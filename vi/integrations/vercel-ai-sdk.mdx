@@ -1,0 +1,167 @@
+---
+title: "Vercel AI SDK"
+description: "Tích hợp AI Sonar với Vercel AI SDK bằng nhà cung cấp tương thích OpenAI hoặc nhà cung cấp Responses native"
+---
+
+## Tổng quan
+
+
+
+<Note>
+**Loại**: Framework hoặc nền tảng
+
+**Đường chính**: đường tương thích OpenAI mặc định
+
+**Mức hỗ trợ**: Mẫu tích hợp được khuyến nghị
+</Note>
+
+Đối với AI Sonar, lựa chọn mặc định ổn định nhất trong Vercel AI SDK là **nhà cung cấp tương thích OpenAI**.
+
+Nếu bạn cần cụ thể hành vi **Responses native**, bạn có thể chuyển sang nhà cung cấp OpenAI và giữ nguyên URL cơ sở của AI Sonar.
+
+Trang này nên được hiểu là một mẫu tích hợp được khuyến nghị, chứ không phải tuyên bố rằng mọi helper trong Vercel AI SDK đều có kiểm thử đầu-cuối chuyên biệt trong repo này.
+
+## Mặc định được khuyến nghị: Nhà cung cấp tương thích OpenAI
+
+```bash
+npm install ai @ai-sdk/openai-compatible
+```
+
+```typescript
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
+
+export const aisonar = createOpenAICompatible({
+  name: 'aisonar',
+  apiKey: process.env.TOKENLAB_API_KEY,
+  baseURL: 'https://api.aisonar.dev/v1',
+});
+```
+
+## Tạo văn bản
+
+```typescript
+import { generateText } from 'ai';
+import { aisonar } from './aisonar';
+
+const { text } = await generateText({
+  model: aisonar.chatModel('gpt-5.4'),
+  prompt: 'Explain AI Sonar in one sentence.',
+});
+
+console.log(text);
+```
+
+## Stream văn bản
+
+```typescript
+import { streamText } from 'ai';
+import { aisonar } from './aisonar';
+
+const result = await streamText({
+  model: aisonar.chatModel('gpt-5.4'),
+  prompt: 'Write a short poem about coding.',
+});
+
+for await (const textPart of result.textStream) {
+  process.stdout.write(textPart);
+}
+```
+
+## Gọi công cụ
+
+```typescript
+import { generateText, tool } from 'ai';
+import { z } from 'zod';
+import { aisonar } from './aisonar';
+
+const result = await generateText({
+  model: aisonar.chatModel('gpt-5.4'),
+  prompt: 'What is the weather in San Francisco?',
+  tools: {
+    weather: tool({
+      description: 'Get weather in a location',
+      parameters: z.object({
+        location: z.string(),
+      }),
+      execute: async ({ location }) => ({
+        location,
+        temperature: 72,
+        condition: 'sunny',
+      }),
+    }),
+  },
+});
+
+console.log(result.text);
+```
+
+## Đầu ra có cấu trúc
+
+```typescript
+import { generateObject } from 'ai';
+import { z } from 'zod';
+import { aisonar } from './aisonar';
+
+const { object } = await generateObject({
+  model: aisonar.chatModel('gpt-5.4'),
+  schema: z.object({
+    name: z.string(),
+    role: z.string(),
+  }),
+  prompt: 'Generate a fake developer profile.',
+});
+
+console.log(object);
+```
+
+## Nếu bạn thực sự cần hành vi Responses-native
+
+```bash
+npm install ai @ai-sdk/openai
+```
+
+```typescript
+import { createOpenAI } from '@ai-sdk/openai';
+
+export const aisonarResponses = createOpenAI({
+  apiKey: process.env.TOKENLAB_API_KEY,
+  baseURL: 'https://api.aisonar.dev/v1',
+});
+```
+
+```typescript
+import { generateText } from 'ai';
+import { aisonarResponses } from './aisonar-responses';
+
+const { text } = await generateText({
+  model: aisonarResponses('gpt-5.4'),
+  prompt: 'Explain AI Sonar in one sentence.',
+});
+```
+
+<Note>
+Sử dụng `@ai-sdk/openai-compatible` làm lựa chọn mặc định an toàn cho các tích hợp kiểu proxy. Chỉ chuyển sang `@ai-sdk/openai` khi bạn thực sự muốn đường dẫn nhà cung cấp được xây dựng trên `/v1/responses`.
+</Note>
+
+## Biến môi trường
+
+```bash
+# .env.local
+TOKENLAB_API_KEY=sk-your-api-key
+```
+
+## Thực tiễn tốt nhất
+
+<AccordionGroup>
+  <Accordion title="Ưu tiên openai-compatible trước">
+    Đối với các cổng bên thứ ba và backend proxy, `@ai-sdk/openai-compatible` thường là điểm khởi đầu ít gây nhầm lẫn nhất.
+  </Accordion>
+
+  <Accordion title="Chỉ chuyển sang Responses khi cần">
+    Nếu bạn cần hành vi nhà cung cấp gắn với `/v1/responses`, hãy chủ động chuyển package nhà cung cấp thay vì trộn cả hai mẫu trong cùng một client.
+  </Accordion>
+
+  <Accordion title="Giữ bí mật ở phía server">
+    Không bao giờ để lộ API key AI Sonar trong code phía client. Hãy đặt phần thiết lập nhà cung cấp trong các file server hoặc API routes.
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,292 @@
+---
+title: "建立回應"
+openapi: "POST /v1/responses"
+description: "使用 OpenAI Responses API 格式建立回應"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+Responses API 是 OpenAI 較新的有狀態對話 API。AI Sonar 以進階可選路徑的方式支援這種格式，適用於相容模型；除非您明確需要 Responses 特定行為，否則請使用 `POST /v1/chat/completions` 作為預設的相容 OpenAI 路由。
+
+## 請求主體
+
+<ParamField body="model" type="string" required>
+  要使用的模型 ID。請參見 [Models](https://aisonar.dev/models) 以了解可用選項。
+</ParamField>
+
+<ParamField body="input" type="array" required>
+  由對話組成的輸入項目清單。
+
+  每個項目可以是：
+  - `message`: 含有 role 與 content 的對話訊息
+  - `function_call`: 一個函式呼叫請求
+  - `function_call_output`: 函式呼叫的輸出
+
+  對於多模態輸入，`message.content` 可以是純字串或內容區塊的陣列。對於支援影像的模型（例如 GPT-5.4 變體），請將影像作為 `input_image` 區塊傳遞，而非將 URL 或 Base64 字串直接嵌入純文字中。
+
+  範例內容區塊：
+  - `{ "type": "input_text", "text": "Describe this image" }`
+  - `{ "type": "input_image", "image_url": "https://example.com/image.jpg" }`
+  - `{ "type": "input_image", "image_url": "data:image/png;base64,..." }`
+</ParamField>
+
+<ParamField body="instructions" type="string">
+  提供給模型的系統指示（等同於 system message）。
+</ParamField>
+
+<ParamField body="max_output_tokens" type="integer">
+  可生成的最大 token 數。
+</ParamField>
+
+<ParamField body="temperature" type="number" default="1">
+  抽樣溫度，範圍 0 到 2。
+</ParamField>
+
+<ParamField body="tools" type="array">
+  模型可能呼叫的工具清單。
+
+  對於使用預設圖片工具模型，或明確設定 `model: "gpt-image-2"` 的 hosted `image_generation` 工具，AI Sonar 會在轉發請求前移除不支援的 `input_fidelity`，因為 GPT Image 2 已經以高保真處理圖片輸入。請不要對這個工具傳入 `background: "transparent"`；AI Sonar 不會靜默移除它，因為這會改變輸出語義。
+</ParamField>
+
+<ParamField body="stream" type="boolean" default="false">
+  若為 true，則回傳事件串流。
+</ParamField>
+
+<ParamField body="previous_response_id" type="string">
+  先前回應的 ID，用於從該回應延續對話。
+</ParamField>
+
+<ParamField body="store" type="boolean" default="true">
+  是否儲存回應以便日後擷取。
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  附加至回應的 metadata 以供追蹤使用。
+</ParamField>
+
+<ParamField body="text" type="object">
+  文字生成的設定選項。`text.format` 的行為取決於所選模型與路由路徑；各模型之間不保證一致。
+</ParamField>
+
+<ParamField body="parallel_tool_calls" type="boolean" default="true">
+  是否允許多個工具並行呼叫。
+</ParamField>
+
+<ParamField body="top_p" type="number">
+  Nucleus 抽樣參數（0-1）。
+</ParamField>
+
+<ParamField body="reasoning" type="object">
+  針對支援推理的模型（例如 GPT-5 系列變體）的推理設定。
+
+  - `effort` (string): 推理努力等級（`low`, `medium`, `high`）
+</ParamField>
+
+## 回應
+
+<ResponseField name="id" type="string">
+  回應的唯一識別碼。
+</ResponseField>
+
+<ResponseField name="object" type="string">
+  恆為 `response`。
+</ResponseField>
+
+<ResponseField name="created" type="integer">
+  回應建立的 Unix 時間戳。
+</ResponseField>
+
+<ResponseField name="output" type="array">
+  模型產生的輸出項目清單。
+</ResponseField>
+
+<ResponseField name="usage" type="object">
+  Token 使用統計。
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/responses" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o",
+    "input": [
+      {"type": "message", "role": "user", "content": "Hello!"}
+    ],
+    "max_output_tokens": 1000
+  }'
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.responses.create(
+    model="gpt-4o",
+    input=[
+        {"type": "message", "role": "user", "content": "Hello!"}
+    ],
+    max_output_tokens=1000
+)
+
+print(response.output)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.responses.create({
+  model: 'gpt-4o',
+  input: [
+    { type: 'message', role: 'user', content: 'Hello!' }
+  ],
+  max_output_tokens: 1000
+});
+
+console.log(response.output);
+```
+
+```go Go
+package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "fmt"
+    "net/http"
+)
+
+func main() {
+    payload := map[string]interface{}{
+        "model": "gpt-4o",
+        "input": []map[string]interface{}{
+            {"type": "message", "role": "user", "content": "Hello!"},
+        },
+        "max_output_tokens": 1000,
+    }
+    body, _ := json.Marshal(payload)
+
+    req, _ := http.NewRequest("POST", "https://api.aisonar.dev/v1/responses", bytes.NewBuffer(body))
+    req.Header.Set("Authorization", "Bearer sk-your-api-key")
+    req.Header.Set("Content-Type", "application/json")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+
+    var result map[string]interface{}
+    json.NewDecoder(resp.Body).Decode(&result)
+    fmt.Println(result["output"])
+}
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/responses');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Content-Type: application/json',
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => json_encode([
+        'model' => 'gpt-4o',
+        'input' => [
+            ['type' => 'message', 'role' => 'user', 'content' => 'Hello!']
+        ],
+        'max_output_tokens' => 1000
+    ])
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+print_r($data['output']);
+```
+## 視覺輸入範例
+
+對於支援影像的模型，請將影像放在 `message.content` 中，使用 `input_image` 區塊。`image_url` 的值可以是公開 URL 或 Base64 資料 URL。
+
+```json
+{
+  "model": "gpt-5.4",
+  "input": [
+    {
+      "type": "message",
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "Please describe this image."
+        },
+        {
+          "type": "input_image",
+          "image_url": "https://example.com/demo.jpg"
+        }
+      ]
+    }
+  ]
+}
+```
+
+```json
+{
+  "model": "gpt-5.4",
+  "input": [
+    {
+      "type": "message",
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "Please describe this image."
+        },
+        {
+          "type": "input_image",
+          "image_url": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ..."
+        }
+      ]
+    }
+  ]
+}
+```
+
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "id": "resp_abc123",
+  "object": "response",
+  "created": 1706000000,
+  "model": "gpt-4o",
+  "output": [
+    {
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {"type": "text", "text": "Hello! How can I help you today?"}
+      ]
+    }
+  ],
+  "usage": {
+    "input_tokens": 10,
+    "output_tokens": 12,
+    "total_tokens": 22
+  }
+}
+```
+</ResponseExample>

@@ -1,0 +1,35 @@
+---
+title: "Lấy Lô"
+openapi: "GET /v1/batches/{batch_id}"
+description: "Lấy trạng thái hiện tại, số lượng và các tệp kết quả cho một lô."
+---
+
+## Tổng Quan
+
+Điểm cuối này là một phần của API Lô tương thích với OpenAI của AI Sonar. Các công việc lô sử dụng các tệp JSONL đã tải lên, chạy không đồng bộ và có thể trả lại các tệp đầu ra/lỗi sau.
+
+## Ghi Chú
+
+- Các tệp đầu vào lô phải sử dụng `purpose=batch`.
+- `completion_window` hiện tại là `24h`.
+- Thứ tự đầu ra không được đảm bảo; luôn khớp theo `custom_id`.
+- Không hỗ trợ streaming bên trong các mục lô.
+
+## Ví Dụ
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/batches/batch_abc123" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+## Yêu Cầu / Phản Hồi
+
+Sử dụng bảng điều khiển OpenAPI tương tác ở trên để có sơ đồ chính xác.
+
+## Mẹo Vận Hành
+
+- Sử dụng `custom_id` cho việc đối chiếu không thay đổi ở phía hạ nguồn.
+- Mong đợi `output_file_id` và `error_file_id` chỉ sau khi công nhân hoàn tất lô.
+- Giá lô có thể khác với giá đồng bộ vì các quy tắc giảm giá `isBatchRequest=true` áp dụng.

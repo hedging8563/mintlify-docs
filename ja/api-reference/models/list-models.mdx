@@ -1,0 +1,192 @@
+---
+title: "モデル一覧"
+openapi: "GET /v1/models"
+description: "利用可能なすべてのモデルを一覧表示します"
+---
+
+## レスポンス
+
+<ResponseField name="object" type="string">
+  常に `list` です。
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  モデルオブジェクトの配列です。
+
+  各モデルには以下が含まれます:
+  - `id` (string): モデル識別子
+  - `object` (string): `model`
+  - `created` (integer): 作成タイムスタンプ
+  - `owned_by` (string): モデルプロバイダー
+  - `aisonar.category` (string): 公開モデルカテゴリ
+  - `aisonar.pricing_unit` (string or `null`): 利用可能な場合の公開料金単位
+  - `aisonar.capability_flags` (object or `null`): 公開されている機能サマリー
+  - `aisonar.supported_operations` (array or `null`): モデルが公開サポートする非チャット操作
+  - `aisonar.pricing_provenance` (object or `null`): 公開料金の出典メタデータ
+  - `aisonar.public_contract_summary` (object or `null`): `public_operations` と `request_endpoint` のみを含む軽量な非チャット発見用サマリー
+  - `aisonar.agent_preferences` (object): `recommended_for` がある場合のみ返されます
+</ResponseField>
+
+<Note>
+`GET /v1/models` は発見向けに最適化されています。`capability_flags`、`pricing_provenance`、完全な `public_contract` のような詳細専用メタデータは `GET /v1/models/{model}` にあります。
+</Note>
+
+## クエリパラメータ
+
+<ParamField query="category" type="string">
+  任意の公開カテゴリフィルタです。`chat`、`image`、`video`、`audio`、`tts`、`stt`、`music`、`3d`、`embedding`、`rerank`、`translation` をサポートします。
+</ParamField>
+
+<ParamField query="recommended_for" type="string">
+  任意の非チャット推奨シーンです。`image`、`video`、`music`、`3d`、`tts`、`stt`、`embedding`、`rerank`、`translation` をサポートします。
+</ParamField>
+
+<ParamField query="provider" type="string">
+  `openai`、`anthropic`、`google`、`deepseek` などの任意のプロバイダーフィルタです。
+</ParamField>
+
+<ParamField query="tag" type="string">
+  `chat`、`image`、`video`、`embedding`、`translation` などの任意のモデルタグフィルタです。
+</ParamField>
+
+<Note>
+`recommended_for` がある場合、`/v1/models` は直近のキャッシュ済み 24 時間成功率スナップショットに基づいて非チャットモデルを並べ替えます。`status = "insufficient_samples"` のモデルも表示されますが、スコア付きモデルの後ろに並びます。
+</Note>
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/models" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+models = client.models.list()
+
+for model in models.data:
+    print(f"{model.id} ({model.owned_by})")
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const models = await client.models.list();
+
+for (const model of models.data) {
+  console.log(`${model.id} (${model.owned_by})`);
+}
+```
+
+```go Go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "net/http"
+)
+
+func main() {
+    req, _ := http.NewRequest("GET", "https://api.aisonar.dev/v1/models", nil)
+    req.Header.Set("Authorization", "Bearer sk-your-api-key")
+
+    resp, _ := http.DefaultClient.Do(req)
+    defer resp.Body.Close()
+
+    var payload struct {
+        Data []struct {
+            ID      string `json:"id"`
+            OwnedBy string `json:"owned_by"`
+        } `json:"data"`
+    }
+
+    json.NewDecoder(resp.Body).Decode(&payload)
+
+    for _, model := range payload.Data {
+        fmt.Printf("%s (%s)\n", model.ID, model.OwnedBy)
+    }
+}
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/models');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer sk-your-api-key'
+    ]
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+foreach ($data['data'] as $model) {
+    echo "{$model['id']} ({$model['owned_by']})\n";
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "gpt-5.4",
+      "object": "model",
+      "created": 1706000000,
+      "owned_by": "openai"
+    },
+    {
+      "id": "claude-sonnet-4-6",
+      "object": "model",
+      "created": 1706000000,
+      "owned_by": "anthropic"
+    },
+    {
+      "id": "gemini-2.5-flash",
+      "object": "model",
+      "created": 1706000000,
+      "owned_by": "google"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## プロバイダーでのフィルタリング
+
+```python
+# Get all OpenAI models
+openai_models = [m for m in models.data if m.owned_by == "openai"]
+
+# Get all Anthropic models
+anthropic_models = [m for m in models.data if m.owned_by == "anthropic"]
+```
+
+## モデルカテゴリ
+
+| プロバイダー | 例のモデル |
+|----------|----------------|
+| `openai` | gpt-5.4, gpt-5.4-mini, gpt-5-mini, gpt-4o, dall-e-3 |
+| `anthropic` | claude-opus-4-6, claude-sonnet-4-6, claude-haiku-4-5 |
+| `google` | gemini-3-pro-preview, gemini-3-flash-preview, gemini-2.5-pro |
+| `deepseek` | deepseek-r1, deepseek-v3-2 |
+| `xai` | grok-4.1 |
+| `moonshot` | kimi-k2.5 |
+| `minimax` | minimax-m2.1 |
+| `meta` | llama-3.3-70b, llama-3.1-405b |

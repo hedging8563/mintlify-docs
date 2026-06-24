@@ -1,0 +1,190 @@
+---
+title: "Créer un modèle 3D"
+openapi: "POST /v1/3d/generations"
+description: "Crée une tâche de génération de modèle 3D"
+---
+
+Générez des modèles 3D à partir de texte ou d'images en utilisant Tripo3D et d'autres fournisseurs. Il s'agit d'une API asynchrone. La réponse de création renvoie un identifiant de tâche et peut, lorsqu'il est disponible, inclure un `poll_url` à utiliser en priorité.
+
+## Corps de la requête
+
+<ParamField body="model" type="string" default="tripo3d-v2.5">
+  Modèle à utiliser (par ex., `tripo3d-v2.5`, `tripo3d-v2`).
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  Description textuelle du modèle 3D à générer.
+</ParamField>
+
+<ParamField body="image" type="string">
+  Image encodée en Base64 pour la génération image-vers-3D.
+</ParamField>
+
+<ParamField body="image_url" type="string">
+  URL de l'image pour la génération image-vers-3D.
+</ParamField>
+
+<ParamField body="format" type="string" default="glb">
+  Format de sortie : `glb`, `fbx`, `obj` ou `usdz`.
+</ParamField>
+
+<ParamField body="quality" type="string" default="standard">
+  Niveau de qualité : `draft`, `standard` ou `high`.
+</ParamField>
+
+<ParamField body="style" type="string">
+  Préréglage de style pour le modèle.
+</ParamField>
+
+<ParamField body="seed" type="integer">
+  Seed pour une génération reproductible.
+</ParamField>
+
+<ParamField body="user" type="string">
+  Un identifiant unique pour l'utilisateur final.
+</ParamField>
+
+## Réponse
+
+<ResponseField name="id" type="string">
+  ID de la tâche pour le suivi du statut.
+</ResponseField>
+
+<ResponseField name="task_id" type="string">
+  Alias de l'identifiant de tâche asynchrone lorsque l'adaptateur le renvoie.
+</ResponseField>
+
+<ResponseField name="poll_url" type="string">
+  URL de polling prioritaire lorsqu'elle est disponible.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Statut de la tâche : `pending`, `processing`, `completed` ou `failed`.
+</ResponseField>
+
+<ResponseField name="created" type="integer">
+  Horodatage Unix de la création de la tâche.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/3d/generations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "tripo3d-v2.5",
+    "prompt": "A detailed medieval castle with towers",
+    "format": "glb",
+    "quality": "high"
+  }'
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    "https://api.aisonar.dev/v1/3d/generations",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+    json={
+        "model": "tripo3d-v2.5",
+        "prompt": "A detailed medieval castle with towers",
+        "format": "glb",
+        "quality": "high"
+    }
+)
+
+task_id = response.json()["id"]
+print(f"Task ID: {task_id}")
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.aisonar.dev/v1/3d/generations', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer sk-your-api-key',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    model: 'tripo3d-v2.5',
+    prompt: 'A detailed medieval castle with towers',
+    format: 'glb',
+    quality: 'high'
+  })
+});
+
+const data = await response.json();
+console.log(`Task ID: ${data.id}`);
+```
+
+```go Go
+package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "fmt"
+    "net/http"
+)
+
+func main() {
+    payload := map[string]interface{}{
+        "model":   "tripo3d-v2.5",
+        "prompt":  "A detailed medieval castle with towers",
+        "format":  "glb",
+        "quality": "high",
+    }
+    body, _ := json.Marshal(payload)
+
+    req, _ := http.NewRequest("POST", "https://api.aisonar.dev/v1/3d/generations", bytes.NewBuffer(body))
+    req.Header.Set("Authorization", "Bearer sk-your-api-key")
+    req.Header.Set("Content-Type", "application/json")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+
+    var result map[string]interface{}
+    json.NewDecoder(resp.Body).Decode(&result)
+    fmt.Printf("Task ID: %s\n", result["id"])
+}
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/3d/generations');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Content-Type: application/json',
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => json_encode([
+        'model' => 'tripo3d-v2.5',
+        'prompt' => 'A detailed medieval castle with towers',
+        'format' => 'glb',
+        'quality' => 'high'
+    ])
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+echo "Task ID: " . $data['id'];
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "pending",
+  "created": 1706000000,
+  "model": "tripo3d-v2.5"
+}
+```
+</ResponseExample>

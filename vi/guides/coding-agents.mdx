@@ -1,0 +1,66 @@
+---
+title: "Coding Agents"
+description: "Giảm chi phí Coding Agent lên đến 90% với định tuyến thông minh, bộ nhớ đệm và lựa chọn mô hình"
+---
+
+## Tại sao Coding Agent tốn kém
+
+Các công cụ như Claude Code, Cursor và Codex CLI rất mạnh mẽ — nhưng chúng tiêu thụ token với tốc độ khiến hầu hết các nhóm ngạc nhiên.
+
+**Ngữ cảnh dài mỗi yêu cầu.** Mỗi lần gọi bao gồm system prompt, file dự án và lịch sử hội thoại — thường 10.000–100.000+ token trước khi mô hình bắt đầu suy nghĩ.
+
+**Tần suất gọi cao.** Một phiên lập trình tạo ra hàng chục lần gọi API: tạo mã, tìm kiếm, đánh giá, tự động hoàn thành và sử dụng công cụ. Một phiên 1 giờ dễ dàng vượt 200 yêu cầu.
+
+**Tích lũy hội thoại.** Mỗi lượt gửi lại toàn bộ lịch sử tin nhắn. Đến lượt thứ 20, bạn đang trả tiền cho cùng một ngữ cảnh 20 lần.
+
+<Info>
+Một phiên Claude Code điển hình 1 giờ có thể tiêu thụ 2–5M token. Với giá API trực tiếp, đó là $6–30+ mỗi giờ tùy theo mô hình.
+</Info>
+
+## AI Sonar giúp gì
+
+<CardGroup cols={2}>
+  <Card title="Định tuyến đa nhà cung cấp" icon="route" href="/vi/guides/coding-agent-cost#smart-model-selection">
+    Tự động định tuyến đến nhà cung cấp rẻ nhất có sẵn cho mỗi mô hình. Cùng mô hình, giá thấp hơn.
+  </Card>
+  <Card title="Truyền qua Prompt Cache" icon="bolt" href="/vi/guides/prompt-cache">
+    Bộ nhớ đệm tiền tố upstream (Anthropic, OpenAI, DeepSeek) hoạt động tự động — system prompt dài được lưu đệm ở cấp nhà cung cấp.
+  </Card>
+  <Card title="Dự phòng mô hình" icon="arrows-rotate" href="/vi/guides/coding-agent-models#how-aisonar-routing-works">
+    Nếu nhà cung cấp không khả dụng hoặc chậm, yêu cầu tự động chuyển sang nhà cung cấp tiếp theo. Không có thời gian chết.
+  </Card>
+</CardGroup>
+
+## Công cụ lập trình được hỗ trợ
+
+<CardGroup cols={3}>
+  <Card title="Cursor" icon="text-slash" href="/vi/integrations/cursor">
+    IDE hỗ trợ AI với tự động hoàn thành tab và chat
+  </Card>
+  <Card title="Claude Code" icon="terminal" href="/vi/integrations/claude-code">
+    Coding Agent CLI chính thức của Anthropic
+  </Card>
+  <Card title="Codex CLI" icon="code" href="/vi/integrations/codex-cli">
+    Coding Agent terminal của OpenAI
+  </Card>
+  <Card title="Gemini CLI" icon="gem" href="/vi/integrations/gemini-cli">
+    Trợ lý lập trình dòng lệnh của Google
+  </Card>
+  <Card title="OpenCode" icon="laptop-code" href="/vi/integrations/opencode">
+    Coding Agent terminal mã nguồn mở
+  </Card>
+  <Card title="AI Sonar API Skill" icon="lemon" href="/vi/integrations/coding-agent-skill">
+    Dùng skill tích hợp API chung của AI Sonar
+  </Card>
+</CardGroup>
+
+## Tìm hiểu thêm
+
+<CardGroup cols={2}>
+  <Card title="Hướng dẫn tối ưu chi phí" icon="piggy-bank" href="/vi/guides/coding-agent-cost">
+    Chiến lược cụ thể để giảm hóa đơn: lựa chọn mô hình, bộ nhớ đệm, quản lý token và so sánh chi phí thực tế.
+  </Card>
+  <Card title="Hướng dẫn chọn mô hình" icon="microchip" href="/vi/guides/coding-agent-models">
+    Mô hình nào cho tác vụ nào? Bảng so sánh, đề xuất theo tác vụ và cấu hình theo công cụ.
+  </Card>
+</CardGroup>

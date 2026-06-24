@@ -1,0 +1,26 @@
+---
+title: "Listar chaves API"
+openapi: "GET /v1/management/api-keys"
+description: "Lista as chaves API gerenciadas pelo usuário para o token de gerenciamento atual da organização."
+---
+
+## Visão Geral
+
+Retorna as chaves API de usuário da organização associada ao token de gerenciamento atual.
+
+## Notas
+
+- Chaves gerenciadas pelo sistema, como chaves do Playground e do Claw, são excluídas.
+
+## Exemplo
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/management/api-keys" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## Solicitação / Resposta
+
+Use o painel interativo OpenAPI acima para o esquema exato.

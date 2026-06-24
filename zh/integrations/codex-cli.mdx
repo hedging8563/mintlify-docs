@@ -1,0 +1,222 @@
+---
+title: "Codex CLI"
+description: "配置 OpenAI Codex CLI 以使用 AI Sonar API"
+---
+
+## 概述
+
+
+
+<Note>
+**类型**：编码工具
+
+**主要路径**：OpenAI Responses（高级可选路径）
+
+**支持情况**：在模型/路径限制下受支持
+</Note>
+
+OpenAI Codex 是一个开源的命令行工具 (CLI)，作为轻量级的编码代理，能够在终端中读取、修改和运行代码。它基于 GPT 模型构建，并针对代码生成进行了优化。
+
+对于 AI Sonar，Codex CLI 可以使用 `/v1/responses`，但您应将其视为一个高级兼容路径。某些仅适用于 Responses 的功能并不保证在每个模型和路由路径上可用。
+
+Codex CLI 远程压缩支持 `POST /v1/responses/compact`。Codex 在 `/compact` 和自动压缩时会把当前会话的 `model` 放在 `body.model` 中，因此请确保要用于压缩的模型在 Responses 路径上可用；不要配置 `/v1/compact`。
+
+## 系统要求
+
+- **OS**：macOS、Linux（官方支持）、Windows 通过 WSL
+- **Node.js**：版本 18+
+- **npm**：版本 10.x.x 或更高
+
+## 安装
+
+```bash
+npm install -g @openai/codex
+```
+
+验证安装：
+
+```bash
+codex --version
+```
+
+## 配置
+
+### 第 1 步：设置 API 密钥
+
+**临时（当前会话）：**
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+```
+
+**永久配置：**
+
+添加到 `~/.bashrc`、`~/.zshrc` 或 `~/.bash_profile`：
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+```
+
+然后重新加载：
+
+```bash
+source ~/.zshrc  # or source ~/.bashrc
+```
+
+### 第 2 步：配置 config.toml
+
+编辑 `~/.codex/config.toml`：
+
+```toml
+model_provider = "aisonar"
+model = "gpt-5.4"
+model_reasoning_effort = "xhigh"
+plan_mode_reasoning_effort = "xhigh"
+fast_mode = true
+model_context_window = 1000000
+model_auto_compact_token_limit = 900000
+sandbox_mode = "danger-full-access"
+approval_policy = "never"
+
+disable_response_storage = false
+personality = "friendly"
+service_tier = "fast"
+
+[model_providers.aisonar]
+env_key = "OPENAI_API_KEY"
+name = "AI Sonar"
+base_url = "https://api.aisonar.dev/v1"
+wire_api = "responses"
+supports_websockets = true
+websocket_connect_timeout_ms = 15000
+
+[features]
+responses_websockets = true
+responses_websockets_v2 = true
+```
+
+此 WebSocket 模式是面向 Codex 客户端的 Responses-over-WebSocket 桥接层。它只接受 `response.create` 和 `response.cancel`；它不是 OpenAI Realtime API，也不接受 `session.update`、`conversation.item.*`、`input_audio_buffer.*`、二进制音频或嵌套的 Realtime `response.create.response` 信封。
+
+<Note>
+如果配置文件不存在，请运行 `codex` 一次以生成该文件，然后编辑该文件。在更改 `config.toml` 后需完全重启 Codex，以便重新加载新的提供者设置。
+</Note>
+
+<Warning>
+Codex 正在弃用对自定义提供者的 `chat/completions` 支持。对于 AI Sonar，请保持 `wire_api = "responses"`，除非您有意使用较旧的兼容路径。
+</Warning>
+
+<Note>
+如果请求使用了在所选模型或路由上不受支持的 Responses 专用字段，AI Sonar 会返回明确的错误，而不是静默降级该请求。
+</Note>
+
+## 基本用法
+
+**启动交互模式：**
+
+```bash
+codex
+```
+
+**直接命令：**
+
+```bash
+codex "Fix the bug in main.py line 42"
+```
+
+**指定模型：**
+
+```bash
+codex -m gpt-5.4 "Build a REST API server"
+```
+
+## 推荐模型
+
+| 模型 | 适用场景 |
+|-------|----------|
+| `gpt-5.4` | 作为编码和推理的默认最佳选择 |
+| `gpt-5-mini` | 用于编码工作流的更快、更便宜的后备选项 |
+| `claude-sonnet-4-6` | 代码审查、文档编写 |
+| `deepseek-r1` | 算法设计、推理 |
+
+## 交互命令
+
+| Command | 说明 |
+|---------|------|
+| `/help` | 显示帮助 |
+| `/exit` 或 `Ctrl+C` | 退出 |
+| `/clear` | 清除会话 |
+| `/config` | 查看配置 |
+| `/model <name>` | 切换模型 |
+| `/tokens` | 查看 token 使用情况 |
+
+## 验证配置
+
+```bash
+# Check environment variable
+echo $OPENAI_API_KEY
+
+# Test API connection
+codex "Hello, Codex!"
+
+# View configuration
+cat ~/.codex/config.toml
+```
+
+## 常见用例
+
+**代码审查：**
+
+```bash
+git diff | codex "Review these code changes"
+```
+
+**生成提交信息：**
+
+```bash
+git diff --staged | codex "Generate a commit message for these changes"
+```
+
+**修复错误：**
+
+```bash
+codex "Fix the TypeScript errors in src/components/"
+```
+
+**解释代码：**
+
+```bash
+cat main.py | codex "Explain what this code does"
+```
+
+## 故障排除
+
+<AccordionGroup>
+  <Accordion title="连接错误">
+    - 验证 `base_url` 在 config.toml 中是否为准确的 `https://api.aisonar.dev/v1`
+    - 检查网络连接
+    - 确保没有代理干扰
+  </Accordion>
+
+  <Accordion title="身份验证失败">
+    - 验证 `env_key = "OPENAI_API_KEY"` 是否存在于 `~/.codex/config.toml`
+    - 验证已设置 `OPENAI_API_KEY` 环境变量
+    - 检查密钥是否以 `sk-` 开头
+    - 确保密钥在 AI Sonar 仪表板中处于激活状态
+  </Accordion>
+
+  <Accordion title="模型未找到">
+    - 检查模型名称是否完全匹配
+    - 验证模型可用性： [aisonar.dev/en/models](https://aisonar.dev/models)
+  </Accordion>
+
+  <Accordion title="Responses 原生字段被拒绝">
+    - 某些字段仅在 AI Sonar 能为所选模型和路由保证该行为时在 `/v1/responses` 可用
+    - 如果看到 `unsupported_request_field`，请删除该字段或切换到不依赖该字段的工作流
+  </Accordion>
+
+  <Accordion title="/compact 或自动压缩失败">
+    - Codex CLI 调用 `POST /v1/responses/compact`，不是 `/v1/compact`
+    - 压缩请求使用当前会话的 `model`，因此该模型必须在 Responses 路径上可用
+    - 保持 `wire_api = "responses"` 和 `base_url = "https://api.aisonar.dev/v1"`
+  </Accordion>
+</AccordionGroup>

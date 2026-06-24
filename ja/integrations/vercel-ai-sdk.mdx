@@ -1,0 +1,167 @@
+---
+title: "Vercel AI SDK"
+description: "OpenAI互換またはResponses-nativeプロバイダーを使用してAI SonarをVercel AI SDKに統合します"
+---
+
+## 概要
+
+
+
+<Note>
+**種類**: フレームワーク / プラットフォーム
+
+**主要パス**: OpenAI 互換 default
+
+**サポートレベル**: 推奨統合パターン
+</Note>
+
+AI Sonar では、Vercel AI SDK における最も安定した既定値は **OpenAI互換プロバイダー** です。
+
+特に **Responses-native** の動作が必要な場合は、OpenAIプロバイダーに切り替えつつ、同じ AI Sonar の base URL を維持できます。
+
+このページは推奨される統合パターンとして参照してください。Vercel AI SDK のすべてのヘルパーに対して、このリポジトリで専用の end-to-end 回帰があることを意味するわけではありません。
+
+## 推奨デフォルト: OpenAI互換プロバイダー
+
+```bash
+npm install ai @ai-sdk/openai-compatible
+```
+
+```typescript
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
+
+export const aisonar = createOpenAICompatible({
+  name: 'aisonar',
+  apiKey: process.env.TOKENLAB_API_KEY,
+  baseURL: 'https://api.aisonar.dev/v1',
+});
+```
+
+## テキスト生成
+
+```typescript
+import { generateText } from 'ai';
+import { aisonar } from './aisonar';
+
+const { text } = await generateText({
+  model: aisonar.chatModel('gpt-5.4'),
+  prompt: 'Explain AI Sonar in one sentence.',
+});
+
+console.log(text);
+```
+
+## テキストストリーミング
+
+```typescript
+import { streamText } from 'ai';
+import { aisonar } from './aisonar';
+
+const result = await streamText({
+  model: aisonar.chatModel('gpt-5.4'),
+  prompt: 'Write a short poem about coding.',
+});
+
+for await (const textPart of result.textStream) {
+  process.stdout.write(textPart);
+}
+```
+
+## Tool Calling
+
+```typescript
+import { generateText, tool } from 'ai';
+import { z } from 'zod';
+import { aisonar } from './aisonar';
+
+const result = await generateText({
+  model: aisonar.chatModel('gpt-5.4'),
+  prompt: 'What is the weather in San Francisco?',
+  tools: {
+    weather: tool({
+      description: 'Get weather in a location',
+      parameters: z.object({
+        location: z.string(),
+      }),
+      execute: async ({ location }) => ({
+        location,
+        temperature: 72,
+        condition: 'sunny',
+      }),
+    }),
+  },
+});
+
+console.log(result.text);
+```
+
+## 構造化出力
+
+```typescript
+import { generateObject } from 'ai';
+import { z } from 'zod';
+import { aisonar } from './aisonar';
+
+const { object } = await generateObject({
+  model: aisonar.chatModel('gpt-5.4'),
+  schema: z.object({
+    name: z.string(),
+    role: z.string(),
+  }),
+  prompt: 'Generate a fake developer profile.',
+});
+
+console.log(object);
+```
+
+## 明示的にResponses-Nativeの動作が必要な場合
+
+```bash
+npm install ai @ai-sdk/openai
+```
+
+```typescript
+import { createOpenAI } from '@ai-sdk/openai';
+
+export const aisonarResponses = createOpenAI({
+  apiKey: process.env.TOKENLAB_API_KEY,
+  baseURL: 'https://api.aisonar.dev/v1',
+});
+```
+
+```typescript
+import { generateText } from 'ai';
+import { aisonarResponses } from './aisonar-responses';
+
+const { text } = await generateText({
+  model: aisonarResponses('gpt-5.4'),
+  prompt: 'Explain AI Sonar in one sentence.',
+});
+```
+
+<Note>
+プロキシスタイルの統合では、安全なデフォルトとして `@ai-sdk/openai-compatible` を使用してください。`/v1/responses` 上に構築されたプロバイダーパスを明示的に使いたい場合にのみ、`@ai-sdk/openai` に切り替えてください。
+</Note>
+
+## 環境変数
+
+```bash
+# .env.local
+TOKENLAB_API_KEY=sk-your-api-key
+```
+
+## ベストプラクティス
+
+<AccordionGroup>
+  <Accordion title="まず openai-compatible を優先する">
+    サードパーティのゲートウェイやプロキシバックエンドでは、`@ai-sdk/openai-compatible` が通常、最も予測しやすい出発点です。
+  </Accordion>
+
+  <Accordion title="必要な場合にのみ Responses に移行する">
+    `/v1/responses` に紐づくプロバイダー動作が必要な場合は、1つの client で両方のパターンを混在させるのではなく、意図的にプロバイダーパッケージを切り替えてください。
+  </Accordion>
+
+  <Accordion title="シークレットはサーバー側で管理する">
+    AI Sonar API key をクライアントサイドのコードに公開してはいけません。プロバイダーの設定はサーバーファイルまたは API routes に配置してください。
+  </Accordion>
+</AccordionGroup>

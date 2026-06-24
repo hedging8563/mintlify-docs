@@ -1,0 +1,167 @@
+---
+title: "Vercel AI SDK"
+description: "Integrate AI Sonar with Vercel AI SDK using OpenAI-compatible or Responses-native providers"
+---
+
+## Overview
+
+
+
+<Note>
+**Type**: Framework or Platform
+
+**Primary Path**: OpenAI-compatible default
+
+**Support Confidence**: Recommended integration pattern
+</Note>
+
+For AI Sonar, the most stable default in Vercel AI SDK is the **OpenAI-compatible provider**.
+
+If you specifically need **Responses-native** behavior, you can switch to the OpenAI provider and keep the same AI Sonar base URL.
+
+Treat this page as a recommended integration pattern, not as a claim that every helper in Vercel AI SDK has dedicated end-to-end regression coverage in this repo.
+
+## Recommended Default: OpenAI-Compatible Provider
+
+```bash
+npm install ai @ai-sdk/openai-compatible
+```
+
+```typescript
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
+
+export const aisonar = createOpenAICompatible({
+  name: 'aisonar',
+  apiKey: process.env.TOKENLAB_API_KEY,
+  baseURL: 'https://api.aisonar.dev/v1',
+});
+```
+
+## Generate Text
+
+```typescript
+import { generateText } from 'ai';
+import { aisonar } from './aisonar';
+
+const { text } = await generateText({
+  model: aisonar.chatModel('gpt-5.4'),
+  prompt: 'Explain AI Sonar in one sentence.',
+});
+
+console.log(text);
+```
+
+## Stream Text
+
+```typescript
+import { streamText } from 'ai';
+import { aisonar } from './aisonar';
+
+const result = await streamText({
+  model: aisonar.chatModel('gpt-5.4'),
+  prompt: 'Write a short poem about coding.',
+});
+
+for await (const textPart of result.textStream) {
+  process.stdout.write(textPart);
+}
+```
+
+## Tool Calling
+
+```typescript
+import { generateText, tool } from 'ai';
+import { z } from 'zod';
+import { aisonar } from './aisonar';
+
+const result = await generateText({
+  model: aisonar.chatModel('gpt-5.4'),
+  prompt: 'What is the weather in San Francisco?',
+  tools: {
+    weather: tool({
+      description: 'Get weather in a location',
+      parameters: z.object({
+        location: z.string(),
+      }),
+      execute: async ({ location }) => ({
+        location,
+        temperature: 72,
+        condition: 'sunny',
+      }),
+    }),
+  },
+});
+
+console.log(result.text);
+```
+
+## Structured Output
+
+```typescript
+import { generateObject } from 'ai';
+import { z } from 'zod';
+import { aisonar } from './aisonar';
+
+const { object } = await generateObject({
+  model: aisonar.chatModel('gpt-5.4'),
+  schema: z.object({
+    name: z.string(),
+    role: z.string(),
+  }),
+  prompt: 'Generate a fake developer profile.',
+});
+
+console.log(object);
+```
+
+## If You Explicitly Need Responses-Native Behavior
+
+```bash
+npm install ai @ai-sdk/openai
+```
+
+```typescript
+import { createOpenAI } from '@ai-sdk/openai';
+
+export const aisonarResponses = createOpenAI({
+  apiKey: process.env.TOKENLAB_API_KEY,
+  baseURL: 'https://api.aisonar.dev/v1',
+});
+```
+
+```typescript
+import { generateText } from 'ai';
+import { aisonarResponses } from './aisonar-responses';
+
+const { text } = await generateText({
+  model: aisonarResponses('gpt-5.4'),
+  prompt: 'Explain AI Sonar in one sentence.',
+});
+```
+
+<Note>
+Use `@ai-sdk/openai-compatible` as the safe default for proxy-style integrations. Switch to `@ai-sdk/openai` only when you explicitly want a provider path built on `/v1/responses`.
+</Note>
+
+## Environment Variables
+
+```bash
+# .env.local
+TOKENLAB_API_KEY=sk-your-api-key
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Prefer openai-compatible first">
+    For third-party gateways and proxy backends, `@ai-sdk/openai-compatible` is usually the least surprising starting point.
+  </Accordion>
+
+  <Accordion title="Move to Responses only when needed">
+    If you need provider behavior tied to `/v1/responses`, switch the provider package deliberately instead of mixing both patterns in one client.
+  </Accordion>
+
+  <Accordion title="Keep secrets on the server">
+    Never expose your AI Sonar API key in client-side code. Put provider setup in server files or API routes.
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,327 @@
+---
+title: "视频生成"
+description: "通过统一公开视频契约接入文生视频、图生视频、参考图生视频、首尾帧、动作控制和视频转视频。"
+---
+
+## 概述
+
+AI Sonar 通过统一 API 提供视频生成能力。视频生成是**异步**的：提交请求后会返回 `task_id` 和 `poll_url`，随后再轮询任务状态获取最终结果。
+
+如果创建响应返回了 `poll_url`，请优先直接调用这个地址。若它指向 `/v1/tasks/{id}`，就把它视为公开视频任务的规范状态入口；`/v1/videos/generations/{id}` 只保留兼容用途。
+
+### 可用性与轮询
+
+模型库存会持续变化。要获取最新的公开视频模型可用性，请使用 [Models API](/zh/api-reference/models/list-models) 或访问[模型页面](https://aisonar.dev/models)。
+
+### 模型与媒体行为
+
+音频行为与具体模型有关。在 AI Sonar 中，Veo 3 家族在省略 `output_audio` 时默认按开启音频处理；有些公开视频模型默认无声，或并未暴露稳定的音频切换开关。
+
+生产环境建议优先使用公网可访问的 `https` URL 作为图片、视频和音频输入。兼容模型仍支持内联 `data:` URL，但 URL 更容易重试、观测和排障。
+
+### 异步工作流
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant AI Sonar
+    participant Provider
+
+    Client->>AI Sonar: POST /v1/videos/generations
+    AI Sonar->>Provider: 转发规范化后的请求
+    Provider-->>AI Sonar: task_id + pending
+    AI Sonar-->>Client: { task_id, poll_url, status: "pending" }
+
+    loop 每 5-10 秒轮询
+        Client->>AI Sonar: GET poll_url
+        AI Sonar->>Provider: 查询状态
+        Provider-->>AI Sonar: 状态更新
+        AI Sonar-->>Client: { status, video_url? }
+    end
+```
+
+## 当前公开操作
+
+AI Sonar 当前公开视频契约重点覆盖以下操作：
+
+- `text-to-video`
+- `image-to-video`
+- `reference-to-video`
+- `start-end-to-video`
+- `video-to-video`
+- `motion-control`
+
+请求契约也接受 `audio-to-video` 和 `video-extension`，用于模型特定流程；但在当前这版文档对应的“通用启用”公开视频模型列表中，没有一个广泛启用的模型明确对外公开这两项能力。
+
+## 能力矩阵
+
+**图例**：✅ 该 Provider 家族中至少有一个当前启用的公开视频模型支持该能力；❌ 当前启用模型中未公开这项能力
+
+| 系列 | T2V | I2V | 参考 | 开始-结束 | V2V | 运动 |
+|--------|-----|-----|-----------|-----------|-----|--------|
+| OpenAI | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Kuaishou | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Google | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| ByteDance | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| MiniMax | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Alibaba | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Shengshu | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| xAI | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ |
+| Other | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
+
+### 能力定义
+
+- **T2V（Text-to-Video）**：根据文本提示词生成视频
+- **I2V（Image-to-Video）**：根据起始图片生成视频；为了兼容性更好，建议传 `image_url`
+- **Reference**：通过 `reference_images` 传入一张或多张参考图进行条件控制
+- **Start-End**：通过 `start_image` 和 `end_image` 控制首帧和尾帧
+- **V2V（Video-to-Video）**：以现有视频作为主输入
+- **Motion**：同时使用主体图片和动作参考视频
+
+## 当前启用的公开视频模型
+
+
+### Kuaishou
+
+| 模型 | 公开操作 |
+|-------|----------|
+| `kling-3.0-motion-control` | 动作控制 |
+| `kling-3.0-video` | 文生视频、图生视频、首尾帧视频、元素引用 |
+| `kling-v2.1-master` | 文生视频、图生视频 |
+| `kling-v2.1-pro` | 图生视频、首尾帧视频 |
+| `kling-v2.1-standard` | 图生视频 |
+| `kling-v2.5-turbo-pro` | 文生视频、图生视频、首尾帧视频 |
+| `kling-v2.5-turbo-std` | 文生视频、图生视频 |
+| `kling-v2.6-pro` | 文生视频、图生视频、首尾帧视频 |
+| `kling-v2.6-std` | 文生视频、图生视频 |
+| `kling-v3.0-pro` | 文生视频、图生视频、首尾帧视频 |
+| `kling-v3.0-std` | 文生视频、图生视频、首尾帧视频 |
+| `kling-video-o1-pro` | 文生视频、图生视频、参考图生视频、首尾帧视频、视频转视频 |
+| `kling-video-o1-std` | 文生视频、图生视频、参考图生视频、首尾帧视频、视频转视频 |
+
+### Google
+
+| 模型 | 公开操作 |
+|-------|----------|
+| `veo3` | 文生视频、图生视频 |
+| `veo3-fast` | 文生视频、图生视频 |
+| `veo3-pro` | 文生视频、图生视频 |
+| `veo3.1` | 文生视频、图生视频、参考图生视频、首尾帧视频 |
+| `veo3.1-fast` | 文生视频、图生视频、参考图生视频、首尾帧视频 |
+| `veo3.1-pro` | 文生视频、图生视频、首尾帧视频 |
+
+### ByteDance
+
+| 模型 | 公开操作 |
+|-------|----------|
+| `seedance-1.5-pro` | 文生视频、图生视频 |
+
+### MiniMax
+
+| 模型 | 公开操作 |
+|-------|----------|
+| `hailuo-2.3-fast` | 图生视频 |
+| `hailuo-2.3-pro` | 文生视频、图生视频 |
+| `hailuo-2.3-standard` | 文生视频、图生视频 |
+
+### Alibaba
+
+| 模型 | 公开操作 |
+|-------|----------|
+| `wan-2.2-plus` | 文生视频、图生视频 |
+| `wan-2.5` | 文生视频、图生视频 |
+| `wan-2.6` | 文生视频、图生视频、参考图生视频 |
+
+### Shengshu
+
+| 模型 | 公开操作 |
+|-------|----------|
+| `viduq2` | 文生视频、参考图生视频 |
+| `viduq2-pro` | 图生视频、参考图生视频、首尾帧视频 |
+| `viduq2-pro-fast` | 图生视频、首尾帧视频 |
+| `viduq2-turbo` | 图生视频、首尾帧视频 |
+| `viduq3-pro` | 文生视频、图生视频、首尾帧视频 |
+| `viduq3-turbo` | 文生视频、图生视频、首尾帧视频 |
+
+### xAI
+
+| 模型 | 公开操作 |
+|-------|----------|
+| `grok-imagine-video` | 文生视频、图生视频、参考图生视频、视频转视频 |
+| `grok-imagine-video-1.5-preview` | 图生视频 |
+| `grok-imagine-image-to-video` | 图生视频 |
+| `grok-imagine-text-to-video` | 文生视频 |
+| `grok-imagine-upscale` | 视频转视频 |
+
+### 其他
+
+| 模型 | 公开操作 |
+|-------|----------|
+| `topaz-video-upscale` | 视频转视频 |
+
+## 使用示例
+
+### 文生视频
+
+```python
+response = requests.post(f"{BASE}/videos/generations",
+    headers=headers,
+    json={
+        "model": "veo3.1",
+        "prompt": "A calm cinematic shot of a cat walking through a sunlit garden.",
+        "operation": "text-to-video",
+        "duration": 4,
+        "aspect_ratio": "16:9"
+    }
+)
+```
+
+### 图生视频
+
+```python
+response = requests.post(f"{BASE}/videos/generations",
+    headers=headers,
+    json={
+        "model": "hailuo-2.3-standard",
+        "prompt": "The scene begins from the provided image and adds gentle natural motion.",
+        "operation": "image-to-video",
+        "image_url": "https://example.com/portrait.jpg",
+        "duration": 6,
+        "aspect_ratio": "16:9"
+    }
+)
+```
+
+### Kling 3.0 元素引用
+
+当需要元素引用时，在 `kling-3.0-video` 请求中传入 `kling_elements`。请求需要包含图片条件输入（`image_url`、`image_urls`、`start_image` 或 `end_image`），并在提示词中用 `@name` 引用对应元素。
+
+```python
+response = requests.post(f"{BASE}/videos/generations",
+    headers=headers,
+    json={
+        "model": "kling-3.0-video",
+        "prompt": "Place @hero_bag on a studio turntable with soft product lighting.",
+        "operation": "image-to-video",
+        "image_url": "https://example.com/studio-start.png",
+        "duration": 5,
+        "resolution": "720p",
+        "kling_elements": [
+            {
+                "name": "hero_bag",
+                "description": "black leather handbag",
+                "element_input_urls": [
+                    "https://example.com/bag-front.png",
+                    "https://example.com/bag-side.png"
+                ]
+            }
+        ]
+    }
+)
+```
+
+### 参考图生视频
+
+对于 `seedance-2.0` 和 `seedance-2.0-fast`，AI Sonar 当前支持最多 9 张参考图，外加最多 3 段参考视频和 3 段参考音频。`duration` 只控制生成输出时长，不单独限制参考视频输入时长。 对于 `grok-imagine-video`，reference-to-video 最多接受 7 个图片参考（`reference_images` 或 `image_urls`），且 `duration` 最高为 10 秒。不要把参考图片与 `image_url` / `image` 首帧输入混用。`grok-imagine-video-1.5-preview` 仅支持图生视频。
+
+```python
+response = requests.post(f"{BASE}/videos/generations",
+    headers=headers,
+    json={
+        "model": "veo3.1",
+        "prompt": "Keep the same subject identity and palette while adding subtle motion.",
+        "operation": "reference-to-video",
+        "reference_images": [
+            "https://example.com/ref-a.jpg",
+            "https://example.com/ref-b.jpg"
+        ],
+        "duration": 8,
+        "resolution": "720p",
+        "aspect_ratio": "9:16"
+    }
+)
+```
+
+### 首尾帧控制
+
+```python
+response = requests.post(f"{BASE}/videos/generations",
+    headers=headers,
+    json={
+        "model": "viduq2-pro",
+        "prompt": "Smooth transition from day to night.",
+        "operation": "start-end-to-video",
+        "start_image": "https://example.com/city-day.jpg",
+        "end_image": "https://example.com/city-night.jpg",
+        "duration": 5,
+        "resolution": "720p",
+        "aspect_ratio": "16:9"
+    }
+)
+```
+
+### 视频转视频
+
+对于 `grok-imagine-video` 的 video-to-video，请在 `video_url` 中传入公网 HTTPS `.mp4` URL。AI Sonar 会把它转换为 xAI REST 的 `video.url` 请求体。你可以把 `resolution` 设为 `480p` 或 `720p`；该编辑流程不接受 `duration` 和 `aspect_ratio`。
+
+```python
+response = requests.post(f"{BASE}/videos/generations",
+    headers=headers,
+    json={
+        "model": "topaz-video-upscale",
+        "operation": "video-to-video",
+        "video_url": "https://example.com/source.mp4",
+        "prompt": "Upscale this clip while preserving the original motion."
+    }
+)
+```
+
+### 动作控制
+
+```python
+response = requests.post(f"{BASE}/videos/generations",
+    headers=headers,
+    json={
+        "model": "kling-3.0-motion-control",
+        "operation": "motion-control",
+        "prompt": "Keep the subject stable while following the motion reference.",
+        "image_url": "https://example.com/subject.png",
+        "video_url": "https://example.com/motion.mp4",
+        "resolution": "720p"
+    }
+)
+```
+
+## 参数参考
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| `operation` | string | 生产环境建议显式传入 `operation`。 |
+| `image_url` | string | 兼容性最好的图片输入形式。 |
+| `image` | string | 内联 data URL，适合本地调试或小体积请求。 |
+| `reference_images` | string[] | 参考图条件控制的规范公开字段。 |
+| `reference_image_type` | string | 可选的 `asset` / `style` 角色选择器。 |
+| `video_url` | string | 当前公开 `video-to-video` 和 `motion-control` 模型都需要该字段。 |
+| `audio_url` | string | 用于模型特定的音频条件控制流程。 |
+| `output_audio` | boolean | Veo 3 家族省略时默认按 `true` 处理。`kling-3.0-video` 接受该 selector 用于上游 sound 控制，省略时默认无声。 |
+
+## 模型选择建议
+
+<CardGroup cols={2}>
+  <Card title="高质量优先" icon="crown">
+    当画质优先于速度时，优先考虑 **veo3.1-pro**、**kling-video-o1-pro** 或 **viduq3-pro**。
+  </Card>
+  <Card title="更快迭代" icon="bolt">
+    需要更快出结果时，可先尝试 **veo3.1-fast**、**hailuo-2.3-fast** 或 **viduq3-turbo**。
+  </Card>
+  <Card title="参考图条件控制" icon="images">
+    需要专门的参考图条件控制时，可优先考虑 **veo3.1**、**veo3.1-fast**、**wan-2.6** 或 **kling-video-o1-pro / std**。
+  </Card>
+  <Card title="视频转视频" icon="film">
+    当前一般启用的公开视频 `video-to-video` 路径主要包括 **topaz-video-upscale**、**grok-imagine-upscale** 和 **kling-video-o1-pro / std**。
+  </Card>
+</CardGroup>
+
+## 计费
+
+视频计费与具体模型相关。有些公开视频模型表现为按次计费，有些则按秒计费。请以[模型页面](https://aisonar.dev/models)或 [Pricing API](/zh/api-reference/pricing/get-pricing) 的当前公开价格为准。

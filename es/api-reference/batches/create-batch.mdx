@@ -1,0 +1,41 @@
+---
+title: "Crear Lote"
+openapi: "POST /v1/batches"
+description: "Crea un trabajo por lotes compatible con OpenAI a partir de un archivo de entrada subido."
+---
+
+## Descripción General
+
+Este endpoint es parte de la API de Lotes compatible con OpenAI de AI Sonar. Los trabajos por lotes utilizan archivos JSONL subidos, se ejecutan de manera asíncrona y pueden devolver archivos de salida/error más tarde.
+
+## Notas
+
+- Los archivos de entrada por lotes deben usar `purpose=batch`.
+- `completion_window` es actualmente `24h`.
+- El orden de salida no está garantizado; siempre coincida por `custom_id`.
+- La transmisión no es compatible dentro de los elementos del lote.
+
+## Ejemplo
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/batches" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input_file_id": "file_abc123",
+    "endpoint": "/v1/chat/completions",
+    "completion_window": "24h"
+  }'
+```
+</RequestExample>
+
+## Solicitud / Respuesta
+
+Utilice el panel interactivo de OpenAPI arriba para el esquema exacto.
+
+## Consejos Operativos
+
+- Use `custom_id` para la reconciliación idempotente en downstream.
+- Espere `output_file_id` y `error_file_id` solo después de que el trabajador finalice el lote.
+- La fijación de precios por lotes puede diferir de la fijación de precios sincrónica porque se aplican las reglas de descuento `isBatchRequest=true`.

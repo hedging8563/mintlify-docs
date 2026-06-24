@@ -1,0 +1,325 @@
+---
+title: "✨ واجهة برمجة تطبيقات Agent-First"
+description: "إرشادات أخطاء مهيكلة لوكلاء الذكاء الاصطناعي ليتصحيحوا ذاتيًا في المحاولة الأولى"
+---
+
+## نظرة عامة
+
+تثري واجهة برمجة تطبيقات AI Sonar Agent-First استجابات الأخطاء بإرشادات مهيكلة يمكن لوكلاء الذكاء الاصطناعي تحليلها والتصرف بناءً عليها فورًا — دون بحث على الويب، دون الرجوع إلى الوثائق، ودون تخمين.
+
+تتضمن كل استجابة خطأ حقولًا اختيارية مثل `did_you_mean` و`suggestions` و`hint` و`retryable` و`retry_after` داخل كائن `error` القياسي. هذه الحقول متوافقة مع الإصدارات السابقة — العملاء الذين لا يستخدمونها لن يلاحظوا أي اختلاف.
+
+## حقول إرشادات الخطأ
+
+جميع حقول الإرشاد امتدادات اختيارية داخل كائن `error`:
+
+| الحقل | النوع | الوصف |
+|-------|------|-------------|
+| `did_you_mean` | `string` | أقرب اسم نموذج مطابق |
+| `suggestions` | `array` | نماذج موصى بها مع بيانات وصفية |
+| `alternatives` | `array` | نماذج بديلة متاحة حاليًا |
+| `hint` | `string` | إرشاد قابل للقراءة من قبل الإنسان/الوكيل للخطوة التالية |
+| `retryable` | `boolean` | ما إذا كانت إعادة محاولة الطلب نفسه قد تنجح |
+| `retry_after` | `number` | ثوانٍ للانتظار قبل إعادة المحاولة |
+| `balance_usd` | `number` | رصيد الحساب الحالي بالدولار الأمريكي |
+| `estimated_cost_usd` | `number` | التكلفة المقدرة للطلب الفاشل بالدولار الأمريكي |
+
+## أمثلة على رموز الخطأ
+
+### model_not_found (400)
+
+عندما لا يطابق اسم النموذج أي نموذج نشط:
+
+```json
+{
+  "error": {
+    "message": "Model not found: please check the model name",
+    "type": "invalid_request_error",
+    "param": "model",
+    "code": "model_not_found",
+    "did_you_mean": "gpt-5.4",
+    "suggestions": [
+      {"id": "gpt-5.4"},
+      {"id": "gpt-5-mini"},
+      {"id": "claude-sonnet-4-6"}
+    ],
+    "hint": "Did you mean 'gpt-5.4'? Use GET https://api.aisonar.dev/v1/models to list all available models."
+  }
+}
+```
+
+يستخدم حل `did_you_mean` الأساليب التالية:
+1. تعيين الألقاب الثابت (مستند إلى بيانات أخطاء الإنتاج)
+2. مطابقة السلاسل بعد التسويّة (يزيل الشرطات، غير حساس لحالة الأحرف)
+3. مطابقة مسافة التحرير (العتبة ≤ 3)
+
+لا تكشف المسارات العامة عن رموز خطأ منفصلة للنماذج المخفية أو المؤجلة أو غير العامة. عامل النماذج العامة غير المتاحة بنفس طريقة الخطأ: افحص `did_you_mean` و`suggestions` و`hint`، ثم أعد المحاولة بنموذج عام مدعوم.
+
+### insufficient_balance (402)
+
+عندما يكون رصيد الحساب أقل من التكلفة المقدرة:
+
+```json
+{
+  "error": {
+    "message": "Insufficient balance: need ~$0.3500 for claude-sonnet-4-6, but balance is $0.1200.",
+    "type": "insufficient_balance",
+    "code": "insufficient_balance",
+    "balance_usd": 0.12,
+    "estimated_cost_usd": 0.35,
+    "suggestions": [
+      {"id": "gpt-5-mini"},
+      {"id": "deepseek-v3-2"}
+    ],
+    "hint": "Insufficient balance: need ~$0.3500 for claude-sonnet-4-6, but balance is $0.1200. Try a cheaper model, or top up at https://console.aisonar.dev/billing."
+  }
+}
+```
+
+يحتوي `suggestions` على نماذج أرخص من التكلفة المقدرة يمكن للوكيل التبديل إليها.
+
+### all_channels_failed (503)
+
+عندما تكون جميع القنوات الصاعدة لنموذج غير متاحة:
+
+```json
+{
+  "error": {
+    "message": "Model claude-opus-4-6 temporarily unavailable",
+    "code": "all_channels_failed",
+    "retryable": true,
+    "retry_after": 30,
+    "alternatives": [
+      {"id": "claude-sonnet-4-6", "status": "available", "tags": []},
+      {"id": "gpt-5-mini", "status": "available", "tags": []}
+    ],
+    "hint": "All channels for 'claude-opus-4-6' are temporarily unavailable. Retry in 30s or try an alternative model."
+  }
+}
+```
+
+<Note>
+`retryable` هو `false` عندما يكون السبب هو `no_channels` (لا توجد قنوات مكوّنة لهذا النموذج). يكون `true` فقط للفشل العابر مثل تشغيل قاطع الدائرة أو نفاد الحصة.
+</Note>
+
+### rate_limit_exceeded (429)
+
+```json
+{
+  "error": {
+    "message": "Rate limit: 60 rpm exceeded",
+    "type": "rate_limit_exceeded",
+    "code": "rate_limit_exceeded",
+    "retryable": true,
+    "retry_after": 8,
+    "hint": "Rate limited. Retry after 8s. Current limit: 60/min for user role."
+  }
+}
+```
+
+تُحسب قيمة `retry_after` من وقت إعادة ضبط نافذة حد المعدل الفعلي.
+
+<Note>
+تستخدم نقاط النهاية المتوافقة مع OpenAI أنواع أخطاء عامة ومستقرة من AI Sonar مثل `rate_limit_exceeded` و`upstream_error` و`all_channels_failed`. تستخدم نقاط النهاية المتوافقة مع Anthropic وGemini هياكل الاستجابة الأصلية الخاصة بها.
+</Note>
+
+### context_length_exceeded (400)
+
+عندما يتجاوز الإدخال نافذة السياق للنموذج (خطأ صاعد، معزز بالإرشادات):
+
+```json
+{
+  "error": {
+    "message": "This model's maximum context length is 128000 tokens...",
+    "type": "invalid_request_error",
+    "code": "context_length_exceeded",
+    "retryable": false,
+    "suggestions": [
+      {"id": "gemini-2.5-pro"},
+      {"id": "claude-sonnet-4-6"}
+    ],
+    "hint": "Reduce your input or switch to a model with a larger context window."
+  }
+}
+```
+
+## رؤوس نقاط النهاية الأصلية
+
+عندما تنادي `/v1/chat/completions` بنموذج له نقطة نهاية أصلية (Anthropic أو Gemini)، تتضمن **استجابة النجاح** رؤوس تحسين:
+
+
+
+| مزود النموذج | نقطة النهاية المقترحة | الفائدة |
+|---------------|-------------------|---------|
+| Anthropic (Claude) | `/v1/messages` | لا يوجد تحويل صيغة، تفكير ممتد، تخزين مؤقت للمطالبات |
+| Google (Gemini) | `/v1beta/gemini` | لا يوجد تحويل صيغة، grounding، إعدادات الأمان |
+| OpenAI | — | Chat completions هو بالفعل الصيغة الأصلية |
+
+تظهر هذه الرؤوس في كل من الاستجابات المتدفقة وغير المتدفقة.
+
+## تحسينات `/v1/models`
+
+يحمل `/v1/models` الآن بيانات وصفية توصية غير محادثة يمكن للوكالات استخدامها قبل أن تستدعي نقاط النهاية الخاصة بالصور أو الفيديو أو الموسيقى أو 3D أو TTS أو STT أو embedding أو rerank أو الترجمة.
+
+```json
+{
+  "id": "gemini-2.5-flash-image",
+  "aisonar": {
+    "category": "image",
+    "pricing_unit": "per_request",
+    "agent_preferences": {
+      "image": {
+        "preferred_rank": 1,
+        "success_rate_24h": 0.98,
+        "sample_count_24h": 423,
+        "status": "ready",
+        "updated_at": "2026-03-28T12:00:00.000Z",
+        "basis": {
+          "score_source": "clickhouse_24h",
+          "channel_id": null,
+          "physical_model": null
+        }
+      }
+    }
+  }
+}
+```
+
+| الحقل | القيم | الوصف |
+|-------|--------|-------------|
+| `category` | `chat`, `image`, `video`, `audio`, `tts`, `stt`, `3d`, `embedding`, `rerank` | نوع النموذج |
+| `pricing_unit` | `per_token`, `per_image`, `per_second`, `per_request` | كيفية تحصيل رسوم النموذج |
+| `cache_pricing` | object or `null` | يُعاد فقط عندما يملك النموذج أسعار prompt cache صاعدة خاصة به. |
+| `agent_preferences.<scene>` | object | لقطة توصية غير محادثة تُعاد فقط مع `GET /v1/models?recommended_for=<scene>` |
+
+عند وجود `recommended_for` يُستمد `agent_preferences` من لقطة معدل نجاح مخبأة لمدة 24 ساعة:
+
+- النافذة: 24 ساعة
+- ذاكرة لقطة الشاشة: stale-while-revalidate
+- `status = "ready"` يعني أن لدى النموذج عينات حديثة كافية للمشاركة في الترتيب
+- `status = "insufficient_samples"` يعني أن النموذج يظل مرئيًا لكنه لا يُصنف قبل النماذج المُسجلة بالدرجات
+
+### تصفية حسب الفئة
+
+```bash
+GET https://api.aisonar.dev/v1/models?category=chat          # نماذج الدردشة فقط
+GET https://api.aisonar.dev/v1/models?category=image         # نماذج توليد الصور
+GET https://api.aisonar.dev/v1/models?tag=coding&category=chat  # نماذج دردشة محسّنة للترميز
+```
+
+### اكتشاف التوصية
+
+بالنسبة لتدفقات العمل غير المحادثة، يجب على الوكلاء جلب القائمة القصيرة الموصى بها أولًا:
+
+```bash
+GET https://api.aisonar.dev/v1/models?recommended_for=image
+GET https://api.aisonar.dev/v1/models?recommended_for=translation
+GET https://api.aisonar.dev/v1/models?category=tts&recommended_for=tts
+```
+
+القيم الصالحة لـ `recommended_for` هي:
+
+- `image`
+- `video`
+- `music`
+- `3d`
+- `tts`
+- `stt`
+- `embedding`
+- `rerank`
+- `translation`
+
+إذا كان كل من `category` و`recommended_for` موجودين، يجب أن يتطابقا تمامًا.
+
+تدفق الوكيل الموصى به:
+
+1. `GET /v1/models?recommended_for=<scene>`
+2. اختر أول نموذج حيث `agent_preferences.<scene>.status == "ready"`
+3. نادِ نقطة النهاية صراحةً مع `model=<selected>`
+4. عند حدوث أخطاء عابرة فقط، أعد المحاولة مع النموذج التالي `ready`
+
+## llms.txt
+
+يتوفر نظرة عامة على واجهة برمجة التطبيقات بصيغة قابلة للقراءة آليًا في:
+
+```
+GET https://api.aisonar.dev/llms.txt
+```
+
+يتضمن:
+- قالب النداء الأول مع مثال عملي يعمل
+- أسماء النماذج الشائعة (مولدة ديناميكيًا من بيانات الاستخدام)
+- كل نقاط النهاية الـ 12 للـ API
+- معلمات التصفية لاكتشاف النماذج
+- إرشادات التعامل مع الأخطاء
+
+يمكن للوكلاء الذين يقرأون `llms.txt` قبل نداءهم الأول عادةً النجاح في المحاولة الأولى.
+
+## الاستخدام في كود الوكيل
+
+### بايثون (OpenAI SDK)
+
+```python
+from openai import OpenAI, BadRequestError
+
+client = OpenAI(
+    api_key="sk-your-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+def smart_chat(messages, model="gpt-4o"):
+    try:
+        return client.chat.completions.create(
+            model=model, messages=messages
+        )
+    except BadRequestError as e:
+        error = e.body.get("error", {}) if isinstance(e.body, dict) else {}
+        # Use did_you_mean for auto-correction
+        if error.get("code") == "model_not_found" and error.get("did_you_mean"):
+            return client.chat.completions.create(
+                model=error["did_you_mean"], messages=messages
+            )
+        raise
+```
+
+### JavaScript (OpenAI SDK)
+
+```javascript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+async function smartChat(messages, model = 'gpt-4o') {
+  try {
+    return await client.chat.completions.create({ model, messages });
+  } catch (error) {
+    const err = error?.error;
+    if (err?.code === 'model_not_found' && err?.did_you_mean) {
+      return client.chat.completions.create({
+        model: err.did_you_mean, messages
+      });
+    }
+    throw error;
+  }
+}
+```
+
+## مبادئ التصميم
+
+<CardGroup cols={2}>
+  <Card title="افشل بسرعة وبشكل إعلامي" icon="bolt">
+    تعيد الأخطاء فورًا كل البيانات التي يحتاجها الوكيل ليتصحيح نفسه.
+  </Card>
+  <Card title="لا توجيه تلقائي" icon="route">
+    لا تقوم الـ API باستبدال نموذج مختلف بصمت. الوكيل هو من يقرر.
+  </Card>
+  <Card title="اقتراحات مستندة إلى البيانات" icon="database">
+    جميع التوصيات تأتي من بيانات الإنتاج، وليس قوائم ثابتة مشفرة.
+  </Card>
+  <Card title="متوافق مع الإصدارات السابقة" icon="plug">
+    جميع حقول الإرشاد اختيارية. العملاء الحاليون لن يلاحظوا أي اختلاف.
+  </Card>
+</CardGroup>

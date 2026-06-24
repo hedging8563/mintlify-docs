@@ -1,0 +1,178 @@
+---
+title: "Gemini CLI"
+description: "配置 Google Gemini CLI 以使用 AI Sonar API"
+---
+
+## 概览
+
+Google Gemini CLI 是一个用于与 Gemini 模型交互的命令行工具。AI Sonar 提供了一个兼容的端点，允许您使用 Gemini CLI 访问数百个模型。
+
+
+<Warning>
+这只是实验性兼容方案：Gemini CLI 目前并没有正式文档化稳定的 AI Sonar 自定义 Base URL 工作流。如果您需要受支持的 AI Sonar 终端方案，优先使用 Codex CLI、Claude Code 或 OpenCode。
+</Warning>
+
+## 系统要求
+
+- **Node.js**: 20.0+ 版本
+- **OS**: Windows 10/11, macOS 10.15+, Ubuntu 20.04+ 或 Debian 10+
+
+## 安装
+
+```bash
+npm install -g @google/gemini-cli
+```
+
+验证安装：
+
+```bash
+gemini --version
+```
+
+## 配置
+
+### 第 1 步：获取您的 API Key
+
+1. 登录 [AI Sonar 控制台](https://console.aisonar.dev)
+2. 导航至 [API Keys](https://console.aisonar.dev/api)
+3. 创建并复制您的 API key（格式：`sk-...`）
+
+### 第 2 步：设置环境变量
+
+**临时（当前会话）：**
+
+```bash
+export GEMINI_API_KEY="sk-your-api-key"
+export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"
+```
+
+**永久配置：**
+
+添加到您的 shell 配置文件中：
+
+<Tabs>
+  <Tab title="Bash">
+    ```bash
+    echo 'export GEMINI_API_KEY="sk-your-api-key"' >> ~/.bashrc
+    echo 'export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"' >> ~/.bashrc
+    source ~/.bashrc
+    ```
+  </Tab>
+  <Tab title="Zsh">
+    ```bash
+    echo 'export GEMINI_API_KEY="sk-your-api-key"' >> ~/.zshrc
+    echo 'export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"' >> ~/.zshrc
+    source ~/.zshrc
+    ```
+  </Tab>
+  <Tab title="Fish">
+    ```bash
+    set -Ux GEMINI_API_KEY "sk-your-api-key"
+    set -Ux GOOGLE_GEMINI_BASE_URL "https://api.aisonar.dev"
+    ```
+  </Tab>
+</Tabs>
+
+<Warning>
+配置完成后请重启终端以使更改生效。
+</Warning>
+
+<Note>
+**已知限制**：在某些情况下，如果存在缓存的 Google 会话，Gemini CLI 可能不会遵循 `GOOGLE_GEMINI_BASE_URL`。如果您遇到连接问题，请尝试清除 CLI 缓存或启动新的终端会话。
+</Note>
+
+## 基本用法
+
+从您的项目目录启动 Gemini CLI：
+
+```bash
+cd your-project
+gemini
+```
+
+首次运行时，您需要：
+1. 选择主题
+2. 确认安全声明
+3. 信任工作目录
+
+## 可用模型
+
+| 模型 | 描述 |
+|-------|-------------|
+| `gemini-2.5-pro` | 功能最强大的 Gemini 模型 |
+| `gemini-2.5-flash` | 快速、高效，适用于大多数任务 |
+| `gemini-2.0-flash` | 上一代版本，稳定 |
+
+## 常用命令
+
+**提问：**
+
+```
+> What is the best way to structure a React app?
+```
+
+**分析代码：**
+
+```
+> Explain the code in src/main.ts
+```
+
+**生成代码：**
+
+```
+> Create a Python function to parse JSON files
+```
+
+**审查更改：**
+
+```
+> Review the recent git changes and suggest improvements
+```
+
+## 验证配置
+
+```bash
+# 检查环境变量
+echo $GEMINI_API_KEY
+echo $GOOGLE_GEMINI_BASE_URL
+
+# 测试连接
+gemini
+```
+
+## 故障排除
+
+<AccordionGroup>
+  <Accordion title="连接错误">
+    - 验证 `GOOGLE_GEMINI_BASE_URL` 已设置为 `https://api.aisonar.dev`
+    - 注意：Gemini 端点不需要 `/v1` 后缀
+    - 检查网络连接
+  </Accordion>
+
+  <Accordion title="身份验证失败">
+    - 验证 `GEMINI_API_KEY` 环境变量已设置
+    - 检查 Key 是否以 `sk-` 开头
+    - 确保 Key 在 AI Sonar 控制台中处于激活状态
+  </Accordion>
+
+  <Accordion title="模型不可用">
+    - 在 [aisonar.dev/en/models](https://aisonar.dev/models) 查看 Gemini 模型的可用性
+    - 尝试不同的 Gemini 模型变体
+  </Accordion>
+</AccordionGroup>
+
+## 最佳实践
+
+<AccordionGroup>
+  <Accordion title="在项目目录中使用">
+    始终从项目根目录运行 Gemini CLI，以便更好地理解上下文。
+  </Accordion>
+
+  <Accordion title="谨慎信任目录">
+    仅信任您拥有的目录。Gemini CLI 可以读取和修改文件。
+  </Accordion>
+
+  <Accordion title="审查生成的代码">
+    在提交到项目之前，务必审查 AI 生成的代码。
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,156 @@
+---
+title: "レート制限"
+description: "レート制限の理解と対処方法"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## 概要
+
+AI Sonar は、公平な利用とプラットフォームの安定性を確保するためにレート制限を実装しています。制限はアカウント tier によって異なります。
+
+## レート制限の tier
+
+| ティア | Requests/min | 説明 |
+|------|-------------|-------------|
+| **User** | 1,000 | すべてのアカウントのデフォルト tier |
+| **Partner** | 3,000 | integration partner 向け |
+| **VIP** | 10,000 | 大量利用ユーザー向け |
+
+<Note>
+  レート制限は変更される場合があります。カスタム制限については support@aisonar.dev までお問い合わせください。
+</Note>
+
+## レート制限レスポンス
+
+レート制限を超えると、API は `429` ステータスコードと、再試行するまでに待機すべき時間を示す `Retry-After` header を返します。
+
+## レート制限超過
+
+制限を超えると、`429` レスポンスを受け取ります:
+
+```json
+{
+  "error": {
+    "message": "Rate limit exceeded. Please retry later.",
+    "type": "rate_limit_exceeded",
+    "code": "rate_limit_exceeded"
+  }
+}
+```
+
+レスポンスには `Retry-After` header が含まれます:
+```
+Retry-After: 60  # Seconds to wait before retrying
+```
+
+## レート制限への対処
+
+### 指数バックオフ
+
+自動再試行のために指数バックオフを実装します:
+
+```python
+import time
+from openai import OpenAI, RateLimitError
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+def make_request_with_backoff(messages, max_retries=5):
+    for attempt in range(max_retries):
+        try:
+            return client.chat.completions.create(
+                model="gpt-4o",
+                messages=messages
+            )
+        except RateLimitError as e:
+            if attempt == max_retries - 1:
+                raise
+
+            wait_time = 2 ** attempt  # 1, 2, 4, 8, 16 seconds
+            print(f"Rate limited. Waiting {wait_time}s...")
+            time.sleep(wait_time)
+```
+
+### リクエストキューイング
+
+大量トラフィックのアプリケーションでは、リクエストキューを実装します:
+
+```python
+import asyncio
+from collections import deque
+
+class RateLimitedClient:
+    def __init__(self, requests_per_minute=60):
+        self.rpm = requests_per_minute
+        self.interval = 60 / requests_per_minute
+        self.last_request = 0
+
+    async def request(self, messages):
+        # Wait if needed to respect rate limit
+        now = asyncio.get_event_loop().time()
+        wait_time = max(0, self.last_request + self.interval - now)
+        if wait_time > 0:
+            await asyncio.sleep(wait_time)
+
+        self.last_request = asyncio.get_event_loop().time()
+        return await self.client.chat.completions.create(
+            model="gpt-4o",
+            messages=messages
+        )
+```
+
+### バッチ処理
+
+一括処理では、遅延を入れながらバッチ単位で処理します:
+
+```python
+def process_batch(items, batch_size=50, delay=1):
+    results = []
+    for i in range(0, len(items), batch_size):
+        batch = items[i:i + batch_size]
+        for item in batch:
+            result = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[{"role": "user", "content": item}]
+            )
+            results.append(result)
+        time.sleep(delay)  # Pause between batches
+    return results
+```
+
+## ベストプラクティス
+
+<AccordionGroup>
+  <Accordion title="使用量を監視する">
+    制限を超えないように、レート制限 header を追跡して事前に対応してください。
+  </Accordion>
+
+  <Accordion title="キャッシュを実装する">
+    API 呼び出しを減らすために、同一のリクエストに対するレスポンスをキャッシュします。
+  </Accordion>
+
+  <Accordion title="適切な model を使用する">
+    より高速な model（gpt-5-mini など）を使用すると、より高いスループットが可能になります。
+  </Accordion>
+
+  <Accordion title="より高い制限が必要な場合はお問い合わせください">
+    より高い制限が必要な場合は、support@aisonar.dev までお問い合わせください。
+  </Accordion>
+</AccordionGroup>
+
+## tier のアップグレード
+
+tier のアップグレードを申請するには:
+
+1. [Dashboard](https://console.aisonar.dev) にログインします
+2. **Settings → アカウント** に移動します
+3. ユースケースを添えてサポートに連絡します
+
+または、以下を記載して support@aisonar.dev にメールしてください:
+- アカウントのメールアドレス
+- 想定されるリクエスト量
+- ユースケースの説明

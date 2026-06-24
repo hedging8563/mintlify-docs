@@ -1,0 +1,142 @@
+---
+title: "管理 API"
+description: "使用管理令牌查询组织余额、管理组织 API Key，并查询单个 Key 的用量与账单。"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## 概览
+
+管理 API 用于查询组织余额、自动化管理组织级 API Key，并查询单个 Key 维度的用量与账单，无需使用普通推理 API Key。
+
+管理令牌可以在 Dashboard 的 **Settings** 页面生成和轮换：
+
+```bash
+Authorization: Bearer mt-your-management-token
+```
+
+<Warning>
+管理令牌不是推理 API Key。`mt-...` 用于 `/v1/management/*`，`sk-...` 用于 `/v1/responses` 等模型推理接口。
+</Warning>
+
+## 可用接口
+
+| Endpoint | Method | 说明 |
+|----------|--------|------|
+| `/v1/management/balance` | GET | 查询当前组织余额汇总 |
+| `/v1/management/api-keys` | GET | 列出当前组织下的用户 API Key |
+| `/v1/management/api-keys` | POST | 创建新的用户 API Key |
+| `/v1/management/api-keys/{keyId}` | PATCH | 更新名称、额度、模型白名单、过期时间或状态 |
+| `/v1/management/api-keys/{keyId}/usage` | GET | 查询指定 Key 的分页用量明细 |
+| `/v1/management/api-keys/{keyId}/billing` | GET | 查询指定 Key 的聚合账单明细 |
+
+## 用量筛选契约
+
+`GET /v1/management/api-keys/{keyId}/usage` 支持以下 query 参数：
+
+| 参数 | 类型 | 默认值 / 限制 | 说明 |
+|------|------|---------------|------|
+| `page` | integer | 默认 `1`，最小 `1` | 1-based 页码 |
+| `limit` | integer | 默认 `50`，最小 `1`，最大 `100` | 每页条数 |
+| `logicalModel` | string | 最大长度 `100` | 请求时使用的逻辑模型名 |
+| `modelVendor` | string | 最大长度 `100` | 公开模型厂商 |
+| `scene` | enum | - | `chat`、`image`、`audio`、`video`、`embedding`、`rerank`、`translation`、`music`、`3d` |
+| `accessChannel` | enum | - | `platform` 或 `byok` |
+| `startDate` | string | - | 起始时间，接受带时区的 RFC3339 或 `YYYY-MM-DD` |
+| `endDate` | string | - | 结束时间，接受带时区的 RFC3339 或 `YYYY-MM-DD` |
+
+如果同时提供 `startDate` 和 `endDate`，则 `startDate` 必须早于或等于 `endDate`。
+
+## API Key Body 契约
+
+### POST /v1/management/api-keys
+
+| 字段 | 类型 | 默认值 / 限制 | 说明 |
+|------|------|---------------|------|
+| `name` | string | 必填，默认 `Default Key`，长度 `1-50` | 展示名称，服务端会先 trim |
+| `limitAmount` | number \| null | 最小 `0`，输入上限 `1000000` | `null` 或省略 = 不限额，`0` = 零额度，正数会被规范化为一个存储上限，且不能超过 `100000` USD 等值 |
+| `limitCurrency` | enum | 默认 `USD` | 仅支持 USD。发送 `CNY` 会返回 `400 currency_retired`。 |
+| `models` | string[] | 默认 `[]` | 可选的逻辑模型白名单 |
+| `expiresAt` | string \| null | RFC3339 datetime | `null` 表示永不过期 |
+
+### PATCH /v1/management/api-keys/{keyId}
+
+| 字段 | 类型 | 默认值 / 限制 | 说明 |
+|------|------|---------------|------|
+| `status` | enum | - | `active`、`inactive`、`suspended`、`revoked` |
+| `name` | string | 长度 `1-50` | 更新后的展示名称 |
+| `limitAmount` | number \| null | 最小 `0`，输入上限 `1000000` | `null` = 不限额，`0` = 零额度，正数会被规范化为一个存储上限，且不能超过 `100000` USD 等值 |
+| `limitCurrency` | enum | 默认 `USD` | 仅支持 USD。发送 `CNY` 会返回 `400 currency_retired`。 |
+| `models` | string[] | - | 更新后的逻辑模型白名单 |
+| `expiresAt` | string \| null | RFC3339 datetime | `null` 表示清除过期时间 |
+
+PATCH 请求至少需要提供一个字段。
+
+## 金额契约
+
+
+## 报表语义
+
+- `logicalModel` 表示调用方请求的公开逻辑模型。
+- `modelVendor` 表示公开模型厂商，不是隐藏的物理路由。
+- `scene` 表示公开请求场景，由接口或任务类型归一化得到。
+- `accessChannel=platform` 表示通过 AI Sonar 平台渠道计费。
+- `accessChannel=byok` 表示请求使用了你自己的上游 Provider Key。
+
+接口只返回公开可理解的账单与报表字段，不暴露内部路由细节或物理渠道元数据。
+- `/usage` 的逐条明细会在底层请求完成结算后包含 `billing_transaction_id`。建议使用 `request_id` + `billing_transaction_id` 做请求级对账。
+
+## Billing 分页说明
+
+`/usage` 是分页接口；`/billing` 当前返回的是聚合账单拆分结果，不返回 `page` / `limit` 风格的分页元数据。如果你需要逐条记录，请优先使用 `/usage`。
+
+## 快速示例
+
+先用当前管理令牌查询组织余额：
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/management/balance" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+然后列出这个组织下的 API Keys：
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/management/api-keys" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response (200)
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "key_abc123def456",
+      "name": "Backend Worker",
+      "key_prefix": "sk-abc123...",
+      "status": "active",
+      "limit_amount": 500.0,
+      "used_amount": 148.25,
+      "models": ["gpt-4o-mini", "claude-3-7-sonnet"],
+      "expires_at": "2026-04-30T00:00:00.000Z",
+      "last_used_at": "2026-03-27T08:12:45.000Z",
+      "created_at": "2026-03-01T10:00:00.000Z"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## 下一步
+
+- [获取组织余额](/zh/api-reference/management/get-balance)
+- [列出 API Keys](/zh/api-reference/management/list-api-keys)
+- [创建 API Key](/zh/api-reference/management/create-api-key)
+- [更新 API Key](/zh/api-reference/management/update-api-key)
+- [获取 API Key 用量](/zh/api-reference/management/get-api-key-usage)
+- [获取 API Key 账单](/zh/api-reference/management/get-api-key-billing)

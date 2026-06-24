@@ -1,0 +1,133 @@
+---
+title: "Dify"
+description: "OpenAI sağlayıcısını ve özel bir temel URL kullanarak AI Sonar'yı Dify ile entegre edin"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Genel Bakış
+
+Dify, OpenAI uyumlu model sağlayıcı akışı üzerinden AI Sonar ile iyi çalışır.
+
+Mevcut Dify sürümlerinde, genellikle en güvenli yol şudur:
+- yerleşik **OpenAI** sağlayıcısını seçin
+- AI Sonar API anahtarınızı ayarlayın
+- `https://api.aisonar.dev/v1` şeklinde özel bir temel URL ayarlayın
+
+<Note>
+Bazı eski Dify sürümleri bunu, özel bir temel URL alanına sahip yerleşik `OpenAI` sağlayıcısı yerine `OpenAI-API-compatible` olarak sunar. Dify arayüzünüz farklı görünüyorsa, o sürümde mevcut olan OpenAI uyumlu özel sağlayıcı akışına en yakın seçeneği kullanın.
+</Note>
+
+<Note>
+**Tür**: Framework veya platform
+
+**Birincil yol**: OpenAI ile uyumlu sohbet yolu
+
+**Destek seviyesi**: Sınırlı olarak desteklenir
+</Note>
+
+Bu, chat-completions odaklı bir entegrasyon yoludur. Dify’nin özel Codex entegrasyonlarıyla aynı Responses veya WebSocket davranışını sunduğu şeklinde yorumlanmamalıdır.
+
+## Ön Koşullar
+
+- API erişimine sahip AI Sonar hesabı
+- Dify Cloud veya kendin barındırılan Dify
+
+## Yapılandırma Adımları
+
+### Adım 1: API Anahtarınızı Alın
+
+1. [AI Sonar Dashboard](https://console.aisonar.dev) hesabınıza giriş yapın
+2. [API Keys](https://console.aisonar.dev/api) bölümünü açın
+3. `sk-` ile başlayan bir API anahtarı oluşturun veya kopyalayın
+
+### Adım 2: Sağlayıcıyı Yapılandırın
+
+<Steps>
+  <Step title="Model Providers'ı açın">
+    Dify içinde **Settings** → **Model Providers** bölümüne gidin
+  </Step>
+  <Step title="OpenAI'ı seçin">
+    **OpenAI** sağlayıcı ayarlarını açın. Dify sürümünüz burada özel bir temel URL sunmuyorsa, bunun yerine o sürümün sunduğu OpenAI uyumlu özel sağlayıcı seçeneğini kullanın.
+  </Step>
+  <Step title="AI Sonar ayarlarını girin">
+    Şu değerleri kullanın:
+
+    | Alan | Değer |
+    |-------|-------|
+    | API Anahtarı | `sk-your-api-key` |
+    | API Temel URL'si / Özel Temel URL | `https://api.aisonar.dev/v1` |
+  </Step>
+  <Step title="Modelleri ekleyin">
+    Kullanmak istediğiniz modelleri ekleyin, örneğin:
+    - `gpt-5.4`
+    - `gpt-5-mini`
+    - `gpt-4o`
+    - `claude-sonnet-4-6`
+    - `claude-opus-4-6`
+    - `gemini-2.5-flash`
+    - `gemini-2.5-pro`
+    - `deepseek-r1`
+  </Step>
+</Steps>
+
+### Adım 3: Bağlantıyı Test Edin
+
+1. `gpt-5-mini` veya `gpt-4o` gibi bir model seçin
+2. Bir test prompt'u gönderin
+3. Dify'nin geçerli bir yanıt aldığını doğrulayın
+
+## Bilgi Tabanları için Embeddings
+
+RAG ve bilgi tabanı indeksleme için şu tür bir embedding modeli ekleyin:
+- `text-embedding-3-small`
+- `text-embedding-3-large`
+
+Ardından bunu ilgili bilgi tabanı veya uygulama ayarlarında varsayılan embedding modeli olarak ayarlayın.
+
+## Önerilen Model Rolleri
+
+| Kullanım Senaryosu | Önerilen Modeller |
+|----------|------------------|
+| Varsayılan sohbet | `gpt-5.4`, `gpt-5-mini`, `gpt-4o` |
+| Derin muhakeme | `gpt-5.4`, `claude-opus-4-6`, `deepseek-r1` |
+| Hızlı/ucuz | `gpt-5-mini`, `gemini-2.5-flash` |
+| Embeddings | `text-embedding-3-small`, `text-embedding-3-large` |
+
+## En İyi Uygulamalar
+
+<AccordionGroup>
+  <Accordion title="Yerleşik OpenAI sağlayıcısıyla başlayın">
+    Yeni Dify sürümlerinde, özel bir base URL içeren yerleşik OpenAI sağlayıcısı genellikle AI Sonar için en temiz kurulumdur.
+  </Accordion>
+
+  <Accordion title="Yineleme için daha ucuz modeller kullanın">
+    Yineleme yaparken `gpt-5-mini` veya `gemini-2.5-flash` kullanın; ardından daha ağır iş akışlarını yalnızca gerektiği yerlerde daha güçlü modellere geçirin.
+  </Accordion>
+
+  <Accordion title="Dify'nin genellikle chat-completions odaklı olduğunu unutmayın">
+    Dify akışlarının çoğu OpenAI uyumlu chat davranışı kullanır. Codex'e özgü Responses veya WebSocket davranışına ihtiyacınız varsa, Dify yerine özel Codex entegrasyonlarını kullanın.
+  </Accordion>
+</AccordionGroup>
+
+## Sorun Giderme
+
+<AccordionGroup>
+  <Accordion title="Bağlantı Hatası">
+    - temel URL'nin tam olarak `https://api.aisonar.dev/v1` olduğunu doğrulayın
+    - Dify bunları çoğaltıyorsa sondaki eğik çizgileri kaldırın
+    - Dify sunucusunun genel internet üzerinden AI Sonar'ya erişebildiğini doğrulayın
+  </Accordion>
+
+  <Accordion title="401 Unauthorized">
+    - API anahtarını yeniden kontrol edin
+    - Anahtarın AI Sonar dashboard içinde etkin olduğunu doğrulayın
+    - Dify içine yapıştırılan değerin fazladan boşluk veya satır sonu içermediğinden emin olun
+  </Accordion>
+
+  <Accordion title="Model Bulunamadı">
+    - Model adını birebir doğrulayın
+    - Sağlayıcı arayüzü eski bir değeri önbelleğe aldıysa model girdisini yeniden ekleyin
+    - Mevcut model kullanılabilirliğini AI Sonar dokümanlarında veya dashboard'da kontrol edin
+  </Accordion>
+</AccordionGroup>

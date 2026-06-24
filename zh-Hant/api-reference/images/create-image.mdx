@@ -1,0 +1,295 @@
+---
+title: "建立圖片"
+openapi: "POST /v1/images/generations"
+description: "根據 prompt 建立圖片"
+---
+
+## 概覽
+
+對於 coding agent，請先透過 `GET /v1/models?recommended_for=image` 找出目前推薦的圖片模型清單，然後把選定的 `model` 明確傳給這個端點。
+
+`gpt-image-2` 是按 token 計費的 GPT Image 模型。AI Sonar 依 OpenAI 官方 usage 明細結算文字輸入、圖片輸入、已回報的快取輸入與圖片輸出 token；它不是固定每張圖片計費的模型。
+
+對於 `gpt-image-2` 圖像生成，公共參數支援 `prompt`、`n`、`size`、`quality`、`response_format`、`async`、`background`、`output_format`、`output_compression` 或 `compression`、`moderation`、`partial_images` 和 `user`。未傳 `size` 或 `quality` 時 AI Sonar 會使用 `auto`；自訂 `size` 必須使用下方說明的彈性 `WIDTHxHEIGHT` 契約。
+
+相容性說明：如果 `gpt-image-2` 請求帶上 `input_fidelity`，AI Sonar 會在轉送前移除該欄位，因為 GPT Image 2 已自動以高保真處理圖片輸入。
+
+### 模型行為說明
+
+Google Gemini 圖片系列不共用同一套選擇器契約：
+
+- `gemini-3.1-flash-image-preview`、`gemini-3-pro-image-preview` 和 `nano-banana-pro` 在公開的文字生圖、圖片編輯/圖生圖操作中支援 `aspect_ratio` 和 `resolution`（`1k`、`2k`、`4k`）。
+- `nano-banana-2` 在目前 AI Sonar 契約中僅文字生圖支援 `aspect_ratio` 和 `resolution`（`1k`、`2k`、`4k`）。
+- `gemini-2.5-flash-image`、`nano-banana` 和 `nano-banana-edit` 支援 `aspect_ratio`，但不提供公開的 `resolution` 選項。
+- `gemini-2.0-flash-preview-image-generation` 在此文件中被描述為僅以提示文字進行文字轉圖片。
+- Nano Banana 參考圖請求請在本端點（`/v1/images/generations`）使用 `nano-banana-edit` 或 `nano-banana-pro`，並傳送 `operation: "image-to-image"` 與 `image_urls`。不要把 Nano Banana 參考圖請求送到 `/v1/images/edits`。
+- Nano Banana 圖生圖請求中，`nano-banana-pro` 可以傳送 `resolution`（`1k`、`2k`、`4k`）；`nano-banana-edit` 必須省略此參數。`nano-banana` 和 `nano-banana-2` 在目前公開契約中是文字生圖模型。
+- 本端點的參考圖可以透過 JSON `image_url` / `image_urls` 傳入，也可以用 multipart `image` 檔案直接上傳。`/v1/images/generations` 不接受 `images[]` 或 `file_id`；只有明確支援 `images[].file_id` 的 `/v1/images/edits` 模型才使用 `/v1/files` 回傳的引用。
+
+Google 圖片系列請優先使用 `aspect_ratio`，只有模型明確支援時才傳送 `resolution`。
+
+xAI Grok Imagine 圖片模型（`grok-imagine-image`、`grok-imagine-image-quality` 以及 legacy `grok-imagine-image-pro`）支援 `aspect_ratio` 與 `resolution`（`1k`、`2k`）。`grok-imagine-image-pro` 會保留為相容 ID，並在 upstream 路由至 `grok-imagine-image-quality`。
+
+## 請求本文
+
+**同步請求逾時：** 某些路由到的圖片提供者會以内嵌方式返回最終圖片，並等待生成完成。高解析度或高品質請求可能接近一分鐘甚至更久，因此請將 HTTP 用戶端逾時設定為至少 `120s`。如果建立回應包含 `status: "pending"`、`task_id` 或 `poll_url`，請改為依照返回的 `poll_url` 輪詢。
+
+<ParamField body="model" type="string" default="dall-e-3">
+  要使用的模型（例如：`gpt-image-2`、`dall-e-3`、`flux-pro`、`midjourney`）。
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  所需圖片的文字描述。
+</ParamField>
+
+<ParamField body="image_url" type="string">
+  用於圖生圖的公開 HTTPS 參考圖 URL。Nano Banana 參考圖請求請將 `operation` 設為 `image-to-image`；`nano-banana-pro` 可以傳送 `resolution`，`nano-banana-edit` 應省略此參數。
+</ParamField>
+
+<ParamField body="image_urls" type="string[]">
+  公開 HTTPS 參考圖 URL 陣列。JSON 請求需要一張或多張參考圖時使用此欄位。本端點不支援 `file_id` 和 `images[]`。
+</ParamField>
+
+<ParamField body="reference_image_urls" type="string[]">
+  額外的模型特定參考圖 URL，用於區分主要輸入圖與參考圖的供應商。
+</ParamField>
+
+<ParamField body="image" type="file">
+  用於圖生圖的 multipart 參考圖檔案。來源圖片是私有或需要請求標頭授權時，請使用直接上傳。這不同於 /v1/files 的 `file_id`；本端點不接受 `file_id`。
+</ParamField>
+
+<ParamField body="n" type="integer" default="1">
+  要產生的圖片數量（1-10，依模型而定）。
+</ParamField>
+
+<ParamField body="size" type="string" default="1024x1024">
+  圖片尺寸。用於 OpenAI 風格的圖片系列，以及接受精確像素尺寸的其他模型。
+
+  對於 `gpt-image-2`，`size` 接受 `auto` 或 `WIDTHxHEIGHT`。自訂寬高都必須是 16 的倍數，最長邊不超過 `3840px`，長邊/短邊比例不超過 `3:1`，總像素必須介於 `655,360` 到 `8,294,400` 之間。`aspect_ratio` 與 `resolution` 目前不屬於 AI Sonar 對 `gpt-image-2` 的公開契約。
+
+  對於 Google Gemini 圖片系列，`size` 會被視為相容別名，映射到模型公開的 `aspect_ratio` 契約，以及在支援時的 `resolution` 契約。建議對這些模型直接傳送 `aspect_ratio`。
+</ParamField>
+
+<ParamField body="aspect_ratio" type="string">
+  依模型而定的長寬比選擇器。
+
+  Google 圖片系列常見值包括 `1:1`、`16:9`、`9:16`、`3:2`、`2:3`。
+</ParamField>
+
+<ParamField body="resolution" type="string">
+  依模型而定的輸出解析度選擇器。
+
+  `gemini-3.1-flash-image-preview` 和 `gemini-3-pro-image-preview` 在文字生圖與圖片編輯中支援此參數；`nano-banana-pro` 在文字生圖與圖生圖中支援；`nano-banana-2` 僅文字生圖支援。常見值為 `1k`、`2k`、`4k`。除非模型明確說明，否則不要傳給僅支援比例選擇的 Gemini 圖片系列。xAI Grok Imagine 圖片模型請使用 `1k` 或 `2k`。
+</ParamField>
+
+<ParamField body="quality" type="string" default="standard">
+  圖像品質。DALL-E 模型使用 `standard` 或 `hd`；`gpt-image-2` 等 GPT Image 模型使用 `auto`、`low`、`medium` 或 `high`。
+</ParamField>
+
+<ParamField body="response_format" type="string" default="url">
+  回應格式：`url` 或 `b64_json`，預設為 `url`。
+
+  對於 Azure Official 或 Azure-compatible 的 `gpt-image-2` 路由，AI Sonar 不會把 `response_format` 傳給上游。閘道始終從上游取得 `b64_json` 圖片資料；請求 `url` 時會把每張圖上傳到 CDN 並返回 `data[].url`。如果 CDN 儲存不可用或上傳失敗，請求會失敗，而不是降級返回 Base64；請求 `b64_json` 時直接返回原始 Base64。
+</ParamField>
+
+<ParamField body="async" type="boolean" default="false">
+  搭配 `gpt-image-2` 或官方 FLUX/BFL 圖像模型設為 `true` 時，會先建立任務。完成後的非同步圖片任務無論請求的 `response_format` 是什麼，都只返回 URL；如果需要 `b64_json`，請使用同步請求。
+</ParamField>
+
+<ParamField body="style" type="string" default="vivid">
+  DALL-E 3 的風格：`vivid` 或 `natural`。
+</ParamField>
+
+<ParamField body="user" type="string">
+  終端使用者的唯一識別碼。
+</ParamField>
+
+## 回應
+
+### 即時回應
+
+<ResponseField name="created" type="integer">
+  建立時間的 Unix timestamp。
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  產生圖片的陣列。
+
+  每個物件包含：
+  - `url`（string）：產生圖片的 URL
+  - `b64_json`（string）：Base64 編碼的圖片（若有要求）
+  - `revised_prompt`（string）：實際使用的 prompt（DALL-E 3）
+</ResponseField>
+
+### 非同步任務回應
+
+搭配 `gpt-image-2` 或官方 FLUX/BFL 圖像模型設定 `async: true` 後，建立請求會先返回任務，而不是等待最終圖片完成。回應包含 `status: "pending"`、`task_id` 和 `poll_url`。請輪詢 `/v1/tasks/{task_id}`，直到任務進入 `completed` 或 `failed`。
+
+非同步圖片任務最終只返回圖片 URL。如果你需要原始 `b64_json` 圖片資料，請使用同步請求。
+
+任務建立時可能會先預留預估費用。任務完成後按實際用量結算；失敗或逾時的任務會釋放預留費用或退回費用。
+
+<ResponseField name="created" type="integer">
+  建立時間的 Unix 時間戳。
+</ResponseField>
+
+<ResponseField name="task_id" type="string">
+  用於輪詢的唯一任務識別碼。
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  初始狀態：`pending`。
+</ResponseField>
+
+<ResponseField name="poll_url" type="string">
+  用於輪詢結果的相對 URL，例如 `/v1/tasks/{id}`。
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  任務處於 pending 時為空。已完成的圖片任務會在 `data[].url` 中回傳產生的圖片 URL。
+</ResponseField>
+
+當你收到 `status: "pending"` 時，請使用 `poll_url` 或 `GET /v1/tasks/{task_id}` 來取得結果。
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/images/generations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gemini-3-pro-image-preview",
+    "prompt": "A cinematic portrait of a white cat sitting on a rainy windowsill",
+    "aspect_ratio": "16:9",
+    "resolution": "2k",
+    "n": 1
+  }'
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.images.generate(
+    model="gemini-3-pro-image-preview",
+    prompt="A cinematic portrait of a white cat sitting on a rainy windowsill",
+    aspect_ratio="16:9",
+    resolution="2k",
+    n=1
+)
+
+print(response.data[0].url)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.images.generate({
+  model: 'gemini-3-pro-image-preview',
+  prompt: 'A cinematic portrait of a white cat sitting on a rainy windowsill',
+  aspect_ratio: '16:9',
+  resolution: '2k',
+  n: 1
+});
+
+console.log(response.data[0].url);
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/images/generations');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Content-Type: application/json',
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => json_encode([
+        'model' => 'gemini-3-pro-image-preview',
+        'prompt' => 'A cinematic portrait of a white cat sitting on a rainy windowsill',
+        'aspect_ratio' => '16:9',
+        'resolution' => '2k',
+        'n' => 1
+    ])
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+echo $data['data'][0]['url'];
+```
+
+僅支援比例選擇的圖片系列範例：對於 `gemini-2.5-flash-image`、`nano-banana` 或 `nano-banana-edit`，請傳送 `aspect_ratio` 但省略 `resolution`：
+
+```json
+{
+  "model": "gemini-2.5-flash-image",
+  "prompt": "A clean editorial product shot of a citrus soda can",
+  "aspect_ratio": "16:9"
+}
+```
+
+Nano Banana Pro 參考圖範例：請將請求送到 `/v1/images/generations`，不要送到 `/v1/images/edits`。`resolution` 是選填參數，可設為 `1k`、`2k` 或 `4k`：
+
+```json
+{
+  "model": "nano-banana-pro",
+  "prompt": "Create a clean cinematic character image based on the reference images",
+  "operation": "image-to-image",
+  "image_urls": ["https://example.com/reference-1.png"],
+  "aspect_ratio": "1:1",
+  "resolution": "2k"
+}
+```
+
+
+私有或本機來源圖片可以用 multipart 直接上傳。不要把 `file_id` 傳給 `/v1/images/generations`：
+
+```bash
+curl -X POST "https://api.aisonar.dev/v1/images/generations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F "model=nano-banana-pro" \
+  -F "prompt=Create a clean cinematic character image based on this reference" \
+  -F "operation=image-to-image" \
+  -F "image=@reference.png" \
+  -F "aspect_ratio=1:1" \
+  -F "resolution=2k"
+```
+
+</RequestExample>
+
+<ResponseExample>
+```json Inline Response
+{
+  "created": 1706000000,
+  "data": [
+    {
+      "url": "https://...",
+      "revised_prompt": "A fluffy white cat with bright eyes sitting peacefully on a wooden windowsill, watching raindrops stream down the glass window..."
+    }
+  ]
+}
+```
+
+```json Async Task Response
+{
+  "created": 1706000000,
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "pending",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "data": []
+}
+```
+</ResponseExample>

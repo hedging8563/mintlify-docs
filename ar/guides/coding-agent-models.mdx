@@ -1,0 +1,151 @@
+---
+title: "اختيار نماذج Coding Agent"
+description: "اختر النموذج المناسب لكل مهمة برمجية — جدول مقارنة، توصيات، وإعداد"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## مقارنة النماذج للبرمجة
+
+| النموذج | السرعة | جودة الكود | التكلفة | نافذة السياق | الأفضل لـ |
+|---------|--------|-----------|---------|--------------|-----------|
+| `claude-opus-4-6` | متوسط | ممتاز | $$$$ | 200K | المعمارية، إعادة الهيكلة المعقدة |
+| `gpt-5.4` | متوسط | ممتاز | $$$$ | 200K | الاستدلال المعقد، التخطيط |
+| `claude-sonnet-4-6` | سريع | جيد جدًا | $$$ | 200K | البرمجة العامة، المراجعات |
+| `gemini-3-pro-preview` | سريع | جيد جدًا | $$$ | 1M | تحليل قواعد الكود الكبيرة |
+| `gpt-5-mini` | سريع جدًا | جيد | $$ | 128K | التعديلات السريعة، الإكمال |
+| `gemini-3-flash-preview` | سريع جدًا | جيد | $$ | 1M | التكرار السريع، البحث |
+| `deepseek-r1` | متوسط | جيد جدًا | $ | 64K | المهام الثقيلة استدلاليًا |
+| `deepseek-v3.2` | سريع | جيد | $ | 128K | التوليد الكمي، الكود النمطي |
+
+## توصيات حسب المهمة
+
+<AccordionGroup>
+  <Accordion title="توليد الكود / السقالات">
+    **الموصى به**: `claude-sonnet-4-6`، `gemini-3-pro-preview`
+
+    هذه النماذج تنتج كودًا نظيفًا وجيد البنية مع اصطلاحات تسمية جيدة. للسقالات المعقدة متعددة الملفات، فكر في `claude-opus-4-6`.
+
+    البديل الاقتصادي: `deepseek-v3.2` يتعامل مع الكود النمطي بشكل جيد بجزء من التكلفة.
+  </Accordion>
+
+  <Accordion title="مراجعة الكود / إعادة الهيكلة">
+    **الموصى به**: `claude-sonnet-4-6`، `deepseek-r1`
+
+    مراجعة الكود تستفيد من قدرة الاستدلال. `deepseek-r1` فعّال من حيث التكلفة هنا — نهجه في التفكير المتسلسل يكتشف المشكلات الدقيقة.
+
+    للمراجعات المركزة على الأمان: `claude-opus-4-6` أو `gpt-5.4`.
+  </Accordion>
+
+  <Accordion title="إصلاح الأخطاء / التصحيح">
+    **الموصى به**: `claude-sonnet-4-6`، `gpt-5-mini`
+
+    إصلاح الأخطاء عادةً محدد النطاق — تعرف ما هو المعطوب. النماذج القياسية تتعامل مع هذا بشكل جيد. استخدم النماذج المتميزة فقط للأخطاء المعقدة متعددة الملفات.
+  </Accordion>
+
+  <Accordion title="تصميم المعمارية">
+    **الموصى به**: `claude-opus-4-6`، `gpt-5.4`
+
+    قرارات المعمارية تستفيد من أقوى استدلال. يستحق التكلفة المتميزة لأن هذه القرارات نادرة لكن عالية التأثير.
+  </Accordion>
+
+  <Accordion title="التعديلات السريعة / الإكمال التلقائي">
+    **الموصى به**: `gpt-5-mini`، `gemini-3-flash-preview`
+
+    السرعة حاسمة للاستخدام التفاعلي. النماذج الاقتصادية ذات أوقات الاستجابة السريعة توفر أفضل تجربة. لا تهدر tokens متميزة على الإكمال التلقائي.
+  </Accordion>
+</AccordionGroup>
+
+## كيف يعمل توجيه AI Sonar
+
+AI Sonar توجّه طلباتك إلى أفضل مزود متاح تلقائيًا.
+
+### استراتيجيات التوجيه
+
+| الاستراتيجية | السلوك | الأفضل لـ |
+|-------------|--------|-----------|
+| **PRIORITY** | التوجيه إلى المزود الأعلى أولوية المتاح | التركيز على الموثوقية |
+| **COST** | التوجيه إلى أرخص مزود متاح | التركيز على التكلفة |
+
+يمكنك تعيين استراتيجيتك المفضلة في لوحة التحكم.
+
+### الانتقال التلقائي
+
+إذا كان مزود غير متاح أو أعاد خطأ، تُعيد AI Sonar المحاولة تلقائيًا مع المزود التالي:
+
+```
+طلب: claude-sonnet-4-6
+  → المزود A (أساسي): خطأ 503
+  → المزود B (احتياطي): ✓ نجاح
+```
+
+يحدث هذا بشفافية — Coding Agent الخاص بك يرى استجابة طبيعية.
+
+### توجيه التنسيق الأصلي
+
+عندما يدعم النموذج المحدد والقناة الموجَّهة ذلك، يمكن لـ AI Sonar توجيه الطلبات عبر التنسيق الأصلي لواجهة API الخاصة بعائلة النموذج لتحقيق توافق أفضل:
+
+| عائلة النموذج | تنسيق API | عنوان URL الأساسي |
+|-------------|------------|----------|
+| Claude | Anthropic Messages | `https://api.aisonar.dev` |
+| GPT | استجابات OpenAI | `https://api.aisonar.dev/v1` |
+| Gemini | واجهة Gemini الأصلية للـ API | `https://api.aisonar.dev` أو `https://api.aisonar.dev/v1beta` بحسب مسار العميل |
+| DeepSeek | دردشة OpenAI | `https://api.aisonar.dev/v1` |
+
+يمثل Claude Code مسارًا قويًا من نوع Anthropic-native. توجد أيضًا واجهات Gemini-native، لكن Gemini CLI نفسه ما يزال مسار توافق best-effort ولا ينبغي اعتباره سير عمل مستقرًا على المدى الطويل.
+
+## الإعداد لكل أداة
+
+<AccordionGroup>
+  <Accordion title="Claude Code">
+    ```bash
+    export ANTHROPIC_API_KEY="sk-your-api-key"
+    export ANTHROPIC_BASE_URL="https://api.aisonar.dev"
+    ```
+
+    اختيار النموذج: `claude --model claude-sonnet-4-6`
+
+    [الدليل الكامل ←](/integrations/claude-code)
+  </Accordion>
+
+  <Accordion title="Cursor">
+    في Settings → Models:
+    - API Key: `sk-your-api-key`
+    - Base URL: `https://api.aisonar.dev/v1`
+    - Model: `claude-sonnet-4-6` أو `gpt-5-mini`
+
+    [الدليل الكامل ←](/integrations/cursor)
+  </Accordion>
+
+  <Accordion title="Codex CLI">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export OPENAI_BASE_URL="https://api.aisonar.dev/v1"
+    ```
+
+    [الدليل الكامل ←](/integrations/codex-cli)
+  </Accordion>
+
+  <Accordion title="Gemini CLI">
+    ```bash
+    export GEMINI_API_KEY="sk-your-api-key"
+    export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"
+    ```
+
+    اعتبر هذا المسار توافقًا من نوع best-effort، وليس عقد upstream مستقرًا.
+
+    [الدليل الكامل ←](/integrations/gemini-cli)
+  </Accordion>
+
+  <Accordion title="OpenCode">
+    ```json
+    {
+      "provider": "openai",
+      "apiKey": "sk-your-api-key",
+      "baseURL": "https://api.aisonar.dev/v1"
+    }
+    ```
+
+    [الدليل الكامل ←](/integrations/opencode)
+  </Accordion>
+</AccordionGroup>

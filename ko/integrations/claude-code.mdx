@@ -1,0 +1,146 @@
+---
+title: "Claude Code"
+description: "Anthropic의 Claude Code CLI와 함께 AI Sonar 사용"
+---
+
+## 개요
+
+
+
+<Note>
+**유형**: 코딩 도구
+
+**주요 경로**: Anthropic-native
+
+**지원 수준**: 강한 네이티브 경로
+</Note>
+
+[Claude Code](https://docs.anthropic.com/en/docs/claude-code)는 AI 지원 코딩을 위한 Anthropic의 공식 CLI 도구입니다. API 제공자로 AI Sonar를 사용하도록 구성할 수 있습니다.
+
+## 설치
+
+Anthropic는 이제 native installer를 권장합니다. npm 설치도 호환성을 위해 여전히 존재하지만, upstream에서는 deprecated 상태입니다.
+
+```bash
+curl -fsSL https://claude.ai/install.sh | bash
+```
+
+특별히 npm 패키지가 필요한 경우 다음을 사용하세요:
+
+```bash
+npm install -g @anthropic-ai/claude-code
+```
+
+<Warning>
+Claude Code에 `sudo npm install -g`를 사용하지 마세요.
+</Warning>
+
+## 구성
+
+### 환경 변수
+
+다음 환경 변수를 설정하세요:
+
+```bash
+export ANTHROPIC_API_KEY="sk-your-api-key"
+export ANTHROPIC_BASE_URL="https://api.aisonar.dev"
+```
+
+영구적으로 적용하려면 이를 shell profile(`~/.bashrc`, `~/.zshrc` 등)에 추가하세요.
+
+<Note>
+AI Sonar의 경우 `ANTHROPIC_BASE_URL`은 `/v1` suffix 없이 `https://api.aisonar.dev`로 유지하세요. 이는 Anthropic 스타일 endpoint 형식 및 Claude Code에 문서화된 unified gateway pattern과 일치합니다.
+</Note>
+
+### 구성 파일
+
+또는 `~/.claude/settings.json`을 생성하거나 편집하세요:
+
+```json
+{
+  "env": {
+    "ANTHROPIC_API_KEY": "sk-your-api-key",
+    "ANTHROPIC_BASE_URL": "https://api.aisonar.dev"
+  }
+}
+```
+
+## 사용법
+
+구성 후에는 Claude Code를 일반적으로 사용하세요:
+
+```bash
+# Start an interactive session
+claude
+
+# Run a single command
+claude "Explain this code" < main.py
+
+# Chat mode
+claude chat
+```
+
+필요한 경우 설치를 확인하세요:
+
+```bash
+claude --version
+claude doctor
+```
+
+## 사용 가능한 모델
+
+AI Sonar는 모든 Claude 모델을 지원합니다:
+
+| 모델 | 설명 |
+|-------|-------------|
+| `claude-opus-4-6` | 가장 뛰어난 성능, 복잡한 추론 |
+| `claude-sonnet-4-6` | 균형 잡힌 성능, 코딩에 탁월 |
+| `claude-haiku-4-5` | 가장 빠르며 비용 효율적 |
+
+## 모델 선택
+
+`--model` 플래그로 모델을 지정하세요:
+
+```bash
+claude --model claude-sonnet-4-6 "Review this PR"
+```
+
+또는 구성에서 기본값을 설정하세요:
+
+```json
+{
+  "env": {
+    "ANTHROPIC_API_KEY": "sk-your-api-key",
+    "ANTHROPIC_BASE_URL": "https://api.aisonar.dev"
+  },
+  "model": "claude-sonnet-4-6"
+}
+```
+
+## 확장된 사고
+
+복잡한 추론 작업에는 extended thinking이 지원되는 모델을 사용하세요:
+
+```bash
+claude --model claude-opus-4-6 "Design a microservices architecture for..."
+```
+
+## 문제 해결
+
+<AccordionGroup>
+  <Accordion title="연결 오류">
+    base URL이 정확히 `https://api.aisonar.dev`인지 확인하세요(Anthropic 스타일 요청에는 `/v1` suffix 없음).
+  </Accordion>
+
+  <Accordion title="유효하지 않은 API 키">
+    AI Sonar API 키가 `sk-`로 시작하고 충분한 잔액이 있는지 확인하세요.
+  </Accordion>
+
+  <Accordion title="Gateway에는 Authorization bearer token이 필요합니다">
+    Claude Code의 gateway mode는 `ANTHROPIC_AUTH_TOKEN`도 지원합니다. 의도적으로 gateway auth 동작을 전환한 경우가 아니라면, 표준 AI Sonar 설정에서는 계속 `ANTHROPIC_API_KEY`를 사용하세요.
+  </Accordion>
+
+  <Accordion title="모델을 찾을 수 없음">
+    모델 이름이 올바른지 확인하세요. `claude-sonnet-4-6` 형식을 사용하세요.
+  </Accordion>
+</AccordionGroup>

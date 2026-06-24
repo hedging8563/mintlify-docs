@@ -1,0 +1,129 @@
+---
+title: "Autentikasi"
+description: "Amankan permintaan API AI Sonar Anda dengan API key"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## API Key
+
+Semua permintaan API AI Sonar memerlukan API key.
+
+Untuk endpoint yang kompatibel dengan OpenAI, kirim sebagai:
+
+```bash
+Authorization: Bearer sk-your-api-key
+```
+
+Untuk permintaan `/v1/messages` yang kompatibel dengan Anthropic, Anda juga dapat menggunakan:
+
+```bash
+x-api-key: sk-your-api-key
+```
+
+## Mendapatkan API Key Anda
+
+1. Masuk ke [AI Sonar Dashboard](https://console.aisonar.dev) Anda
+2. Buka **API Keys**
+3. Buat key baru
+4. Beri nama yang deskriptif
+5. Salin segera karena hanya ditampilkan satu kali
+
+<Warning>
+- Jangan pernah mengekspos API key dalam kode sisi klien
+- Jangan pernah melakukan commit API key ke version control
+- Gunakan environment variables atau secret manager
+- Rotasi key secara berkala
+- Hapus key yang tidak digunakan
+</Warning>
+
+## Menggunakan API Key
+
+<CodeGroup>
+
+```bash cURL
+curl https://api.aisonar.dev/v1/responses \
+  -H "Authorization: Bearer $TOKENLAB_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.4",
+    "input": "Hello!"
+  }'
+```
+
+```python Python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ.get("TOKENLAB_API_KEY"),
+    base_url="https://api.aisonar.dev/v1"
+)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: process.env.TOKENLAB_API_KEY,
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+```
+
+</CodeGroup>
+
+## Fitur API Key
+
+### Batas Penggunaan
+
+Anda dapat menetapkan batas penggunaan pada setiap API key:
+
+| Pengaturan | Deskripsi |
+|---------|-------------|
+| **No Limit** | Key menggunakan saldo akun Anda tanpa batasan |
+| **Fixed Limit** | Key berhenti berfungsi setelah mencapai jumlah yang ditentukan |
+
+### Prefix Key
+
+Semua API key AI Sonar diawali dengan `sk-`.
+
+## Kompatibilitas Anthropic
+
+Untuk endpoint `/v1/messages`, header bergaya Anthropic berfungsi sebagaimana mestinya:
+
+```bash
+curl https://api.aisonar.dev/v1/messages \
+  -H "x-api-key: sk-your-api-key" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-sonnet-4-6",
+    "max_tokens": 1024,
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'
+```
+
+<Note>
+Gunakan `Authorization: Bearer ...` untuk endpoint yang kompatibel dengan OpenAI seperti `/v1/responses`, `/v1/chat/completions`, `/v1/models`, dan sebagian besar route AI Sonar lainnya.
+</Note>
+
+## Respons Error
+
+| Kode Status | Tipe | Kode | Deskripsi |
+|-------------|------|------|-------------|
+| 401 | `invalid_api_key` | `invalid_api_key` | API key tidak ada atau tidak valid |
+| 401 | `expired_api_key` | `expired_api_key` | API key telah dicabut |
+| 402 | `insufficient_balance` | `insufficient_balance` | Saldo akun tidak mencukupi |
+| 402 | `quota_exceeded` | `quota_exceeded` | Batas penggunaan API key tercapai |
+
+Contoh:
+
+```json
+{
+  "error": {
+    "message": "Invalid API key provided",
+    "type": "invalid_api_key",
+    "code": "invalid_api_key"
+  }
+}
+```

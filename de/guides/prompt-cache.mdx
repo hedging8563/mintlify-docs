@@ -1,0 +1,125 @@
+---
+title: "✨ Upstream-Prompt-Cache"
+description: "Verstehen Sie das Prompt-Caching auf Provider-Ebene und wie es Kosten senkt"
+---
+
+## Übersicht
+
+## Wie Provider-Prompt-Caching funktioniert
+
+Provider-Prompt-Caching speichert die verarbeitete Darstellung Ihres Prompt-Präfixes auf den Servern des Providers. Wenn Sie eine Anfrage mit demselben Präfix senden, kann der Provider die erneute Verarbeitung dieser Token überspringen.
+
+### Hauptmerkmale
+
+- **Präfix-basiert**: Nur der Anfang Ihres Prompts kann zwischengespeichert werden
+- **Exakte Übereinstimmung**: Erfordert identische Token (keine semantische Ähnlichkeit)
+- **Zeitlich begrenzt**: Cache-Einträge laufen ab (normalerweise 5–60 Minuten)
+- **Automatisch**: Keine spezielle Konfiguration erforderlich
+
+```
+Anfrage 1: [System-Prompt + Kontext A + Frage 1]
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+           Dieses Präfix wird zwischengespeichert
+
+Anfrage 2: [System-Prompt + Kontext A + Frage 2]
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+           Cache-Treffer! Nur Frage 2 wird verarbeitet
+```
+
+## Unterstützte Provider
+
+| Anbieter | Cache-Lese-Rabatt | Cache-Schreib-Kosten | Min. Token |
+|----------|---------------------|------------------|------------|
+| **Anthropic** | 90 % Rabatt | 25 % Aufpreis | 1024 |
+| **OpenAI** | 50 % Rabatt | Gleich wie Input | 1024 |
+| **DeepSeek** | 90 % Rabatt | Gleich wie Input | 64 |
+| **Google** | 75 % Rabatt | 25 % Aufpreis | 32768 |
+
+<Info>
+Rabatte werden automatisch angewendet. AI Sonar gibt die Cache-Preise des Providers direkt an Sie weiter.
+</Info>
+
+## Cache-Nutzung erkennen
+
+### In den Nutzungsprotokollen
+
+Ihre Nutzungsprotokolle zeigen eine detaillierte Aufschlüsselung der Cache-Token:
+
+| Feld | Beschreibung |
+|-------|-------------|
+| `cacheReadTokens` | Token aus dem Provider-Cache (ermäßigt) |
+| `cacheWriteTokens` | Token, die in den Cache geschrieben wurden (für zukünftige Anfragen) |
+| `nonCachedPromptTokens` | Token, die ohne Cache verarbeitet wurden |
+
+### In Transaktionen
+
+Transaktionen zeigen ein **Provider Cache**-Label an, wenn Upstream-Caching verwendet wurde:
+
+- **Cache** (himmelblau): Plattform-Semantic-Cache-Treffer – 90 % Rabatt
+- **Provider Cache** (blaugrün): Upstream-Prompt-Cache-Treffer – ermäßigte Raten
+
+## Kostenberechnungsbeispiel
+
+Für eine Anfrage mit 10.000 Input-Token an Claude (Anthropic):
+
+**Ohne Cache:**
+```
+10.000 Token × $3,00/1M = $0,030
+```
+
+**Mit Provider-Cache (8.000 gecacht + 2.000 neu):**
+```
+Cache-Lesen:    8.000 Token × $0,30/1M = $0,0024  (90 % Rabatt)
+Cache-Schreiben: 2.000 Token × $3,75/1M = $0,0075  (25 % Aufpreis)
+Gesamt: $0,0099 (67 % Ersparnis)
+```
+
+## Bewährte Praktiken
+
+<AccordionGroup>
+  <Accordion title="Konsistente System-Prompts verwenden">
+    Platzieren Sie Ihren System-Prompt und statischen Kontext am Anfang Ihrer Nachrichten. Dies maximiert die Cache-Trefferwahrscheinlichkeit.
+  </Accordion>
+
+  <Accordion title="Ähnliche Anfragen bündeln">
+    Senden Sie Anfragen mit demselben Präfix zeitnah hintereinander, um vom Cache zu profitieren, bevor er abläuft.
+  </Accordion>
+
+  <Accordion title="Mindest-Token-Anforderungen einhalten">
+    Stellen Sie sicher, dass Ihr cachebarer Präfix die Mindestanforderung des Providers erfüllt (z. B. 1024 Token für Anthropic/OpenAI).
+  </Accordion>
+
+  <Accordion title="Cache-Metriken überwachen">
+    Überprüfen Sie die Nutzungsstatistiken in Ihrem Dashboard auf Cache-Trefferraten und Einsparungen.
+  </Accordion>
+</AccordionGroup>
+
+## Cache-Status prüfen
+
+### Response-Header
+
+```
+X-Upstream-Cache-Read: 8000   # Provider-Cache gelesene Token
+X-Upstream-Cache-Write: 2000  # Provider-Cache geschriebene Token
+```
+
+### Usage-API
+
+Fragen Sie Ihre Nutzungsprotokolle ab, um die Cache-Aufschlüsselung zu sehen:
+
+```text
+GET /v1/usage/logs is currently not a public endpoint.
+Use X-Upstream-Cache-* response headers, plus the dashboard usage page.
+```
+
+Die Antwort enthält:
+```json
+{
+  "promptTokens": 10000,
+  "cacheReadTokens": 8000,
+  "cacheWriteTokens": 2000,
+  "nonCachedPromptTokens": 0,
+  "completionTokens": 500,
+  "cost": 0.0099
+}
+```

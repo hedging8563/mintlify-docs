@@ -1,0 +1,26 @@
+---
+title: "Lấy dữ liệu thanh toán API Key"
+openapi: "GET /v1/management/api-keys/{keyId}/billing"
+description: "Trả về breakdown billing tổng hợp cho một API key người dùng."
+---
+
+## Tổng Quan
+
+Endpoint này trả về các tổng hợp billing theo mức tiêu thụ cho API key đã chọn, bao gồm tổng chi phí, tổng số request, usage theo đơn vị tính phí và breakdown theo tên model được gửi trong request (`model`), nhà cung cấp, `scene`, `accessChannel`, loại cache, cùng xu hướng chi phí theo ngày.
+
+## Ghi Chú
+
+- Nạp tiền, hóa đơn và các bản ghi tài chính ở cấp tổ chức sẽ không được đưa vào.
+
+## Ví Dụ
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/billing?startDate=2026-01-01&endDate=2026-01-31" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## Yêu Cầu / Phản Hồi
+
+Sử dụng bảng điều khiển OpenAPI tương tác ở trên để xem schema chính xác.

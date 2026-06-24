@@ -1,0 +1,166 @@
+---
+title: "Vercel AI SDK"
+description: "Integrasikan AI Sonar dengan Vercel AI SDK menggunakan penyedia yang kompatibel dengan OpenAI atau jalur Responses native"
+---
+
+## Gambaran Umum
+
+Untuk AI Sonar, default yang paling stabil di Vercel AI SDK adalah **penyedia yang kompatibel dengan OpenAI**.
+
+Jika Anda secara khusus memerlukan perilaku **Responses native**, Anda dapat beralih ke penyedia OpenAI dan tetap menggunakan URL dasar AI Sonar yang sama.
+
+Halaman ini sebaiknya dibaca sebagai pola integrasi yang direkomendasikan, bukan sebagai klaim bahwa setiap helper di Vercel AI SDK memiliki pengujian end-to-end khusus di repo ini.
+
+
+<Note>
+**Jenis**: Framework atau platform
+
+**Jalur utama**: Default yang kompatibel dengan OpenAI
+
+**Tingkat dukungan**: Pola integrasi yang direkomendasikan
+</Note>
+
+## Default yang Direkomendasikan: Penyedia yang Kompatibel dengan OpenAI
+
+```bash
+npm install ai @ai-sdk/openai-compatible
+```
+
+```typescript
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
+
+export const aisonar = createOpenAICompatible({
+  name: 'aisonar',
+  apiKey: process.env.TOKENLAB_API_KEY,
+  baseURL: 'https://api.aisonar.dev/v1',
+});
+```
+
+## Menghasilkan Teks
+
+```typescript
+import { generateText } from 'ai';
+import { aisonar } from './aisonar';
+
+const { text } = await generateText({
+  model: aisonar.chatModel('gpt-5.4'),
+  prompt: 'Explain AI Sonar in one sentence.',
+});
+
+console.log(text);
+```
+
+## Streaming Teks
+
+```typescript
+import { streamText } from 'ai';
+import { aisonar } from './aisonar';
+
+const result = await streamText({
+  model: aisonar.chatModel('gpt-5.4'),
+  prompt: 'Write a short poem about coding.',
+});
+
+for await (const textPart of result.textStream) {
+  process.stdout.write(textPart);
+}
+```
+
+## Pemanggilan Tool
+
+```typescript
+import { generateText, tool } from 'ai';
+import { z } from 'zod';
+import { aisonar } from './aisonar';
+
+const result = await generateText({
+  model: aisonar.chatModel('gpt-5.4'),
+  prompt: 'What is the weather in San Francisco?',
+  tools: {
+    weather: tool({
+      description: 'Get weather in a location',
+      parameters: z.object({
+        location: z.string(),
+      }),
+      execute: async ({ location }) => ({
+        location,
+        temperature: 72,
+        condition: 'sunny',
+      }),
+    }),
+  },
+});
+
+console.log(result.text);
+```
+
+## Output Terstruktur
+
+```typescript
+import { generateObject } from 'ai';
+import { z } from 'zod';
+import { aisonar } from './aisonar';
+
+const { object } = await generateObject({
+  model: aisonar.chatModel('gpt-5.4'),
+  schema: z.object({
+    name: z.string(),
+    role: z.string(),
+  }),
+  prompt: 'Generate a fake developer profile.',
+});
+
+console.log(object);
+```
+
+## Jika Anda Secara Eksplisit Memerlukan Perilaku Native Responses
+
+```bash
+npm install ai @ai-sdk/openai
+```
+
+```typescript
+import { createOpenAI } from '@ai-sdk/openai';
+
+export const aisonarResponses = createOpenAI({
+  apiKey: process.env.TOKENLAB_API_KEY,
+  baseURL: 'https://api.aisonar.dev/v1',
+});
+```
+
+```typescript
+import { generateText } from 'ai';
+import { aisonarResponses } from './aisonar-responses';
+
+const { text } = await generateText({
+  model: aisonarResponses('gpt-5.4'),
+  prompt: 'Explain AI Sonar in one sentence.',
+});
+```
+
+<Note>
+Gunakan `@ai-sdk/openai-compatible` sebagai default yang aman untuk integrasi bergaya proxy. Beralihlah ke `@ai-sdk/openai` hanya jika Anda secara eksplisit menginginkan jalur penyedia yang dibangun di atas `/v1/responses`.
+</Note>
+
+## Variabel Environment
+
+```bash
+# .env.local
+TOKENLAB_API_KEY=sk-your-api-key
+```
+
+## Praktik Terbaik
+
+<AccordionGroup>
+  <Accordion title="Utamakan openai-compatible terlebih dahulu">
+    Untuk gateway pihak ketiga dan backend proxy, `@ai-sdk/openai-compatible` biasanya merupakan titik awal yang paling minim kejutan.
+  </Accordion>
+
+  <Accordion title="Beralih ke Responses hanya saat diperlukan">
+    Jika Anda memerlukan perilaku penyedia yang terkait dengan `/v1/responses`, ganti package penyedia secara sengaja alih-alih mencampurkan kedua pola dalam satu client.
+  </Accordion>
+
+  <Accordion title="Simpan rahasia di server">
+    Jangan pernah mengekspos AI Sonar API key Anda dalam kode sisi client. Tempatkan setup penyedia di file server atau route API.
+  </Accordion>
+</AccordionGroup>

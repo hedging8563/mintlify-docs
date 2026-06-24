@@ -1,0 +1,195 @@
+---
+title: "LangChain"
+description: "Integrieren Sie AI Sonar mit LangChain unter Verwendung standardmäßiger OpenAI-kompatibler Chat- und Embeddings-Funktionen"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Überblick
+
+AI Sonar funktioniert gut mit den LangChain-Integrationen `ChatOpenAI` und `OpenAIEmbeddings`, wenn Sie bei der standardmäßigen OpenAI-kompatiblen Oberfläche für Chat und Embeddings bleiben.
+
+<Note>
+In der aktuellen LangChain-Dokumentation wird darauf hingewiesen, dass `ChatOpenAI` auf offizielle OpenAI-kompatible Request-/Response-Formate abzielt. Wenn Sie anbieterspezifische, nicht standardisierte Response-Felder benötigen, verwenden Sie eine anbieterspezifische LangChain-Integration, anstatt sich auf `ChatOpenAI` zu verlassen.
+</Note>
+
+<Note>
+**Typ**: Framework oder Plattform
+
+**Primärer Pfad**: OpenAI-kompatible Standardsurface
+
+**Support-Niveau**: Standardsurface unterstützt
+</Note>
+
+Diese Seite deckt bewusst nur die standardmäßige OpenAI-kompatible LangChain-Oberfläche ab und nicht anbieterspezifische LangChain-Funktionen darüber hinaus.
+
+## Installation
+
+```bash
+pip install langchain langchain-openai langchain-community faiss-cpu
+```
+
+## Grundkonfiguration
+
+```python
+from langchain_openai import ChatOpenAI
+
+llm = ChatOpenAI(
+    model="gpt-5.4",
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1",
+)
+
+response = llm.invoke("Explain AI Sonar in one sentence.")
+print(response.content)
+```
+
+## Verwendung verschiedener Modelle
+
+```python
+from langchain_openai import ChatOpenAI
+
+gpt = ChatOpenAI(
+    model="gpt-5.4",
+    api_key="sk-your-key",
+    base_url="https://api.aisonar.dev/v1",
+)
+
+claude = ChatOpenAI(
+    model="claude-sonnet-4-6",
+    api_key="sk-your-key",
+    base_url="https://api.aisonar.dev/v1",
+)
+
+gemini = ChatOpenAI(
+    model="gemini-2.5-flash",
+    api_key="sk-your-key",
+    base_url="https://api.aisonar.dev/v1",
+)
+
+deepseek = ChatOpenAI(
+    model="deepseek-r1",
+    api_key="sk-your-key",
+    base_url="https://api.aisonar.dev/v1",
+)
+```
+
+## Nachrichtenverlauf
+
+```python
+from langchain_core.messages import HumanMessage, SystemMessage
+
+messages = [
+    SystemMessage(content="You are a helpful assistant."),
+    HumanMessage(content="What is the capital of France?")
+]
+
+response = llm.invoke(messages)
+print(response.content)
+```
+
+## Streaming
+
+```python
+for chunk in llm.stream("Write a short poem about coding."):
+    if chunk.content:
+        print(chunk.content, end="", flush=True)
+```
+
+## Embeddings
+
+```python
+from langchain_openai import OpenAIEmbeddings
+
+embeddings = OpenAIEmbeddings(
+    model="text-embedding-3-small",
+    api_key="sk-your-key",
+    base_url="https://api.aisonar.dev/v1",
+)
+
+vector = embeddings.embed_query("Hello world")
+print(vector[:5])
+```
+
+## Einfaches RAG-Beispiel
+
+```python
+from langchain_openai import OpenAIEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnablePassthrough
+
+embeddings = OpenAIEmbeddings(
+    model="text-embedding-3-small",
+    api_key="sk-your-key",
+    base_url="https://api.aisonar.dev/v1",
+)
+
+texts = [
+    "AI Sonar provides one API for many AI models.",
+    "AI Sonar supports OpenAI-compatible integrations."
+]
+
+vectorstore = FAISS.from_texts(texts, embeddings)
+retriever = vectorstore.as_retriever()
+
+prompt = ChatPromptTemplate.from_template(
+    "Answer using the context below.\\n\\nContext:\\n{context}\\n\\nQuestion:\\n{question}"
+)
+
+rag_chain = (
+    {"context": retriever, "question": RunnablePassthrough()}
+    | prompt
+    | llm
+)
+
+response = rag_chain.invoke("What does AI Sonar provide?")
+print(response.content)
+```
+
+## Agents
+
+<Note>
+Für neue agentische Projekte empfiehlt LangChain, LangGraph für eine explizitere Kontrolle über langlaufende und Tool-verwendende Workflows in Betracht zu ziehen.
+</Note>
+
+```python
+from langchain.agents import create_openai_tools_agent, AgentExecutor
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.tools import tool
+
+@tool
+def search(query: str) -> str:
+    """Search for information."""
+    return f"Search results for: {query}"
+
+tools = [search]
+
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a helpful assistant with access to tools."),
+    ("human", "{input}"),
+    ("placeholder", "{agent_scratchpad}")
+])
+
+agent = create_openai_tools_agent(llm, tools, prompt)
+executor = AgentExecutor(agent=agent, tools=tools)
+
+result = executor.invoke({"input": "Search for AI Sonar pricing"})
+print(result["output"])
+```
+
+## Bewährte Praktiken
+
+<AccordionGroup>
+  <Accordion title="`base_url` explizit übergeben">
+    Die zuverlässigste AI Sonar-Konfiguration besteht darin, `base_url="https://api.aisonar.dev/v1"` direkt an `ChatOpenAI` und `OpenAIEmbeddings` zu übergeben, anstatt von älteren Aliassen für Umgebungsvariablen abhängig zu sein.
+  </Accordion>
+
+  <Accordion title="Hier standardmäßige Funktionen verwenden">
+    Bleiben Sie bei standardmäßigem Chat, Tool Calling, Streaming und Embeddings in `ChatOpenAI`. Wenn Sie anbieterspezifische Extras benötigen, wechseln Sie zur eigenen LangChain-Integration des Anbieters.
+  </Accordion>
+
+  <Accordion title="Günstigere Modelle für Retrieval verwenden">
+    Verwenden Sie Embedding-Modelle wie `text-embedding-3-small` für Retrieval und reservieren Sie leistungsstärkere Chat-Modelle für den abschließenden Antwortschritt.
+  </Accordion>
+</AccordionGroup>

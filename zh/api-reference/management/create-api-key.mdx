@@ -1,0 +1,47 @@
+---
+title: "创建 API Key"
+openapi: "POST /v1/management/api-keys"
+description: "为当前组织创建新的用户 API Key。"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## 概览
+
+该接口会在当前管理令牌所属的组织下创建一个新的 `type=user` API Key。
+
+## 请求体
+
+| 字段 | 类型 | 默认值 / 限制 | 说明 |
+|------|------|---------------|------|
+| `name` | string | 必填，默认 `Default Key`，长度 `1-50` | 展示名称，服务端会先 trim |
+| `limitAmount` | number \| null | 最小 `0`，输入上限 `1000000` | `null` 或省略 = 不限额，`0` = 零额度，正数会被规范化为一个存储上限，且不能超过 `100000` USD 等值 |
+| `limitCurrency` | enum | 默认 `USD` | 仅支持 USD。发送 `CNY` 会返回 `400 currency_retired`。 |
+| `models` | string[] | 默认 `[]` | 可选的逻辑模型白名单 |
+| `expiresAt` | string \| null | RFC3339 datetime | `null` 表示永不过期 |
+
+## 说明
+
+- 响应中的完整 API Key 只会返回一次。
+- `models: []` 表示该 Key 除组织级策略外没有额外模型限制。
+- `limitAmount: 0` 会创建一个合法但无法消费额度的 Key，后续可再更新。
+
+## 示例
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/management/api-keys" \
+  -H "Authorization: Bearer mt-your-management-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Backend Worker",
+    "limitAmount": 500,
+    "models": ["veo3.1", "kling-3.0-video"],
+    "expiresAt": "2026-12-31T23:59:59Z"
+  }'
+```
+</RequestExample>
+
+## 请求 / 响应
+
+精确 schema 和响应字段请使用上方的交互式 OpenAPI 面板。

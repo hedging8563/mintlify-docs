@@ -1,0 +1,38 @@
+---
+title: "Dosya İçeriğini Al"
+openapi: "GET /v1/files/{file_id}/content"
+description: "Yüklenen bir dosyanın orijinal içeriğini indirir."
+---
+
+## Genel Bakış
+
+Bu endpoint, AI Sonar'nın OpenAI uyumlu Batch API dosya içeriği alımına hizmet eder.
+
+İstek Anthropic Files uyumluluk moduna geçtiğinde, aynı route bağlı workspace için saklanan orijinal dosya içeriğini proxy edebilir.
+
+## Notlar
+
+- Batch giriş dosyaları `purpose=batch` kullanmalıdır.
+- `completion_window` şu anda `24h`'dir.
+- Output sırası garanti edilmez; her zaman `custom_id` ile eşleştirin.
+- Streaming, batch öğelerinin içinde desteklenmez.
+
+## Örnek
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/files/file_abc123/content" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  --output batch-output.jsonl
+```
+</RequestExample>
+
+## İstek / Yanıt
+
+Kesin şema için yukarıdaki etkileşimli OpenAPI panelini kullanın.
+
+## Operasyonel İpuçları
+
+- Downstream mutabakatı idempotent yapmak için `custom_id` kullanın.
+- `output_file_id` ve `error_file_id` yalnızca worker batch'i tamamladıktan sonra beklenmelidir.
+- `isBatchRequest=true` indirim kuralları uygulandığı için batch fiyatlandırması senkron fiyatlandırmadan farklı olabilir.

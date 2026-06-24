@@ -1,0 +1,27 @@
+---
+title: "الحصول على رصيد المؤسسة"
+openapi: "GET /v1/management/balance"
+description: "يعيد مجاميع الرصيد الحالية للمؤسسة المرتبطة برمز الإدارة."
+---
+
+## نظرة عامة
+
+تعيد نقطة النهاية هذه مجاميع الرصيد الحالية للمؤسسة المرتبطة برمز الإدارة. وهي تستخدم مصدر الحقيقة نفسه لرصيد المؤسسة المستخدم في الفوترة والتسوية.
+
+## ملاحظات
+
+- يتم إرجاع حقول القيمة المالية الحقيقية بالدولار الأمريكي: `balance` و `total_recharge` و `total_used`.
+- يعكس `preferred_currency` تفضيل العرض في Dashboard للمؤسسة؛ ولا يغيّر حقول الحقيقة بالدولار الأمريكي.
+
+## مثال
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/management/balance" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## الطلب / الاستجابة
+
+استخدم لوحة OpenAPI التفاعلية أعلاه للحصول على المخطط الدقيق.

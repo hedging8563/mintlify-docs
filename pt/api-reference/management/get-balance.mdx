@@ -1,0 +1,27 @@
+---
+title: "Obter saldo da organização"
+openapi: "GET /v1/management/balance"
+description: "Retorna os totais atuais de saldo da organização para o token de gerenciamento."
+---
+
+## Visão Geral
+
+Este endpoint retorna os totais atuais de saldo da organização associada ao token de gerenciamento. Ele usa a mesma fonte da verdade de saldo da organização usada por faturamento e liquidação.
+
+## Notas
+
+- Os campos monetários de verdade são retornados em USD: `balance`, `total_recharge` e `total_used`.
+- `preferred_currency` reflete a preferência de exibição da organização no Dashboard; ela não altera os campos de verdade em USD.
+
+## Exemplo
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/management/balance" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## Solicitação / Resposta
+
+Use o painel interativo OpenAPI acima para o esquema exato.

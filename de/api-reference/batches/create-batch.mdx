@@ -1,0 +1,41 @@
+---
+title: "Batch erstellen"
+openapi: "POST /v1/batches"
+description: "Erstellt einen OpenAI-kompatiblen Batch-Job aus einer hochgeladenen Eingabedatei."
+---
+
+## Übersicht
+
+Dieser Endpunkt ist Teil von AI Sonar's OpenAI-kompatibler Batch-API. Batch-Jobs verwenden hochgeladene JSONL-Dateien, laufen asynchron und können später Ausgabedateien/Fehlerdateien zurückgeben.
+
+## Hinweise
+
+- Batch-Eingabedateien müssen `purpose=batch` verwenden.
+- `completion_window` beträgt derzeit `24h`.
+- Die Ausgabereihenfolge ist nicht garantiert; immer nach `custom_id` abgleichen.
+- Streaming wird innerhalb von Batch-Elementen nicht unterstützt.
+
+## Beispiel
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/batches" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input_file_id": "file_abc123",
+    "endpoint": "/v1/chat/completions",
+    "completion_window": "24h"
+  }'
+```
+</RequestExample>
+
+## Anfrage / Antwort
+
+Verwenden Sie das interaktive OpenAPI-Panel oben für das genaue Schema.
+
+## Betriebliche Tipps
+
+- Verwenden Sie `custom_id` für idempotente nachgelagerte Abgleiche.
+- Erwarten Sie `output_file_id` und `error_file_id` erst, nachdem der Worker den Batch abgeschlossen hat.
+- Die Preisgestaltung für Batches kann von der synchronen Preisgestaltung abweichen, da die Rabattregeln für `isBatchRequest=true` gelten.

@@ -1,0 +1,208 @@
+---
+title: "Rerank Documents"
+openapi: "POST /v1/rerank"
+description: "Reranks documents by relevance to a query"
+---
+
+<Note>
+For coding agents, discover the current recommended rerank shortlist first with `GET /v1/models?recommended_for=rerank`, then send the selected `model` explicitly to this endpoint.
+</Note>
+
+Rerank documents using semantic similarity models. Useful for improving search results and RAG applications.
+
+## Request Body
+
+**Synchronous request timeout:** This non-chat endpoint waits for the routed model to finish. Large inputs, long audio, or large batches can exceed common 30s client defaults, so set your HTTP client timeout to at least `120s`.
+
+<ParamField body="model" type="string" required>
+  ID of the reranker model to use (e.g., `BAAI/bge-reranker-v2-m3`, `qwen3-rerank`).
+</ParamField>
+
+<ParamField body="query" type="string" required>
+  The query to rank documents against. Maximum length: `32,000` characters.
+</ParamField>
+
+<ParamField body="documents" type="array" required>
+  List of documents (strings) to rerank. Limits: up to `1,000` documents, each document up to `100,000` characters, and at most `2,000,000` total document characters.
+</ParamField>
+
+<ParamField body="top_n" type="integer">
+  Number of top results to return. Defaults to all documents. Must be at least `1` and no greater than `documents.length`. AI Sonar currently has no governed provider-specific lower hard cap; if a provider publishes one later, it must be added to rerank request-shape truth before being documented or enforced.
+</ParamField>
+
+<ParamField body="return_documents" type="boolean" default="false">
+  Whether to include original document text in response.
+</ParamField>
+
+## Response
+
+<ResponseField name="results" type="array">
+  Ranked list of documents with scores.
+
+  Each result contains:
+  - `index` (integer): Original document index
+  - `relevance_score` (number): Relevance score (0-1)
+  - `document` (string): Original text (if `return_documents=true`)
+</ResponseField>
+
+<ResponseField name="model" type="string">
+  The model used for reranking.
+</ResponseField>
+
+<ResponseField name="usage" type="object">
+  Token usage statistics.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/rerank" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "BAAI/bge-reranker-v2-m3",
+    "query": "What is machine learning?",
+    "documents": [
+      "Machine learning is a subset of AI",
+      "The weather is nice today",
+      "Deep learning uses neural networks"
+    ],
+    "top_n": 2,
+    "return_documents": true
+  }'
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    "https://api.aisonar.dev/v1/rerank",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+    json={
+        "model": "BAAI/bge-reranker-v2-m3",
+        "query": "What is machine learning?",
+        "documents": [
+            "Machine learning is a subset of AI",
+            "The weather is nice today",
+            "Deep learning uses neural networks"
+        ],
+        "top_n": 2
+    }
+)
+
+print(response.json())
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.aisonar.dev/v1/rerank', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer sk-your-api-key',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    model: 'BAAI/bge-reranker-v2-m3',
+    query: 'What is machine learning?',
+    documents: [
+      'Machine learning is a subset of AI',
+      'The weather is nice today',
+      'Deep learning uses neural networks'
+    ],
+    top_n: 2
+  })
+});
+
+const data = await response.json();
+console.log(data.results);
+```
+
+```go Go
+package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "fmt"
+    "net/http"
+)
+
+func main() {
+    payload := map[string]interface{}{
+        "model": "BAAI/bge-reranker-v2-m3",
+        "query": "What is machine learning?",
+        "documents": []string{
+            "Machine learning is a subset of AI",
+            "The weather is nice today",
+            "Deep learning uses neural networks",
+        },
+        "top_n": 2,
+    }
+    body, _ := json.Marshal(payload)
+
+    req, _ := http.NewRequest("POST", "https://api.aisonar.dev/v1/rerank", bytes.NewBuffer(body))
+    req.Header.Set("Authorization", "Bearer sk-your-api-key")
+    req.Header.Set("Content-Type", "application/json")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+
+    var result map[string]interface{}
+    json.NewDecoder(resp.Body).Decode(&result)
+    fmt.Println(result["results"])
+}
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/rerank');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Content-Type: application/json',
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => json_encode([
+        'model' => 'BAAI/bge-reranker-v2-m3',
+        'query' => 'What is machine learning?',
+        'documents' => [
+            'Machine learning is a subset of AI',
+            'The weather is nice today',
+            'Deep learning uses neural networks'
+        ],
+        'top_n' => 2
+    ])
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+print_r($data['results']);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "results": [
+    {
+      "index": 0,
+      "relevance_score": 0.95,
+      "document": "Machine learning is a subset of AI"
+    },
+    {
+      "index": 2,
+      "relevance_score": 0.82,
+      "document": "Deep learning uses neural networks"
+    }
+  ],
+  "model": "BAAI/bge-reranker-v2-m3",
+  "usage": {
+    "prompt_tokens": 45,
+    "total_tokens": 45
+  }
+}
+```
+</ResponseExample>

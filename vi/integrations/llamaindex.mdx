@@ -1,0 +1,143 @@
+---
+title: "LlamaIndex"
+description: "Tích hợp AI Sonar với LlamaIndex bằng các tích hợp tương thích OpenAI"
+---
+
+## Tổng quan
+
+
+
+<Note>
+**Loại**: Framework hoặc nền tảng
+
+**Đường chính**: tương thích OpenAI via OpenAILike
+
+**Mức hỗ trợ**: Hỗ trợ qua OpenAILike
+</Note>
+
+Đối với AI Sonar, cấu hình LlamaIndex mạnh mẽ hơn là sử dụng **các tích hợp tương thích OpenAI** thay vì các lớp OpenAI tích hợp sẵn.
+
+Tài liệu LlamaIndex hiện tại khuyến nghị rõ ràng `OpenAILike` cho các endpoint tương thích OpenAI của bên thứ ba, vì các lớp OpenAI tích hợp sẵn suy luận metadata từ tên model chính thức.
+
+Nói cách khác: ở đây hãy coi `OpenAILike` là đường được hỗ trợ cho AI Sonar, chứ không phải các lớp OpenAI tích hợp sẵn.
+
+## Cài đặt
+
+```bash
+pip install llama-index-core \
+  llama-index-readers-file \
+  llama-index-llms-openai-like \
+  llama-index-embeddings-openai-like
+```
+
+## Cấu hình cơ bản
+
+```python
+from llama_index.core import Settings
+from llama_index.llms.openai_like import OpenAILike
+from llama_index.embeddings.openai_like import OpenAILikeEmbedding
+
+llm = OpenAILike(
+    model="gpt-5.4",
+    api_base="https://api.aisonar.dev/v1",
+    api_key="sk-your-api-key",
+    is_chat_model=True,
+)
+
+embed_model = OpenAILikeEmbedding(
+    model_name="text-embedding-3-small",
+    api_base="https://api.aisonar.dev/v1",
+    api_key="sk-your-api-key",
+)
+
+Settings.llm = llm
+Settings.embed_model = embed_model
+```
+
+## Cách sử dụng cơ bản
+
+```python
+response = llm.complete("Explain AI Sonar in one sentence.")
+print(response.text)
+```
+
+## Chat
+
+```python
+from llama_index.core.llms import ChatMessage
+
+messages = [
+    ChatMessage(role="system", content="You are a helpful assistant."),
+    ChatMessage(role="user", content="What is the capital of France?")
+]
+
+response = llm.chat(messages)
+print(response.message.content)
+```
+
+## Phát trực tuyến
+
+```python
+for chunk in llm.stream_complete("Write a short poem about AI."):
+    print(chunk.delta, end="", flush=True)
+```
+
+## Embeddings
+
+```python
+vector = embed_model.get_text_embedding("Hello, world!")
+print(vector[:5])
+```
+
+## RAG với tài liệu
+
+```python
+from llama_index.core import SimpleDirectoryReader, VectorStoreIndex
+
+documents = SimpleDirectoryReader("./data").load_data()
+index = VectorStoreIndex.from_documents(documents)
+
+query_engine = index.as_query_engine()
+response = query_engine.query("What is in my documents?")
+print(response)
+```
+
+## Chat Engine
+
+```python
+chat_engine = index.as_chat_engine(chat_mode="condense_question")
+
+response = chat_engine.chat("What is AI Sonar?")
+print(response)
+
+response = chat_engine.chat("How many models does it support?")
+print(response)
+```
+
+## Sử dụng bất đồng bộ
+
+```python
+import asyncio
+
+async def main():
+    response = await llm.acomplete("Hello!")
+    print(response.text)
+
+asyncio.run(main())
+```
+
+## Các phương pháp hay nhất
+
+<AccordionGroup>
+  <Accordion title="Sử dụng OpenAILike cho AI Sonar">
+    Ưu tiên `llama_index.llms.openai_like.OpenAILike` và `llama_index.embeddings.openai_like.OpenAILikeEmbedding` cho AI Sonar và các gateway tương thích OpenAI của bên thứ ba khác.
+  </Accordion>
+
+  <Accordion title="Thiết lập api_base một cách tường minh">
+    Truyền `api_base="https://api.aisonar.dev/v1"` trực tiếp trong mã thay vì phụ thuộc vào các tên biến môi trường OpenAI cũ hơn.
+  </Accordion>
+
+  <Accordion title="Giữ tách biệt vai trò của model">
+    Sử dụng các model chat/reasoning cho việc tổng hợp và `text-embedding-3-small` hoặc `text-embedding-3-large` cho truy xuất.
+  </Accordion>
+</AccordionGroup>

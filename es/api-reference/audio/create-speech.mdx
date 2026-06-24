@@ -1,0 +1,123 @@
+---
+title: "Crear voz"
+openapi: "POST /v1/audio/speech"
+description: "Genera audio a partir del texto de entrada"
+---
+
+## Cuerpo de la solicitud
+
+**Tiempo de espera de solicitudes síncronas:** este endpoint no-chat espera a que el modelo enrutado termine. Entradas grandes, audio largo o lotes grandes pueden superar los valores predeterminados habituales de 30s del cliente, así que configura el timeout de tu cliente HTTP en al menos `120s`.
+
+<ParamField body="model" type="string" default="tts-1">
+  Modelo TTS: `tts-1` (estándar) o `tts-1-hd` (mayor calidad).
+</ParamField>
+
+<ParamField body="input" type="string" required>
+  El texto para el que se generará audio. Máximo 4096 caracteres.
+</ParamField>
+
+<ParamField body="voice" type="string" required>
+  Voz a usar: `alloy`, `ash`, `ballad`, `coral`, `echo`, `fable`, `nova`, `onyx`, `sage`, `shimmer`, `verse`.
+</ParamField>
+
+<ParamField body="response_format" type="string" default="mp3">
+  Formato de audio: `mp3`, `opus`, `aac`, `flac`, `wav`, `pcm`.
+</ParamField>
+
+<ParamField body="speed" type="number" default="1.0">
+  Velocidad del audio (0.25 a 4.0).
+</ParamField>
+
+## Respuesta
+
+Devuelve el archivo de audio en el formato solicitado.
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/audio/speech" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "tts-1-hd",
+    "voice": "nova",
+    "input": "Hello, welcome to AI Sonar!"
+  }' \
+  --output speech.mp3
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.audio.speech.create(
+    model="tts-1-hd",
+    voice="nova",
+    input="Hello, welcome to AI Sonar!"
+)
+
+response.stream_to_file("speech.mp3")
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+import fs from 'fs';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.audio.speech.create({
+  model: 'tts-1-hd',
+  voice: 'nova',
+  input: 'Hello, welcome to AI Sonar!'
+});
+
+const buffer = Buffer.from(await response.arrayBuffer());
+fs.writeFileSync('speech.mp3', buffer);
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/audio/speech');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Content-Type: application/json',
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => json_encode([
+        'model' => 'tts-1-hd',
+        'voice' => 'nova',
+        'input' => 'Hello, welcome to AI Sonar!'
+    ])
+]);
+
+$audio = curl_exec($ch);
+curl_close($ch);
+
+file_put_contents('speech.mp3', $audio);
+```
+</RequestExample>
+
+## Muestras de voz
+
+| Voz | Descripción |
+|-------|-------------|
+| `alloy` | Neutral, equilibrada |
+| `ash` | Tranquila, medida |
+| `ballad` | Melódica, expresiva |
+| `coral` | Cálida, acogedora |
+| `echo` | Cálida, conversacional |
+| `fable` | Expresiva, narrativa |
+| `nova` | Amigable, clara |
+| `onyx` | Profunda, autoritaria |
+| `sage` | Sabia, reflexiva |
+| `shimmer` | Suave, delicada |
+| `verse` | Dinámica, versátil |

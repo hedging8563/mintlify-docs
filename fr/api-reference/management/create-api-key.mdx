@@ -1,0 +1,49 @@
+---
+title: "Créer une API Key"
+openapi: "POST /v1/management/api-keys"
+description: "Crée une nouvelle API Key utilisateur pour l’organisation courante."
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Vue d’ensemble
+
+Crée une nouvelle API Key `type=user` dans l’organisation associée au jeton de gestion courant.
+
+## Corps de la requête
+
+| Champ | Type | Valeurs par défaut / limites | Description |
+|------|------|------------------------------|-------------|
+| `name` | string | requis, valeur par défaut `Default Key`, longueur `1-50` | Nom affiché ; les espaces de début et de fin sont retirés côté serveur |
+| `limitAmount` | number \| null | min. `0`, entrée max. `1000000` | `null` ou omis = illimité, `0` = quota nul. Les valeurs positives sont normalisées vers un plafond stocké qui ne peut pas dépasser l’équivalent de `100000` USD. |
+| `limitCurrency` | enum | valeur par défaut `USD` | USD uniquement. L'envoi de `CNY` renvoie `400 currency_retired`. |
+| `models` | string[] | valeur par défaut `[]` | Liste d’autorisation optionnelle des modèles logiques |
+| `expiresAt` | string \| null | datetime RFC3339 | `null` signifie sans date d’expiration |
+
+## Notes
+
+- Les champs monétaires sont réservés au USD. Les entrées `CNY` sont obsolètes et renvoient `400 currency_retired`.
+
+- La valeur complète de l’API Key n’est affichée qu’une seule fois dans la réponse.
+- `models: []` signifie qu’aucune restriction supplémentaire n’est appliquée au-delà de la politique d’organisation.
+- `limitAmount: 0` crée une clé valide mais incapable de consommer du quota tant qu’elle n’est pas mise à jour.
+
+## Exemple
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/management/api-keys" \
+  -H "Authorization: Bearer mt-your-management-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Backend Worker",
+    "limitAmount": 500,
+    "models": ["veo3.1", "kling-3.0-video"],
+    "expiresAt": "2026-12-31T23:59:59Z"
+  }'
+```
+</RequestExample>
+
+## Requête / Réponse
+
+Utilisez le panneau OpenAPI interactif ci-dessus pour obtenir le schéma exact et les champs de réponse.

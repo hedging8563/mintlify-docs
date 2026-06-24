@@ -1,0 +1,142 @@
+---
+title: "API de gestion"
+description: "Gérez le solde d’organisation, les API Keys, ainsi que l’usage et la facturation par clé avec un jeton de gestion."
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Vue d’ensemble
+
+La Management API vous permet de récupérer les totaux de solde d’organisation, de gérer les API Keys d’organisation et de récupérer l’usage et la facturation d’une clé donnée sans utiliser de clé d’inférence standard.
+
+Utilisez un jeton de gestion depuis la page **Settings** de votre Dashboard :
+
+```bash
+Authorization: Bearer mt-your-management-token
+```
+
+<Warning>
+Les management tokens sont différents des API Keys d’inférence. Utilisez `mt-...` pour `/v1/management/*` et `sk-...` pour les endpoints de modèle comme `/v1/responses`.
+</Warning>
+
+## Endpoints disponibles
+
+| Point de terminaison | Méthode | Description |
+|----------|--------|-------------|
+| `/v1/management/balance` | GET | Récupère les totaux de solde actuels de l’organisation |
+| `/v1/management/api-keys` | GET | Liste les API Keys gérées par l’utilisateur dans l’organisation courante |
+| `/v1/management/api-keys` | POST | Crée une nouvelle API Key utilisateur |
+| `/v1/management/api-keys/{keyId}` | PATCH | Met à jour le nom, la limite d’usage, les modèles autorisés, l’expiration ou le statut |
+| `/v1/management/api-keys/{keyId}/usage` | GET | Récupère les détails d’usage paginés pour une clé donnée |
+| `/v1/management/api-keys/{keyId}/billing` | GET | Récupère les ventilations de facturation agrégées pour une clé donnée |
+
+## Contrat des filtres d’usage
+
+`GET /v1/management/api-keys/{keyId}/usage` prend en charge les paramètres de requête suivants :
+
+| Paramètre | Type | Valeurs par défaut / limites | Description |
+|-----------|------|------------------------------|-------------|
+| `page` | integer | défaut `1`, min. `1` | Numéro de page basé sur 1 |
+| `limit` | integer | défaut `50`, min. `1`, max. `100` | Taille de page |
+| `logicalModel` | string | longueur max. `100` | Nom du modèle logique demandé |
+| `modelVendor` | string | longueur max. `100` | Fournisseur public du modèle |
+| `scene` | enum | - | `chat`, `image`, `audio`, `video`, `embedding`, `rerank`, `translation`, `music`, `3d` |
+| `accessChannel` | enum | - | `platform` ou `byok` |
+| `startDate` | string | - | Borne inférieure incluse ; accepte RFC3339 avec fuseau horaire ou `YYYY-MM-DD` |
+| `endDate` | string | - | Borne supérieure incluse ; accepte RFC3339 avec fuseau horaire ou `YYYY-MM-DD` |
+
+Si `startDate` et `endDate` sont présents ensemble, `startDate` doit être inférieur ou égal à `endDate`.
+
+## Contrat du body API Key
+
+### POST /v1/management/api-keys
+
+| Champ | Type | Valeurs par défaut / limites | Description |
+|------|------|------------------------------|-------------|
+| `name` | string | requis, valeur par défaut `Default Key`, longueur `1-50` | Nom affiché ; les espaces de début et de fin sont retirés côté serveur |
+| `limitAmount` | number \| null | min. `0`, entrée max. `1000000` | `null` ou omis = illimité, `0` = quota nul. Les valeurs positives sont normalisées vers un plafond stocké qui ne peut pas dépasser l’équivalent de `100000` USD. |
+| `limitCurrency` | enum | valeur par défaut `USD` | USD uniquement. L'envoi de `CNY` renvoie `400 currency_retired`. |
+| `models` | string[] | valeur par défaut `[]` | Liste d’autorisation optionnelle des modèles logiques |
+| `expiresAt` | string \| null | datetime RFC3339 | `null` signifie sans date d’expiration |
+
+### PATCH /v1/management/api-keys/{keyId}
+
+| Champ | Type | Valeurs par défaut / limites | Description |
+|------|------|------------------------------|-------------|
+| `status` | enum | - | `active`, `inactive`, `suspended`, `revoked` |
+| `name` | string | longueur `1-50` | Nom affiché mis à jour |
+| `limitAmount` | number \| null | min. `0`, entrée max. `1000000` | `null` = illimité, `0` = quota nul. Les valeurs positives sont normalisées vers un plafond stocké qui ne peut pas dépasser l’équivalent de `100000` USD. |
+| `limitCurrency` | enum | valeur par défaut `USD` | USD uniquement. L'envoi de `CNY` renvoie `400 currency_retired`. |
+| `models` | string[] | - | Liste d’autorisation des modèles logiques mise à jour |
+| `expiresAt` | string \| null | datetime RFC3339 | `null` efface la date d’expiration |
+
+Au moins un champ doit être fourni dans la requête PATCH.
+
+## Contrat monétaire
+
+
+## Sémantique des rapports
+
+- `logicalModel` désigne le modèle logique public demandé par l’appelant.
+- `modelVendor` désigne le fournisseur public du modèle, et non la route physique cachée.
+- `scene` correspond à la scène publique de la requête, dérivée de l’endpoint ou du type de tâche.
+- `accessChannel=platform` signifie que la requête a été facturée via le canal plateforme de AI Sonar.
+- `accessChannel=byok` signifie que la requête a utilisé votre propre clé de fournisseur upstream.
+
+Les réponses n’exposent que des champs publics de facturation et de reporting. Les détails de routage interne et les métadonnées physiques restent masqués.
+- Les lignes `/usage` peuvent inclure `billing_transaction_id` une fois que la requête sous-jacente est réglée. Utilisez `request_id` + `billing_transaction_id` pour le rapprochement au niveau de la requête.
+
+## Note sur la pagination billing
+
+`/usage` est paginé. `/billing` est actuellement un endpoint de synthèse agrégée et ne renvoie pas de métadonnées de pagination de type `page` / `limit`. Pour des enregistrements ligne à ligne, utilisez `/usage`.
+
+## Exemple rapide
+
+Commencez par consulter le solde de l’organisation avec le jeton de gestion courant :
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/management/balance" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+Listez ensuite les API Keys disponibles pour ce même jeton de gestion :
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/management/api-keys" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response (200)
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "key_abc123def456",
+      "name": "Backend Worker",
+      "key_prefix": "sk-abc123...",
+      "status": "active",
+      "limit_amount": 500.0,
+      "used_amount": 148.25,
+      "models": ["gpt-4o-mini", "claude-3-7-sonnet"],
+      "expires_at": "2026-04-30T00:00:00.000Z",
+      "last_used_at": "2026-03-27T08:12:45.000Z",
+      "created_at": "2026-03-01T10:00:00.000Z"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## Étapes suivantes
+
+- [Obtenir le solde de l’organisation](/fr/api-reference/management/get-balance)
+- [Lister les API Keys](/fr/api-reference/management/list-api-keys)
+- [Créer une API Key](/fr/api-reference/management/create-api-key)
+- [Mettre à jour une API Key](/fr/api-reference/management/update-api-key)
+- [Obtenir l’usage d’une API Key](/fr/api-reference/management/get-api-key-usage)
+- [Obtenir la facturation d’une API Key](/fr/api-reference/management/get-api-key-billing)

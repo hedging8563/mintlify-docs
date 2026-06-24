@@ -1,0 +1,188 @@
+---
+title: "Gemini CLI"
+description: "AI Sonar API를 사용하도록 Google Gemini CLI 설정하기"
+---
+
+## 개요
+
+
+
+<Note>
+**유형**: 코딩 도구
+
+**주요 경로**: Gemini-native
+
+**지원 수준**: best-effort
+</Note>
+
+Google Gemini CLI는 Gemini 모델과 상호작용하기 위한 명령줄 도구입니다. AI Sonar는 수백 개의 모델에 액세스하여 Gemini CLI를 사용할 수 있도록 호환 가능한 엔드포인트를 제공합니다.
+
+
+<Warning>
+이 경로는 실험적 호환성에 가깝습니다. Gemini CLI는 현재 AI Sonar 같은 사용자 지정 Base URL 워크플로를 안정적인 방식으로 공식 문서화하지 않았습니다. 지원되는 AI Sonar 터미널 워크플로가 필요하면 Codex CLI, Claude Code, OpenCode를 우선 사용하세요.
+</Warning>
+
+## 시스템 요구 사항
+
+- **Node.js**: 버전 20.0+
+- **OS**: Windows 10/11, macOS 10.15+, Ubuntu 20.04+, 또는 Debian 10+
+
+## 설치
+
+```bash
+npm install -g @google/gemini-cli
+```
+
+설치 확인:
+
+```bash
+gemini --version
+```
+
+## 설정
+
+### 1단계: API 키 가져오기
+
+1. [AI Sonar 대시보드](https://console.aisonar.dev)에 로그인합니다.
+2. [API 키](https://console.aisonar.dev/api)로 이동합니다.
+3. API 키를 생성하고 복사합니다 (형식: `sk-...`).
+
+### 2단계: 환경 변수 설정
+
+**임시 (현재 세션):**
+
+```bash
+export GEMINI_API_KEY="sk-your-api-key"
+export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"
+```
+
+**영구 설정:**
+
+쉘 설정 파일에 추가합니다:
+
+<Tabs>
+  <Tab title="Bash">
+    ```bash
+    echo 'export GEMINI_API_KEY="sk-your-api-key"' >> ~/.bashrc
+    echo 'export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"' >> ~/.bashrc
+    source ~/.bashrc
+    ```
+  </Tab>
+  <Tab title="Zsh">
+    ```bash
+    echo 'export GEMINI_API_KEY="sk-your-api-key"' >> ~/.zshrc
+    echo 'export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"' >> ~/.zshrc
+    source ~/.zshrc
+    ```
+  </Tab>
+  <Tab title="Fish">
+    ```bash
+    set -Ux GEMINI_API_KEY "sk-your-api-key"
+    set -Ux GOOGLE_GEMINI_BASE_URL "https://api.aisonar.dev"
+    ```
+  </Tab>
+</Tabs>
+
+<Warning>
+설정 후 변경 사항을 적용하려면 터미널을 재시작하세요.
+</Warning>
+
+<Note>
+**알려진 제한 사항**: 경우에 따라 캐시된 Google 세션이 있으면 Gemini CLI가 `GOOGLE_GEMINI_BASE_URL`을 무시할 수 있습니다. 연결 문제가 발생하면 CLI 캐시를 지우거나 새 터미널 세션을 시작해 보세요.
+</Note>
+
+## 기본 사용법
+
+프로젝트 디렉토리에서 Gemini CLI를 시작합니다:
+
+```bash
+cd your-project
+gemini
+```
+
+처음 실행 시 다음을 수행합니다:
+1. 테마 선택
+2. 안전 고지 확인
+3. 작업 디렉토리 신뢰
+
+## 사용 가능한 모델
+
+| 모델 | 설명 |
+|-------|-------------|
+| `gemini-2.5-pro` | 가장 성능이 뛰어난 Gemini 모델 |
+| `gemini-2.5-flash` | 대부분의 작업에 빠르고 효율적임 |
+| `gemini-2.0-flash` | 이전 세대, 안정적임 |
+
+## 주요 명령
+
+**질문하기:**
+
+```
+> What is the best way to structure a React app?
+```
+
+**코드 분석:**
+
+```
+> Explain the code in src/main.ts
+```
+
+**코드 생성:**
+
+```
+> Create a Python function to parse JSON files
+```
+
+**변경 사항 검토:**
+
+```
+> Review the recent git changes and suggest improvements
+```
+
+## 설정 확인
+
+```bash
+# 환경 변수 확인
+echo $GEMINI_API_KEY
+echo $GOOGLE_GEMINI_BASE_URL
+
+# 연결 테스트
+gemini
+```
+
+## 문제 해결
+
+<AccordionGroup>
+  <Accordion title="연결 오류">
+    - `GOOGLE_GEMINI_BASE_URL`이 `https://api.aisonar.dev`로 설정되어 있는지 확인하세요.
+    - 참고: Gemini 엔드포인트에는 `/v1` 접미사가 없습니다.
+    - 네트워크 연결을 확인하세요.
+  </Accordion>
+
+  <Accordion title="인증 실패">
+    - `GEMINI_API_KEY` 환경 변수가 설정되어 있는지 확인하세요.
+    - 키가 `sk-`로 시작하는지 확인하세요.
+    - AI Sonar 대시보드에서 키가 활성 상태인지 확인하세요.
+  </Accordion>
+
+  <Accordion title="모델을 사용할 수 없음">
+    - [aisonar.dev/en/models](https://aisonar.dev/models)에서 Gemini 모델 가용성을 확인하세요.
+    - 다른 Gemini 모델 변형을 시도해 보세요.
+  </Accordion>
+</AccordionGroup>
+
+## 권장 사항
+
+<AccordionGroup>
+  <Accordion title="프로젝트 디렉토리에서 사용">
+    더 나은 컨텍스트 이해를 위해 항상 프로젝트 루트에서 Gemini CLI를 실행하세요.
+  </Accordion>
+
+  <Accordion title="디렉토리 신뢰 시 주의">
+    본인이 소유한 디렉토리만 신뢰하세요. Gemini CLI는 파일을 읽고 수정할 수 있습니다.
+  </Accordion>
+
+  <Accordion title="생성된 코드 검토">
+    프로젝트에 커밋하기 전에 항상 AI가 생성한 코드를 검토하세요.
+  </Accordion>
+</AccordionGroup>

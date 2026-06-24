@@ -1,0 +1,174 @@
+---
+title: "Tạo bản chép lời"
+openapi: "POST /v1/audio/transcriptions"
+description: "Chép lời audio sang ngôn ngữ đầu vào"
+---
+
+## Nội dung Request
+
+**Timeout cho yêu cầu đồng bộ:** endpoint không phải chat này chờ model được định tuyến hoàn tất. Input lớn, audio dài, hoặc batch lớn có thể vượt quá mặc định 30s phổ biến của client, vì vậy hãy đặt timeout của HTTP client ít nhất là `120s`.
+
+<ParamField body="file" type="file" required>
+  Tệp audio cần chép lời. Các định dạng được hỗ trợ: flac, mp3, mp4, mpeg, mpga, m4a, ogg, wav, webm.
+</ParamField>
+
+<ParamField body="model" type="string" default="whisper-1">
+  Model sẽ sử dụng. Hiện tại chỉ hỗ trợ `whisper-1`.
+</ParamField>
+
+<ParamField body="language" type="string">
+  Ngôn ngữ của audio theo định dạng ISO-639-1 (ví dụ: `en`, `zh`, `ja`).
+</ParamField>
+
+<ParamField body="prompt" type="string">
+  Văn bản tùy chọn để định hướng phong cách của model hoặc tiếp tục một đoạn trước đó.
+</ParamField>
+
+<ParamField body="response_format" type="string" default="json">
+  Định dạng đầu ra: `json`, `text`, `srt`, `verbose_json`, `vtt`.
+</ParamField>
+
+<ParamField body="temperature" type="number" default="0">
+  Nhiệt độ lấy mẫu (0 đến 1).
+</ParamField>
+
+<ParamField body="timestamp_granularities" type="array">
+  Độ chi tiết của dấu thời gian: `word` và/hoặc `segment`. Yêu cầu `verbose_json`.
+</ParamField>
+
+## Phản hồi
+
+<ResponseField name="text" type="string">
+  Văn bản đã được chép lời.
+</ResponseField>
+
+Đối với `verbose_json`:
+
+<ResponseField name="task" type="string">
+  Luôn là `transcribe`.
+</ResponseField>
+
+<ResponseField name="language" type="string">
+  Ngôn ngữ được phát hiện.
+</ResponseField>
+
+<ResponseField name="duration" type="number">
+  Thời lượng audio tính bằng giây.
+</ResponseField>
+
+<ResponseField name="segments" type="array">
+  Các đoạn chép lời kèm dấu thời gian.
+</ResponseField>
+
+<ResponseField name="words" type="array">
+  Dấu thời gian ở cấp độ từ (nếu được yêu cầu).
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/audio/transcriptions" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F file="@audio.mp3" \
+  -F model="whisper-1" \
+  -F language="en"
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+with open("audio.mp3", "rb") as audio_file:
+    response = client.audio.transcriptions.create(
+        model="whisper-1",
+        file=audio_file,
+        language="en"
+    )
+
+print(response.text)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+import fs from 'fs';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.audio.transcriptions.create({
+  model: 'whisper-1',
+  file: fs.createReadStream('audio.mp3'),
+  language: 'en'
+});
+
+console.log(response.text);
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/audio/transcriptions');
+
+$file = new CURLFile('audio.mp3', 'audio/mpeg', 'audio.mp3');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => [
+        'file' => $file,
+        'model' => 'whisper-1',
+        'language' => 'en'
+    ]
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+echo $data['text'];
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response (json)
+{
+  "text": "Hello, this is a test of the transcription API."
+}
+```
+
+```json Response (verbose_json)
+{
+  "task": "transcribe",
+  "language": "english",
+  "duration": 5.5,
+  "text": "Hello, this is a test of the transcription API.",
+  "segments": [
+    {
+      "id": 0,
+      "start": 0.0,
+      "end": 2.5,
+      "text": "Hello, this is a test",
+      "tokens": [...]
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## Dịch
+
+Để dịch audio sang tiếng Anh, hãy sử dụng endpoint translations:
+
+```python
+response = client.audio.translations.create(
+    model="whisper-1",
+    file=audio_file
+)
+```

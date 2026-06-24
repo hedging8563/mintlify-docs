@@ -1,0 +1,107 @@
+---
+title: "獲取模型"
+openapi: "GET /v1beta/models/{model}"
+description: "使用 Google Gemini API 格式獲取模型元數據"
+---
+
+以 Google Gemini API 格式傳回特定模型的元數據。
+
+## 路徑參數
+
+<ParamField path="model" type="string" required>
+  模型名稱（例如：`gemini-2.5-pro`、`gemini-2.5-flash`）。也支援別名。
+</ParamField>
+
+## 身分驗證
+
+公開模型元數據讀取端點不需要身分驗證。
+
+## 回應
+
+<ResponseField name="name" type="string">
+  `models/{model}` 格式的模型資源名稱。
+</ResponseField>
+
+<ResponseField name="displayName" type="string">
+  人類可讀的模型名稱。
+</ResponseField>
+
+<ResponseField name="inputTokenLimit" type="integer">
+  最大輸入 token 數（上下文視窗）。
+</ResponseField>
+
+<ResponseField name="outputTokenLimit" type="integer">
+  最大輸出 token 數。
+</ResponseField>
+
+<ResponseField name="supportedGenerationMethods" type="array">
+  支援的生成方法列表（例如：`generateContent`、`countTokens`、`embedContent`）。
+</ResponseField>
+
+<ResponseField name="version" type="string">
+  可用時的公開版本字串。
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  可用時的人類可讀模型描述。
+</ResponseField>
+
+<ResponseField name="temperature" type="number">
+  上游公開時的預設 temperature。
+</ResponseField>
+
+<ResponseField name="topP" type="number">
+  可用時的預設 top-p 值。
+</ResponseField>
+
+<ResponseField name="topK" type="integer">
+  可用時的預設 top-k 值。
+</ResponseField>
+
+<ResponseField name="maxTemperature" type="number">
+  可用時支援的最大 temperature。
+</ResponseField>
+
+## 錯誤
+
+- 如果 GET 請求錯誤地帶上了 `:generateContent` 或 `:streamGenerateContent`，會回傳 `405 METHOD_NOT_ALLOWED`。
+- 找不到模型時會回傳 `404 NOT_FOUND`。
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1beta/models/gemini-2.5-pro"
+```
+
+```python Python
+import google.generativeai as genai
+
+genai.configure(
+    api_key="sk-your-api-key",
+    transport="rest",
+    client_options={"api_endpoint": "api.aisonar.dev"}
+)
+
+model = genai.get_model("models/gemini-2.5-pro")
+print(f"Name: {model.name}")
+print(f"Input limit: {model.input_token_limit}")
+print(f"Output limit: {model.output_token_limit}")
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "name": "models/gemini-2.5-pro",
+  "version": "1.0",
+  "displayName": "gemini-2.5-pro",
+  "description": "gemini-2.5-pro model available via AI Sonar",
+  "inputTokenLimit": 1048576,
+  "outputTokenLimit": 65536,
+  "supportedGenerationMethods": ["generateContent", "countTokens"],
+  "temperature": 1.0,
+  "topP": 0.95,
+  "topK": 40,
+  "maxTemperature": 2.0
+}
+```
+</ResponseExample>

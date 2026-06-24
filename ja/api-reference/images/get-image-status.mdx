@@ -1,0 +1,168 @@
+---
+title: "画像ステータスの取得"
+openapi: "GET /v1/tasks/{id}"
+description: "非同期画像生成タスクのステータスと結果を取得します"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## パスパラメータ
+
+<ParamField path="id" type="string" required>
+  初期の画像生成リクエストから返されたタスクID。
+</ParamField>
+
+<Info>
+作成時のレスポンスに `poll_url` が含まれている場合は、そのURLを直接呼び出してポーリングすることをお勧めします。一部の画像タスクでは、画像固有のステータスパスではなく `/v1/tasks/{id}` の下に `poll_url` が表示される場合があります。
+
+`ldtask_...` のような公開画像タスク ID は `/v1/images/{id}` でもポーリングできます。この互換エイリアスは `/v1/images/generations/{id}` と同じ認証、所有権チェック、課金ヘッダー、終端スナップショット、レスポンス形式を使います。
+
+
+タスクが存在しないか、公開の async-task 契約ではこれ以上解決できない場合、AI Sonar はメッセージ `Task not found or no longer available.` とともに `async_task_not_found` を返します
+</Info>
+
+## レスポンス
+
+<ResponseField name="created" type="integer">
+  作成時のUnixタイムスタンプ。
+</ResponseField>
+
+<ResponseField name="task_id" type="string">
+  タスク識別子。
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  タスクのステータス: `pending`、`processing`、`completed`、または `failed`。
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  生成された画像の配列（`status` が `completed` の際に入力されます）。
+
+  各オブジェクトの内容:
+  - `url` (string): 生成された画像のURL
+  - `revised_prompt` (string): 生成に使用されたプロンプト
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  エラーメッセージ（`status` が `failed` の場合のみ存在）。
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+```python Python
+import requests
+
+response = requests.get(
+    "https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    headers={"Authorization": "Bearer sk-your-api-key"}
+)
+
+data = response.json()
+print(f"Status: {data['status']}")
+
+if data["status"] == "completed":
+    print(f"Image URL: {data['data'][0]['url']}")
+```
+
+```javascript JavaScript
+const response = await fetch(
+  'https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+  {
+    headers: {
+      'Authorization': 'Bearer sk-your-api-key'
+    }
+  }
+);
+
+const data = await response.json();
+console.log(`Status: ${data.status}`);
+
+if (data.status === 'completed') {
+  console.log(`Image URL: ${data.data[0].url}`);
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json 保留中
+{
+  "created": 1706000000,
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "pending",
+  "data": [
+    {
+      "url": "",
+      "revised_prompt": "a beautiful sunset over mountains"
+    }
+  ]
+}
+```
+
+```json 完了
+{
+  "created": 1706000000,
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "completed",
+  "data": [
+    {
+      "url": "https://cdn.example.com/generated/image-abc123.png",
+      "revised_prompt": "a beautiful sunset over mountains with vibrant orange and purple colors"
+    }
+  ]
+}
+```
+
+```json 失敗
+{
+  "created": 1706000000,
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "failed",
+  "error": "Content policy violation",
+  "data": []
+}
+```
+</ResponseExample>
+
+## ポーリングのベストプラクティス
+
+<Tip>
+**推奨されるポーリング間隔**: 3〜5秒。ほとんどの画像生成タスクは、モデルやルーティングされたプロバイダーのパスに応じて30〜120秒以内に完了します。
+</Tip>
+
+```python
+import requests
+import time
+
+def poll_image_task(task_id, api_key, max_wait=300, interval=3):
+    """タイムアウト付きで画像生成結果をポーリングします。"""
+    url = f"https://api.aisonar.dev/v1/tasks/{task_id}"
+    headers = {"Authorization": f"Bearer {api_key}"}
+
+    start_time = time.time()
+    while time.time() - start_time < max_wait:
+        response = requests.get(url, headers=headers)
+        data = response.json()
+
+        if data["status"] == "completed":
+            return data["data"][0]["url"]
+        elif data["status"] == "failed":
+            raise Exception(data.get("error", "Generation failed"))
+
+        time.sleep(interval)
+
+    raise TimeoutError(f"Task {task_id} did not complete within {max_wait}s")
+
+# 使用例
+image_url = poll_image_task("ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "sk-your-api-key")
+print(f"Generated image: {image_url}")
+```

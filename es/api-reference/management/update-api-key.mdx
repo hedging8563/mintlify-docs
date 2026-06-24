@@ -1,0 +1,47 @@
+---
+title: "Actualizar API Key"
+openapi: "PATCH /v1/management/api-keys/{keyId}"
+description: "Actualiza una API Key de usuario existente para la organización actual."
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Resumen
+
+Usa este endpoint para actualizar el nombre, el límite de uso, los modelos permitidos, la caducidad o el estado de una API Key existente.
+
+## Cuerpo de la solicitud
+
+Debe enviarse al menos un campo.
+
+| Campo | Tipo | Valor predeterminado / límites | Notas |
+|-------|------|-------------------------------|-------|
+| `status` | enum | - | `active`, `inactive`, `suspended`, `revoked` |
+| `name` | string | longitud `1-50` | Nombre visible actualizado |
+| `limitAmount` | number \| null | mínimo `0`, máximo de entrada `1000000` | `null` = ilimitado, `0` = cuota cero. Los valores positivos se normalizan a un límite almacenado que no puede superar `100000` USD equivalente. |
+| `limitCurrency` | enum | default `USD` | Solo USD. Enviar `CNY` devuelve `400 currency_retired`. |
+| `models` | string[] | - | Lista actualizada de modelos lógicos permitidos |
+| `expiresAt` | string \| null | datetime RFC3339 | `null` borra la caducidad |
+
+## Notas
+
+- La eliminación dura no está soportada a propósito en Management API v1.
+- `revoked` es un estado terminal para el uso operativo normal; crea una nueva clave en lugar de esperar un futuro flujo de reactivación.
+
+## Ejemplo
+
+<RequestExample>
+```bash cURL
+curl -X PATCH "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456" \
+  -H "Authorization: Bearer mt-your-management-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "inactive",
+    "limitAmount": 0
+  }'
+```
+</RequestExample>
+
+## Solicitud / Respuesta
+
+Usa el panel OpenAPI interactivo de arriba para ver el esquema exacto y los campos de respuesta.

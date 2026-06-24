@@ -1,0 +1,100 @@
+---
+title: "Cursor"
+description: "AI Sonar'yı Cursor AI kod editörü ile kullanın"
+---
+
+## Genel Bakış
+
+
+
+<Note>
+**Tür**: Kodlama aracı
+
+**Birincil yol**: OpenAI ile uyumlu
+
+**Destek seviyesi**: Sınırlı olarak desteklenir
+</Note>
+
+[Cursor](https://cursor.sh), bring-your-own-key (BYOK) sağlayıcılarını destekler, ancak özel API anahtarları yalnızca standart chat modelleriyle çalışır. AI Sonar'yı burada, chat tarzı editör iş akışları için OpenAI uyumlu bir uç nokta olarak kullanın; Cursor'daki her model özelliğinin tam bir yerine geçecek çözüm olarak değil.
+
+## Yapılandırma
+
+1. Cursor Ayarları'nı açın (`Cmd/Ctrl + ,`)
+2. Sol kenar çubuğunda **Models** bölümüne gidin
+3. **OpenAI API Key** bölümüne kadar aşağı kaydırın
+4. AI Sonar API anahtarınızı girin
+5. **Override OpenAI Base URL** seçeneğini etkinleştirin
+6. Base URL'yi şu şekilde ayarlayın:
+
+```
+https://api.aisonar.dev/v1
+```
+
+<Warning>
+Cursor özel API anahtarları yalnızca standart chat modelleri için geçerlidir. Tab Completion ve Cursor tarafından yönetilen diğer özelleşmiş özellikler, Cursor'un yerleşik sağlayıcılarını kullanmaya devam edecektir.
+</Warning>
+
+<Warning>
+Cursor’un özel API anahtarı akışı yalnızca standart chat modelleri için geçerlidir. Tab Completion ve bazı akıl yürütme odaklı akışlar gibi Cursor tarafından yönetilen özelleşmiş modeller gerektiren özellikler, Cursor’un yerleşik sağlayıcılarını kullanmaya devam edecektir. Cursor ayrıca, isteklerin son prompt oluşturma işlemi için yine de kendi backend'i üzerinden geçtiğini belirtir.
+</Warning>
+
+## Model Seçimi
+
+Yapılandırmadan sonra, AI Sonar üzerinden sunulan standart chat modellerini tercih edin:
+
+### Kodlama için Önerilen Modeller
+
+| Model | En Uygun Olduğu Alan |
+|-------|----------|
+| `gpt-5.4` | Genel kodlama, debugging, chat |
+| `gpt-5-mini` | Hızlı düzenlemeler ve hafif prompt'lar |
+
+## En İyi Çalışanlar
+
+### Chat ve editör akışları
+
+Cursor üzerinden AI Sonar'yı şunlar için kullanın:
+
+- Kod açıklamaları
+- Hata düzeltme
+- Refactoring önerileri
+- Dokümantasyon oluşturma
+
+### Cursor tarafından yönetilen modellerde kalanlar
+
+Bu özellikler AI Sonar endpoint'inize güvenilir şekilde geçmez:
+
+- Sekme Tamamlama
+- Özelleşmiş standart dışı chat modelleri
+- Cursor'un yalnızca yerleşik modellerde etkinleştirdiği sağlayıcıya özgü özellikler
+
+## Sorun Giderme
+
+<AccordionGroup>
+  <Accordion title="Modeller görünmüyor">
+    Cursor, model ve sağlayıcı durumunu önbelleğe alır. API anahtarını ve temel URL'yi yapılandırdıktan sonra Cursor'u yeniden başlatın.
+  </Accordion>
+
+  <Accordion title="BYOK modunda model desteklenmiyor">
+    Özel API anahtarları yalnızca standart chat modelleriyle çalışır. Bir model özelleşmiş Cursor altyapısı kullanıyorsa, `gpt-5.4` gibi standart bir chat modeline geçin.
+  </Accordion>
+
+  <Accordion title="Kimlik doğrulama hataları">
+    API anahtarınızın doğru olduğunu ve yeterli bakiyeye sahip olduğunu doğrulayın.
+  </Accordion>
+
+  <Accordion title="AI Sonar etkinleştirildikten sonra başka bir sağlayıcı çalışmayı durdurdu">
+    Cursor’un BYOK yapılandırması diğer sağlayıcı akışlarını etkileyebilir. OpenAI temel URL override özelliğini etkinleştirdikten sonra başka bir model yolu bozulursa, override'ı devre dışı bırakın ve Cursor'u yeniden başlatın.
+  </Accordion>
+</AccordionGroup>
+
+## İpuçları
+
+<CardGroup cols={2}>
+  <Card title="Uygun modelleri kullanın" icon="gauge-high">
+    Hızlı chat tarzı görevler için `gpt-5-mini`, daha ağır kodlama işleri için `gpt-5.4` kullanın.
+  </Card>
+  <Card title="Bakiyenizi kontrol edin" icon="wallet">
+    AI Sonar panelinizden kullanımı izleyin.
+  </Card>
+</CardGroup>

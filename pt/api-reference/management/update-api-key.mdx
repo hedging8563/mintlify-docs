@@ -1,0 +1,47 @@
+---
+title: "Atualizar API Key"
+openapi: "PATCH /v1/management/api-keys/{keyId}"
+description: "Atualiza uma API Key de usuário existente da organização atual."
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Visão geral
+
+Use este endpoint para atualizar nome, limite de uso, modelos permitidos, data de expiração ou status de uma API Key existente.
+
+## Corpo da requisição
+
+A requisição PATCH deve incluir pelo menos um campo.
+
+| Campo | Tipo | Padrões / limites | Descrição |
+|-------|------|-------------------|-----------|
+| `status` | enum | - | `active`, `inactive`, `suspended`, `revoked` |
+| `name` | string | tamanho `1-50` | Nome de exibição atualizado |
+| `limitAmount` | number \| null | mínimo `0`, máximo de entrada `1000000` | `null` = ilimitado, `0` = quota zero. Valores positivos são normalizados para um teto armazenado que não pode exceder `100000` USD equivalente. |
+| `limitCurrency` | enum | default `USD` | Apenas USD. Enviar `CNY` retorna `400 currency_retired`. |
+| `models` | string[] | - | Allowlist atualizada de modelos lógicos |
+| `expiresAt` | string \| null | datetime RFC3339 | `null` remove a expiração |
+
+## Observações
+
+- A exclusão definitiva não é suportada intencionalmente na Management API v1.
+- `revoked` costuma ser tratado como estado terminal; se você precisar usar outra chave, normalmente é melhor criar uma nova.
+
+## Exemplo
+
+<RequestExample>
+```bash cURL
+curl -X PATCH "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456" \
+  -H "Authorization: Bearer mt-your-management-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "inactive",
+    "limitAmount": 0
+  }'
+```
+</RequestExample>
+
+## Requisição / Resposta
+
+Consulte o painel interativo de OpenAPI acima para ver o schema exato e os campos da resposta.

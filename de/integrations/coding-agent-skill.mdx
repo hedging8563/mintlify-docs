@@ -1,0 +1,252 @@
+---
+title: "✨ AI Sonar API-Integrations-Skill"
+description: "Installieren Sie das gemeinsame AI Sonar API-Integrations-Skill für jeden Coding-Agenten, mit Agent-First-Fehlerbehebung."
+---
+
+<Note>
+Dieses Skill zeigt Ihrem Coding-Agenten, wie er die **Hunderte von KI-APIs** von AI Sonar integriert, indem Sie einfach beschreiben, was Sie benötigen. Es ist als gemeinsames agent-first Skill verpackt und funktioniert mit jedem Coding-Agenten, der Skill- oder Rules-Dateien unterstützt.
+
+Die API ist **[Agent-First](/guides/agent-first-api)** — selbst wenn der Agent einen Modellnamen falsch errät, sagt ihm die Fehlerantwort genau, wie er das Problem beheben kann.
+</Note>
+
+<Note>
+Diese Seite beschreibt eine wiederverwendbare Skill-Verpackungsschicht und keine Oberfläche für Protokollkompatibilität. Wenn Sie Endpunkt-, SDK- oder Client-Setup benötigen, verwenden Sie die dedizierten Integrationsseiten der jeweiligen Tools.
+</Note>
+
+## Wie es funktioniert
+
+1. **Sie beschreiben, was Sie benötigen** — "Ich möchte GPT-4 in meinem Python-Projekt verwenden"
+2. **Der Agent ruft die API auf** — er kann dabei einen Modellnamen oder Endpunkt erraten
+3. **Falls etwas schiefgeht** — gibt die API strukturierte Hinweise zurück (`did_you_mean`, `suggestions`, `retry_after`)
+4. **Der Agent korrigiert sich selbst** — liest die Hinweise und versucht es mit den richtigen Parametern erneut
+5. **Sie erhalten funktionierenden Code** — typischerweise beim ersten oder zweiten Versuch
+
+## Installation
+
+<Note>
+Verwenden Sie den kanonischen nicht-interaktiven Installationsbefehl:
+
+```bash
+npx skills add https://github.com/hedging8563/aisonar-skills --skill aisonar-api-integration -y
+```
+
+Dadurch wird das gemeinsame `aisonar-api-integration` Skill aus dem AI Sonar-Skills-Repository installiert.
+
+Falls Ihr Tool den Installer nicht unterstützt, kopieren Sie den Ordner `skills/aisonar-api-integration/` aus dem Repository in das Verzeichnis für gemeinsame Skills oder Rules Ihres Tools.
+</Note>
+
+### Installation überprüfen
+
+Fragen Sie Ihren Coding-Agenten:
+```
+Welche skills sind verfügbar?
+```
+
+Wenn Sie `aisonar-api-integration` sehen, war die Installation erfolgreich.
+
+## API Key abrufen
+
+<Steps>
+  <Step title="AI Sonar besuchen">
+    Gehen Sie zu [aisonar.dev](https://aisonar.dev)
+  </Step>
+  <Step title="Anmelden">
+    Erstellen Sie ein Konto oder melden Sie sich an
+  </Step>
+  <Step title="API Key abrufen">
+    Navigieren Sie zu [Dashboard → API Keys](https://console.aisonar.dev/api) und erstellen Sie einen neuen Key
+  </Step>
+  <Step title="Key kopieren">
+    Ihr Key beginnt mit `sk-...` — speichern Sie ihn sicher
+  </Step>
+</Steps>
+
+<Tip>
+Sie müssen keinen API-Key in Prompts oder Quelldateien einfügen. Der Skill sollte nach der gewünschten Umgebungsvariable fragen und Code erzeugen, der den Key daraus liest.
+</Tip>
+
+## Beispiele
+
+### Chat Completion
+
+**Sie sagen:**
+```
+Ich möchte GPT-4 in meinem Python-Projekt verwenden
+```
+
+**Der Agent generiert:**
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["TOKENLAB_API_KEY"],
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+
+print(response.choices[0].message.content)
+```
+
+Ausführen mit:
+
+```bash
+export TOKENLAB_API_KEY="sk-your-api-key"
+python app.py
+```
+
+Wenn der Agent einen falschen Modellnamen errät (z. B. `gpt5`), gibt die API Folgendes zurück:
+```json
+{
+  "error": {
+    "code": "model_not_found",
+    "did_you_mean": "gpt-5.4",
+    "suggestions": [{"id": "gpt-5.4"}, {"id": "gpt-5-mini"}],
+    "hint": "Did you mean 'gpt-5.4'? Use GET https://api.aisonar.dev/v1/models to list all available models."
+  }
+}
+```
+
+Der Agent liest `did_you_mean`, korrigiert den Modellnamen und versucht es erneut — alles automatisch.
+
+### Bildgenerierung
+
+**Sie sagen:**
+```
+Generate images with Flux in Node.js
+```
+
+Der Agent ruft die Bild-API auf, verarbeitet Fehler und generiert vollständigen Code mit Logik zum Herunterladen und Speichern.
+
+### Spracherkennung
+
+**Sie sagen:**
+```
+Integrate speech-to-text in my app
+```
+
+Der Agent generiert Code mit dem korrekten Endpunkt `/v1/audio/transcriptions` und der Handhabung von Audiodateien.
+
+## Agent-First-Fehlerbehebung
+
+Jede Fehlerantwort enthält strukturierte Hinweise, die jeder Coding-Agent parsen kann. Details finden Sie in der [vollständigen Agent-First API-Referenz](/guides/agent-first-api).
+
+| Fehler | Was die API zurückgibt | Was der Agent tut |
+|-------|---------------------|---------------------|
+| Falscher Modellname | `did_you_mean` + `suggestions` | Korrigiert automatisch und versucht es erneut |
+| Unzureichendes Guthaben | `balance_usd` + günstigere `suggestions` | Wechselt zu einem bezahlbaren Modell |
+| Modell nicht verfügbar | `alternatives` + `retry_after` | Wechselt zu einem verfügbaren Modell |
+| Rate limitiert | `retry_after` (genaue Sekunden) | Wartet und versucht es erneut |
+| Kontext zu lang | `suggestions` mit größeren Modellen | Wechselt zu einem Modell mit größerem Kontext |
+| Vertragskonflikt bei Nicht-Chat-Anfrage | `supported_operations`, `supported_parameters`, `request_endpoint`, `recommended_request` | Baut die Anfrage aus dem öffentlichen Modellvertrag neu auf |
+
+### Native Endpunkt-Optimierung
+
+Wenn Sie `/v1/chat/completions` mit einem Claude- oder Gemini-Modell aufrufen, gibt die API Optimierungs-Header zurück:
+
+
+
+Behandeln Sie diese Header als Routing-Hinweise, nicht als erzwungenen automatischen Wechsel. Native Claude-Aufrufe verwenden `/v1/messages`; native Gemini-Aufrufe sollten dem von the native endpoint hint header angegebenen Endpoint folgen, häufig `/v1beta/gemini`.
+
+### Modellsuche
+
+Sie müssen die Dokumentation nicht durchsuchen:
+
+```bash
+# Maschinenlesbare API-Übersicht
+curl https://api.aisonar.dev/llms.txt
+
+# List models by category
+curl "https://api.aisonar.dev/v1/models?category=chat" -H "Authorization: Bearer sk-KEY"
+curl "https://api.aisonar.dev/v1/models?category=image" -H "Authorization: Bearer sk-KEY"
+
+# Empfohlene Shortlist für Nicht-Chat-Szenarien
+curl "https://api.aisonar.dev/v1/models?recommended_for=image" -H "Authorization: Bearer sk-KEY"
+curl "https://api.aisonar.dev/v1/models?recommended_for=translation" -H "Authorization: Bearer sk-KEY"
+
+# Vor einem erneuten Nicht-Chat-Versuch den öffentlichen Vertrag eines Modells lesen
+curl "https://api.aisonar.dev/v1/models/gpt-image-2" -H "Authorization: Bearer sk-KEY"
+
+# Nach Fähigkeit filtern
+curl "https://api.aisonar.dev/v1/models?tag=coding" -H "Authorization: Bearer sk-KEY"
+```
+
+## Unterstützte Fähigkeiten
+
+| Typ | Beispiele |
+|------|----------|
+| Chat | GPT-5.4, Claude, Gemini, DeepSeek |
+| Bildgenerierung | GPT Image, Flux, Stable Diffusion, Gemini-Bildmodelle |
+| Musikgenerierung | Suno |
+| 3D-Modelle | Tripo3D |
+| Audio | Text-zu-Sprache, Sprache-zu-Text |
+| Einbettungen | text-embedding-3 |
+| Rerank | bce-reranker, qwen3-rerank |
+
+## Bewährte Praktiken
+
+<CardGroup cols={2}>
+  <Card title="API-Key-Sicherheit" icon="shield">
+    Verwenden Sie Umgebungsvariablen. Committen Sie Keys niemals in git und legen Sie sie nicht in Frontend-Code offen.
+  </Card>
+  <Card title="Kostenmanagement" icon="wallet">
+    Legen Sie Nutzungslimits in Ihrem [Dashboard](https://console.aisonar.dev) fest. Prüfen Sie `error.balance_usd`, um Kosten programmatisch zu überwachen.
+  </Card>
+  <Card title="Seien Sie direkt" icon="bullseye">
+    Sagen Sie "Ich möchte Bilder in Python generieren" statt "Hat AI Sonar eine Bild-API?"
+  </Card>
+  <Card title="Beschreiben Sie Ihr Szenario" icon="message">
+    "Ich entwickle einen Chatbot mit GPT-4" gibt dem Agenten mehr Kontext als "Verwende GPT-4".
+  </Card>
+</CardGroup>
+
+## FAQ
+
+<AccordionGroup>
+  <Accordion title="Skill wird nicht automatisch ausgelöst?">
+    Versuchen Sie, in Ihrer Anfrage "AI Sonar" oder "AI Sonar API" zu erwähnen:
+    ```
+    Ich möchte GPT-4 mit AI Sonar in mein Projekt integrieren
+    ```
+  </Accordion>
+
+  <Accordion title="Wie hilft die API dem Agenten, das richtige Modell zu finden?">
+    Die [Agent-First API](/guides/agent-first-api) von AI Sonar gibt strukturierte Fehlerhinweise zurück. Wenn der Agent einen falschen Modellnamen errät, enthält der Fehler `did_you_mean` mit dem korrekten Namen und `suggestions` mit Alternativen. Der Agent liest diese und korrigiert sich beim nächsten Versuch automatisch.
+  </Accordion>
+
+  <Accordion title="Welche Coding-Agenten werden unterstützt?">
+    Jeder Coding-Agent, der gemeinsame Skill- oder Rules-Verzeichnisse unterstützt. Wenn der Installer unterstützt wird, platziert `npx skills add` das gemeinsame `aisonar-api-integration` Skill automatisch am erkannten Speicherort.
+  </Accordion>
+
+  <Accordion title="Wie aktualisiert man das Skill?">
+    Führen Sie den Installer erneut aus:
+    ```bash
+    npx skills add https://github.com/hedging8563/aisonar-skills --skill aisonar-api-integration -y
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Ressourcen
+
+<CardGroup cols={2}>
+  <Card title="Agent-First API" icon="robot" href="/de/guides/agent-first-api">
+    Vollständige Referenz für strukturierte Fehlerhinweise
+  </Card>
+  <Card title="API-Dokumentation" icon="book" href="https://docs.aisonar.dev">
+    Vollständige API-Referenz
+  </Card>
+  <Card title="Modelle" icon="sparkles" href="https://aisonar.dev/models">
+    Durchsuchen Sie Hunderte verfügbare Modelle
+  </Card>
+  <Card title="llms.txt" icon="file-lines" href="https://api.aisonar.dev/llms.txt">
+    Maschinenlesbare API-Übersicht für AI-Agenten
+  </Card>
+</CardGroup>
+
+<Info>
+**Haben Sie Fragen?** Schauen Sie in unsere [GitHub Issues](https://github.com/hedging8563/aisonar-skills/issues) oder kontaktieren Sie [support@aisonar.dev](mailto:support@aisonar.dev)
+</Info>

@@ -1,0 +1,53 @@
+---
+title: "Subir Archivo"
+openapi: "POST /v1/files"
+description: "Sube un archivo de entrada en formato JSONL para su posterior creación por lotes."
+---
+
+## Descripción General
+
+Este endpoint es parte de la API por lotes compatible con OpenAI de AI Sonar. Los trabajos por lotes utilizan archivos JSONL subidos, se ejecutan de manera asíncrona y pueden devolver archivos de salida/error más tarde.
+
+## Notas
+
+- Los archivos de entrada por lotes deben usar `purpose=batch`.
+- `completion_window` es actualmente `24h`.
+- El orden de salida no está garantizado; siempre coincida por `custom_id`.
+- La transmisión no es compatible dentro de los elementos por lotes.
+
+## Ejemplo
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/files" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F "purpose=batch" \
+  -F "file=@batch-input.jsonl;type=application/jsonl"
+```
+</RequestExample>
+
+## Solicitud / Respuesta
+
+Utilice el panel interactivo de OpenAPI arriba para el esquema exacto.
+
+## Consejos Operativos
+
+- Use `custom_id` para la reconciliación idempotente en downstream.
+- Espere `output_file_id` y `error_file_id` solo después de que el trabajador finalice el lote.
+- Los precios por lotes pueden diferir de los precios sincrónicos porque se aplican las reglas de descuento de `isBatchRequest=true`.
+## Entradas de archivos de imagen
+
+La misma ruta `/v1/files` también puede subir archivos de imagen de referencia para `/v1/images/edits`.
+
+- Usa `purpose=user_data` o `purpose=vision`.
+- Incluye opcionalmente `model` para seleccionar el modelo de edición de imágenes; el valor predeterminado es `gpt-image-2`.
+- El `file_id` devuelto se vincula al canal upstream de edición de imágenes seleccionado y puede reutilizarse en `images[].file_id`.
+
+## Modo Anthropic Files API
+
+Esta misma ruta `/v1/files` también admite la ruta de Anthropic Files API.
+
+- Añade el encabezado `anthropic-beta: files-api-2025-04-14` para cambiar al modo Anthropic.
+- En modo Anthropic, sube el archivo original directamente y no envíes `purpose=batch`.
+- El `file_id` devuelto queda vinculado al mismo canal/workspace oficial de Anthropic y debe reutilizarse en las solicitudes `/v1/messages`.
+- Si vas a referenciar ese archivo desde el contenido de un mensaje Anthropic, sigue usando los encabezados nativos de Anthropic (`x-api-key`, `anthropic-version` y, cuando haga falta, el beta header).

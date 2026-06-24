@@ -1,0 +1,198 @@
+---
+title: "Dapatkan Status Musik"
+openapi: "GET /v1/tasks/{id}"
+description: "Mengambil status dan hasil dari tugas pembuatan musik"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+Lakukan polling pada endpoint ini untuk memeriksa status tugas pembuatan musik Anda.
+
+<Info>
+Jika respons create menyertakan `poll_url`, prioritaskan URL tersebut saat melakukan polling. `id` dan `task_id` harus diperlakukan sebagai identitas tugas asinkron yang sama.
+
+
+Jika tugas tidak lagi ada atau tidak dapat lagi diselesaikan melalui kontrak async-task publik, AI Sonar mengembalikan `async_task_not_found` dengan pesan `Task not found or no longer available.`
+</Info>
+
+## Parameter Path
+
+<ParamField path="id" type="string" required>
+  ID tugas pembuatan musik.
+</ParamField>
+
+## Respons
+
+<ResponseField name="id" type="string">
+  ID tugas.
+</ResponseField>
+
+<ResponseField name="task_id" type="string">
+  Alias identifier tugas asinkron ketika tersedia.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Status tugas: `pending`, `processing`, `completed`, atau `failed`.
+</ResponseField>
+
+<ResponseField name="progress" type="integer">
+  Persentase progres (0-100).
+</ResponseField>
+
+<ResponseField name="audio_url" type="string">
+  URL untuk mengunduh file audio (saat selesai).
+</ResponseField>
+
+<ResponseField name="video_url" type="string">
+  URL ke versi video dengan visualizer (saat selesai).
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  Judul lagu yang dihasilkan.
+</ResponseField>
+
+<ResponseField name="lyrics" type="string">
+  Lirik yang dihasilkan atau disediakan.
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  Pesan kesalahan (saat gagal).
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+```python Python
+import requests
+import time
+
+task_id = "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+
+while True:
+    response = requests.get(
+        f"https://api.aisonar.dev/v1/tasks/{task_id}",
+        headers={"Authorization": "Bearer sk-your-api-key"}
+    )
+    result = response.json()
+
+    if result["status"] == "completed":
+        print(f"Audio URL: {result['audio_url']}")
+        break
+    elif result["status"] == "failed":
+        print(f"Error: {result['error']}")
+        break
+
+    time.sleep(5)  # Polling setiap 5 detik
+```
+
+```javascript JavaScript
+const taskId = 'ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+
+async function pollForMusic() {
+  while (true) {
+    const response = await fetch(
+      `https://api.aisonar.dev/v1/tasks/${taskId}`,
+      { headers: { 'Authorization': 'Bearer sk-your-api-key' } }
+    );
+
+    const result = await response.json();
+
+    if (result.status === 'completed') {
+      console.log(`Audio URL: ${result.audio_url}`);
+      return result.audio_url;
+    } else if (result.status === 'failed') {
+      throw new Error(result.error);
+    }
+
+    await new Promise(r => setTimeout(r, 5000));
+  }
+}
+```
+
+```go Go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "net/http"
+    "time"
+)
+
+func main() {
+    taskID := "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+
+    for {
+        req, _ := http.NewRequest("GET",
+            fmt.Sprintf("https://api.aisonar.dev/v1/tasks/%s", taskID), nil)
+        req.Header.Set("Authorization", "Bearer sk-your-api-key")
+
+        client := &http.Client{}
+        resp, _ := client.Do(req)
+
+        var result map[string]interface{}
+        json.NewDecoder(resp.Body).Decode(&result)
+        resp.Body.Close()
+
+        if result["status"] == "completed" {
+            fmt.Printf("Audio URL: %s\n", result["audio_url"])
+            break
+        } else if result["status"] == "failed" {
+            fmt.Printf("Error: %s\n", result["error"])
+            break
+        }
+
+        time.Sleep(5 * time.Second)
+    }
+}
+```
+
+```php PHP
+<?php
+$taskId = 'ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+
+while (true) {
+    $ch = curl_init("https://api.aisonar.dev/v1/tasks/{$taskId}");
+
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            'Authorization: Bearer sk-your-api-key'
+        ]
+    ]);
+
+    $response = curl_exec($ch);
+    curl_close($ch);
+
+    $result = json_decode($response, true);
+
+    if ($result['status'] === 'completed') {
+        echo "Audio URL: {$result['audio_url']}\n";
+        break;
+    } elseif ($result['status'] === 'failed') {
+        echo "Error: {$result['error']}\n";
+        break;
+    }
+
+    sleep(5);
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json Respons (Selesai)
+{
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "completed",
+  "audio_url": "https://cdn.suno.ai/abc123.mp3",
+  "video_url": "https://cdn.suno.ai/abc123.mp4",
+  "title": "Night Drive",
+  "lyrics": "[Verse 1]\nDriving through the night..."
+}
+```
+</ResponseExample>

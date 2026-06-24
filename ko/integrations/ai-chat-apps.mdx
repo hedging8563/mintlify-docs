@@ -1,0 +1,168 @@
+---
+title: "AI 채팅 애플리케이션"
+description: "AI Sonar의 OpenAI 호환 API를 사용하도록 널리 사용되는 AI 채팅 애플리케이션을 구성합니다"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## 개요
+
+대부분의 일반 AI 채팅 앱은 표준 OpenAI 호환 채팅 경로를 통해 AI Sonar에 연결됩니다.
+
+실제로 이는 다음을 의미합니다:
+- 앱이 전체 엔드포인트 URL을 명시적으로 요구하지 않는 한 베이스 URL로 `https://api.aisonar.dev/v1`을 사용합니다
+- OpenAI 스타일 API key로 AI Sonar API 키를 사용합니다
+- 앱이 표준 채팅 흐름에서 사용할 수 있는 모델을 선택합니다
+
+<Note>
+일반 채팅 앱은 보통 **chat-completions 지향적**이며, Codex Responses WebSocket 클라이언트가 아닙니다. Responses 전용 동작이 필요한 Codex CLI/App, Cursor 또는 기타 코딩 도구의 경우, 대신 전용 통합 가이드를 사용하세요.
+</Note>
+
+<Note>
+**유형**: 채팅 앱
+
+**주요 경로**: OpenAI 호환 chat-completions 경로
+
+**지원 수준**: 지원 경로
+</Note>
+
+## 지원되는 애플리케이션
+
+| 애플리케이션 | 플랫폼 | 비고 |
+|-------------|----------|-------|
+| Open WebUI | Web, 자체 호스팅 | 인기 있는 자체 호스팅 클라이언트, OpenAI 호환 연결 지원 |
+| LibreChat | Web, 자체 호스팅 | 커스텀 OpenAI 엔드포인트를 지원하는 다중 제공자 채팅 UI |
+| LobeChat | Web, Desktop, 자체 호스팅 | 강력한 커스텀 제공자 지원 |
+| Cherry Studio | Windows, macOS, Linux | 우수한 OpenAI 호환 제공자 흐름 |
+| Chatbox | Windows, macOS, Linux | 간단한 OpenAI 호환 설정 |
+| TypingMind | Web, Desktop | 커스텀 엔드포인트 스타일 사용 |
+| NextChat | Web, 자체 호스팅 | 베이스 URL 재정의를 지원하는 가벼운 ChatGPT 스타일 클라이언트 |
+| ChatWise | Windows, macOS | 표준 커스텀 제공자 패턴 |
+
+## 기본 연결 값
+
+| 항목 | 값 |
+|-------|-------|
+| 기본 URL | `https://api.aisonar.dev/v1` |
+| API 키 | `sk-your-api-key` |
+| API 유형 | OpenAI 호환 |
+
+앱이 베이스 URL 대신 **전체 엔드포인트 URL**을 요청하는 경우 다음을 사용하세요:
+- Chat Completions: `https://api.aisonar.dev/v1/chat/completions`
+
+## 예시 앱 설정
+
+<Tabs>
+  <Tab title="LobeChat">
+    **자체 호스팅 LobeChat**
+
+    ```bash
+    OPENAI_API_KEY=sk-your-api-key
+    OPENAI_PROXY_URL=https://api.aisonar.dev/v1
+    ```
+
+    **LobeChat Cloud**
+    1. **Settings** → **AI 서비스 제공자**를 엽니다
+    2. **OpenAI**를 선택합니다
+    3. AI Sonar API 키를 입력합니다
+    4. 커스텀 엔드포인트를 `https://api.aisonar.dev/v1`로 설정합니다
+  </Tab>
+
+  <Tab title="Cherry Studio">
+    1. **Settings** → **모델 제공자**를 엽니다
+    2. **OpenAI 호환** 제공자를 추가합니다
+    3. 다음을 입력합니다:
+       - **Name**: AI Sonar
+       - **API Base URL**: `https://api.aisonar.dev/v1`
+       - **API Key**: `sk-your-api-key`
+    4. 사용하려는 모델을 추가합니다
+  </Tab>
+
+  <Tab title="Chatbox">
+    1. **Settings** → **AI Model**을 엽니다
+    2. **OpenAI API Compatible**를 선택합니다
+    3. 다음을 입력합니다:
+       - **API Host**: `https://api.aisonar.dev/v1`
+       - **API Key**: `sk-your-api-key`
+       - **Model**: `gpt-5-mini` 또는 `gpt-4o`
+  </Tab>
+
+  <Tab title="TypingMind">
+    1. **Settings**를 엽니다
+    2. **커스텀 엔드포인트**를 선택합니다
+    3. 다음을 입력합니다:
+       - **엔드포인트 URL**: `https://api.aisonar.dev/v1/chat/completions`
+       - **API Key**: `sk-your-api-key`
+    4. 노출하려는 모델을 구성합니다
+  </Tab>
+
+  <Tab title="Open WebUI">
+    1. **Admin Settings** → **Connections**를 엽니다
+    2. **OpenAI 호환** 연결을 추가합니다
+    3. 다음을 입력합니다:
+       - **Base URL**: `https://api.aisonar.dev/v1`
+       - **API Key**: `sk-your-api-key`
+    4. 저장한 뒤 노출할 모델을 선택합니다
+  </Tab>
+
+  <Tab title="LibreChat">
+    LibreChat의 제공자 설정에 OpenAI 호환 엔드포인트를 추가하고 다음을 지정합니다:
+
+    ```yaml
+    customEndpoints:
+      - name: AI Sonar
+        apiKey: '${OPENAI_API_KEY}'
+        baseURL: 'https://api.aisonar.dev/v1'
+        models:
+          default: ['gpt-5-mini', 'gpt-5.4', 'claude-sonnet-4-6']
+          fetch: false
+    ```
+  </Tab>
+</Tabs>
+
+## 더 안전한 기본 모델
+
+| 범주 | 권장 모델 |
+|----------|------------------|
+| 일반 기본값 | `gpt-5.4`, `gpt-5-mini`, `gpt-4o` |
+| Anthropic | `claude-sonnet-4-6`, `claude-opus-4-6` |
+| Google | `gemini-2.5-flash`, `gemini-2.5-pro` |
+| DeepSeek | `deepseek-r1`, `deepseek-v3-2` |
+
+## 팁
+
+<AccordionGroup>
+  <Accordion title="앱이 지원하면 베이스 URL을 우선 사용하세요">
+    대부분의 앱은 전체 엔드포인트 URL 대신 `https://api.aisonar.dev/v1`을 베이스 URL로 제공할 때 더 쉽게 구성할 수 있고 더 안정적으로 동작합니다.
+  </Accordion>
+
+  <Accordion title="먼저 더 작은 모델을 사용하세요">
+    일상적인 채팅에는 `gpt-5-mini` 또는 `gpt-4o`로 시작한 다음, 더 무거운 추론 작업은 `gpt-5.4` 또는 `claude-opus-4-6`로 옮기세요.
+  </Accordion>
+
+  <Accordion title="코딩 도구는 분리해서 유지하세요">
+    일반 채팅 앱과 코딩 에이전트는 종종 서로 다른 엔드포인트 동작이 필요합니다. Codex/Cursor 스타일 도구는 해당 전용 통합 페이지에서 유지하세요.
+  </Accordion>
+</AccordionGroup>
+
+## 문제 해결
+
+<AccordionGroup>
+  <Accordion title="연결 오류">
+    - 베이스 URL이 정확히 `https://api.aisonar.dev/v1`인지 확인하세요
+    - 앱이 경로를 자동으로 추가하는 경우 후행 슬래시를 제거하세요
+    - 앱이 전체 엔드포인트 URL을 원하는 경우 `https://api.aisonar.dev/v1/chat/completions`를 사용하세요
+  </Accordion>
+
+  <Accordion title="401 Unauthorized">
+    - API 키를 다시 확인하세요
+    - AI Sonar dashboard에서 키가 활성 상태인지 확인하세요
+    - 불필요한 공백이나 줄바꿈이 없는지 확인하세요
+  </Accordion>
+
+  <Accordion title="모델을 사용할 수 없음">
+    - 모델 이름이 정확한지 확인하세요
+    - `gpt-5-mini`, `gpt-4o` 또는 `claude-sonnet-4-6` 같은 널리 지원되는 기본 모델을 시도하세요
+    - AI Sonar 문서 또는 대시보드에서 현재 사용 가능 여부를 확인하세요
+  </Accordion>
+</AccordionGroup>

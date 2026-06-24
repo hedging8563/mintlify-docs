@@ -1,0 +1,44 @@
+---
+title: "API anahtarı kullanımını getir"
+openapi: "GET /v1/management/api-keys/{keyId}/usage"
+description: "Bir kullanıcı API anahtarı için sayfalanmış kullanım ayrıntılarını döndürür."
+---
+
+## Genel bakış
+
+Bu endpoint, fiziksel yönlendirme metadatasını açığa çıkarmadan API anahtarı düzeyinde kullanım ayrıntılarını döndürür.
+
+## Sorgu parametreleri
+
+| Parametre | Tür | Varsayılan / sınırlar | Açıklama |
+|-----------|-----|-----------------------|----------|
+| `page` | integer | varsayılan `1`, minimum `1` | 1’den başlayan sayfa numarası |
+| `limit` | integer | varsayılan `50`, minimum `1`, maksimum `100` | Sayfa boyutu |
+| `logicalModel` | string | maksimum uzunluk `100` | İstenen mantıksal model adı |
+| `modelVendor` | string | maksimum uzunluk `100` | Herkese açık model sağlayıcısı |
+| `scene` | enum | - | `chat`, `image`, `audio`, `video`, `embedding`, `rerank`, `translation`, `music`, `3d` |
+| `accessChannel` | enum | - | `platform` veya `byok` |
+| `startDate` | string | - | Dahil alt sınır; zaman dilimli RFC3339 veya `YYYY-MM-DD` kabul eder |
+| `endDate` | string | - | Dahil üst sınır; zaman dilimli RFC3339 veya `YYYY-MM-DD` kabul eder |
+
+`startDate` ve `endDate` birlikte gönderilirse `startDate`, `endDate` değerinden erken veya eşit olmalıdır.
+
+## Notlar
+
+- Yanıt sayfalanmıştır.
+- Yanıt yalnızca herkese açık faturalama ve raporlama alanlarını içerir.
+- Her usage kaydı, alttaki istek mutabakatı tamamlandıktan sonra `billing_transaction_id` da içerebilir. İstek düzeyinde mutabakat için bunu `request_id` ile birlikte kullanın.
+- Dahili yönlendirme ve fiziksel kanal metadatası kasıtlı olarak gizlenir.
+
+## Örnek
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/usage?page=1&limit=20&scene=video&accessChannel=platform&startDate=2026-03-01&endDate=2026-03-31" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## İstek / Yanıt
+
+Kesin şema ve yanıt alanları için yukarıdaki etkileşimli OpenAPI panelini kullanın.

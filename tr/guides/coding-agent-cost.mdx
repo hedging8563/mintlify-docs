@@ -1,0 +1,133 @@
+---
+title: "Coding Agent Maliyet Optimizasyonu"
+description: "Coding Agent API maliyetlerini %60-90 azaltmak için pratik stratejiler"
+---
+
+## Maliyet Sorunu
+
+Tipik bir coding agent oturumu token'ları hızla tüketir:
+
+| Aktivite | Çağrı başına token | Saatlik çağrı | Saatlik token |
+|----------|-------------------|---------------|---------------|
+| Kod üretimi | 5.000–50.000 | 10–30 | 150K–1,5M |
+| Kod tabanı araması | 2.000–20.000 | 20–50 | 100K–1M |
+| Kod incelemesi | 10.000–80.000 | 5–10 | 100K–800K |
+| Otomatik tamamlama | 500–3.000 | 50–200 | 50K–600K |
+| **Toplam** | | | **400K–4M+** |
+
+Premium model tarifelerinde geliştirici başına saatte $3–30. 10 kişilik ekip için aylık $500–5.000.
+
+## Akıllı Model Seçimi
+
+| Görev | Önerilen | Maliyet seviyesi | Neden |
+|-------|---------|-----------------|-------|
+| Mimari tasarım | `claude-opus-4-6`, `gpt-5.4` | $$$$ Premium | Karmaşık muhakeme gerekli |
+| Kod üretimi | `claude-sonnet-4-6`, `gemini-3-pro-preview` | $$$ Standart | En iyi kalite/maliyet dengesi |
+| Kod incelemesi | `claude-sonnet-4-6`, `deepseek-r1` | $$–$$$ | Örüntü eşleştirme |
+| Hata düzeltme | `claude-sonnet-4-6`, `gpt-5-mini` | $$–$$$ | Odaklı görevler |
+| Tab tamamlama | `gpt-5-mini`, `gemini-3-flash-preview` | $$ Bütçe | Hız derinlikten önemli |
+| Şablon kod | `deepseek-v3.2`, `gpt-5-mini` | $ Ekonomi | Basit, tekrarlayan kalıplar |
+
+<Tip>
+Ayrıntılı model karşılaştırmaları için [model seçim rehberine](/tr/guides/coding-agent-models) bakın.
+</Tip>
+
+## Önbellekleme Stratejileri
+
+### Prompt Cache (Sağlayıcı Seviyesi)
+
+[Upstream prompt cache](/tr/guides/prompt-cache) otomatik olarak çalışır:
+
+| Sağlayıcı | Önbellek indirimi | Min. token |
+|-----------|-------------------|------------|
+| Anthropic | Okumada %90 indirim | 1.024 |
+| OpenAI | Okumada %50 indirim | 1.024 |
+| DeepSeek | Okumada %90 indirim | 64 |
+
+Prompt Cache isabet oranı tipik olarak **%70–90**.
+
+### Birleşik Tasarruf Örneği
+
+50.000 giriş token'lık bir istek için:
+
+```
+Doğrudan API (önbellek yok):
+  50.000 token × $3,00/1M = $0,150
+
+Prompt Cache ile (40.000 önbellekli + 10.000 yeni):
+  Önbellek: 40.000 × $0,30/1M = $0,012
+  Yeni:     10.000 × $3,00/1M = $0,030
+  Toplam: $0,042 (%72 tasarruf)
+```
+
+## Gerçek Maliyet Karşılaştırması
+
+Tipik 1 saatlik kodlama oturumu (~3M token) tahmini maliyetler:
+
+| Kurulum | Saatlik maliyet | Aylık (160s) |
+|---------|----------------|--------------|
+| Doğrudan API (premium model) | ~$15–25 | ~$2.400–4.000 |
+| AI Sonar (akıllı yönlendirme) | ~$10–18 | ~$1.600–2.900 |
+| AI Sonar + Prompt Cache | ~$4–8 | ~$640–1.280 |
+
+<Warning>
+Bunlar tahmini rakamlardır. Gerçek maliyetler model seçimi, kullanım kalıpları ve önbellek isabet oranlarına bağlıdır. [Güncel fiyatlar](/tr/api-reference/pricing/get-pricing) için kontrol edin.
+</Warning>
+
+## Token Yönetimi İpuçları
+
+### max_tokens ayarlama
+
+```json
+{
+  "model": "claude-sonnet-4-6",
+  "max_tokens": 4096,
+  "messages": [...]
+}
+```
+
+### Auto-Compact kullanma
+
+- **Claude Code**: Bağlam sınırlarında yerleşik auto-compact
+- **Cursor**: Otomatik bağlam yönetimi
+- **Codex CLI**: `--max-context` bayrağı
+
+### Bağlam şişmesinden kaçınma
+
+- Bir fonksiyon yeterliyken dosyanın tamamını yapıştırmayın
+- `.gitignore` kalıplarıyla ilgisiz dosyaları hariç tutun
+- Görev değiştirirken konuşma geçmişini temizleyin
+
+## Hızlı Yapılandırma
+
+<AccordionGroup>
+  <Accordion title="Claude Code">
+    ```bash
+    export ANTHROPIC_API_KEY="sk-your-api-key"
+    export ANTHROPIC_BASE_URL="https://api.aisonar.dev"
+    ```
+    [Tam rehber →](/tr/integrations/claude-code)
+  </Accordion>
+
+  <Accordion title="Cursor">
+    Ayarlar → Modeller → OpenAI API Anahtarı: `sk-your-key`, Temel URL: `https://api.aisonar.dev/v1`
+
+    [Tam rehber →](/tr/integrations/cursor)
+  </Accordion>
+
+  <Accordion title="Codex CLI">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export OPENAI_BASE_URL="https://api.aisonar.dev/v1"
+    ```
+    [Tam rehber →](/tr/integrations/codex-cli)
+  </Accordion>
+
+  <Accordion title="Gemini CLI">
+    ```bash
+    export GEMINI_API_KEY="sk-your-api-key"
+    export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"
+    ```
+    [Tam rehber →](/tr/integrations/gemini-cli)
+  </Accordion>
+</AccordionGroup>

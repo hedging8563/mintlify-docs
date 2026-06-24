@@ -1,0 +1,74 @@
+---
+title: "Cancelar tarea"
+openapi: "DELETE /v1/tasks/{id}"
+description: "Cancela una tarea asíncrona en cola cuando el proveedor y el modelo lo admiten"
+---
+
+## Resumen
+
+Usa `DELETE /v1/tasks/{id}` para cancelar una tarea asíncrona que aún no ha empezado a ejecutarse. Usa el mismo ID de tarea de la respuesta create o el incluido en `poll_url`.
+
+## Tareas compatibles
+
+La cancelación actualmente se admite para tareas de video Volcengine Seedance en cola con `seedance-1.5-pro`, `seedance-2.0` o `seedance-2.0-fast`. Las tareas que ya están en `processing`/running no se pueden cancelar. Las tareas completadas, fallidas, expiradas o no compatibles se mantienen consultables para estado y conciliación de facturación, en lugar de eliminar registros upstream.
+
+## Parámetros de ruta
+
+<ParamField path="id" type="string" required>
+  ID de tarea asíncrona devuelto por la solicitud create o incluido en `poll_url`.
+</ParamField>
+
+## Respuesta
+
+<ResponseField name="id" type="string">
+  Identificador canónico de tarea asíncrona.
+</ResponseField>
+
+<ResponseField name="task_id" type="string">
+  Alias del identificador de tarea asíncrona.
+</ResponseField>
+
+<ResponseField name="poll_url" type="string">
+  URL de polling preferida para la tarea. Sigue siendo válida después de la cancelación.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Estado de la tarea. Una tarea cancelada correctamente se devuelve como `failed` con `cancelled: true` para mantener compatibilidad con los valores de estado existentes.
+</ResponseField>
+
+<ResponseField name="cancelled" type="boolean">
+  `true` cuando la tarea se canceló antes de la ejecución.
+</ResponseField>
+
+<ResponseField name="cancellation_status" type="string">
+  Marcador de cancelación. El valor es `cancelled` cuando la cancelación se realiza correctamente.
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  Motivo de cancelación o mensaje de fallo de la tarea.
+</ResponseField>
+
+## Comportamiento de errores
+
+`400 unsupported_task_cancel` significa que el tipo de tarea, proveedor o modelo no admite cancelación. `409 task_not_cancellable` significa que la tarea ya se está procesando, está en estado terminal o ya no se puede cancelar. `403` significa que la API key no puede acceder a la tarea.
+
+## Ejemplo
+
+<RequestExample>
+```bash cURL
+curl -X DELETE "https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+```json Response
+{
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "failed",
+  "cancelled": true,
+  "cancellation_status": "cancelled",
+  "error": "Task cancelled before execution"
+}
+```

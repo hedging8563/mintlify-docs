@@ -1,0 +1,102 @@
+---
+title: "قائمة النماذج"
+openapi: "GET /v1beta/models"
+description: "عرض قائمة بالنماذج المتاحة باستخدام تنسيق Google Gemini API"
+---
+
+يُرجع قائمة بالنماذج المتاحة بتنسيق Google Gemini API.
+
+## معلمات الاستعلام
+
+<ParamField query="pageSize" type="integer">
+  أقصى عدد من النماذج التي سيتم إرجاعها. القيمة الافتراضية: `1000`، الحد الأقصى: `1000`.
+</ParamField>
+
+<ParamField query="pageToken" type="string">
+  رمز متابعة غير شفاف تعيده الصفحة السابقة. أرسله كما هو للحصول على الصفحة التالية.
+</ParamField>
+
+## المصادقة
+
+لا يلزم التوثيق لنقاط قراءة كتالوج النماذج العامة.
+
+مؤشرات المصادقة على نمط Gemini مثل `?key=` أو `x-goog-api-key` لا تغيّر عقد الاستجابة هنا.
+
+## الاستجابة
+
+<ResponseField name="models" type="array">
+  مصفوفة من كائنات النماذج.
+</ResponseField>
+
+<ResponseField name="nextPageToken" type="string">
+  يُعاد عند وجود المزيد من النماذج. مرّر هذه القيمة كـ `pageToken` لمتابعة التصفح.
+</ResponseField>
+
+## الأخطاء
+
+- إعادة `400 INVALID_ARGUMENT` عند إرسال `pageToken` غير صالح.
+- إعادة `500 INTERNAL` عند فشل غير متوقع في عرض القائمة.
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1beta/models?pageSize=5" \
+  -H "x-goog-api-key: sk-your-api-key"
+```
+
+```python Python
+import google.generativeai as genai
+
+genai.configure(
+    api_key="sk-your-api-key",
+    transport="rest",
+    client_options={"api_endpoint": "api.aisonar.dev"}
+)
+
+for model in genai.list_models():
+    print(model.name)
+```
+
+```javascript JavaScript
+const response = await fetch(
+  "https://api.aisonar.dev/v1beta/models?pageSize=5",
+  { headers: { "x-goog-api-key": "sk-your-api-key" } }
+);
+const { models } = await response.json();
+models.forEach(m => console.log(m.name));
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "models": [
+    {
+      "name": "models/gemini-2.5-pro",
+      "version": "1.0",
+      "displayName": "gemini-2.5-pro",
+      "description": "gemini-2.5-pro model available via AI Sonar",
+      "inputTokenLimit": 1048576,
+      "outputTokenLimit": 65536,
+      "supportedGenerationMethods": ["generateContent", "countTokens"],
+      "temperature": 1.0,
+      "topP": 0.95,
+      "topK": 40,
+      "maxTemperature": 2.0
+    },
+    {
+      "name": "models/gemini-2.5-flash",
+      "version": "1.0",
+      "displayName": "gemini-2.5-flash",
+      "description": "gemini-2.5-flash model available via AI Sonar",
+      "inputTokenLimit": 1048576,
+      "outputTokenLimit": 65536,
+      "supportedGenerationMethods": ["generateContent", "countTokens"],
+      "temperature": 1.0,
+      "topP": 0.95,
+      "topK": 40,
+      "maxTemperature": 2.0
+    }
+  ]
+}
+```
+</ResponseExample>

@@ -1,0 +1,37 @@
+---
+title: "Retrieve File"
+openapi: "GET /v1/files/{file_id}"
+description: "Retrieves metadata for a single uploaded file."
+---
+
+## Overview
+
+This endpoint primarily serves AI Sonar's OpenAI-compatible Batch API file objects.
+
+When the request opts into Anthropic Files compatibility mode, the same route can also return Anthropic-style file metadata for the bound workspace.
+
+## Notes
+
+- Batch input files must use `purpose=batch`.
+- `completion_window` is currently `24h`.
+- Output ordering is not guaranteed; always match by `custom_id`.
+- Streaming is not supported inside batch items.
+
+## Example
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/files/file_abc123" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+## Request / Response
+
+Use the interactive OpenAPI panel above for the exact schema.
+
+## Operational Tips
+
+- Use `custom_id` for idempotent downstream reconciliation.
+- Expect `output_file_id` and `error_file_id` only after the worker finalizes the batch.
+- Batch pricing may differ from synchronous pricing because `isBatchRequest=true` discount rules apply.

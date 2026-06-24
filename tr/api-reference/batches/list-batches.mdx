@@ -1,0 +1,35 @@
+---
+title: "Parti Listeleri"
+openapi: "GET /v1/batches"
+description: "Geçerli API anahtarı organizasyonu için parti işlerini listeler."
+---
+
+## Genel Bakış
+
+Bu uç nokta, AI Sonar'nın OpenAI uyumlu Parti API'sinin bir parçasıdır. Parti işleri, yüklenen JSONL dosyalarını kullanır, asenkron olarak çalışır ve daha sonra çıktı/hata dosyaları döndürebilir.
+
+## Notlar
+
+- Parti giriş dosyaları `purpose=batch` kullanmalıdır.
+- `completion_window` şu anda `24s`dir.
+- Çıktı sıralaması garanti edilmez; her zaman `custom_id` ile eşleştirin.
+- Parti öğeleri içinde akış desteği yoktur.
+
+## Örnek
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/batches?limit=20" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+## İstek / Yanıt
+
+Kesin şemayı almak için yukarıdaki etkileşimli OpenAPI panelini kullanın.
+
+## Operasyonel İpuçları
+
+- İdempotent aşağı akış uzlaşması için `custom_id` kullanın.
+- Çalışan partiyi tamamladıktan sonra yalnızca `output_file_id` ve `error_file_id` bekleyin.
+- Parti fiyatlandırması, `isBatchRequest=true` indirim kuralları uygulandığı için senkron fiyatlandırmadan farklı olabilir.

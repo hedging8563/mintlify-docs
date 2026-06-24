@@ -1,0 +1,148 @@
+---
+title: "Streaming"
+description: "Implemente respostas de streaming em tempo real"
+---
+
+## Visão geral
+
+Streaming permite que você receba saída parcial à medida que ela é gerada, o que melhora a latência percebida e a experiência do usuário.
+
+Para novas integrações no estilo OpenAI, prefira primeiro **Responses streaming**. Se o seu framework ainda usa streaming de Chat Completions, a AI Sonar também oferece suporte a esse caminho de compatibilidade.
+
+## Recomendado: Responses Streaming
+
+<CodeGroup>
+
+```bash cURL
+curl https://api.aisonar.dev/v1/responses \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.4",
+    "input": "Write a short poem.",
+    "stream": true
+  }'
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+stream = client.responses.create(
+    model="gpt-5.4",
+    input="Write a short poem.",
+    stream=True
+)
+
+for event in stream:
+    if event.type == "response.output_text.delta":
+        print(event.delta, end="", flush=True)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const stream = await client.responses.create({
+  model: 'gpt-5.4',
+  input: 'Write a short poem.',
+  stream: true
+});
+
+for await (const event of stream) {
+  if (event.type === 'response.output_text.delta') {
+    process.stdout.write(event.delta);
+  }
+}
+```
+
+</CodeGroup>
+
+## Streaming de Chat Completions
+
+Se o seu framework ainda espera chunks SSE de `/v1/chat/completions`, isso também funciona:
+
+```python
+stream = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Write a short poem"}],
+    stream=True
+)
+
+for chunk in stream:
+    content = chunk.choices[0].delta.content
+    if content:
+        print(content, end="", flush=True)
+```
+
+## Condições de término do stream
+
+Condições típicas de conclusão:
+- `response.completed` para streams da Responses API
+- `finish_reason: "stop"` para streams de Chat Completions
+- `finish_reason: "length"` quando um limite de token é atingido
+- eventos de chamada de tool/function quando o modelo deseja usar tools
+
+## Padrão para aplicação web
+
+```javascript
+async function streamChat(message) {
+  const response = await fetch('https://api.aisonar.dev/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer sk-your-api-key',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o',
+      messages: [{ role: 'user', content: message }],
+      stream: true
+    })
+  });
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    const chunk = decoder.decode(value);
+    const lines = chunk.split('\\n').filter(line => line.startsWith('data: '));
+
+    for (const line of lines) {
+      const data = line.slice(6);
+      if (data === '[DONE]') return;
+      const parsed = JSON.parse(data);
+      const content = parsed.choices?.[0]?.delta?.content;
+      if (content) {
+        document.getElementById('output').textContent += content;
+      }
+    }
+  }
+}
+```
+
+## Boas práticas
+
+<AccordionGroup>
+  <Accordion title="Prefira Responses streaming em novas implementações">
+    Use `/v1/responses` se o seu SDK ou app já oferecer suporte a ele. Mantenha o streaming de `/v1/chat/completions` para integrações orientadas por compatibilidade.
+  </Accordion>
+
+  <Accordion title="Descarregue a saída incrementalmente">
+    Acrescente chunks delta à UI ou ao terminal à medida que eles chegarem, em vez de esperar pela resposta completa.
+  </Accordion>
+
+  <Accordion title="Trate desconexões e novas tentativas">
+    Considere quedas de rede e desconexões upstream como modos normais de falha e reconecte com cuidado em sessões de longa duração.
+  </Accordion>
+</AccordionGroup>

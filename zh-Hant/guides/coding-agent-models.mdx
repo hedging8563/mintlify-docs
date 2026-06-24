@@ -1,0 +1,142 @@
+---
+title: "Coding Agent 模型選擇"
+description: "為每種編碼任務選擇合適的模型——對比表格、推薦方案和設定說明"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## 編碼模型對比
+
+| 模型 | 速度 | 程式碼品質 | 成本 | 上下文視窗 | 最適合 |
+|------|------|----------|------|-----------|--------|
+| `claude-opus-4-6` | 中等 | 優秀 | $$$$ | 200K | 架構設計、複雜重構 |
+| `gpt-5.4` | 中等 | 優秀 | $$$$ | 200K | 複雜推理、規劃 |
+| `claude-sonnet-4-6` | 快 | 很好 | $$$ | 200K | 通用編碼、審查 |
+| `gemini-3-pro-preview` | 快 | 很好 | $$$ | 1M | 大型程式碼庫分析 |
+| `gpt-5-mini` | 很快 | 好 | $$ | 128K | 快速編輯、補全 |
+| `gemini-3-flash-preview` | 很快 | 好 | $$ | 1M | 快速迭代、搜尋 |
+| `deepseek-r1` | 中等 | 很好 | $ | 64K | 推理密集型任務 |
+| `deepseek-v3.2` | 快 | 好 | $ | 128K | 批量生成、樣板程式碼 |
+
+## 按任務推薦
+
+<AccordionGroup>
+  <Accordion title="程式碼生成 / 腳手架">
+    **推薦**：`claude-sonnet-4-6`、`gemini-3-pro-preview`
+
+    這些模型生成的程式碼結構清晰、命名規範。複雜的多檔案腳手架可考慮 `claude-opus-4-6`。
+
+    經濟替代：`deepseek-v3.2` 處理樣板程式碼效果好，成本僅為前者的零頭。
+  </Accordion>
+
+  <Accordion title="程式碼審查 / 重構">
+    **推薦**：`claude-sonnet-4-6`、`deepseek-r1`
+
+    程式碼審查受益於推理能力。`deepseek-r1` 在這方面性價比特別高——其思維鏈方法能捕捉細微問題。
+
+    安全審查：`claude-opus-4-6` 或 `gpt-5.4`。
+  </Accordion>
+
+  <Accordion title="Bug 修復 / 除錯">
+    **推薦**：`claude-sonnet-4-6`、`gpt-5-mini`
+
+    Bug 修復通常範圍明確——你知道什麼壞了。標準檔模型就能勝任。僅在複雜的跨檔案 bug 時使用高階模型。
+  </Accordion>
+
+  <Accordion title="架構設計">
+    **推薦**：`claude-opus-4-6`、`gpt-5.4`
+
+    架構決策受益於最強的推理能力。這類決策不頻繁但影響大，值得使用高階模型。
+  </Accordion>
+
+  <Accordion title="快速編輯 / Tab 補全">
+    **推薦**：`gpt-5-mini`、`gemini-3-flash-preview`
+
+    互動式使用中速度至關重要。回應快的經濟模型提供最佳體驗。不要在自動補全上浪費高階 token。
+  </Accordion>
+</AccordionGroup>
+
+## AI Sonar 路由機制
+
+AI Sonar 自動將請求路由到最佳可用提供方。
+
+### 路由策略
+
+| 策略 | 行為 | 適用場景 |
+|------|------|---------|
+| **PRIORITY** | 路由到最高優先級的可用提供方 | 注重可靠性 |
+| **COST** | 路由到最便宜的可用提供方 | 注重成本 |
+
+### 自動降級
+
+如果某個提供方不可用或回傳錯誤，AI Sonar 自動重試下一個提供方：
+
+```
+請求：claude-sonnet-4-6
+  → 提供方 A（主要）：503 錯誤
+  → 提供方 B（備用）：✓ 成功
+```
+
+### 原生格式路由
+
+當所選模型與路由到的渠道支援時，AI Sonar 可以透過該模型系列的原生 API 格式路由請求，以取得更好的相容性：
+
+| 模型系列 | API 格式 | Base URL |
+|---------|----------|----------|
+| Claude | Anthropic 訊息 | `https://api.aisonar.dev` |
+| GPT | OpenAI 回應 | `https://api.aisonar.dev/v1` |
+| Gemini | Gemini Native API | `https://api.aisonar.dev` 或 `https://api.aisonar.dev/v1beta`，取決於客戶端路徑 |
+| DeepSeek | OpenAI 聊天 | `https://api.aisonar.dev/v1` |
+
+Claude Code 是一條強 Anthropic 原生路徑。Gemini 原生 API 也存在，但 Gemini CLI 本身仍屬於 best-effort 相容路徑，不應被視為長期穩定工作流。
+
+## 各工具設定
+
+<AccordionGroup>
+  <Accordion title="Claude Code">
+    ```bash
+    export ANTHROPIC_API_KEY="sk-your-api-key"
+    export ANTHROPIC_BASE_URL="https://api.aisonar.dev"
+    ```
+    選擇模型：`claude --model claude-sonnet-4-6`
+
+    [完整指南 →](/zh-Hant/integrations/claude-code)
+  </Accordion>
+
+  <Accordion title="Cursor">
+    在 Settings → Models 中：
+    - API Key: `sk-your-api-key`
+    - Base URL: `https://api.aisonar.dev/v1`
+
+    [完整指南 →](/zh-Hant/integrations/cursor)
+  </Accordion>
+
+  <Accordion title="Codex CLI">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export OPENAI_BASE_URL="https://api.aisonar.dev/v1"
+    ```
+    [完整指南 →](/zh-Hant/integrations/codex-cli)
+  </Accordion>
+
+  <Accordion title="Gemini CLI">
+    ```bash
+    export GEMINI_API_KEY="sk-your-api-key"
+    export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"
+    ```
+
+    請將此路徑視為 best-effort 相容，而不是穩定的上游契約。
+    [完整指南 →](/zh-Hant/integrations/gemini-cli)
+  </Accordion>
+
+  <Accordion title="OpenCode">
+    ```json
+    {
+      "provider": "openai",
+      "apiKey": "sk-your-api-key",
+      "baseURL": "https://api.aisonar.dev/v1"
+    }
+    ```
+    [完整指南 →](/zh-Hant/integrations/opencode)
+  </Accordion>
+</AccordionGroup>

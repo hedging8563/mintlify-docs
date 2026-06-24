@@ -1,0 +1,26 @@
+---
+title: "API 키 청구 조회"
+openapi: "GET /v1/management/api-keys/{keyId}/billing"
+description: "사용자 API 키의 집계된 청구 내역을 반환합니다."
+---
+
+## 개요
+
+이 엔드포인트는 선택한 API 키의 소비 기준 청구 집계를 반환합니다. 총 비용, 총 요청 수, 과금 단위별 사용량, 요청에 넣는 모델 이름(`model`), 벤더, `scene`, `accessChannel`, 캐시 유형별 내역과 일별 비용 추세가 포함됩니다.
+
+## 주의 사항
+
+- 충전, 인보이스 등 조직 수준의 재무 기록은 포함되지 않습니다.
+
+## 예시
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/billing?startDate=2026-01-01&endDate=2026-01-31" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## 요청 / 응답
+
+정확한 스키마를 위해 위의 대화형 OpenAPI 패널을 사용하세요.

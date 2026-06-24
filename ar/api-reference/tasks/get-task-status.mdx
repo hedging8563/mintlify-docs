@@ -1,0 +1,89 @@
+---
+title: "الحصول على حالة المهمة"
+openapi: "GET /v1/tasks/{id}"
+description: "استرجاع حالة ونتيجة أي مهمة غير متزامنة باستخدام `poll_url` المُعاد من نقاط نهاية الإنشاء"
+---
+
+## نظرة عامة
+
+استخدم نقطة النهاية هذه للاستطلاع غير المتزامن الموحّد عبر أنواع المهام مثل إنشاء الفيديو والصورة والموسيقى و3D.
+
+إذا كانت استجابة الإنشاء تتضمن `poll_url`، فاستدعِ ذلك المسار نفسه تمامًا. بالنسبة لسير العمل غير المتزامن الأحدث، قد يشير `poll_url` إلى `/v1/tasks/{taskId}`.
+
+## معاملات المسار
+
+<ParamField path="taskId" type="string" required>
+  معرّف المهمة المُعاد من طلب الإنشاء.
+</ParamField>
+
+## الاستجابة
+
+<ResponseField name="id" type="string">
+  معرّف المهمة.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  حالة المهمة مثل `pending` أو `processing` أو `completed` أو `failed`. يتم تمثيل المهام الملغاة كـ `failed` مع `cancelled: true`.
+</ResponseField>
+
+<ResponseField name="cancelled" type="boolean">
+  `true` عندما يتم إلغاء مهمة غير متزامنة في قائمة الانتظار قبل التنفيذ.
+</ResponseField>
+
+<ResponseField name="cancellation_status" type="string">
+  مؤشر الإلغاء. يظهر كـ `cancelled` عند نجاح الإلغاء.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  بالنسبة لمهام الصور المكتملة، تُعاد نتائج الصور التي تم إنشاؤها هنا. تعيد مهام الصور روابط URL في `data[].url`.
+</ResponseField>
+
+<ResponseField name="video_url" type="string">
+  URL الأصل الناتج عند اكتمال المهمة وإنتاج فيديو.
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  رسالة الخطأ عند فشل المهمة.
+</ResponseField>
+
+## سلوك الخطأ
+
+إذا لم تعد المهمة موجودة، أو انتهت صلاحيتها، أو تعذر حلها عبر عقد المهمة غير المتزامنة العام، فستعيد AI Sonar:
+
+```json
+{
+  "error": {
+    "message": "Task not found or no longer available.",
+    "type": "invalid_request_error",
+    "code": "async_task_not_found"
+  }
+}
+```
+
+## أمثلة
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+```python Python
+import requests
+
+poll_url = "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+response = requests.get(
+    f"https://api.aisonar.dev{poll_url}",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+)
+print(response.json())
+```
+
+```javascript JavaScript
+const pollUrl = '/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+const response = await fetch(`https://api.aisonar.dev${pollUrl}`, {
+  headers: { Authorization: 'Bearer sk-your-api-key' },
+});
+console.log(await response.json());
+```

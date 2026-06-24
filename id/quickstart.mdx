@@ -1,0 +1,150 @@
+---
+title: "Panduan Cepat"
+description: "Mulai dengan AI Sonar API dalam 2 menit"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Langkah 1: Mulai dengan kredit uji coba
+
+<Steps>
+  <Step title="Buat akun">
+    Daftar di [aisonar.dev](https://aisonar.dev) menggunakan email, Gmail, atau akun GitHub Anda.
+  </Step>
+  <Step title="Gunakan kredit uji coba yang disertakan">
+    Akun Anda menyertakan kredit uji coba untuk beberapa request kecil pertama. Anda tidak perlu menambah kredit sebelum Quickstart.
+  </Step>
+  <Step title="Buat atau salin API key">
+    Buka **Dashboard → API Keys** dan buat key baru, atau salin key yang sudah ada. Simpan dengan aman karena key lengkap hanya ditampilkan sekali.
+  </Step>
+</Steps>
+
+<Warning>
+Jaga keamanan API key Anda. Jangan pernah mengeksposnya di kode sisi-klien atau repositori publik.
+</Warning>
+
+## Langkah 2: Instal Klien
+
+<CodeGroup>
+
+```bash Python
+pip install openai
+```
+
+```bash JavaScript
+npm install openai
+```
+
+```bash Go
+go get github.com/openai/openai-go/v3
+```
+
+```bash PHP
+composer require openai-php/client
+```
+
+</CodeGroup>
+
+## Langkah 3: Buat Permintaan Pertama Anda
+
+Untuk sebagian besar integrasi baru, mulailah dengan **Chat Completions** pada `POST /v1/chat/completions`.
+
+<CodeGroup>
+
+```bash cURL
+curl https://api.aisonar.dev/v1/chat/completions \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.4",
+    "messages": [
+      {"role": "user", "content": "What is the capital of France?"}
+    ]
+  }'
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "What is the capital of France?"}]
+)
+
+print(response.choices[0].message.content)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.chat.completions.create({
+  model: 'gpt-5.4',
+  messages: [{ role: 'user', content: 'What is the capital of France?' }],
+});
+
+console.log(response.choices[0].message.content);
+```
+
+</CodeGroup>
+
+<Note>
+Gunakan `POST /v1/responses` hanya ketika Anda secara eksplisit membutuhkan perilaku spesifik Responses. Beberapa field yang hanya untuk Responses bergantung pada model yang dipilih dan jalur routing.
+</Note>
+
+## Tambah kredit untuk produksi
+
+Kredit uji coba yang disertakan ditujukan untuk beberapa test kecil pertama. Tambahkan kredit di **Dashboard → Billing** hanya saat Anda siap untuk penggunaan produksi atau pengujian dengan volume lebih tinggi.
+
+## Coba Model yang Berbeda
+
+AI Sonar mendukung ratusan model. Ubah hanya field `model`:
+
+```python
+response = client.chat.completions.create(model="gpt-5.4", messages=[{"role": "user", "content": "Hello"}])
+response = client.chat.completions.create(model="gpt-5-mini", messages=[{"role": "user", "content": "Hello"}])
+response = client.chat.completions.create(model="claude-sonnet-4-6", messages=[{"role": "user", "content": "Hello"}])
+response = client.chat.completions.create(model="gemini-2.5-flash", messages=[{"role": "user", "content": "Hello"}])
+response = client.chat.completions.create(model="deepseek-r1", messages=[{"role": "user", "content": "Hello"}])
+```
+
+## Aktifkan Streaming
+
+```python
+stream = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "Tell me a short story."}],
+    stream=True
+)
+
+for chunk in stream:
+    delta = chunk.choices[0].delta.content
+    if delta:
+        print(delta, end="")
+```
+
+## Apa Selanjutnya?
+
+<CardGroup cols={2}>
+  <Card title="Autentikasi" icon="key" href="/authentication">
+    Pelajari tentang manajemen API key dan keamanan.
+  </Card>
+  <Card title="OpenAI SDK" icon="code" href="/integrations/openai-sdk">
+    Gunakan rute kompatibel OpenAI `/v1` dengan SDK OpenAI yang sudah ada.
+  </Card>
+  <Card title="Referensi API" icon="book" href="/api-reference/introduction">
+    Jelajahi referensi endpoint lengkap.
+  </Card>
+  <Card title="Model" icon="robot" href="https://aisonar.dev/models">
+    Telusuri ketersediaan model saat ini dan harga.
+  </Card>
+</CardGroup>

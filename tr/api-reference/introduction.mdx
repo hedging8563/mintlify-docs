@@ -1,0 +1,231 @@
+---
+title: 'API Referansı'
+description: 'AI Sonar API için eksiksiz referans'
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Genel Bakış
+
+AI Sonar, **yerel öncelikli ve OpenAI ile uyumludur**. Yerel davranış gerektiğinde Anthropic için `POST /v1/messages` ve Gemini için `/v1beta/models/...:generateContent` gibi sağlayıcıya özgü yerel rotaları kullanın; mevcut OpenAI tarzı SDK'ları veya araçları taşırken ise OpenAI uyumlu `/v1` uç noktalarını kullanın. `POST /v1/responses` ise Responses'a özgü davranış için gelişmiş isteğe bağlı bir yol olmaya devam eder.
+
+## Base URL
+
+```
+https://api.aisonar.dev
+```
+
+## Kimlik Doğrulama
+
+Tüm API uç noktaları Bearer token kullanılarak kimlik doğrulaması gerektirir:
+
+```bash
+Authorization: Bearer sk-your-api-key
+```
+
+API anahtarınızı [Kontrol Paneli](https://console.aisonar.dev) üzerinden alın.
+
+<Warning>
+**Etkileşimli Playground Hakkında**: Bu dokümantasyon sitesindeki playground yalnızca gösterim amaçlıdır ve API anahtarı girilmesine izin vermez. API'yi test etmek için lütfen:
+- **cURL** - Örnek komutları kopyalayın ve `sk-your-api-key` yerine gerçek anahtarınızı koyun
+- **Postman** - [OpenAPI spesifikasyonumuzu](/openapi.json) içe aktarın
+- **SDK** - base URL olarak bizim URL'imizi kullanarak OpenAI/Anthropic SDK'sını kullanın
+</Warning>
+
+## Desteklenen Uç Noktalar
+
+### Sohbet & Metin Üretimi
+
+| Uç Nokta | Yöntem | Açıklama |
+|----------|--------|-------------|
+| `/v1/chat/completions` | POST | OpenAI uyumlu sohbet tamamlamaları |
+| `/v1/messages` | POST | Anthropic uyumlu mesajlar API'si |
+| `/v1/responses` | POST | OpenAI Responses API |
+
+### Embeddings & Yeniden Sıralama
+
+| Uç Nokta | Yöntem | Açıklama |
+|----------|--------|-------------|
+| `/v1/embeddings` | POST | Metin embedding'leri oluşturma |
+| `/v1/rerank` | POST | Dokümanları yeniden sıralama |
+
+### Görseller
+
+| Uç Nokta | Yöntem | Açıklama |
+|----------|--------|-------------|
+| `/v1/images/generations` | POST | Metinden görsel oluşturma |
+| `/v1/images/edits` | POST | Görselleri düzenleme |
+| `/v1/images/generations/{id}` | GET | Görev tabanlı görsel yanıtlar için görsel görev durumu yolu |
+
+<Info>
+Bazı görsel modeller sonuçları doğrudan döndürebilir, bazıları görev tabanlı yanıtlar verebilir ve bazıları yönlendirilen sağlayıcı yoluna bağlı olarak her iki şekilde davranabilir. Create yanıtı `poll_url` içeriyorsa, tam olarak onu izleyin.
+</Info>
+
+### Ses
+
+| Uç Nokta | Yöntem | Açıklama |
+|----------|--------|-------------|
+| `/v1/audio/speech` | POST | Metinden sese (TTS) |
+| `/v1/audio/transcriptions` | POST | Konuşmadan metne (STT) |
+
+### Gerçek zamanlı
+
+| Endpoint | Yöntem | Açıklama |
+|----------|--------|-------------|
+| `/v1/realtime?model={model}` | WS | Gerçek zamanlı WebSocket oturumları |
+
+<Info>
+`/v1/realtime` WebSocket upgrade istekleri için kullanılır. Normal `GET /v1/realtime`, WebSocket rotalarını doğrudan inceleyemeyen istemciler için endpoint metadata döndürür.
+</Info>
+
+### Video
+
+| Uç Nokta | Yöntem | Açıklama |
+|----------|--------|-------------|
+| `/v1/videos/generations` | POST | Video üretim görevi oluşturma |
+| `/v1/tasks/{id}` | GET | Video işleri için asenkron görev durumu alma |
+| `/v1/videos/generations/{id}` | GET | Eski uyumluluğa uygun video görev durumu yolu |
+
+<Info>
+Yeni istemciler için, create yanıtları tarafından döndürülen `poll_url`'u takip etmeyi tercih edin. `/v1/videos/generations/{id}` yolunu yalnızca geriye dönük uyumluluk için tutun.
+</Info>
+
+### Asenkron Görevler
+
+| Uç Nokta | Yöntem | Açıklama |
+|----------|--------|-------------|
+| `/v1/tasks/{id}` | GET | Birleştirilmiş asenkron görev durumu uç noktası. Döndürülen `poll_url` izlenirken önerilir |
+
+<Info>
+Bu uç nokta yalnızca video, müzik ve 3B ile sınırlı değildir. Bazı görsel görevleri de resmi sorgulama yolu olarak `/v1/tasks/{id}` kullanabilir.
+</Info>
+
+### Müzik
+
+| Uç Nokta | Yöntem | Açıklama |
+|----------|--------|-------------|
+| `/v1/music/generations` | POST | Müzik üretim görevi oluşturma |
+| `/v1/music/generations/{id}` | GET | Müzik'e özgü durum yolu |
+
+<Info>
+Yeni istemciler için öncelikle döndürülen `poll_url`'u tercih edin. Sabit bir görev-durum uç noktasına ihtiyacınız varsa `/v1/tasks/{id}` kullanın; müzik'e özgü uyumluluk yolları için `/v1/music/generations/{id}`'i koruyun.
+</Info>
+
+### 3B Üretimi
+
+| Uç Nokta | Yöntem | Açıklama |
+|----------|--------|-------------|
+| `/v1/3d/generations` | POST | 3B model üretim görevi oluşturma |
+| `/v1/3d/generations/{id}` | GET | 3B'ye özgü durum yolu |
+
+<Info>
+Yeni istemciler için öncelikle döndürülen `poll_url`'u tercih edin. Sabit bir görev-durum uç noktasına ihtiyacınız varsa `/v1/tasks/{id}` kullanın; 3B'ye özgü uyumluluk yolları için `/v1/3d/generations/{id}`'i koruyun.
+</Info>
+
+### Modeller
+
+| Uç Nokta | Yöntem | Açıklama |
+|----------|--------|-------------|
+| `/v1/models` | GET | Mevcut tüm modelleri listele |
+| `/v1/models/{model}` | GET | Belirli model bilgilerini al |
+
+### Gemini (v1beta)
+
+Yerel Google Gemini API formatı desteği:
+
+| Uç Nokta | Yöntem | Açıklama |
+|----------|--------|-------------|
+| `/v1beta/models/{model}:generateContent` | POST | İçerik oluşturma (Gemini formatı) |
+| `/v1beta/models/{model}:streamGenerateContent` | POST | Akışlı içerik oluşturma (Gemini formatı) |
+
+<Note>
+Gemini uç noktaları, standart Bearer token'a ek olarak `?key=` sorgu parametresi ile kimlik doğrulamayı da destekler.
+</Note>
+
+## Yanıt Formatı
+
+Tüm yanıtlar tutarlı bir format izler:
+
+### Başarılı Yanıt
+
+```json
+{
+  "id": "chatcmpl-abc123",
+  "object": "chat.completion",
+  "created": 1234567890,
+  "model": "gpt-4o",
+  "choices": [...],
+  "usage": {
+    "prompt_tokens": 10,
+    "completion_tokens": 20,
+    "total_tokens": 30
+  }
+}
+```
+
+### Yönlendirme Şeffaflığı
+
+Tüm yanıtlar kanal bilgilerini içeren bir `_routing` alanı içerir:
+
+```json
+{
+  "id": "chatcmpl-abc123",
+  ...,
+  "_routing": {
+    "channel": {
+      "id": "ch_xxx",
+      "name": "channel-name",
+      "provider": "openai",
+      "channelType": "PLATFORM"
+    },
+    "cached": false,
+    "retryCount": 0
+  }
+}
+```
+
+| Alan | Açıklama |
+|-------|-------------|
+| `channel.id` | Kullanılan kanal tanımlayıcısı |
+| `channel.provider` | Üst akış sağlayıcısı (openai, anthropic, vb.) |
+| `channel.channelType` | `PLATFORM` (AI Sonar) veya `PRIVATE` (BYOK) |
+| `cached` | Yanıtın önbellekten servis edilip edilmediği |
+| `retryCount` | Yeniden deneme sayısı (varsa) |
+
+### Hata Yanıtı
+
+```json
+{
+  "error": {
+    "message": "Invalid API key provided",
+    "type": "invalid_api_key",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+## Hız Sınırları
+
+Hız sınırları role dayalıdır ve yöneticiler tarafından yapılandırılabilir. Varsayılan değerler:
+
+| Rol | İstek/dakika |
+|------|-------------|
+| Kullanıcı | 60 |
+| Ortak | 300 |
+| VIP | 1,000 |
+
+<Note>
+Özel hız sınırları için destek ile iletişime geçin. Kesin değerler hesap yapılandırmasına göre değişebilir.
+</Note>
+
+Hız sınırları aşıldığında, API beklemeniz gereken süreyi belirten bir `Retry-After` başlığı ile birlikte `429` durum kodu döndürür.
+
+## OpenAPI Spesifikasyonu
+
+<Card
+  title="OpenAPI Spesifikasyonu"
+  icon="file-code"
+  href="/openapi.json"
+>
+  Tam OpenAPI 3.0 spesifikasyonunu indir
+</Card>

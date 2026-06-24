@@ -1,0 +1,167 @@
+---
+title: "Vercel AI SDK"
+description: "AI Sonar'yı OpenAI ile uyumlu veya Responses native sağlayıcılar kullanarak Vercel AI SDK ile entegre edin"
+---
+
+## Genel Bakış
+
+
+
+<Note>
+**Tür**: Framework veya platform
+
+**Birincil yol**: Varsayılan OpenAI ile uyumlu yol
+
+**Destek seviyesi**: Önerilen entegrasyon deseni
+</Note>
+
+AI Sonar için Vercel AI SDK'deki en kararlı varsayılan seçenek **OpenAI ile uyumlu sağlayıcı**dır.
+
+Özellikle **Responses native** davranışına ihtiyacınız varsa, OpenAI sağlayıcısına geçebilir ve aynı AI Sonar temel URL'sini kullanmaya devam edebilirsiniz.
+
+Bu sayfa önerilen bir entegrasyon deseni olarak okunmalıdır; bu depoda Vercel AI SDK içindeki her yardımcı için özel uçtan uca test bulunduğu iddiası olarak değil.
+
+## Önerilen Varsayılan: OpenAI ile uyumlu sağlayıcı
+
+```bash
+npm install ai @ai-sdk/openai-compatible
+```
+
+```typescript
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
+
+export const aisonar = createOpenAICompatible({
+  name: 'aisonar',
+  apiKey: process.env.TOKENLAB_API_KEY,
+  baseURL: 'https://api.aisonar.dev/v1',
+});
+```
+
+## Metin Üretme
+
+```typescript
+import { generateText } from 'ai';
+import { aisonar } from './aisonar';
+
+const { text } = await generateText({
+  model: aisonar.chatModel('gpt-5.4'),
+  prompt: 'Explain AI Sonar in one sentence.',
+});
+
+console.log(text);
+```
+
+## Metni Akış Olarak Alma
+
+```typescript
+import { streamText } from 'ai';
+import { aisonar } from './aisonar';
+
+const result = await streamText({
+  model: aisonar.chatModel('gpt-5.4'),
+  prompt: 'Write a short poem about coding.',
+});
+
+for await (const textPart of result.textStream) {
+  process.stdout.write(textPart);
+}
+```
+
+## Tool Çağırma
+
+```typescript
+import { generateText, tool } from 'ai';
+import { z } from 'zod';
+import { aisonar } from './aisonar';
+
+const result = await generateText({
+  model: aisonar.chatModel('gpt-5.4'),
+  prompt: 'What is the weather in San Francisco?',
+  tools: {
+    weather: tool({
+      description: 'Get weather in a location',
+      parameters: z.object({
+        location: z.string(),
+      }),
+      execute: async ({ location }) => ({
+        location,
+        temperature: 72,
+        condition: 'sunny',
+      }),
+    }),
+  },
+});
+
+console.log(result.text);
+```
+
+## Yapılandırılmış Çıktı
+
+```typescript
+import { generateObject } from 'ai';
+import { z } from 'zod';
+import { aisonar } from './aisonar';
+
+const { object } = await generateObject({
+  model: aisonar.chatModel('gpt-5.4'),
+  schema: z.object({
+    name: z.string(),
+    role: z.string(),
+  }),
+  prompt: 'Generate a fake developer profile.',
+});
+
+console.log(object);
+```
+
+## Özellikle Responses-Native Davranışına İhtiyacınız Varsa
+
+```bash
+npm install ai @ai-sdk/openai
+```
+
+```typescript
+import { createOpenAI } from '@ai-sdk/openai';
+
+export const aisonarResponses = createOpenAI({
+  apiKey: process.env.TOKENLAB_API_KEY,
+  baseURL: 'https://api.aisonar.dev/v1',
+});
+```
+
+```typescript
+import { generateText } from 'ai';
+import { aisonarResponses } from './aisonar-responses';
+
+const { text } = await generateText({
+  model: aisonarResponses('gpt-5.4'),
+  prompt: 'Explain AI Sonar in one sentence.',
+});
+```
+
+<Note>
+Proxy tarzı entegrasyonlar için güvenli varsayılan olarak `@ai-sdk/openai-compatible` kullanın. Yalnızca `/v1/responses` üzerine kurulu bir sağlayıcı yolu özellikle istediğinizde `@ai-sdk/openai`'a geçin.
+</Note>
+
+## Ortam Değişkenleri
+
+```bash
+# .env.local
+TOKENLAB_API_KEY=sk-your-api-key
+```
+
+## En İyi Uygulamalar
+
+<AccordionGroup>
+  <Accordion title="Önce openai-compatible'ı tercih edin">
+    Üçüncü taraf geçitler ve proxy arka uçlar için `@ai-sdk/openai-compatible` genellikle en az sürpriz yaratan başlangıç noktasıdır.
+  </Accordion>
+
+  <Accordion title="Yalnızca gerektiğinde Responses'a geçin">
+    `/v1/responses` ile ilişkili sağlayıcı davranışına ihtiyacınız varsa, tek bir client içinde iki yaklaşımı karıştırmak yerine sağlayıcı package'ını bilinçli olarak değiştirin.
+  </Accordion>
+
+  <Accordion title="Gizli bilgileri server tarafında tutun">
+    AI Sonar API key'inizi asla client-side code içinde açığa çıkarmayın. Sağlayıcı kurulumunu server dosyalarına veya API route'larına yerleştirin.
+  </Accordion>
+</AccordionGroup>

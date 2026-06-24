@@ -1,0 +1,166 @@
+---
+title: "AI Chat Applications"
+description: "Configure popular AI chat applications to use AI Sonar's OpenAI-compatible API"
+---
+
+## Overview
+
+Most general AI chat apps connect to AI Sonar through the standard OpenAI-compatible chat path.
+
+In practice that means:
+- use `https://api.aisonar.dev/v1` as the base URL unless the app explicitly asks for a full endpoint URL
+- use your AI Sonar API key as the OpenAI-style API key
+- pick models that the app can use in a standard chat workflow
+
+<Note>
+General chat apps are usually **chat-completions oriented**, not Codex Responses WebSocket clients. For Codex CLI/App, Cursor, or other coding tools that need Responses-specific behavior, use the dedicated integration guides instead.
+</Note>
+
+<Note>
+**Type**: Chat App
+
+**Primary Path**: OpenAI-compatible chat-completions
+
+**Support Confidence**: Supported path
+</Note>
+
+## Supported Applications
+
+| Application | Platform | Notes |
+|-------------|----------|-------|
+| Open WebUI | Web, Self-hosted | Popular self-hosted choice with OpenAI-compatible connections |
+| LibreChat | Web, Self-hosted | Multi-provider chat workspace with custom OpenAI endpoints |
+| LobeChat | Web, Desktop, Self-hosted | Strong custom-provider support |
+| Cherry Studio | Windows, macOS, Linux | Good OpenAI-compatible provider flow |
+| Chatbox | Windows, macOS, Linux | Simple OpenAI-compatible setup |
+| TypingMind | Web, Desktop | Uses a custom endpoint style |
+| NextChat | Web, Self-hosted | Lightweight ChatGPT-style client with base-URL overrides |
+| ChatWise | Windows, macOS | Standard custom provider pattern |
+
+## Default Connection Values
+
+| Field | Value |
+|-------|-------|
+| Base URL | `https://api.aisonar.dev/v1` |
+| API Key | `sk-your-api-key` |
+| API Type | OpenAI Compatible |
+
+If an app asks for a **full endpoint URL** instead of a base URL, use:
+- Chat Completions: `https://api.aisonar.dev/v1/chat/completions`
+
+## Example App Setups
+
+<Tabs>
+  <Tab title="LobeChat">
+    **Self-hosted LobeChat**
+
+    ```bash
+    OPENAI_API_KEY=sk-your-api-key
+    OPENAI_PROXY_URL=https://api.aisonar.dev/v1
+    ```
+
+    **LobeChat Cloud**
+    1. Open **Settings** → **AI Service Provider**
+    2. Select **OpenAI**
+    3. Enter your AI Sonar API key
+    4. Set the custom endpoint to `https://api.aisonar.dev/v1`
+  </Tab>
+
+  <Tab title="Cherry Studio">
+    1. Open **Settings** → **Model Provider**
+    2. Add an **OpenAI-compatible** provider
+    3. Enter:
+       - **Name**: AI Sonar
+       - **API Base URL**: `https://api.aisonar.dev/v1`
+       - **API Key**: `sk-your-api-key`
+    4. Add the models you want to use
+  </Tab>
+
+  <Tab title="Chatbox">
+    1. Open **Settings** → **AI Model**
+    2. Choose **OpenAI API Compatible**
+    3. Enter:
+       - **API Host**: `https://api.aisonar.dev/v1`
+       - **API Key**: `sk-your-api-key`
+       - **Model**: `gpt-5-mini` or `gpt-4o`
+  </Tab>
+
+  <Tab title="TypingMind">
+    1. Open **Settings**
+    2. Choose **Custom Endpoint**
+    3. Enter:
+       - **Endpoint URL**: `https://api.aisonar.dev/v1/chat/completions`
+       - **API Key**: `sk-your-api-key`
+    4. Configure the models you want to expose
+  </Tab>
+
+  <Tab title="Open WebUI">
+    1. Open **Admin Settings** → **Connections**
+    2. Add an **OpenAI-compatible** connection
+    3. Enter:
+       - **Base URL**: `https://api.aisonar.dev/v1`
+       - **API Key**: `sk-your-api-key`
+    4. Save and select the models you want to expose
+  </Tab>
+
+  <Tab title="LibreChat">
+    Add an OpenAI-compatible endpoint in your LibreChat provider config and point it to:
+
+    ```yaml
+    customEndpoints:
+      - name: AI Sonar
+        apiKey: '${OPENAI_API_KEY}'
+        baseURL: 'https://api.aisonar.dev/v1'
+        models:
+          default: ['gpt-5-mini', 'gpt-5.4', 'claude-sonnet-4-6']
+          fetch: false
+    ```
+  </Tab>
+</Tabs>
+
+## Safer Model Defaults
+
+| Category | Suggested Models |
+|----------|------------------|
+| General default | `gpt-5.4`, `gpt-5-mini`, `gpt-4o` |
+| Anthropic | `claude-sonnet-4-6`, `claude-opus-4-6` |
+| Google | `gemini-2.5-flash`, `gemini-2.5-pro` |
+| DeepSeek | `deepseek-r1`, `deepseek-v3-2` |
+
+## Tips
+
+<AccordionGroup>
+  <Accordion title="Prefer base URL when the app supports it">
+    Most apps are easier to configure and less fragile when you provide `https://api.aisonar.dev/v1` as a base URL instead of a full endpoint URL.
+  </Accordion>
+
+  <Accordion title="Use smaller models first">
+    Start with `gpt-5-mini` or `gpt-4o` for everyday chat, then move heavier reasoning tasks to `gpt-5.4` or `claude-opus-4-6`.
+  </Accordion>
+
+  <Accordion title="Keep coding tools separate">
+    General chat apps and coding agents often need different endpoint behavior. Keep Codex/Cursor-style tools on their dedicated integration pages.
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Connection Error">
+    - Verify the base URL is exactly `https://api.aisonar.dev/v1`
+    - Remove trailing slashes if the app auto-appends paths
+    - If the app wants a full endpoint URL, use `https://api.aisonar.dev/v1/chat/completions`
+  </Accordion>
+
+  <Accordion title="401 Unauthorized">
+    - Double-check your API key
+    - Confirm the key is active in AI Sonar dashboard
+    - Make sure there are no extra spaces or line breaks
+  </Accordion>
+
+  <Accordion title="Model Not Available">
+    - Verify the model name exactly
+    - Try a widely supported default like `gpt-5-mini`, `gpt-4o`, or `claude-sonnet-4-6`
+    - Check current availability in AI Sonar docs or dashboard
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,39 @@
+---
+title: "Pi Coding Agent"
+description: "استخدم Pi مع AI Sonar. Pi هو أداة برمجة طرفية بسيطة تدعم مزوّدات بأسلوب OpenAI وAnthropic وGoogle"
+---
+
+## نظرة عامة
+
+
+
+<Note>
+**النوع**: أداة برمجة
+
+**المسار الرئيسي**: مسار متوافق مع OpenAI
+
+**مستوى الدعم**: مسار مدعوم
+</Note>
+
+[Pi](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent) هو أداة برمجة طرفية بسيطة. في IA الخاصة بوثائق AI Sonar، مكانه ضمن **Coding Tools** وليس ضمن حِزم SDK الأصلية.
+
+يقع Pi بين عدة استخدامات:
+
+- تدفق coding تفاعلي داخل الطرفية
+- أوضاع JSON / RPC لدمج العمليات
+- بيئة تشغيل بأسلوب SDK يمكن تضمينها داخل تطبيقاتك
+
+مع AI Sonar، يكون المسار **متوافق مع OpenAI** عادةً هو نقطة البداية الأبسط، ما لم تكن تريد عمدًا سلوكًا Anthropic-native أو Google-native.
+
+## المسار الموصى به
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+export OPENAI_BASE_URL="https://api.aisonar.dev/v1"
+```
+
+بعد ذلك، وجّه إعداد المزوّد أو النموذج المخصص في Pi إلى AI Sonar.
+
+<Note>
+إذا كنت تحتاج سلوك Claude-native أو Gemini-native، فتعامل مع ذلك على أنه إعداد Pi خاص بالمزوّد، وليس إعدادًا عامًا متوافقًا مع OpenAI.
+</Note>

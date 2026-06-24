@@ -1,0 +1,27 @@
+---
+title: "Kuruluş Bakiyesini Getir"
+openapi: "GET /v1/management/balance"
+description: "Yönetim tokenı için geçerli kuruluş bakiyesi toplamlarını döndürür."
+---
+
+## Genel Bakış
+
+Bu uç nokta, yönetim tokenıyla ilişkili kuruluşun geçerli bakiye toplamlarını döndürür. Faturalandırma ve mutabakatla aynı kuruluş bakiyesi doğruluk kaynağını kullanır.
+
+## Notlar
+
+- Parasal doğruluk alanları USD olarak döner: `balance`, `total_recharge` ve `total_used`.
+- `preferred_currency`, kuruluş Dashboard görüntüleme tercihini yansıtır; USD doğruluk alanlarını değiştirmez.
+
+## Örnek
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/management/balance" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## İstek / Yanıt
+
+Kesin şema için yukarıdaki etkileşimli OpenAPI panelini kullanın.

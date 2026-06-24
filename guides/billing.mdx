@@ -1,0 +1,188 @@
+---
+title: "Billing & Pricing"
+description: "Understand AI Sonar's pay-as-you-go pricing"
+---
+
+## Overview
+
+AI Sonar uses **pay-as-you-go pricing**. You only pay for what you use, with no subscriptions or minimum commitments.
+
+## How Billing Works
+
+1. **Add credits** to your account
+2. **Use the API** - costs are deducted per request
+3. **Monitor usage** in your dashboard
+4. **Top up** when your balance is low
+
+## Pricing Models
+
+### Per-Token Pricing
+
+Most text generation models are priced per million tokens:
+
+| Model | Input (per 1M tokens) | Output (per 1M tokens) |
+|-------|----------------------|------------------------|
+| GPT-4o | $1.75 | $7.00 |
+| GPT-4o-mini | $0.105 | $0.42 |
+| Claude Opus 4.5 | $3.50 | $17.50 |
+| Claude Sonnet 4.5 | $2.10 | $10.50 |
+| Claude Haiku 4.5 | $0.70 | $3.50 |
+| Gemini 2.5 Pro | $0.875 | $7.00 |
+| Gemini 2.5 Flash | $0.1225 | $0.525 |
+| DeepSeek R1 | $0.385 | $1.533 |
+| DeepSeek V3.2 | $0.196 | $0.294 |
+
+<Note>
+  Prices shown are discounted platform prices. Actual prices may vary. Check the [pricing page](https://aisonar.dev/en/pricing) for current rates.
+</Note>
+
+### Per-Request Pricing
+
+Image, video, and audio models are priced per request:
+
+| Model | Price per Request |
+|-------|-------------------|
+| DALL-E 3 (1024x1024) | $0.04 |
+| Midjourney | $0.05 |
+| Whisper (per minute) | $0.006 |
+| TTS-1 | $0.015 |
+
+### Async Task Billing (Video/Music/3D and Some Image Models)
+
+<Note>
+  For task-based generation, creating the task may reserve or pre-deduct the estimated cost. Final settlement happens only after the async task reaches a terminal success state during polling or finalization.
+</Note>
+
+For task-based generation flows (video, music, 3D, and some image models):
+
+1. Submit the task. AI Sonar may place an estimated pre-deduction or reservation to verify balance and spending limits.
+2. Follow the returned `poll_url`, or call `GET /v1/tasks/{id}`, until the task reaches a terminal status.
+3. When the task completes successfully, final settlement records the usage and the task response includes `billing_transaction_id`.
+4. If creation fails or the terminal status is failed, the pending amount is refunded or released and the request is marked non-billable.
+
+If the dashboard does not reflect a completed settlement or refund after terminal status is visible, contact support@aisonar.dev for assistance.
+
+```python
+# Example: Video generation billing
+response = client.post("/v1/videos/generations", json={
+    "model": "veo3.1",
+    "prompt": "A sunset over the ocean"
+})
+# Estimated cost may be reserved now; final billing appears after success.
+
+poll_url = response.json()["poll_url"]
+task_id = response.json()["task_id"]
+# Poll poll_url for status; billing_transaction_id appears after settlement.
+```
+
+### Billing Transaction IDs
+
+Successful billable OpenAI-compatible non-streaming JSON responses include `billing_transaction_id` when settlement has completed before the response is finalized. The same value is also exposed as the `X-Billing-Transaction-ID` response header for browser and server integrations. Native compatibility routes, such as Gemini `/v1beta`, may expose the value via the header only to preserve the provider-native response shape. For async media tasks, poll the returned `poll_url` or `GET /v1/tasks/{id}`; the task response includes `billing_transaction_id` once settlement is complete. Streaming responses may settle after the stream has already been sent, so use the dashboard usage logs for reconciliation when the header is absent.
+
+## Token Counting
+
+Tokens are the basic units of text processing:
+
+- ~4 characters = 1 token (English)
+- ~1-2 characters = 1 token (Chinese)
+- 1 image = varies by size and detail
+
+### Estimating Tokens
+
+```python
+# Rough estimation
+def estimate_tokens(text):
+    return len(text) / 4  # Approximate for English
+
+# Actual count (for OpenAI models)
+import tiktoken
+encoder = tiktoken.encoding_for_model("gpt-4o")
+tokens = encoder.encode("Your text here")
+print(f"Token count: {len(tokens)}")
+```
+
+## Usage Tracking
+
+### Dashboard
+
+Monitor your usage in the [Dashboard](https://console.aisonar.dev):
+
+- Real-time balance
+- Usage history by model
+- Cost breakdown
+- API key usage
+
+### API Response
+
+Each response includes usage information:
+
+```json
+{
+  "usage": {
+    "prompt_tokens": 50,
+    "completion_tokens": 100,
+    "total_tokens": 150
+  }
+}
+```
+
+## Cost Optimization
+
+<AccordionGroup>
+  <Accordion title="Use appropriate models">
+    Use smaller models (GPT-4o-mini, Gemini Flash) for simple tasks.
+  </Accordion>
+
+  <Accordion title="Implement caching">
+    Cache responses for repeated identical requests.
+  </Accordion>
+
+  <Accordion title="Optimize prompts">
+    Keep prompts concise while maintaining clarity.
+  </Accordion>
+
+  <Accordion title="Set max_tokens">
+    Limit response length when full responses aren't needed.
+  </Accordion>
+
+  <Accordion title="Use streaming for long responses">
+    Streaming doesn't cost extra but improves perceived performance.
+  </Accordion>
+</AccordionGroup>
+
+## Low Balance Alerts
+
+Configure alerts when your balance drops:
+
+1. Go to **Dashboard → Settings → Notifications**
+2. Set your threshold amount
+3. Receive email notifications
+
+## Adding Credits
+
+### Payment Methods
+
+- Stripe (Visa, Mastercard)
+
+### Steps
+
+1. Log in to [Dashboard](https://console.aisonar.dev)
+2. Click **Add Credits**
+3. Select amount and payment method
+4. Complete payment
+
+Credits are added instantly after payment confirmation.
+
+## API Key Limits
+
+You can set spending limits on individual API keys:
+
+1. Go to **Dashboard → API Keys**
+2. Click on a key to edit
+3. Set **Usage Limit**
+
+When the limit is reached, requests with that key will return `402 Payment Required`.
+
+## Questions?
+
+Contact support@aisonar.dev for billing inquiries.

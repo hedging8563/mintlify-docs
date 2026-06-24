@@ -1,0 +1,142 @@
+---
+title: "Yönetim API'si"
+description: "Yönetim tokenıyla kuruluş bakiyesini, API anahtarlarını ve key düzeyinde kullanım/faturalandırmayı yönetin."
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Genel Bakış
+
+Management API, normal bir inference API anahtarı kullanmadan kuruluş bakiyesi toplamlarını almanızı, kuruluş API anahtarlarını yönetmenizi ve belirli bir anahtar için kullanım ve faturalama bilgilerini almanızı sağlar.
+
+Dashboard'daki **Settings** sayfasından bir yönetim token'ı kullanın:
+
+```bash
+Authorization: Bearer mt-your-management-token
+```
+
+<Warning>
+Yönetim token'ları inference API anahtarlarından farklıdır. `/v1/management/*` için `mt-...`, `/v1/responses` gibi model inference endpoint'leri için `sk-...` kullanın.
+</Warning>
+
+## Kullanılabilir Endpoint'ler
+
+| Endpoint | Method | Açıklama |
+|----------|--------|----------|
+| `/v1/management/balance` | GET | Geçerli kuruluş bakiyesi toplamlarını getir |
+| `/v1/management/api-keys` | GET | Geçerli kuruluştaki kullanıcı yönetimli API anahtarlarını listele |
+| `/v1/management/api-keys` | POST | Yeni bir kullanıcı API anahtarı oluştur |
+| `/v1/management/api-keys/{keyId}` | PATCH | Adı, kullanım limitini, izinli modelleri, son kullanım tarihini veya durumu güncelle |
+| `/v1/management/api-keys/{keyId}/usage` | GET | Belirli bir anahtar için sayfalı kullanım detaylarını getir |
+| `/v1/management/api-keys/{keyId}/billing` | GET | Belirli bir anahtar için toplulaştırılmış faturalama dökümünü getir |
+
+## Usage Filtre Sözleşmesi
+
+`GET /v1/management/api-keys/{keyId}/usage` aşağıdaki query parametrelerini destekler:
+
+| Parametre | Tür | Varsayılan / Sınırlar | Notlar |
+|-----------|------|----------------------|--------|
+| `page` | integer | varsayılan `1`, min `1` | 1'den başlayan sayfa numarası |
+| `limit` | integer | varsayılan `50`, min `1`, max `100` | Sayfa boyutu |
+| `logicalModel` | string | max uzunluk `100` | İstenen mantıksal model adı |
+| `modelVendor` | string | max uzunluk `100` | Herkese açık model vendor'ı |
+| `scene` | enum | - | `chat`, `image`, `audio`, `video`, `embedding`, `rerank`, `translation`, `music`, `3d` |
+| `accessChannel` | enum | - | `platform` veya `byok` |
+| `startDate` | string | - | Dahil alt sınır; timezone'lu RFC3339 veya `YYYY-MM-DD` kabul eder |
+| `endDate` | string | - | Dahil üst sınır; timezone'lu RFC3339 veya `YYYY-MM-DD` kabul eder |
+
+Hem `startDate` hem `endDate` varsa, `startDate` `endDate`'den küçük ya da eşit olmalıdır.
+
+## API Anahtarı Body Sözleşmesi
+
+### POST /v1/management/api-keys
+
+| Alan | Tür | Varsayılan / Sınırlar | Notlar |
+|------|-----|----------------------|--------|
+| `name` | string | zorunlu, varsayılan `Default Key`, uzunluk `1-50` | Görünen ad, sunucu tarafında trim edilir |
+| `limitAmount` | number \| null | min `0`, input max `1000000` | `null` veya atlanırsa = limitsiz, `0` = sıfır kota. Pozitif değerler `100000` USD eşdeğerini aşamayacak şekilde depolama limiti olarak normalize edilir |
+| `limitCurrency` | enum | varsayılan `USD` | Yalnızca USD. `CNY` gönderildiğinde `400 currency_retired` döner. |
+| `models` | string[] | varsayılan `[]` | Opsiyonel mantıksal model allowlist'i |
+| `expiresAt` | string \| null | RFC3339 datetime | `null` son kullanma olmadığı anlamına gelir |
+
+### PATCH /v1/management/api-keys/{keyId}
+
+| Alan | Tür | Varsayılan / Sınırlar | Notlar |
+|------|-----|----------------------|--------|
+| `status` | enum | - | `active`, `inactive`, `suspended`, `revoked` |
+| `name` | string | uzunluk `1-50` | Güncellenmiş görünen ad |
+| `limitAmount` | number \| null | min `0`, input max `1000000` | `null` = limitsiz, `0` = sıfır kota. Pozitif değerler `100000` USD eşdeğerini aşamayacak şekilde normalize edilir |
+| `limitCurrency` | enum | varsayılan `USD` | Yalnızca USD. `CNY` gönderildiğinde `400 currency_retired` döner. |
+| `models` | string[] | - | Güncellenmiş mantıksal model allowlist'i |
+| `expiresAt` | string \| null | RFC3339 datetime | `null` son kullanmayı kaldırır |
+
+PATCH için en az bir alan verilmelidir.
+
+## Parasal Sözleşme
+
+
+## Raporlama Anlamı
+
+- `logicalModel`, çağıranın talep ettiği herkese açık mantıksal modeli ifade eder.
+- `modelVendor`, gizli fiziksel route yerine herkese açık model vendor'ını ifade eder.
+- `scene`, endpoint veya görev türünden türetilen herkese açık istek sahnesidir.
+- `accessChannel=platform`, isteğin AI Sonar'nın platform kanalından faturalandığı anlamına gelir.
+- `accessChannel=byok`, isteğin kendi upstream provider anahtarınızı kullandığı anlamına gelir.
+
+Yanıtlar yalnızca herkese açık faturalama ve raporlama alanlarını gösterir. Dahili routing ayrıntıları ve fiziksel provider metadata'sı gizli kalır.
+- `/usage` satır öğeleri, alttaki istek settlement edilmiş billing durumuna ulaştığında `billing_transaction_id` içerebilir. İstek düzeyinde mutabakat için `request_id` + `billing_transaction_id` kullanın.
+
+## Faturalama Sayfalama Notu
+
+`/usage` sayfalanır. `/billing` şu anda toplulaştırılmış bir breakdown endpoint'idir ve `page` / `limit` tarzı sayfalama metadata'sı döndürmez. Satır düzeyinde kayıtlara ihtiyacınız varsa `/usage` kullanın.
+
+## Hızlı Örnek
+
+Önce mevcut yönetim token'ı ile kuruluş bakiyesini kontrol edin:
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/management/balance" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+Ardından aynı yönetim token'ı için erişilebilir API anahtarlarını listeleyin:
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/management/api-keys" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response (200)
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "key_abc123def456",
+      "name": "Backend Worker",
+      "key_prefix": "sk-abc123...",
+      "status": "active",
+      "limit_amount": 500.0,
+      "used_amount": 148.25,
+      "models": ["gpt-4o-mini", "claude-3-7-sonnet"],
+      "expires_at": "2026-04-30T00:00:00.000Z",
+      "last_used_at": "2026-03-27T08:12:45.000Z",
+      "created_at": "2026-03-01T10:00:00.000Z"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## Sonraki Adımlar
+
+- [Kuruluş Bakiyesini Getir](/tr/api-reference/management/get-balance)
+- [API anahtarlarını listele](/tr/api-reference/management/list-api-keys)
+- [API anahtarı oluştur](/tr/api-reference/management/create-api-key)
+- [API anahtarını güncelle](/tr/api-reference/management/update-api-key)
+- [API anahtarı kullanımını getir](/tr/api-reference/management/get-api-key-usage)
+- [API anahtarı faturalamasını getir](/tr/api-reference/management/get-api-key-billing)

@@ -1,0 +1,122 @@
+---
+title: "소개"
+description: "통합 API를 통해 수백 개의 AI 모델에 접근"
+---
+
+## AI Sonar란?
+
+AI Sonar는 OpenAI, Anthropic, Google, DeepSeek, Moonshot, MiniMax 등과 같은 제공업체의 **수백 개의 AI 모델**에 대한 통합 접근을 제공하는 AI API 통합 플랫폼입니다.
+
+<CardGroup cols={2}>
+  <Card title="네이티브 + 호환" icon="plug">
+    공급자 동작이 중요할 때는 네이티브 Anthropic/Gemini 경로를 사용하고, 기존 OpenAI 스타일 도구에는 OpenAI 호환 `/v1` 경로를 사용하세요.
+  </Card>
+  <Card title="네이티브 형식" icon="shuffle">
+    OpenAI, Anthropic, Gemini 및 Responses 스타일 엔드포인트를 한 플랫폼에서 호출하세요.
+  </Card>
+  <Card title="사용한 만큼만 결제" icon="coins">
+    구독 없음. 실제로 사용한 만큼만 결제합니다.
+  </Card>
+  <Card title="고가용성" icon="shield-check">
+    스마트 라우팅, 페일오버, 다중 채널 지원으로 신뢰성을 향상합니다.
+  </Card>
+</CardGroup>
+
+## 지원되는 기능
+
+| 기능 | 설명 | 예시 모델 |
+|------------|-------------|----------------|
+| **채팅 및 추론** | 텍스트 생성, 계획 수립, 도구 활용 | `gpt-5.4`, `claude-sonnet-4-6`, `deepseek-r1` |
+| **비전** | 이미지 이해 및 멀티모달 채팅 | `gpt-4o`, `claude-sonnet-4-6`, `gemini-2.5-flash` |
+| **이미지 생성** | 텍스트-투-이미지 및 이미지 편집 | `dall-e-3`, `flux-pro`, `midjourney` |
+| **오디오** | TTS 및 전사 | `gpt-4o-mini-tts`, `whisper-1`, `gpt-4o-transcribe` |
+| **임베딩** | 텍스트 벡터화 | `text-embedding-3-small`, `text-embedding-3-large` |
+| **음악** | AI 음악 생성 | `suno` |
+| **3D** | 3D 자산 생성 | `tripo3d` |
+
+## 요청 형식 선택
+
+필요한 동작과 일치하는 경로로 시작하세요. 공급자 네이티브 기능에는 네이티브 Anthropic/Gemini 경로를 사용하고, 기존 OpenAI 스타일 채팅 코드를 마이그레이션할 때는 OpenAI 호환 `/v1/chat/completions`를 사용하세요.
+
+<CodeGroup>
+
+```bash cURL
+curl https://api.aisonar.dev/v1/chat/completions \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.4",
+    "messages": [
+      {"role": "user", "content": "Explain what AI Sonar does in one sentence."}
+    ]
+  }'
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "Explain what AI Sonar does in one sentence."}]
+)
+
+print(response.choices[0].message.content)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.chat.completions.create({
+  model: 'gpt-5.4',
+  messages: [{ role: 'user', content: 'Explain what AI Sonar does in one sentence.' }],
+});
+
+console.log(response.choices[0].message.content);
+```
+
+<Note>
+명시적으로 Responses 고유의 동작이 필요할 때만 `POST /v1/responses`를 사용하세요. 모든 모델에 걸친 기본 호환 경로는 아닙니다.
+</Note>
+
+</CodeGroup>
+
+## 주요 기능
+
+<CardGroup cols={2}>
+  <Card title="여러 API 형식" icon="layers" href="/guides/api-formats">
+    하나의 계정으로 OpenAI, Anthropic, Gemini 또는 Responses 네이티브 형식을 사용하세요.
+  </Card>
+  <Card title="에이전트 우선 오류" icon="wand-magic-sparkles" href="/guides/agent-first-api">
+    구조화된 힌트는 코딩 에이전트가 더 빠르게 자기 수정하도록 돕습니다.
+  </Card>
+  <Card title="통합 범위" icon="toolbox" href="/guides/ide-sdk-compatibility">
+    제공업체별 변경을 줄여 IDE, SDK, 프레임워크 및 채팅 앱을 연결합니다.
+  </Card>
+</CardGroup>
+
+## 다음 단계
+
+<CardGroup cols={2}>
+  <Card title="빠른 시작" icon="rocket" href="/quickstart">
+    몇 분 안에 첫 요청을 실행해보세요.
+  </Card>
+  <Card title="API 참조" icon="book" href="/api-reference/introduction">
+    엔드포인트별 참조를 살펴보세요.
+  </Card>
+  <Card title="통합" icon="puzzle-piece" href="/integrations/openai-sdk">
+    SDK, IDE 및 앱 통합부터 시작하세요.
+  </Card>
+  <Card title="모델" icon="robot" href="https://aisonar.dev/models">
+    현재 모델 가용성 및 요금을 확인하세요.
+  </Card>
+</CardGroup>

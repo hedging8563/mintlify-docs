@@ -1,0 +1,287 @@
+---
+title: "ビデオのステータスを取得"
+openapi: "GET /v1/tasks/{id}"
+description: "ビデオ生成タスクのステータスと結果を取得します"
+---
+
+## パスパラメータ
+
+<ParamField path="id" type="string" required>
+  動画作成リクエストから返されるタスクID。`id` と `task_id` は同じ非同期識別子として扱ってください。
+</ParamField>
+
+<Info>
+作成レスポンスが `poll_url` を返す場合は、その正確な URL を呼び出してください。これが `/v1/tasks/{id}` を指す場合は、それを正準の固定ステータスエンドポイントとして扱ってください。
+
+タスクが存在しない、または公開された非同期タスク契約を通じて解決できない場合、AI Sonar は `async_task_not_found` を返し、メッセージ `Task not found or no longer available.` を返します。
+</Info>
+
+## レスポンス
+
+<ResponseField name="id" type="string">
+  正準の非同期タスク識別子。
+</ResponseField>
+
+<ResponseField name="task_id" type="string">
+  非同期タスク識別子の別名。
+</ResponseField>
+
+<ResponseField name="poll_url" type="string">
+  作成レスポンスが提供する場合の推奨ポーリングURL。
+</ResponseField>
+
+<ResponseField name="billing_transaction_id" type="string">
+  決済がすでに完了している場合に返される AI Sonar の請求トランザクション ID です。dashboard / 照合で使う取引識別子であり、非同期 `id` / `task_id` とは別物です。
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  タスクのステータス: `pending`, `processing`, `completed`, `failed`。
+</ResponseField>
+
+<ResponseField name="progress" type="number">
+  進捗率（0〜100）。
+</ResponseField>
+
+<ResponseField name="video_url" type="string">
+  生成されたビデオの URL（完了時）。
+</ResponseField>
+
+<ResponseField name="video" type="object">
+  利用可能な場合に `url`、`duration`、`width`、`height` を含む単一ビデオペイロード。
+</ResponseField>
+
+<ResponseField name="videos" type="array">
+  上流が複数の出力を返す場合の複数ビデオペイロード。
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  エラーメッセージ（失敗時）。
+</ResponseField>
+
+<ResponseField name="created" type="integer">
+  作成タイムスタンプ。
+</ResponseField>
+
+<ResponseField name="updated" type="integer">
+  最終更新タイムスタンプ。
+</ResponseField>
+
+<ResponseField name="model" type="string">
+  タスクに使用されたモデル。
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+```python Python
+import requests
+import time
+
+task_id = "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+
+while True:
+    response = requests.get(
+        f"https://api.aisonar.dev/v1/tasks/{task_id}",
+        headers={"Authorization": "Bearer sk-your-api-key"}
+    )
+
+    data = response.json()
+    print(f"Status: {data['status']}, Progress: {data.get('progress', 0)}%")
+
+    if data["status"] == "completed":
+        print(f"Video URL: {data['video_url']}")
+        break
+    elif data["status"] == "failed":
+        print(f"Error: {data['error']}")
+        break
+
+    time.sleep(5)  # Poll every 5 seconds
+```
+
+```javascript JavaScript
+const taskId = 'ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+
+async function pollForVideo() {
+  while (true) {
+    const response = await fetch(
+      `https://api.aisonar.dev/v1/tasks/${taskId}`,
+      { headers: { 'Authorization': 'Bearer sk-your-api-key' } }
+    );
+
+    const data = await response.json();
+    console.log(`Status: ${data.status}, Progress: ${data.progress || 0}%`);
+
+    if (data.status === 'completed') {
+      console.log(`Video URL: ${data.video_url}`);
+      return data.video_url;
+    } else if (data.status === 'failed') {
+      throw new Error(data.error);
+    }
+
+    await new Promise(r => setTimeout(r, 5000));
+  }
+}
+```
+
+```go Go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "net/http"
+    "time"
+)
+
+func main() {
+    taskID := "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+
+    for {
+        req, _ := http.NewRequest("GET",
+            fmt.Sprintf("https://api.aisonar.dev/v1/tasks/%s", taskID), nil)
+        req.Header.Set("Authorization", "Bearer sk-your-api-key")
+
+        client := &http.Client{}
+        resp, _ := client.Do(req)
+
+        var result map[string]interface{}
+        json.NewDecoder(resp.Body).Decode(&result)
+        resp.Body.Close()
+
+        fmt.Printf("Status: %s, Progress: %.0f%%\n", result["status"], result["progress"])
+
+        if result["status"] == "completed" {
+            fmt.Printf("Video URL: %s\n", result["video_url"])
+            break
+        } else if result["status"] == "failed" {
+            fmt.Printf("Error: %s\n", result["error"])
+            break
+        }
+
+        time.Sleep(5 * time.Second)
+    }
+}
+```
+
+```php PHP
+<?php
+$taskId = 'ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+
+while (true) {
+    $ch = curl_init("https://api.aisonar.dev/v1/tasks/{$taskId}");
+
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            'Authorization: Bearer sk-your-api-key'
+        ]
+    ]);
+
+    $response = curl_exec($ch);
+    curl_close($ch);
+
+    $data = json_decode($response, true);
+    echo "Status: {$data['status']}, Progress: " . ($data['progress'] ?? 0) . "%\n";
+
+    if ($data['status'] === 'completed') {
+        echo "Video URL: {$data['video_url']}\n";
+        break;
+    } elseif ($data['status'] === 'failed') {
+        echo "Error: {$data['error']}\n";
+        break;
+    }
+
+    sleep(5);
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response (pending)
+{
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "pending",
+  "progress": 0,
+  "model": "veo3.1",
+  "created": 1706000000,
+  "updated": 1706000000
+}
+```
+
+```json Response (processing)
+{
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "processing",
+  "progress": 45,
+  "model": "veo3.1",
+  "created": 1706000000,
+  "updated": 1706000030
+}
+```
+
+```json Response (completed)
+{
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "billing_transaction_id": "cmo164zyc0s48jpgegi80vqv4",
+  "status": "completed",
+  "progress": 100,
+  "video_url": "https://assets.aisonar.dev/videos/abc123.mp4",
+  "model": "veo3.1",
+  "created": 1706000000,
+  "updated": 1706000060
+}
+```
+
+```json Response (failed)
+{
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "failed",
+  "error": "Content policy violation",
+  "model": "veo3.1",
+  "created": 1706000000,
+  "updated": 1706000060
+}
+```
+</ResponseExample>
+
+## ポーリングのベストプラクティス
+
+- 5〜10秒ごとにポーリングする
+- 長時間のタスクには指数バックオフを実装する
+- 最大タイムアウトを設定する（例: 10分）
+- `failed` ステータスを適切に処理する
+
+```python
+import time
+
+def wait_for_video(task_id, max_wait=600, interval=5):
+    """Wait for video with timeout."""
+    start = time.time()
+
+    while time.time() - start < max_wait:
+        response = requests.get(
+            f"https://api.aisonar.dev/v1/tasks/{task_id}",
+            headers={"Authorization": "Bearer sk-your-api-key"}
+        )
+        data = response.json()
+
+        if data["status"] == "completed":
+            return data["video_url"]
+        elif data["status"] == "failed":
+            raise Exception(data.get("error", "Video generation failed"))
+
+        time.sleep(interval)
+
+    raise TimeoutError("Video generation timed out")
+```

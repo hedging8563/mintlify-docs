@@ -1,0 +1,208 @@
+---
+title: "Anthropic SDK"
+description: "Verwenden Sie AI Sonar mit dem Anthropic SDK für Claude-native Messages API-Kompatibilität"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Überblick
+
+AI Sonar unterstützt den nativen Anthropic **Messages API**-Pfad, sodass Sie das offizielle Anthropic SDK direkt für Claude-Modelle verwenden können.
+
+<Note>
+Verwenden Sie für das Anthropic SDK `https://api.aisonar.dev` als Base URL, ohne selbst `/v1` anzuhängen.
+</Note>
+
+<Note>
+**Typ**: Native SDK
+
+**Primärer Pfad**: Anthropic-native
+
+**Support-Niveau**: Starker nativer Pfad
+</Note>
+
+Unter den dokumentierten SDK-Routen ist dies einer der am besten unterstützten AI Sonar-Pfade für Claude-native Funktionen.
+
+## Installation
+
+<CodeGroup>
+
+```bash Python
+pip install anthropic
+```
+
+```bash JavaScript
+npm install @anthropic-ai/sdk
+```
+
+</CodeGroup>
+
+## Den Client konfigurieren
+
+<CodeGroup>
+
+```python Python
+from anthropic import Anthropic
+
+client = Anthropic(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev",
+)
+```
+
+```javascript JavaScript
+import Anthropic from '@anthropic-ai/sdk';
+
+const client = new Anthropic({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev',
+});
+```
+
+</CodeGroup>
+
+## Grundlegende Verwendung
+
+```python
+message = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    messages=[
+        {"role": "user", "content": "Explain AI Sonar in one sentence."}
+    ]
+)
+
+print(message.content[0].text)
+```
+
+## Streaming
+
+```python
+with client.messages.stream(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Write a short poem about coding."}]
+) as stream:
+    for text in stream.text_stream:
+        print(text, end="", flush=True)
+```
+
+## Vision
+
+```python
+import base64
+
+message = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    messages=[{
+        "role": "user",
+        "content": [
+            {"type": "text", "text": "What's in this image?"},
+            {
+                "type": "image",
+                "source": {
+                    "type": "url",
+                    "url": "https://example.com/image.jpg"
+                }
+            }
+        ]
+    }]
+)
+
+with open("image.png", "rb") as f:
+    image_data = base64.b64encode(f.read()).decode()
+
+message = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    messages=[{
+        "role": "user",
+        "content": [
+            {"type": "text", "text": "Describe this image"},
+            {
+                "type": "image",
+                "source": {
+                    "type": "base64",
+                    "media_type": "image/png",
+                    "data": image_data
+                }
+            }
+        ]
+    }]
+)
+```
+
+## Tool-Nutzung
+
+```python
+message = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    tools=[{
+        "name": "get_weather",
+        "description": "Get the weather for a location",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "location": {"type": "string"}
+            },
+            "required": ["location"]
+        }
+    }],
+    messages=[{"role": "user", "content": "What's the weather in Tokyo?"}]
+)
+
+for block in message.content:
+    if block.type == "tool_use":
+        print(block.name)
+        print(block.input)
+```
+
+## Erweitertes Denken
+
+```python
+message = client.messages.create(
+    model="claude-opus-4-6",
+    max_tokens=16000,
+    thinking={
+        "type": "enabled",
+        "budget_tokens": 10000
+    },
+    messages=[{"role": "user", "content": "Solve this complex problem step by step."}]
+)
+
+for block in message.content:
+    if block.type == "thinking":
+        print(block.thinking)
+    elif block.type == "text":
+        print(block.text)
+```
+
+## Empfohlene Claude-Modelle
+
+| Modell | Am besten für |
+|-------|----------|
+| `claude-opus-4-6` | Tiefes Schlussfolgern, ausführliche Analysen |
+| `claude-sonnet-4-6` | Coding, allgemeine Assistant-Aufgaben |
+| `claude-haiku-4-5` | Schnelle, leichtgewichtige Antworten |
+
+## Fehlerbehebung
+
+<AccordionGroup>
+  <Accordion title="Falsche Base URL">
+    - Verwenden Sie `https://api.aisonar.dev`
+    - Hängen Sie `/v1` nicht manuell an, wenn Sie das Anthropic SDK konfigurieren
+  </Accordion>
+
+  <Accordion title="Authentifizierung fehlgeschlagen">
+    - Prüfen Sie, ob Ihr AI Sonar API-Schlüssel mit `sk-` beginnt
+    - Bestätigen Sie, dass der Schlüssel im AI Sonar-Dashboard aktiv ist
+    - Lassen Sie das Anthropic SDK den Auth-Header verwalten, anstatt manuell benutzerdefinierte Header hinzuzufügen
+  </Accordion>
+
+  <Accordion title="Modell nicht gefunden">
+    - Verifizieren Sie den Claude-Modellnamen exakt
+    - Prüfen Sie die aktuelle Verfügbarkeit im AI Sonar-Modellkatalog
+  </Accordion>
+</AccordionGroup>

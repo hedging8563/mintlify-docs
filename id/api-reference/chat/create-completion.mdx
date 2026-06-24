@@ -1,0 +1,279 @@
+---
+title: "Buat Penyelesaian Obrolan"
+openapi: "POST /v1/chat/completions"
+description: "Membuat penyelesaian untuk pesan obrolan"
+---
+
+## Isi Permintaan
+
+<ParamField body="model" type="string" required>
+  ID model yang akan digunakan. Lihat [Models](https://aisonar.dev/models) untuk opsi yang tersedia.
+</ParamField>
+
+<ParamField body="messages" type="array" required>
+  Daftar pesan yang membentuk percakapan.
+
+  Setiap objek pesan berisi:
+  - `role` (string): `system`, `user`, atau `assistant`
+  - `content` (string | array): Konten pesan
+
+  Ketika `content` adalah array, AI Sonar mendukung blok multimodal terstruktur untuk model yang kompatibel:
+  - text: `{ "type": "text", "text": "..." }`
+  - gambar: `{ "type": "image_url", "image_url": { "url": "https://..." } }`
+  - video: `{ "type": "video_url", "video_url": { "url": "https://..." } }`
+  - audio: `{ "type": "audio_url", "audio_url": { "url": "https://..." } }`
+
+  Untuk lalu lintas produksi multimodal, utamakan URL publik `https`. AI Sonar akan menerjemahkan blok media ini ke bentuk permintaan spesifik provider yang diperlukan oleh model fisik yang diarahkan.
+</ParamField>
+
+<ParamField body="temperature" type="number" default="1">
+  Temperatur sampling antara 0 dan 2. Nilai yang lebih tinggi membuat keluaran lebih acak.
+</ParamField>
+
+<ParamField body="max_tokens" type="integer">
+  Jumlah maksimum token yang akan dihasilkan.
+</ParamField>
+
+<ParamField body="stream" type="boolean" default="false">
+  Jika true, delta pesan parsial akan dikirim sebagai event SSE.
+</ParamField>
+
+<ParamField body="stream_options" type="object">
+  Opsi untuk streaming. Setel `include_usage: true` untuk menerima pemakaian token dalam potongan stream.
+</ParamField>
+
+<ParamField body="top_p" type="number" default="1">
+  Parameter nucleus sampling. Kami menyarankan mengubah ini atau temperature, bukan keduanya.
+</ParamField>
+
+<ParamField body="frequency_penalty" type="number" default="0">
+  Angka antara -2.0 dan 2.0. Nilai positif memberi penalti pada token yang berulang.
+</ParamField>
+
+<ParamField body="presence_penalty" type="number" default="0">
+  Angka antara -2.0 dan 2.0. Nilai positif memberi penalti pada token yang sudah ada di teks.
+</ParamField>
+
+<ParamField body="stop" type="string | array">
+  Hingga 4 urutan di mana API akan berhenti menghasilkan token.
+</ParamField>
+
+<ParamField body="tools" type="array">
+  Daftar tools yang mungkin dipanggil model (pemanggilan fungsi).
+</ParamField>
+
+<ParamField body="tool_choice" type="string | object">
+  Mengontrol bagaimana model menggunakan tools. Opsi: `auto`, `none`, `required`, atau objek tool tertentu.
+</ParamField>
+
+<ParamField body="parallel_tool_calls" type="boolean" default="true">
+  Menentukan apakah pemanggilan fungsi paralel diaktifkan. Setel ke false untuk memanggil fungsi secara berurutan.
+</ParamField>
+
+<ParamField body="max_completion_tokens" type="integer">
+  Token maksimum untuk penyelesaian. Alternatif untuk `max_tokens`, berguna untuk keluarga model terbaru yang mendukung reasoning.
+</ParamField>
+
+<ParamField body="reasoning_effort" type="string">
+  Tingkat usaha reasoning untuk model yang mendukung reasoning. Opsi: `low`, `medium`, `high`.
+</ParamField>
+
+<ParamField body="seed" type="integer">
+  Seed acak untuk sampling deterministik.
+</ParamField>
+
+<ParamField body="n" type="integer" default="1">
+  Jumlah penyelesaian yang akan dihasilkan (1-128).
+</ParamField>
+
+<ParamField body="logprobs" type="boolean">
+  Apakah akan mengembalikan log probabilitas.
+</ParamField>
+
+<ParamField body="top_logprobs" type="integer">
+  Jumlah top log probabilitas yang dikembalikan (0-20). Memerlukan `logprobs: true`.
+</ParamField>
+
+<ParamField body="top_k" type="integer">
+  Parameter sampling Top-K (untuk model Anthropic/Gemini).
+</ParamField>
+
+<ParamField body="response_format" type="object">
+  Spesifikasi format respons. Gunakan `{"type": "json_object"}` untuk mode JSON. Perlakukan `{"type": "json_schema", "json_schema": {...}}` sebagai jalur best-effort yang bergantung pada model yang dipilih dan perilaku routing.
+</ParamField>
+
+<ParamField body="logit_bias" type="object">
+  Mengubah kemungkinan token tertentu muncul. Pemetaan ID token (sebagai string) ke nilai bias dari -100 sampai 100.
+</ParamField>
+
+<ParamField body="user" type="string">
+  Identifier unik yang merepresentasikan pengguna akhir Anda untuk pemantauan penyalahgunaan.
+</ParamField>
+
+
+## Respons
+
+<ResponseField name="id" type="string">
+  Pengidentifikasi unik untuk penyelesaian.
+</ResponseField>
+
+<ResponseField name="object" type="string">
+  Selalu `chat.completion`.
+</ResponseField>
+
+<ResponseField name="created" type="integer">
+  Timestamp Unix saat penyelesaian dibuat.
+</ResponseField>
+
+<ResponseField name="model" type="string">
+  Model yang digunakan untuk penyelesaian.
+</ResponseField>
+
+<ResponseField name="choices" type="array">
+  Daftar pilihan penyelesaian.
+
+  Setiap pilihan berisi:
+  - `index` (integer): Indeks pilihan
+  - `message` (object): Pesan yang dihasilkan
+  - `finish_reason` (string): Alasan model berhenti (`stop`, `length`, `tool_calls`)
+</ResponseField>
+
+<ResponseField name="usage" type="object">
+  Statistik penggunaan token.
+
+  - `prompt_tokens` (integer): Token dalam prompt
+  - `completion_tokens` (integer): Token dalam penyelesaian
+  - `total_tokens` (integer): Total token yang digunakan
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/chat/completions" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o",
+    "messages": [
+      {"role": "system", "content": "You are a helpful assistant."},
+      {"role": "user", "content": "Hello!"}
+    ],
+    "temperature": 0.7,
+    "max_tokens": 1000
+  }'
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "Hello!"}
+    ],
+    temperature=0.7,
+    max_tokens=1000
+)
+
+print(response.choices[0].message.content)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.chat.completions.create({
+  model: 'gpt-4o',
+  messages: [
+    { role: 'system', content: 'You are a helpful assistant.' },
+    { role: 'user', content: 'Hello!' }
+  ],
+  temperature: 0.7,
+  max_tokens: 1000
+});
+
+console.log(response.choices[0].message.content);
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/chat/completions');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Content-Type: application/json',
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => json_encode([
+        'model' => 'gpt-4o',
+        'messages' => [
+            ['role' => 'system', 'content' => 'You are a helpful assistant.'],
+            ['role' => 'user', 'content' => 'Hello!']
+        ],
+        'temperature' => 0.7,
+        'max_tokens' => 1000
+    ])
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+echo $data['choices'][0]['message']['content'];
+```
+</RequestExample>
+
+## Contoh Multimodal
+
+```json
+{
+  "model": "gemini-2.5-pro",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        { "type": "text", "text": "Describe this video briefly." },
+        { "type": "video_url", "video_url": { "url": "https://example.com/demo.mp4" } }
+      ]
+    }
+  ],
+  "max_tokens": 64
+}
+```
+
+<ResponseExample>
+```json Response
+{
+  "id": "chatcmpl-abc123",
+  "object": "chat.completion",
+  "created": 1706000000,
+  "model": "gpt-4o",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "Hello! How can I help you today?"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 20,
+    "completion_tokens": 9,
+    "total_tokens": 29
+  }
+}
+```
+</ResponseExample>

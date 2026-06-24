@@ -1,0 +1,89 @@
+---
+title: "Dapatkan Status Task"
+openapi: "GET /v1/tasks/{id}"
+description: "Ambil status dan hasil dari task async apa pun menggunakan poll_url yang dikembalikan oleh endpoint create"
+---
+
+## Gambaran Umum
+
+Gunakan endpoint ini untuk polling async terpadu di berbagai jenis task seperti pembuatan video, gambar, musik, dan 3D.
+
+Jika respons create menyertakan `poll_url`, panggil path tersebut secara persis. Untuk alur kerja async yang lebih baru, `poll_url` dapat mengarah ke `/v1/tasks/{taskId}`.
+
+## Parameter Path
+
+<ParamField path="taskId" type="string" required>
+  ID task yang dikembalikan oleh permintaan create.
+</ParamField>
+
+## Respons
+
+<ResponseField name="id" type="string">
+  Pengidentifikasi task.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Status task seperti `pending`, `processing`, `completed`, atau `failed`. Task yang dibatalkan direpresentasikan sebagai `failed` dengan `cancelled: true`.
+</ResponseField>
+
+<ResponseField name="cancelled" type="boolean">
+  `true` ketika async task yang masih antre dibatalkan sebelum eksekusi.
+</ResponseField>
+
+<ResponseField name="cancellation_status" type="string">
+  Penanda pembatalan. Ada sebagai `cancelled` ketika pembatalan berhasil.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Untuk task gambar yang selesai, hasil gambar yang dibuat dikembalikan di sini. Task gambar mengembalikan URL di `data[].url`.
+</ResponseField>
+
+<ResponseField name="video_url" type="string">
+  URL aset hasil ketika task selesai dan menghasilkan video.
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  Pesan error ketika task gagal.
+</ResponseField>
+
+## Perilaku Error
+
+Jika task sudah tidak ada, telah kedaluwarsa, atau tidak dapat diselesaikan melalui kontrak async-task publik, AI Sonar mengembalikan:
+
+```json
+{
+  "error": {
+    "message": "Task not found or no longer available.",
+    "type": "invalid_request_error",
+    "code": "async_task_not_found"
+  }
+}
+```
+
+## Contoh
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+```python Python
+import requests
+
+poll_url = "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+response = requests.get(
+    f"https://api.aisonar.dev{poll_url}",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+)
+print(response.json())
+```
+
+```javascript JavaScript
+const pollUrl = '/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+const response = await fetch(`https://api.aisonar.dev${pollUrl}`, {
+  headers: { Authorization: 'Bearer sk-your-api-key' },
+});
+console.log(await response.json());
+```

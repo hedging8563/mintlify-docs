@@ -1,0 +1,143 @@
+---
+title: "LlamaIndex"
+description: "OpenAI互換の統合を使用してAI SonarをLlamaIndexに統合"
+---
+
+## 概要
+
+
+
+<Note>
+**種類**: フレームワーク / プラットフォーム
+
+**主要パス**: OpenAI互換（OpenAILike 経由）
+
+**サポートレベル**: OpenAILike 経由でサポート
+</Note>
+
+AI Sonar では、組み込みの OpenAI クラスではなく、**OpenAI互換の統合**を使用する方が、より堅牢な LlamaIndex のセットアップになります。
+
+現在の LlamaIndex のドキュメントでは、組み込みの OpenAI クラスが公式の model 名からメタデータを推論するため、サードパーティの OpenAI互換 endpoint には `OpenAILike` の使用を明示的に推奨しています。
+
+言い換えると、ここでは `OpenAILike` を AI Sonar のサポート対象パスとして扱い、組み込みの OpenAI クラスを同列には扱わないでください。
+
+## インストール
+
+```bash
+pip install llama-index-core \
+  llama-index-readers-file \
+  llama-index-llms-openai-like \
+  llama-index-embeddings-openai-like
+```
+
+## 基本設定
+
+```python
+from llama_index.core import Settings
+from llama_index.llms.openai_like import OpenAILike
+from llama_index.embeddings.openai_like import OpenAILikeEmbedding
+
+llm = OpenAILike(
+    model="gpt-5.4",
+    api_base="https://api.aisonar.dev/v1",
+    api_key="sk-your-api-key",
+    is_chat_model=True,
+)
+
+embed_model = OpenAILikeEmbedding(
+    model_name="text-embedding-3-small",
+    api_base="https://api.aisonar.dev/v1",
+    api_key="sk-your-api-key",
+)
+
+Settings.llm = llm
+Settings.embed_model = embed_model
+```
+
+## 基本的な使い方
+
+```python
+response = llm.complete("Explain AI Sonar in one sentence.")
+print(response.text)
+```
+
+## チャット
+
+```python
+from llama_index.core.llms import ChatMessage
+
+messages = [
+    ChatMessage(role="system", content="You are a helpful assistant."),
+    ChatMessage(role="user", content="What is the capital of France?")
+]
+
+response = llm.chat(messages)
+print(response.message.content)
+```
+
+## ストリーミング
+
+```python
+for chunk in llm.stream_complete("Write a short poem about AI."):
+    print(chunk.delta, end="", flush=True)
+```
+
+## Embeddings
+
+```python
+vector = embed_model.get_text_embedding("Hello, world!")
+print(vector[:5])
+```
+
+## ドキュメントを使用した RAG
+
+```python
+from llama_index.core import SimpleDirectoryReader, VectorStoreIndex
+
+documents = SimpleDirectoryReader("./data").load_data()
+index = VectorStoreIndex.from_documents(documents)
+
+query_engine = index.as_query_engine()
+response = query_engine.query("What is in my documents?")
+print(response)
+```
+
+## Chat Engine
+
+```python
+chat_engine = index.as_chat_engine(chat_mode="condense_question")
+
+response = chat_engine.chat("What is AI Sonar?")
+print(response)
+
+response = chat_engine.chat("How many models does it support?")
+print(response)
+```
+
+## 非同期での使用
+
+```python
+import asyncio
+
+async def main():
+    response = await llm.acomplete("Hello!")
+    print(response.text)
+
+asyncio.run(main())
+```
+
+## ベストプラクティス
+
+<AccordionGroup>
+  <Accordion title="AI Sonar では OpenAILike を使用する">
+    AI Sonar やその他のサードパーティ製 OpenAI互換 gateway には、`llama_index.llms.openai_like.OpenAILike` と `llama_index.embeddings.openai_like.OpenAILikeEmbedding` を優先して使用してください。
+  </Accordion>
+
+  <Accordion title="api_base を明示的に設定する">
+    古い OpenAI の environment variable 名に依存するのではなく、コード内で `api_base="https://api.aisonar.dev/v1"` を直接渡してください。
+  </Accordion>
+
+  <Accordion title="model の役割を分離する">
+    生成には chat/reasoning model を使用し、検索には `text-embedding-3-small` または `text-embedding-3-large` を使用してください。
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,146 @@
+---
+title: "Claude Code"
+description: "Sử dụng AI Sonar với CLI Claude Code của Anthropic"
+---
+
+## Tổng quan
+
+
+
+<Note>
+**Loại**: Công cụ coding
+
+**Đường chính**: Anthropic-native
+
+**Mức hỗ trợ**: Đường native mạnh
+</Note>
+
+[Claude Code](https://docs.anthropic.com/en/docs/claude-code) là công cụ CLI chính thức của Anthropic dành cho việc lập trình có hỗ trợ AI. Bạn có thể cấu hình nó để sử dụng AI Sonar làm nhà cung cấp API.
+
+## Cài đặt
+
+Anthropic hiện khuyến nghị trình cài đặt gốc. Cài đặt qua npm vẫn còn tồn tại để tương thích, nhưng đã bị ngừng khuyến nghị ở phía upstream.
+
+```bash
+curl -fsSL https://claude.ai/install.sh | bash
+```
+
+Nếu bạn cần cụ thể gói npm, hãy sử dụng:
+
+```bash
+npm install -g @anthropic-ai/claude-code
+```
+
+<Warning>
+Không sử dụng `sudo npm install -g` cho Claude Code.
+</Warning>
+
+## Cấu hình
+
+### Biến môi trường
+
+Thiết lập các biến môi trường sau:
+
+```bash
+export ANTHROPIC_API_KEY="sk-your-api-key"
+export ANTHROPIC_BASE_URL="https://api.aisonar.dev"
+```
+
+Thêm các biến này vào hồ sơ shell của bạn (`~/.bashrc`, `~/.zshrc`, v.v.) để duy trì lâu dài.
+
+<Note>
+Đối với AI Sonar, hãy giữ `ANTHROPIC_BASE_URL` là `https://api.aisonar.dev` mà không có hậu tố `/v1`. Điều này khớp với dạng endpoint kiểu Anthropic và mẫu gateway hợp nhất được Claude Code tài liệu hóa.
+</Note>
+
+### Tệp cấu hình
+
+Ngoài ra, hãy tạo hoặc chỉnh sửa `~/.claude/settings.json`:
+
+```json
+{
+  "env": {
+    "ANTHROPIC_API_KEY": "sk-your-api-key",
+    "ANTHROPIC_BASE_URL": "https://api.aisonar.dev"
+  }
+}
+```
+
+## Sử dụng
+
+Sau khi cấu hình, sử dụng Claude Code như bình thường:
+
+```bash
+# Start an interactive session
+claude
+
+# Run a single command
+claude "Explain this code" < main.py
+
+# Chat mode
+claude chat
+```
+
+Xác minh cài đặt nếu cần:
+
+```bash
+claude --version
+claude doctor
+```
+
+## Các model khả dụng
+
+AI Sonar hỗ trợ tất cả các model Claude:
+
+| Mô hình | Mô tả |
+|-------|-------------|
+| `claude-opus-4-6` | Mạnh nhất, suy luận phức tạp |
+| `claude-sonnet-4-6` | Hiệu năng cân bằng, xuất sắc cho lập trình |
+| `claude-haiku-4-5` | Nhanh nhất, tối ưu chi phí |
+
+## Lựa chọn model
+
+Chỉ định một model bằng cờ `--model`:
+
+```bash
+claude --model claude-sonnet-4-6 "Review this PR"
+```
+
+Hoặc đặt mặc định trong cấu hình của bạn:
+
+```json
+{
+  "env": {
+    "ANTHROPIC_API_KEY": "sk-your-api-key",
+    "ANTHROPIC_BASE_URL": "https://api.aisonar.dev"
+  },
+  "model": "claude-sonnet-4-6"
+}
+```
+
+## Suy nghĩ mở rộng
+
+Đối với các tác vụ suy luận phức tạp, hãy sử dụng các model có extended thinking:
+
+```bash
+claude --model claude-opus-4-6 "Design a microservices architecture for..."
+```
+
+## Khắc phục sự cố
+
+<AccordionGroup>
+  <Accordion title="Lỗi kết nối">
+    Xác minh base URL chính xác là `https://api.aisonar.dev` (không có hậu tố `/v1` cho các request kiểu Anthropic).
+  </Accordion>
+
+  <Accordion title="API key không hợp lệ">
+    Đảm bảo API key AI Sonar của bạn bắt đầu bằng `sk-` và có đủ số dư.
+  </Accordion>
+
+  <Accordion title="Gateway yêu cầu Authorization bearer token">
+    Chế độ gateway của Claude Code cũng hỗ trợ `ANTHROPIC_AUTH_TOKEN`. Hãy tiếp tục sử dụng `ANTHROPIC_API_KEY` cho thiết lập AI Sonar tiêu chuẩn trừ khi bạn đã chủ động chuyển đổi hành vi xác thực gateway của mình.
+  </Accordion>
+
+  <Accordion title="Không tìm thấy model">
+    Kiểm tra tên model có chính xác không. Sử dụng định dạng `claude-sonnet-4-6`.
+  </Accordion>
+</AccordionGroup>

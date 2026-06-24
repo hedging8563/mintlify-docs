@@ -1,0 +1,164 @@
+---
+title: "إنشاء ترجمة"
+openapi: "POST /v1/audio/translations"
+description: "يترجم الصوت إلى نص باللغة الإنجليزية"
+---
+
+## نظرة عامة
+
+يترجم الصوت بأي لغة مدعومة إلى نص باللغة الإنجليزية. بخلاف النسخ، تقوم نقطة النهاية هذه دائمًا بإخراج نص باللغة الإنجليزية بغض النظر عن لغة الإدخال.
+
+## نص الطلب
+
+**مهلة الطلبات المتزامنة:** ينتظر هذا الـ endpoint غير الخاص بالمحادثة حتى ينتهي النموذج الذي تم التوجيه إليه. قد تتجاوز المدخلات الكبيرة أو الصوت الطويل أو الدُفعات الكبيرة القيمة الافتراضية الشائعة للعميل وهي 30s، لذا اضبط مهلة عميل HTTP على `120s` على الأقل.
+
+<ParamField body="file" type="file" required>
+  ملف الصوت المراد ترجمته. التنسيقات المدعومة: `flac`, `mp3`, `mp4`, `mpeg`, `mpga`, `m4a`, `ogg`, `wav`, `webm`. الحد الأقصى لحجم الملف هو 25 MB.
+</ParamField>
+
+<ParamField body="model" type="string" default="whisper-1">
+  النموذج المراد استخدامه. حاليًا، النموذج المدعوم الوحيد هو `whisper-1`.
+</ParamField>
+
+<ParamField body="prompt" type="string">
+  نص اختياري لتوجيه أسلوب النموذج أو لمتابعة مقطع سابق. يجب أن يكون باللغة الإنجليزية.
+</ParamField>
+
+<ParamField body="response_format" type="string" default="json">
+  تنسيق المخرجات. الخيارات: `json`, `text`, `srt`, `verbose_json`, `vtt`.
+</ParamField>
+
+<ParamField body="temperature" type="number">
+  درجة حرارة أخذ العينات، بين 0 و1. القيم الأعلى مثل 0.8 تنتج مخرجات أكثر عشوائية، بينما القيم الأقل مثل 0.2 تجعل المخرجات أكثر تركيزًا وحتمية.
+</ParamField>
+
+## الاستجابة
+
+<ResponseField name="text" type="string">
+  النص المترجم باللغة الإنجليزية.
+</ResponseField>
+
+بالنسبة إلى تنسيق `verbose_json`، تتضمن الاستجابة أيضًا:
+
+<ResponseField name="language" type="string">
+  اللغة المكتشفة للصوت المُدخل.
+</ResponseField>
+
+<ResponseField name="duration" type="number">
+  مدة الصوت المُدخل بالثواني.
+</ResponseField>
+
+<ResponseField name="segments" type="array">
+  مقاطع من النص المترجم مع الطوابع الزمنية.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/audio/translations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F "file=@german_audio.mp3" \
+  -F "model=whisper-1"
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+with open("german_audio.mp3", "rb") as audio_file:
+    response = client.audio.translations.create(
+        model="whisper-1",
+        file=audio_file
+    )
+
+print(response.text)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+import fs from 'fs';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.audio.translations.create({
+  model: 'whisper-1',
+  file: fs.createReadStream('german_audio.mp3')
+});
+
+console.log(response.text);
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/audio/translations');
+
+$file = new CURLFile('german_audio.mp3', 'audio/mpeg', 'german_audio.mp3');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => [
+        'file' => $file,
+        'model' => 'whisper-1'
+    ]
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+echo $data['text'];
+```
+</RequestExample>
+
+<ResponseExample>
+```json json
+{
+  "text": "Hello, my name is Wolfgang and I come from Germany. Where are you from?"
+}
+```
+
+```json verbose_json
+{
+  "task": "translate",
+  "language": "german",
+  "duration": 8.470000267028809,
+  "text": "Hello, my name is Wolfgang and I come from Germany. Where are you from?",
+  "segments": [
+    {
+      "id": 0,
+      "seek": 0,
+      "start": 0.0,
+      "end": 4.0,
+      "text": " Hello, my name is Wolfgang and I come from Germany.",
+      "tokens": [50364, 2425, 11, 452, 1315, 307, 25329, 293, 286, 808, 490, 5765, 13, 50564],
+      "temperature": 0.0,
+      "avg_logprob": -0.45,
+      "compression_ratio": 1.0,
+      "no_speech_prob": 0.0
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## الترجمة مقابل النسخ
+
+| الميزة | الترجمة | النسخ |
+|---------|-------------|---------------|
+| لغة المخرجات | الإنجليزية دائمًا | نفس لغة الإدخال |
+| حالة الاستخدام | تحويل الصوت الأجنبي إلى الإنجليزية | الحفاظ على اللغة الأصلية |
+| معلمة اللغة | غير قابلة للتطبيق | تلميح اختياري |
+
+<Note>
+  تقوم نقطة نهاية الترجمة تلقائيًا باكتشاف لغة المصدر وترجمتها إلى الإنجليزية. يتم تجاهل المعلمة `language` الخاصة بالنسخ.
+</Note>

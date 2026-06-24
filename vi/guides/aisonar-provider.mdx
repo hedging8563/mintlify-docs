@@ -1,0 +1,186 @@
+---
+title: "Thiết lập AI Sonar Provider"
+description: "Cấu hình AI Sonar làm provider tùy chỉnh trong OpenClaw sử dụng các route tương thích OpenAI, Responses, Anthropic và Gemini"
+---
+
+<Note>
+Hướng dẫn này dành cho người dùng **self-hosted OpenClaw** muốn kết nối AI Sonar làm provider AI của họ.
+</Note>
+
+## Tổng quan
+
+Đối với các phiên bản OpenClaw hiện tại, cách khuyến nghị là cấu hình AI Sonar qua `models.providers`.
+
+Nếu bạn chỉ muốn bắt đầu nhanh, chỉ cần cấu hình `aisonar` là đủ. Chỉ thêm các provider khác khi bạn thực sự cần hành vi **Responses API**, **Claude native**, **Gemini native**, hoặc **MiniMax native**.
+
+| Nhà cung cấp | OpenClaw `api` | Phù hợp cho | baseUrl |
+|----------|----------------|----------|---------|
+| `aisonar` | `openai-completions` | GPT, DeepSeek, Qwen, và hầu hết các gọi tương thích OpenAI | `https://api.aisonar.dev/v1` |
+| `aisonar-responses` | `openai-responses` | Các luồng công việc OpenAI Responses mong đợi ngữ nghĩa `/v1/responses` | `https://api.aisonar.dev/v1` |
+| `aisonar-claude` | `anthropic-messages` | API Messages gốc của Claude | `https://api.aisonar.dev` |
+| `aisonar-gemini` | `google-generative-ai` | Định dạng API Gemini gốc | `https://api.aisonar.dev` |
+| `aisonar-minimax` | `anthropic-messages` | Điều hướng MiniMax gốc | `https://api.aisonar.dev` |
+
+<Warning>
+Chỉ sử dụng hậu tố `/v1` cho `openai-completions` và `openai-responses`.
+
+Các nhà cung cấp gốc như `anthropic-messages` và `google-generative-ai` nên dùng `https://api.aisonar.dev` mà không có `/v1`, nếu không OpenClaw có thể tạo sai đường dẫn upstream.
+</Warning>
+
+## Yêu cầu tiên quyết
+
+- Một instance OpenClaw self-hosted
+- Một AI Sonar API Key — [Get one here](https://console.aisonar.dev)
+
+## Cấu hình
+
+Chỉnh sửa cấu hình OpenClaw của bạn:
+
+- **Tự lưu trữ**: `~/.openclaw/openclaw.json`
+
+Thêm provider AI Sonar dưới `models.providers`:
+
+```json5
+{
+  agents: {
+    defaults: {
+      model: {
+        primary: "aisonar-claude/claude-sonnet-4-6"
+      }
+    }
+  },
+  models: {
+    mode: "merge",
+    providers: {
+      aisonar: {
+        api: "openai-completions",
+        baseUrl: "https://api.aisonar.dev/v1",
+        apiKey: "sk-your-api-key",
+        models: [
+          { id: "gpt-4o", name: "GPT-4o" },
+          { id: "deepseek-r1", name: "DeepSeek R1" },
+          { id: "qwen3-32b", name: "Qwen 3 32B" }
+        ]
+      },
+      "aisonar-responses": {
+        api: "openai-responses",
+        baseUrl: "https://api.aisonar.dev/v1",
+        apiKey: "sk-your-api-key",
+        models: [
+          { id: "gpt-4o", name: "GPT-4o (Responses)" },
+          { id: "gpt-5.2", name: "GPT-5.2 (Responses)" }
+        ]
+      },
+      "aisonar-claude": {
+        api: "anthropic-messages",
+        baseUrl: "https://api.aisonar.dev",
+        apiKey: "sk-your-api-key",
+        models: [
+          { id: "claude-sonnet-4-6", name: "Claude Sonnet 4.6" },
+          { id: "claude-opus-4-6", name: "Claude Opus 4.6" }
+        ]
+      },
+      "aisonar-gemini": {
+        api: "google-generative-ai",
+        baseUrl: "https://api.aisonar.dev",
+        apiKey: "sk-your-api-key",
+        models: [
+          { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash" },
+          { id: "gemini-3-flash-preview", name: "Gemini 3 Flash Preview" }
+        ]
+      },
+      "aisonar-minimax": {
+        api: "anthropic-messages",
+        baseUrl: "https://api.aisonar.dev",
+        apiKey: "sk-your-api-key",
+        models: [
+          { id: "minimax-m1", name: "MiniMax M1" }
+        ]
+      }
+    }
+  }
+}
+```
+
+<Info>
+Cả 5 nhà cung cấp đều dùng **cùng một API Key**. Bạn chỉ cần một tài khoản AI Sonar.
+</Info>
+
+<Info>
+Các mảng `models` ở trên chỉ hiển thị các ví dụ phổ biến. Thêm các model ID khác cho từng nhà cung cấp khi cần.
+</Info>
+
+## Sử dụng Models
+
+OpenClaw vẫn tham chiếu các model theo định dạng `provider/model`:
+
+```json5
+{
+  agents: {
+    defaults: {
+      model: {
+        primary: "aisonar-gemini/gemini-2.5-flash"
+      }
+    }
+  }
+}
+```
+
+### Ví dụ Model
+
+| Nhà cung cấp | Tham chiếu model | Mô tả |
+|----------|-----------------|-------------|
+| `aisonar` | `aisonar/gpt-4o` | Route tương thích OpenAI |
+| `aisonar` | `aisonar/deepseek-r1` | Mô hình suy luận DeepSeek |
+| `aisonar-responses` | `aisonar-responses/gpt-4o` | Route Responses API |
+| `aisonar-claude` | `aisonar-claude/claude-sonnet-4-6` | Route Messages gốc của Claude |
+| `aisonar-gemini` | `aisonar-gemini/gemini-2.5-flash` | Route Gemini gốc |
+| `aisonar-minimax` | `aisonar-minimax/minimax-m1` | Route MiniMax gốc |
+
+Browse all available models at [aisonar.dev/models](https://aisonar.dev/models).
+
+## Khi nào sử dụng provider nào
+
+- `aisonar`: lựa chọn mặc định cho hầu hết các trường hợp sử dụng agent và chat đa dụng.
+- `aisonar-responses`: dùng khi luồng công việc OpenClaw của bạn phụ thuộc rõ ràng vào ngữ nghĩa OpenAI Responses.
+- `aisonar-claude`: dùng khi bạn muốn hành vi Messages gốc của Claude.
+- `aisonar-gemini`: dùng khi bạn cần định dạng yêu cầu/đáp trả gốc của Gemini hoặc tích hợp theo kiểu Gemini hiện có.
+- `aisonar-minimax`: dùng khi bạn muốn MiniMax theo route gốc của nó.
+
+Nếu bạn không cần hành vi Gemini-gốc, bạn vẫn có thể gọi các model Gemini thông qua `aisonar/gemini-*` trên route tương thích OpenAI.
+
+## Những lỗi phổ biến
+
+<AccordionGroup>
+  <Accordion title="Vẫn đang sử dụng mảng providers cấp cao cũ">
+    Tài liệu OpenClaw hiện tại sử dụng `models.providers`. Nếu bạn giữ định dạng mảng `providers` cấp cao cũ, OpenClaw có thể bỏ qua cấu hình hoặc không thể giải quyết tiền tố provider như mong đợi.
+  </Accordion>
+  <Accordion title="Quên /v1 trên aisonar-responses">
+    `openai-responses` ánh xạ đến đường dẫn `/v1/responses` của AI Sonar, nên `aisonar-responses` phải sử dụng `https://api.aisonar.dev/v1`.
+  </Accordion>
+  <Accordion title="Thêm /v1 vào aisonar-claude, aisonar-gemini, hoặc aisonar-minimax">
+    `anthropic-messages` và `google-generative-ai` nên sử dụng `https://api.aisonar.dev` mà không có `/v1`. Thêm `/v1` có thể tạo ra các đường dẫn yêu cầu không chính xác.
+  </Accordion>
+  <Accordion title="OpenClaw có còn hỗ trợ Gemini gốc không?">
+    Có. Tài liệu OpenClaw hiện tại vẫn bao gồm provider tích hợp sẵn `google` và cũng hỗ trợ các provider tùy chỉnh sử dụng `api: "google-generative-ai"`. Vì vậy `aisonar-gemini` vẫn là một route Gemini gốc hợp lệ cho người dùng OpenClaw.
+  </Accordion>
+</AccordionGroup>
+
+## Xác minh cấu hình
+
+Sau khi lưu cấu hình, khởi động lại instance OpenClaw của bạn và thử với một tin nhắn đơn giản. Nếu bạn nhận được phản hồi, provider đã được cấu hình chính xác.
+
+```bash
+# Tự lưu trữ: khởi động lại dịch vụ
+systemctl --user restart openclaw    # Linux
+launchctl stop cc.aisonar.openclaw && launchctl start cc.aisonar.openclaw  # macOS
+```
+
+## Bước tiếp theo
+
+Khi OpenClaw đã kết nối, các hướng dẫn sau sẽ giúp bạn sử dụng AI Sonar hiệu quả hơn:
+
+- [Định dạng API](/guides/api-formats) — hiểu sự khác nhau giữa các route OpenAI, Responses, Anthropic và Gemini
+- [IDE / SDK Compatibility](/guides/ide-sdk-compatibility) — xem khi nào `/v1/responses` là lựa chọn phù hợp hơn
+- [Xử lý lỗi](/guides/error-handling) — tìm hiểu các chế độ thất bại phổ biến và các mẫu phục hồi
+- [Tổng quan mô hình](https://aisonar.dev/models) — duyệt các ID model trước khi kết nối chúng vào agents

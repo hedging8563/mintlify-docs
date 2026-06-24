@@ -1,0 +1,38 @@
+---
+title: "Ideogram"
+description: "Text rendering in images"
+---
+
+## Overview
+
+AI Sonar provides access to Ideogram models. Total: **4 models** available.
+
+## Image Generation
+
+| Model ID | Pricing |
+|----------|--------|
+| `ideogram-edit-v3` | See dashboard |
+| `ideogram-reframe-v3` | See dashboard |
+| `ideogram-remix-v3` | See dashboard |
+| `ideogram-v3` | See dashboard |
+
+
+## Usage
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="ideogram-edit-v3",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+```
+
+<Note>
+Prices shown are platform prices (~70% of official rates).
+</Note>

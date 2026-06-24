@@ -1,0 +1,252 @@
+---
+title: "OpenAI SDK"
+description: "Sử dụng AI Sonar với các OpenAI SDK chính thức và các client tương thích với OpenAI"
+---
+
+## Tổng quan
+
+AI Sonar hoạt động với các OpenAI SDK chính thức bằng cách trỏ client tới `https://api.aisonar.dev/v1`.
+
+Đối với hầu hết các dự án mới, ưu tiên **Chat Completions** làm đường dẫn tương thích OpenAI mặc định. Chỉ sử dụng **Responses API** khi bạn thực sự cần hành vi đặc thù của Responses.
+
+Các trường riêng cho Responses không được đảm bảo sẽ hoạt động giống hệt trên mọi mô hình và đường dẫn được định tuyến.
+
+<Note>
+Python, JavaScript và Go có các OpenAI SDK chính thức. PHP hoạt động tốt với các client cộng đồng tương thích OpenAI, nhưng nó không phải là một OpenAI SDK chính thức.
+</Note>
+
+<Note>
+**Loại**: SDK gốc
+
+**Đường dẫn chính**: Tương thích OpenAI / Chat Completions
+
+**Độ tin cậy hỗ trợ**: Đường dẫn lõi được hỗ trợ
+</Note>
+
+## Cài đặt
+
+<CodeGroup>
+
+```bash Python
+pip install openai
+```
+
+```bash JavaScript
+npm install openai
+```
+
+```bash Go
+go get github.com/openai/openai-go/v3
+```
+
+</CodeGroup>
+
+<Note>
+Sử dụng `POST /v1/responses` chỉ khi bạn thực sự cần hành vi đặc thù của Responses. Một số trường chỉ dành cho Responses vẫn có thể phụ thuộc vào mô hình được chọn và đường dẫn được định tuyến.
+</Note>
+
+## Cấu hình Client
+
+<CodeGroup>
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1",
+)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1',
+});
+```
+
+```go Go
+package main
+
+import (
+    openai "github.com/openai/openai-go/v3"
+    "github.com/openai/openai-go/v3/option"
+)
+
+func main() {
+    client := openai.NewClient(
+        option.WithAPIKey("sk-your-api-key"),
+        option.WithBaseURL("https://api.aisonar.dev/v1"),
+    )
+
+    _ = client
+}
+```
+
+</CodeGroup>
+
+## Khuyến nghị: Chat Completions
+
+<CodeGroup>
+
+```python Python
+response = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "Explain what AI Sonar does in one sentence."}]
+)
+
+print(response.choices[0].message.content)
+```
+
+```javascript JavaScript
+const response = await client.chat.completions.create({
+  model: 'gpt-5.4',
+  messages: [{ role: 'user', content: 'Explain what AI Sonar does in one sentence.' }],
+});
+
+console.log(response.choices[0].message.content);
+```
+
+```bash cURL
+curl https://api.aisonar.dev/v1/chat/completions \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.4",
+    "messages": [
+      {"role": "user", "content": "Explain what AI Sonar does in one sentence."}
+    ]
+  }'
+```
+
+</CodeGroup>
+
+## Nâng cao: Responses API
+
+Sử dụng đường dẫn này chỉ khi công cụ hoặc quy trình làm việc của bạn phụ thuộc rõ ràng vào ngữ nghĩa của OpenAI Responses.
+
+### Streaming với Responses
+
+<CodeGroup>
+
+```python Python
+stream = client.responses.create(
+    model="gpt-5.4",
+    input="Write a short poem about coding.",
+    stream=True,
+)
+
+for event in stream:
+    if event.type == "response.output_text.delta":
+        print(event.delta, end="")
+```
+
+```javascript JavaScript
+const stream = await client.responses.create({
+  model: 'gpt-5.4',
+  input: 'Write a short poem about coding.',
+  stream: true,
+});
+
+for await (const event of stream) {
+  if (event.type === 'response.output_text.delta') {
+    process.stdout.write(event.delta);
+  }
+}
+```
+
+</CodeGroup>
+
+## Công cụ / Gọi hàm
+
+```python
+response = client.responses.create(
+    model="gpt-5.4",
+    input="What's the weather in Tokyo?",
+    tools=[{
+        "type": "function",
+        "name": "get_weather",
+        "description": "Get weather for a location",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "location": {"type": "string"}
+            },
+            "required": ["location"]
+        }
+    }]
+)
+
+for item in response.output:
+    if item.type == "function_call":
+        print(item.name)
+        print(item.arguments)
+```
+
+## Vision với Responses
+
+```python
+response = client.responses.create(
+    model="gpt-4o",
+    input=[{
+        "role": "user",
+        "content": [
+            {"type": "input_text", "text": "What's in this image?"},
+            {"type": "input_image", "image_url": "https://example.com/image.jpg"}
+        ]
+    }]
+)
+
+print(response.output_text)
+```
+
+## Embeddings
+
+```python
+response = client.embeddings.create(
+    model="text-embedding-3-small",
+    input="Hello world"
+)
+
+print(response.data[0].embedding[:5])
+```
+
+## Chat Completions
+
+Chat Completions là đường dẫn tương thích OpenAI mặc định cho AI Sonar:
+
+```python
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "Hello!"}
+    ]
+)
+
+print(response.choices[0].message.content)
+```
+
+## Khắc phục sự cố
+
+<AccordionGroup>
+  <Accordion title="Connection Error">
+    - Xác minh rằng base URL chính xác là `https://api.aisonar.dev/v1`
+    - Kiểm tra xem có proxy can thiệp hoặc các ghi đè client HTTP tùy chỉnh hay không
+    - Đảm bảo phiên bản SDK của bạn là mới nhất trước khi gỡ lỗi hành vi của nhà cung cấp
+  </Accordion>
+
+  <Accordion title="Xác thực thất bại">
+    - Kiểm tra rằng khóa API của bạn bắt đầu với `sk-`
+    - Xác minh rằng khóa đang hoạt động trên bảng điều khiển AI Sonar
+    - Xác nhận SDK đang gửi `Authorization: Bearer ...`
+  </Accordion>
+
+  <Accordion title="Sai đường dẫn API">
+    - `responses.create(...)` gửi yêu cầu tới `/v1/responses`
+    - `chat.completions.create(...)` gửi yêu cầu tới `/v1/chat/completions`
+    - Sử dụng Chat Completions theo mặc định trừ khi bạn thực sự cần hành vi riêng của Responses
+  </Accordion>
+</AccordionGroup>

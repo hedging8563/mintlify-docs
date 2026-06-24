@@ -1,0 +1,35 @@
+---
+title: "Listar Lotes"
+openapi: "GET /v1/batches"
+description: "Lista trabajos por lotes para la organización de la clave API actual."
+---
+
+## Resumen
+
+Este endpoint es parte de la API de Lotes compatible con OpenAI de AI Sonar. Los trabajos por lotes utilizan archivos JSONL subidos, se ejecutan de manera asíncrona y pueden devolver archivos de salida/error más tarde.
+
+## Notas
+
+- Los archivos de entrada por lotes deben usar `purpose=batch`.
+- `completion_window` es actualmente `24h`.
+- El orden de salida no está garantizado; siempre coincida por `custom_id`.
+- La transmisión no es compatible dentro de los elementos del lote.
+
+## Ejemplo
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/batches?limit=20" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+## Solicitud / Respuesta
+
+Utilice el panel interactivo de OpenAPI arriba para el esquema exacto.
+
+## Consejos Operativos
+
+- Use `custom_id` para la reconciliación idempotente en downstream.
+- Espere `output_file_id` y `error_file_id` solo después de que el trabajador finalice el lote.
+- Los precios de los lotes pueden diferir de los precios sincrónicos porque se aplican las reglas de descuento `isBatchRequest=true`.

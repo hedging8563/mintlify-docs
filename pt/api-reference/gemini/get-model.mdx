@@ -1,0 +1,107 @@
+---
+title: "Obter modelo"
+openapi: "GET /v1beta/models/{model}"
+description: "Obtém metadados do modelo usando o formato da API Google Gemini"
+---
+
+Retorna metadados para um modelo específico no formato da API Google Gemini.
+
+## Parâmetros de caminho
+
+<ParamField path="model" type="string" required>
+  Nome do modelo (por exemplo, `gemini-2.5-pro`, `gemini-2.5-flash`). Aliases também são aceitos.
+</ParamField>
+
+## Autenticação
+
+Autenticação não é obrigatória para o endpoint público de leitura de metadados do modelo.
+
+## Resposta
+
+<ResponseField name="name" type="string">
+  Nome do recurso do modelo no formato `models/{model}`.
+</ResponseField>
+
+<ResponseField name="displayName" type="string">
+  Nome legível do modelo.
+</ResponseField>
+
+<ResponseField name="inputTokenLimit" type="integer">
+  Máximo de tokens de entrada (janela de contexto).
+</ResponseField>
+
+<ResponseField name="outputTokenLimit" type="integer">
+  Máximo de tokens de saída.
+</ResponseField>
+
+<ResponseField name="supportedGenerationMethods" type="array">
+  Lista de métodos de geração suportados (por exemplo, `generateContent`, `countTokens`, `embedContent`).
+</ResponseField>
+
+<ResponseField name="version" type="string">
+  String de versão pública quando disponível.
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  Descrição legível do modelo quando disponível.
+</ResponseField>
+
+<ResponseField name="temperature" type="number">
+  Temperatura padrão quando o upstream a expõe.
+</ResponseField>
+
+<ResponseField name="topP" type="number">
+  Valor padrão de top-p quando disponível.
+</ResponseField>
+
+<ResponseField name="topK" type="integer">
+  Valor padrão de top-k quando disponível.
+</ResponseField>
+
+<ResponseField name="maxTemperature" type="number">
+  Temperatura máxima suportada quando disponível.
+</ResponseField>
+
+## Erros
+
+- GETs inválidos que incluam acidentalmente `:generateContent` ou `:streamGenerateContent` retornam `405 METHOD_NOT_ALLOWED`.
+- Modelos ausentes retornam `404 NOT_FOUND`.
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1beta/models/gemini-2.5-pro"
+```
+
+```python Python
+import google.generativeai as genai
+
+genai.configure(
+    api_key="sk-your-api-key",
+    transport="rest",
+    client_options={"api_endpoint": "api.aisonar.dev"}
+)
+
+model = genai.get_model("models/gemini-2.5-pro")
+print(f"Name: {model.name}")
+print(f"Input limit: {model.input_token_limit}")
+print(f"Output limit: {model.output_token_limit}")
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "name": "models/gemini-2.5-pro",
+  "version": "1.0",
+  "displayName": "gemini-2.5-pro",
+  "description": "gemini-2.5-pro model available via AI Sonar",
+  "inputTokenLimit": 1048576,
+  "outputTokenLimit": 65536,
+  "supportedGenerationMethods": ["generateContent", "countTokens"],
+  "temperature": 1.0,
+  "topP": 0.95,
+  "topK": 40,
+  "maxTemperature": 2.0
+}
+```
+</ResponseExample>

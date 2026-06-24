@@ -1,0 +1,325 @@
+---
+title: "✨ Agent-First API"
+description: "为 AI Agent 提供结构化错误提示，帮助它在第一次重试时自我修正"
+---
+
+## 概览
+
+AI Sonar 的 Agent-First API 会在错误响应中加入结构化提示，AI Agent 可以立即解析并采取行动 —— 无需网络搜索、无需查阅文档、无需猜测。
+
+每个错误响应的标准 `error` 对象中都包含可选字段，例如 `did_you_mean`、`suggestions`、`hint`、`retryable` 和 `retry_after`。这些字段向后兼容 —— 不使用它们的客户端不会有任何差异。
+
+## 错误提示字段
+
+所有提示字段都是 `error` 对象内的可选扩展：
+
+| 字段 | 类型 | 描述 |
+|-------|------|-------------|
+| `did_you_mean` | `string` | 最接近的匹配模型名称 |
+| `suggestions` | `array` | 带元数据的推荐模型 |
+| `alternatives` | `array` | 当前可用的替代模型 |
+| `hint` | `string` | 供人类或 Agent 阅读的下一步指导 |
+| `retryable` | `boolean` | 是否重试相同请求可能成功 |
+| `retry_after` | `number` | 重试前等待的秒数 |
+| `balance_usd` | `number` | 当前账户余额（美元） |
+| `estimated_cost_usd` | `number` | 失败请求的预计费用（美元） |
+
+## 错误代码示例
+
+### model_not_found (400)
+
+当模型名称不匹配任何活动模型时：
+
+```json
+{
+  "error": {
+    "message": "Model not found: please check the model name",
+    "type": "invalid_request_error",
+    "param": "model",
+    "code": "model_not_found",
+    "did_you_mean": "gpt-5.4",
+    "suggestions": [
+      {"id": "gpt-5.4"},
+      {"id": "gpt-5-mini"},
+      {"id": "claude-sonnet-4-6"}
+    ],
+    "hint": "Did you mean 'gpt-5.4'? Use GET https://api.aisonar.dev/v1/models to list all available models."
+  }
+}
+```
+
+`did_you_mean` 的解析使用：
+1. 静态别名映射（来自生产错误数据）
+2. 规范化字符串匹配（去除连字符，大小写不敏感）
+3. 编辑距离匹配（阈值 ≤ 3）
+
+公共路由不会为隐藏的、延后可用的或非公开的模型暴露单独的错误代码。将不可用的公共模型视为一次匹配失败：检查 `did_you_mean`、`suggestions` 和 `hint`，然后使用受支持的公共模型重试。
+
+### insufficient_balance (402)
+
+当账户余额不足以覆盖预计费用时：
+
+```json
+{
+  "error": {
+    "message": "Insufficient balance: need ~$0.3500 for claude-sonnet-4-6, but balance is $0.1200.",
+    "type": "insufficient_balance",
+    "code": "insufficient_balance",
+    "balance_usd": 0.12,
+    "estimated_cost_usd": 0.35,
+    "suggestions": [
+      {"id": "gpt-5-mini"},
+      {"id": "deepseek-v3-2"}
+    ],
+    "hint": "Insufficient balance: need ~$0.3500 for claude-sonnet-4-6, but balance is $0.1200. Try a cheaper model, or top up at https://console.aisonar.dev/billing."
+  }
+}
+```
+
+`suggestions` 包含比预计费用更低、Agent 可以切换到的模型。
+
+### all_channels_failed (503)
+
+当某个模型的所有通道都暂时不可用时：
+
+```json
+{
+  "error": {
+    "message": "Model claude-opus-4-6 temporarily unavailable",
+    "code": "all_channels_failed",
+    "retryable": true,
+    "retry_after": 30,
+    "alternatives": [
+      {"id": "claude-sonnet-4-6", "status": "available", "tags": []},
+      {"id": "gpt-5-mini", "status": "available", "tags": []}
+    ],
+    "hint": "All channels for 'claude-opus-4-6' are temporarily unavailable. Retry in 30s or try an alternative model."
+  }
+}
+```
+
+<Note>
+当原因是 `no_channels`（该模型未配置任何通道）时，`retryable` 为 `false`。只有在诸如熔断器触发或配额耗尽等短暂故障情况下，`retryable` 才为 `true`。
+</Note>
+
+### rate_limit_exceeded (429)
+
+```json
+{
+  "error": {
+    "message": "Rate limit: 60 rpm exceeded",
+    "type": "rate_limit_exceeded",
+    "code": "rate_limit_exceeded",
+    "retryable": true,
+    "retry_after": 8,
+    "hint": "Rate limited. Retry after 8s. Current limit: 60/min for user role."
+  }
+}
+```
+
+`retry_after` 的值根据实际速率限制窗口重置时间计算。
+
+<Note>
+与 OpenAI 兼容的端点使用 AI Sonar 的稳定公共错误类型，例如 `rate_limit_exceeded`、`upstream_error` 和 `all_channels_failed`。与 Anthropic 兼容和与 Gemini 兼容的端点使用它们各自的原生响应格式。
+</Note>
+
+### context_length_exceeded (400)
+
+当输入超过模型的上下文窗口（上游错误，附带提示）时：
+
+```json
+{
+  "error": {
+    "message": "This model's maximum context length is 128000 tokens...",
+    "type": "invalid_request_error",
+    "code": "context_length_exceeded",
+    "retryable": false,
+    "suggestions": [
+      {"id": "gemini-2.5-pro"},
+      {"id": "claude-sonnet-4-6"}
+    ],
+    "hint": "Reduce your input or switch to a model with a larger context window."
+  }
+}
+```
+
+## 原生端点头部
+
+当你对有原生端点（Anthropic 或 Gemini）的模型调用 `/v1/chat/completions` 时，**成功响应** 会包含优化头部：
+
+
+
+| 模型提供方 | 建议的端点 | 好处 |
+|---------------|-------------------|---------|
+| Anthropic (Claude) | `/v1/messages` | 无需格式转换、延长思考阶段、提示缓存 |
+| Google (Gemini) | `/v1beta/gemini` | 无需格式转换、grounding（信息落地/归因）、安全设置 |
+| OpenAI | — | Chat completions 已经是原生格式 |
+
+这些头部会出现在流式和非流式响应中。
+
+## /v1/models 增强
+
+`/v1/models` 现在携带非聊天场景的推荐元数据，Agent 在调用图像、视频、音乐、3D、TTS、STT、embedding、rerank 或翻译端点之前可以使用这些元数据。
+
+```json
+{
+  "id": "gemini-2.5-flash-image",
+  "aisonar": {
+    "category": "image",
+    "pricing_unit": "per_request",
+    "agent_preferences": {
+      "image": {
+        "preferred_rank": 1,
+        "success_rate_24h": 0.98,
+        "sample_count_24h": 423,
+        "status": "ready",
+        "updated_at": "2026-03-28T12:00:00.000Z",
+        "basis": {
+          "score_source": "clickhouse_24h",
+          "channel_id": null,
+          "physical_model": null
+        }
+      }
+    }
+  }
+}
+```
+
+| 字段 | 值 | 描述 |
+|-------|--------|-------------|
+| `category` | `chat`, `image`, `video`, `audio`, `tts`, `stt`, `3d`, `embedding`, `rerank` | 模型类型 |
+| `pricing_unit` | `per_token`, `per_image`, `per_second`, `per_request` | 模型的计费方式 |
+| `cache_pricing` | `object` 或 `null` | 仅在模型存在 prompt cache 价格时返回。 |
+| `agent_preferences.<scene>` | object | 仅在 `GET /v1/models?recommended_for=<scene>` 时返回该场景的非聊天推荐快照 |
+
+当 `recommended_for` 存在时，`agent_preferences` 来源于缓存的 24 小时成功率快照：
+
+- 窗口：24 小时
+- 快照缓存：stale-while-revalidate
+- `status = "ready"` 表示该模型有足够的最近样本参与排序
+- `status = "insufficient_samples"` 表示该模型仍可见，但不会排在有评分模型之前
+
+### 分类过滤
+
+```bash
+GET https://api.aisonar.dev/v1/models?category=chat          # 仅聊天模型
+GET https://api.aisonar.dev/v1/models?category=image         # 图片生成模型
+GET https://api.aisonar.dev/v1/models?tag=coding&category=chat  # 面向 coding 的聊天模型
+```
+
+### 推荐发现
+
+对于非聊天工作流，Agent 应首先获取当前的推荐候选名单：
+
+```bash
+GET https://api.aisonar.dev/v1/models?recommended_for=image
+GET https://api.aisonar.dev/v1/models?recommended_for=translation
+GET https://api.aisonar.dev/v1/models?category=tts&recommended_for=tts
+```
+
+有效的 `recommended_for` 值为：
+
+- `image`
+- `video`
+- `music`
+- `3d`
+- `tts`
+- `stt`
+- `embedding`
+- `rerank`
+- `translation`
+
+如果同时存在 `category` 和 `recommended_for`，则二者必须完全匹配。
+
+推荐的 Agent 流程：
+
+1. `GET /v1/models?recommended_for=<scene>`
+2. 选择第一个 `agent_preferences.<scene>.status == "ready"` 的模型
+3. 使用 `model=<selected>` 明确调用端点
+4. 仅在短暂错误情况下，使用下一个 `ready` 模型重试
+
+## llms.txt
+
+机器可读的 API 概览可通过以下方式获取：
+
+```
+GET https://api.aisonar.dev/llms.txt
+```
+
+其中包含：
+- 带工作示例的首次调用模板
+- 常见模型名称（基于使用数据动态生成）
+- 所有 12 个 API 端点
+- 模型发现的过滤参数
+- 错误处理指南
+
+在首次 API 调用之前读取 `llms.txt` 的 AI Agent 通常可以在第一次尝试时成功。
+
+## 在 Agent 代码中的使用
+
+### Python (OpenAI SDK)
+
+```python
+from openai import OpenAI, BadRequestError
+
+client = OpenAI(
+    api_key="sk-your-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+def smart_chat(messages, model="gpt-4o"):
+    try:
+        return client.chat.completions.create(
+            model=model, messages=messages
+        )
+    except BadRequestError as e:
+        error = e.body.get("error", {}) if isinstance(e.body, dict) else {}
+        # 使用 did_you_mean 自动修正
+        if error.get("code") == "model_not_found" and error.get("did_you_mean"):
+            return client.chat.completions.create(
+                model=error["did_you_mean"], messages=messages
+            )
+        raise
+```
+
+### JavaScript (OpenAI SDK)
+
+```javascript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+async function smartChat(messages, model = 'gpt-4o') {
+  try {
+    return await client.chat.completions.create({ model, messages });
+  } catch (error) {
+    const err = error?.error;
+    if (err?.code === 'model_not_found' && err?.did_you_mean) {
+      return client.chat.completions.create({
+        model: err.did_you_mean, messages
+      });
+    }
+    throw error;
+  }
+}
+```
+
+## 设计原则
+
+<CardGroup cols={2}>
+  <Card title="快速失败，提供明确信息" icon="bolt">
+    错误会立即返回，并提供 Agent 自我修正所需的所有数据。
+  </Card>
+  <Card title="不自动路由" icon="route">
+    API 不会在未通知的情况下替换其他模型。由 Agent 来决定。
+  </Card>
+  <Card title="数据驱动的建议" icon="database">
+    所有推荐均来自生产数据，而非硬编码列表。
+  </Card>
+  <Card title="向后兼容" icon="plug">
+    所有提示字段都是可选的。现有客户端不会受到影响。
+  </Card>
+</CardGroup>

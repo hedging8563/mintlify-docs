@@ -1,0 +1,123 @@
+---
+title: "Buat Speech"
+openapi: "POST /v1/audio/speech"
+description: "Menghasilkan audio dari teks input"
+---
+
+## Body Permintaan
+
+**Timeout permintaan sinkron:** endpoint non-chat ini menunggu model yang dirutekan selesai. Input besar, audio panjang, atau batch besar dapat melebihi default client umum 30s, jadi atur timeout HTTP client Anda minimal `120s`.
+
+<ParamField body="model" type="string" default="tts-1">
+  Model TTS: `tts-1` (standar) atau `tts-1-hd` (kualitas lebih tinggi).
+</ParamField>
+
+<ParamField body="input" type="string" required>
+  Teks untuk menghasilkan audio. Maksimum 4096 karakter.
+</ParamField>
+
+<ParamField body="voice" type="string" required>
+  Voice yang digunakan: `alloy`, `ash`, `ballad`, `coral`, `echo`, `fable`, `nova`, `onyx`, `sage`, `shimmer`, `verse`.
+</ParamField>
+
+<ParamField body="response_format" type="string" default="mp3">
+  Format audio: `mp3`, `opus`, `aac`, `flac`, `wav`, `pcm`.
+</ParamField>
+
+<ParamField body="speed" type="number" default="1.0">
+  Kecepatan audio (0.25 hingga 4.0).
+</ParamField>
+
+## Respons
+
+Mengembalikan file audio dalam format yang diminta.
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/audio/speech" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "tts-1-hd",
+    "voice": "nova",
+    "input": "Hello, welcome to AI Sonar!"
+  }' \
+  --output speech.mp3
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.audio.speech.create(
+    model="tts-1-hd",
+    voice="nova",
+    input="Hello, welcome to AI Sonar!"
+)
+
+response.stream_to_file("speech.mp3")
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+import fs from 'fs';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.audio.speech.create({
+  model: 'tts-1-hd',
+  voice: 'nova',
+  input: 'Hello, welcome to AI Sonar!'
+});
+
+const buffer = Buffer.from(await response.arrayBuffer());
+fs.writeFileSync('speech.mp3', buffer);
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/audio/speech');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Content-Type: application/json',
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => json_encode([
+        'model' => 'tts-1-hd',
+        'voice' => 'nova',
+        'input' => 'Hello, welcome to AI Sonar!'
+    ])
+]);
+
+$audio = curl_exec($ch);
+curl_close($ch);
+
+file_put_contents('speech.mp3', $audio);
+```
+</RequestExample>
+
+## Sampel Voice
+
+| Voice | Deskripsi |
+|-------|-------------|
+| `alloy` | Netral, seimbang |
+| `ash` | Tenang, terukur |
+| `ballad` | Melodis, ekspresif |
+| `coral` | Hangat, mengundang |
+| `echo` | Hangat, percakapan |
+| `fable` | Ekspresif, naratif |
+| `nova` | Ramah, jelas |
+| `onyx` | Dalam, berwibawa |
+| `sage` | Bijaksana, penuh pertimbangan |
+| `shimmer` | Lembut, halus |
+| `verse` | Dinamis, serbaguna |

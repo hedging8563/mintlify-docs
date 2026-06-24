@@ -1,0 +1,343 @@
+---
+title: "Generate Content"
+openapi: "POST /v1beta/models/{model}:generateContent"
+description: "Menghasilkan konten menggunakan format Google Gemini API"
+---
+
+AI Sonar mendukung format native Google Gemini API untuk model Gemini. Hal ini memungkinkan kompatibilitas langsung dengan Google AI SDK.
+
+## Parameter Path
+
+<ParamField path="model" type="string" required>
+  Nama model (misalnya, `gemini-2.5-pro`, `gemini-2.5-flash`).
+
+
+  Untuk integrasi produksi, utamakan bagian media `fileData` / `file_data` berbasis URL dengan URL `https` publik.
+  AI Sonar akan mengarahkan kanal native Gemini yang didukung melalui jalur native jika memungkinkan dan secara otomatis beralih ke jalur konversi internal yang kompatibel ketika rute yang siap-native tidak tersedia untuk permintaan multimodal tersebut.
+
+</ParamField>
+
+## Parameter Query
+
+<ParamField query="key" type="string">
+  API key (alternatif untuk autentikasi header).
+</ParamField>
+
+## Autentikasi
+
+Endpoint Gemini mendukung beberapa metode autentikasi:
+- `?key=YOUR_API_KEY` parameter query
+- `x-goog-api-key: YOUR_API_KEY` header
+- `Authorization: Bearer YOUR_API_KEY` header
+
+## Isi Permintaan
+
+<ParamField body="contents" type="array" required>
+  Isi percakapan.
+
+  Setiap objek konten berisi:
+  - `role` (string): `user` atau `model`
+  - `parts` (array): bagian konten. AI Sonar saat ini mendukung:
+    - bagian teks: `{ "text": "..." }`
+    - bagian media inline: `inlineData` / `inline_data`
+    - bagian file berbasis URL: `fileData` / `file_data`
+
+  Untuk bagian media, AI Sonar saat ini menerima MIME type gambar, audio, dan video lalu meneruskannya melalui kontrak publik yang kompatibel dengan Gemini.
+
+  Nilai role `user` dan `model` dinormalisasi tanpa membedakan huruf besar/kecil. `inlineData` / `inline_data` dengan `application/octet-stream` hanya diterima jika AI Sonar dapat mengenali byte gambar atau video yang didukung; jika tidak, request gagal sebelum routing. Untuk request native image-output, hanya keluarga tool Google search/maps yang diterima, dan kombinasi tool yang tidak didukung gagal sebelum retry upstream.
+</ParamField>
+
+<ParamField body="systemInstruction" type="object">
+  Instruksi sistem untuk model.
+</ParamField>
+
+<ParamField body="generationConfig" type="object">
+  Konfigurasi generasi:
+  - `temperature` (number): Suhu sampling
+  - `topP` (number): Probabilitas nucleus sampling
+  - `topK` (integer): Sampling Top-K
+  - `maxOutputTokens` (integer): Token output maksimum
+  - `stopSequences` (array): Urutan stop
+</ParamField>
+
+<ParamField body="safetySettings" type="array">
+  Pengaturan filter keamanan.
+</ParamField>
+
+## Respons
+
+<ResponseField name="candidates" type="array">
+  Kandidat konten yang dihasilkan.
+</ResponseField>
+
+<ResponseField name="usageMetadata" type="object">
+  Informasi penggunaan token.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1beta/models/gemini-2.5-pro:generateContent?key=sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "contents": [
+      {
+        "parts": [{"text": "Hello, Gemini!"}]
+      }
+    ],
+    "generationConfig": {
+      "temperature": 0.7,
+      "maxOutputTokens": 1024
+    }
+  }'
+```
+
+```python Python
+import google.generativeai as genai
+
+genai.configure(
+    api_key="sk-your-api-key",
+    transport="rest",
+    client_options={"api_endpoint": "api.aisonar.dev"}
+)
+
+model = genai.GenerativeModel("gemini-2.5-pro")
+response = model.generate_content("Hello, Gemini!")
+
+print(response.text)
+```
+
+```javascript JavaScript
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+const genAI = new GoogleGenerativeAI("sk-your-api-key", {
+  baseUrl: "https://api.aisonar.dev"
+});
+
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+const result = await model.generateContent("Hello, Gemini!");
+
+console.log(result.response.text());
+```
+
+```go Go
+package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "fmt"
+    "io"
+    "net/http"
+)
+
+func main() {
+    payload := map[string]interface{}{
+        "contents": []map[string]interface{}{
+            {
+                "parts": []map[string]string{
+                    {"text": "Hello, Gemini!"},
+                },
+            },
+        },
+        "generationConfig": map[string]interface{}{
+            "temperature":    0.7,
+            "maxOutputTokens": 1024,
+        },
+    }
+
+    jsonData, _ := json.Marshal(payload)
+    req, _ := http.NewRequest("POST",
+        "https://api.aisonar.dev/v1beta/models/gemini-2.5-pro:generateContent?key=sk-your-api-key",
+        bytes.NewBuffer(jsonData))
+    req.Header.Set("Content-Type", "application/json")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+
+    body, _ := io.ReadAll(resp.Body)
+    fmt.Println(string(body))
+}
+```
+
+```php PHP
+<?php
+$payload = [
+    'contents' => [
+        [
+            'parts' => [
+                ['text' => 'Hello, Gemini!']
+            ]
+        ]
+    ],
+    'generationConfig' => [
+        'temperature' => 0.7,
+        'maxOutputTokens' => 1024
+    ]
+];
+
+$ch = curl_init('https://api.aisonar.dev/v1beta/models/gemini-2.5-pro:generateContent?key=sk-your-api-key');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Content-Type: application/json'
+    ],
+    CURLOPT_POSTFIELDS => json_encode($payload)
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+echo $data['candidates'][0]['content']['parts'][0]['text'];
+```
+</RequestExample>
+
+
+
+## Contoh input multimodal
+
+Untuk permintaan multimodal Gemini, letakkan media di dalam `contents[].parts[]` dengan menggunakan byte inline atau referensi file berbasis URL.
+
+Kategori media yang saat ini didukung dalam kontrak publik Gemini:
+- gambar
+- audio
+- video
+
+Untuk media inline, gunakan `inlineData` atau `inline_data` dan kirim byte file yang sudah di-encode Base64.
+
+Untuk media berbasis URL, gunakan `fileData` atau `file_data` dan kirim URL publik `https`.
+
+### Contoh input gambar
+
+```json
+{
+  "contents": [
+    {
+      "role": "user",
+      "parts": [
+        { "text": "Tolong jelaskan gambar ini." },
+        {
+          "inlineData": {
+            "mimeType": "image/jpeg",
+            "data": "/9j/4AAQSkZJRgABAQ..."
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+### Contoh input audio
+
+```json
+{
+  "contents": [
+    {
+      "role": "user",
+      "parts": [
+        { "text": "Tolong transkripsikan dan ringkas audio ini." },
+        {
+          "file_data": {
+            "mime_type": "audio/mpeg",
+            "file_uri": "https://example.com/sample.mp3"
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+### Contoh input video
+
+```json
+{
+  "contents": [
+    {
+      "role": "user",
+      "parts": [
+        { "text": "Tolong jelaskan video ini secara singkat." },
+        {
+          "fileData": {
+            "mimeType": "video/mp4",
+            "fileUri": "https://example.com/sample.mp4"
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+<ResponseExample>
+```json Response
+{
+  "candidates": [
+    {
+      "content": {
+        "role": "model",
+        "parts": [
+          {"text": "Hello! How can I assist you today?"}
+        ]
+      },
+      "finishReason": "STOP",
+      "safetyRatings": [
+        {"category": "HARM_CATEGORY_HARASSMENT", "probability": "NEGLIGIBLE"}
+      ]
+    }
+  ],
+  "usageMetadata": {
+    "promptTokenCount": 5,
+    "candidatesTokenCount": 10,
+    "totalTokenCount": 15
+  }
+}
+```
+</ResponseExample>
+
+
+## Contoh Input Video
+
+```json
+{
+  "contents": [
+    {
+      "role": "user",
+      "parts": [
+        { "text": "Please describe this video." },
+        {
+          "fileData": {
+            "mimeType": "video/mp4",
+            "fileUri": "https://example.com/demo.mp4"
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+## Contoh Input Audio
+
+```json
+{
+  "contents": [
+    {
+      "role": "user",
+      "parts": [
+        { "text": "Please describe this audio." },
+        {
+          "fileData": {
+            "mimeType": "audio/mpeg",
+            "fileUri": "https://example.com/demo.mp3"
+          }
+        }
+      ]
+    }
+  ]
+}
+```

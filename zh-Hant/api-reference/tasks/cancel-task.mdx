@@ -1,0 +1,74 @@
+---
+title: "取消任務"
+openapi: "DELETE /v1/tasks/{id}"
+description: "在供應商和模型支援時取消排隊中的非同步任務"
+---
+
+## 概覽
+
+使用 `DELETE /v1/tasks/{id}` 取消尚未開始執行的非同步任務。請使用 create 回應中的任務 ID，或 `poll_url` 中帶有的同一 ID。
+
+## 支援範圍
+
+目前取消僅支援排隊中的火山引擎 Seedance 影片任務，模型為 `seedance-1.5-pro`、`seedance-2.0` 或 `seedance-2.0-fast`。已進入 `processing`/running 的任務不能取消。已完成、失敗、過期或不支援的任務會繼續保留查詢能力，用於狀態與計費核對，而不是刪除上游記錄。
+
+## 路徑參數
+
+<ParamField path="id" type="string" required>
+  由 create 請求返回或包含在 `poll_url` 中的非同步任務 ID。
+</ParamField>
+
+## 回應
+
+<ResponseField name="id" type="string">
+  標準非同步任務識別碼。
+</ResponseField>
+
+<ResponseField name="task_id" type="string">
+  非同步任務識別碼別名。
+</ResponseField>
+
+<ResponseField name="poll_url" type="string">
+  任務的首選輪詢 URL。取消後仍然有效。
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  任務狀態。成功取消的任務會以 `failed` 返回，並帶有 `cancelled: true`，以相容既有狀態值。
+</ResponseField>
+
+<ResponseField name="cancelled" type="boolean">
+  任務在執行前被取消時為 `true`。
+</ResponseField>
+
+<ResponseField name="cancellation_status" type="string">
+  取消標記。取消成功時值為 `cancelled`。
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  取消原因或任務失敗訊息。
+</ResponseField>
+
+## 錯誤行為
+
+`400 unsupported_task_cancel` 表示任務類型、供應商或模型不支援取消。`409 task_not_cancellable` 表示任務已開始處理、已終態或不再可取消。`403` 表示目前 API key 無權存取該任務。
+
+## 範例
+
+<RequestExample>
+```bash cURL
+curl -X DELETE "https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+```json Response
+{
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "failed",
+  "cancelled": true,
+  "cancellation_status": "cancelled",
+  "error": "Task cancelled before execution"
+}
+```

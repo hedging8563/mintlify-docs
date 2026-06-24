@@ -1,0 +1,295 @@
+---
+title: "ベストプラクティス"
+description: "コスト、パフォーマンス、信頼性の観点から AI Sonar API の使用を最適化します"
+---
+
+## モデル選択
+
+適切なモデルを選択することで、コストと品質に大きな影響を与えることができます。
+
+### タスク別の推奨
+
+| タスク | 推奨モデル | 理由 |
+|------|-------------------|-----------|
+| **シンプルな Q&A** | `gpt-5-mini`, `gemini-2.5-flash` | 高速、低コスト、十分な性能 |
+| **複雑な推論** | `gpt-5.4`, `claude-opus-4-6`, `deepseek-r1` | より優れたロジックと計画能力 |
+| **コーディング** | `claude-sonnet-4-6`, `gpt-4o`, `deepseek-v3.2` | コード向けに最適化 |
+| **クリエイティブライティング** | `claude-sonnet-4-6`, `gpt-4o` | より高品質な文章生成 |
+| **Vision/画像** | `gpt-4o`, `claude-sonnet-4-6`, `gemini-2.5-flash` | ネイティブな vision サポート |
+| **長いコンテキスト** | `gemini-2.5-pro`, `claude-sonnet-4-6` | 1M+ token ウィンドウ |
+| **コスト重視** | `gpt-5-mini`, `gemini-2.5-flash`, `deepseek-v3.2` | 最も高いコストパフォーマンス |
+
+### コスト階層
+
+```
+$$$$ Premium: gpt-5.4, claude-opus-4-6
+$$$  Standard: claude-sonnet-4-6, gpt-4o
+$$   Budget:   gpt-5-mini, gemini-2.5-flash
+$    Economy:  deepseek-v3.2, deepseek-r1
+```
+
+## コスト最適化
+
+### 1. まず小さいモデルを使う
+
+```python
+def smart_query(question: str, complexity: str = "auto"):
+    """Use cheaper models for simple tasks."""
+
+    if complexity == "simple":
+        model = "gpt-5-mini"
+    elif complexity == "complex":
+        model = "gpt-4o"
+    else:
+        # Start cheap, escalate if needed
+        model = "gpt-5-mini"
+
+    response = client.chat.completions.create(
+        model=model,
+        messages=[{"role": "user", "content": question}]
+    )
+    return response
+```
+
+### 2. max_tokens を設定する
+
+常に妥当な `max_tokens` 制限を設定してください。
+
+```python
+# ❌ Bad: No limit, could generate thousands of tokens
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Summarize this article"}]
+)
+
+# ✅ Good: Limit response length
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Summarize this article"}],
+    max_tokens=500  # Reasonable limit for a summary
+)
+```
+
+### 3. プロンプトを最適化する
+
+```python
+# ❌ Verbose prompt (more input tokens)
+prompt = """
+I would like you to please help me by analyzing the following text
+and providing a comprehensive summary of the main points. Please be
+thorough but also concise in your response. The text is as follows:
+{text}
+"""
+
+# ✅ Concise prompt (fewer tokens)
+prompt = "Summarize the key points:\n{text}"
+```
+
+### 4. 類似リクエストをバッチ化する
+
+```python
+# ❌ Many small requests
+for question in questions:
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{"role": "user", "content": question}]
+    )
+
+# ✅ Fewer larger requests
+combined_prompt = "\n".join([f"{i+1}. {q}" for i, q in enumerate(questions)])
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": f"Answer each question:\n{combined_prompt}"}]
+)
+```
+
+## パフォーマンス最適化
+
+### 5. UX のためにストリーミングを使う
+
+ストリーミングにより、体感上のパフォーマンスが向上します。
+
+```python
+stream = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Write a long essay"}],
+    stream=True
+)
+
+for chunk in stream:
+    if chunk.choices[0].delta.content:
+        print(chunk.choices[0].delta.content, end="", flush=True)
+```
+
+### 6. インタラクティブ用途には高速なモデルを選ぶ
+
+| ユースケース | 推奨 | レイテンシ |
+|----------|-------------|---------|
+| Chat UI | `gpt-5-mini`, `gemini-2.5-flash` | 初回 token まで約 200ms |
+| Tab completion | `claude-haiku-4-5` | 初回 token まで約 150ms |
+| バックグラウンド処理 | `gpt-4o`, `claude-sonnet-4-6` | 初回 token まで約 500ms |
+
+### 7. タイムアウトを設定する
+
+```python
+client = OpenAI(
+    api_key="sk-your-key",
+    base_url="https://api.aisonar.dev/v1",
+    timeout=60.0  # 60 second timeout
+)
+```
+
+## 信頼性
+
+### 8. リトライを実装する
+
+```python
+import time
+from openai import RateLimitError, APIError
+
+def chat_with_retry(messages, max_retries=3):
+    for attempt in range(max_retries):
+        try:
+            return client.chat.completions.create(
+                model="gpt-4o",
+                messages=messages
+            )
+        except RateLimitError:
+            wait = 2 ** attempt
+            print(f"Rate limited, waiting {wait}s...")
+            time.sleep(wait)
+        except APIError as e:
+            if attempt == max_retries - 1:
+                raise
+            time.sleep(1)
+    raise Exception("Max retries exceeded")
+```
+
+### 9. エラーを適切に処理する
+
+```python
+from openai import APIError, AuthenticationError, RateLimitError
+
+try:
+    response = client.chat.completions.create(...)
+except AuthenticationError:
+    # Check API key
+    notify_admin("Invalid API key")
+except RateLimitError:
+    # Queue for later or use backup
+    add_to_queue(request)
+except APIError as e:
+    if e.status_code == 402:
+        notify_admin("Balance low")
+    elif e.status_code >= 500:
+        # Server error, retry later
+        schedule_retry(request)
+```
+
+### 10. フォールバックモデルを使う
+
+```python
+FALLBACK_CHAIN = ["gpt-4o", "claude-sonnet-4-6", "gemini-2.5-flash"]
+
+def chat_with_fallback(messages):
+    for model in FALLBACK_CHAIN:
+        try:
+            return client.chat.completions.create(
+                model=model,
+                messages=messages
+            )
+        except APIError:
+            continue
+    raise Exception("All models failed")
+```
+
+## セキュリティ
+
+### 11. API キーを保護する
+
+```python
+# ❌ Never hardcode keys
+client = OpenAI(api_key="sk-abc123...")
+
+# ✅ Use environment variables
+import os
+client = OpenAI(api_key=os.environ["TOKENLAB_API_KEY"])
+```
+
+### 12. ユーザー入力を検証する
+
+```python
+def validate_message(content: str) -> bool:
+    """Validate user input before sending to API."""
+    if len(content) > 100000:
+        raise ValueError("Message too long")
+    # Add other validation as needed
+    return True
+```
+
+### 13. API キーの制限を設定する
+
+支出上限付きの個別の API キーを以下の用途ごとに作成してください。
+- 開発/テスト
+- 本番環境
+- 異なるアプリケーション
+
+## モニタリング
+
+### 14. 使用状況を追跡する
+
+以下について、ダッシュボードを定期的に確認してください。
+- モデル別の token 使用量
+- コストの内訳
+- キャッシュヒット率
+- エラー率
+
+### 15. 重要なメトリクスをログに記録する
+
+```python
+import logging
+
+response = client.chat.completions.create(...)
+
+logging.info({
+    "model": response.model,
+    "prompt_tokens": response.usage.prompt_tokens,
+    "completion_tokens": response.usage.completion_tokens,
+    "total_tokens": response.usage.total_tokens,
+})
+```
+
+### 16. アラートを設定する
+
+サービス中断を避けるために、ダッシュボードで残高不足アラートを設定してください。
+
+## チェックリスト
+
+<AccordionGroup>
+  <Accordion title="コスト最適化">
+    - [ ] 各タスクに適したモデルを使用している
+    - [ ] max_tokens 制限を設定している
+    - [ ] プロンプトが簡潔である
+    - [ ] 適切な箇所でキャッシュを有効にしている
+    - [ ] 類似リクエストをバッチ化している
+  </Accordion>
+
+  <Accordion title="パフォーマンス">
+    - [ ] インタラクティブな UX のためにストリーミングを使用している
+    - [ ] リアルタイム用途に高速なモデルを使用している
+    - [ ] タイムアウトを設定している
+  </Accordion>
+
+  <Accordion title="信頼性">
+    - [ ] リトライロジックを実装している
+    - [ ] エラーハンドリングを実装している
+    - [ ] フォールバックモデルを設定している
+  </Accordion>
+
+  <Accordion title="セキュリティ">
+    - [ ] API キーを環境変数で管理している
+    - [ ] 入力検証を行っている
+    - [ ] 開発/本番でキーを分けている
+    - [ ] 支出上限を設定している
+  </Accordion>
+</AccordionGroup>

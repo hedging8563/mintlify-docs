@@ -1,0 +1,114 @@
+---
+title: "SDKとライブラリ"
+description: "AI Sonar 連携に推奨される SDK とライブラリ"
+---
+
+## 概要
+
+AI Sonar は、必要な動作に合わせて SDK を選ぶことで最も簡単に統合できます:
+- Claude ネイティブの `/v1/messages` 動作向けの公式 **Anthropic SDKs**
+- Gemini ネイティブのリクエスト形状向けの公式 **Gemini / Google AI** ツール
+- OpenAI 互換の `/v1` ルートおよび Responses スタイルの使用には、公式の **OpenAI SDKs** を使用してください
+
+サポートの境界は統合ページで確認してください。この docs セットでは、「推奨」または「サポート対象」は、文書化されたセットアップ経路が存在することを意味します。それは必ずしも、このリポジトリ内で各フレームワークのヘルパーや provider-specific 機能が end-to-end で回帰テストされていることを意味しません。
+
+## 推奨 SDK
+
+<CardGroup cols={2}>
+  <Card title="OpenAI Python" icon="python" href="https://github.com/openai/openai-python">
+    `pip install openai`
+  </Card>
+  <Card title="OpenAI Node" icon="node-js" href="https://github.com/openai/openai-node">
+    `npm install openai`
+  </Card>
+  <Card title="OpenAI Go" icon="golang" href="https://github.com/openai/openai-go">
+    `go get github.com/openai/openai-go/v3`
+  </Card>
+  <Card title="Anthropic SDK" icon="robot" href="https://github.com/anthropics/anthropic-sdk-python">
+    Claude Messages API のネイティブサポート
+  </Card>
+</CardGroup>
+
+## OpenAI SDK の例
+
+既存の OpenAI 互換 クライアントを移行している場合や、`/v1` の互換経路が必要な場合に使用してください。Claude ネイティブまたは Gemini ネイティブの機能については、代わりに対応するネイティブ SDK を使用してください。
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.responses.create(
+    model="gpt-5.4",
+    input="Explain AI Sonar in one sentence."
+)
+
+print(response.output_text)
+```
+
+## OpenAI Go の例
+
+```go
+package main
+
+import (
+    openai "github.com/openai/openai-go/v3"
+    "github.com/openai/openai-go/v3/option"
+)
+
+func main() {
+    client := openai.NewClient(
+        option.WithAPIKey("sk-your-api-key"),
+        option.WithBaseURL("https://api.aisonar.dev/v1"),
+    )
+
+    _ = client
+}
+```
+
+## Anthropic SDK の例
+
+```python
+from anthropic import Anthropic
+
+client = Anthropic(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev"
+)
+
+message = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+```
+
+## どの SDK を使うべきですか？
+
+| 目標 | 推奨パス |
+|------|------------------|
+| プロバイダーネイティブの動作 | ネイティブのプロバイダーSDKまたはルート |
+| 既存の OpenAI 互換クライアント | AI Sonar の `/v1` 上の OpenAI SDK |
+| ポータブルチャット / 埋め込み | OpenAI 互換の `/v1` ルート |
+| Claudeネイティブ機能 | Anthropic SDK |
+| Geminiネイティブのリクエスト形式 | GeminiネイティブAPI / SDK |
+| LangChain / LlamaIndex / Vercel AI SDK | 専用の統合ページを使用 |
+
+## ベストプラクティス
+
+<AccordionGroup>
+  <Accordion title="挙動が重要な場合はネイティブルートを選ぶ">
+    provider-specific なフィールド、ツール、ストリーミングの詳細、その他別の形式を介して変換すべきでない動作については、Anthropic または Gemini のネイティブルートを使用してください。
+  </Accordion>
+
+  <Accordion title="移行には OpenAI 互換の `/v1` を使用">
+    OpenAI 互換 SDK は、既存の OpenAI 形式クライアント、移植性のあるチャット、そして embeddings に最適な経路です。これらは互換経路として扱ってください。AI Sonar の唯一の API 面ではありません。
+  </Accordion>
+
+  <Accordion title="Base URL を明示しておく">
+    古い環境変数エイリアスに頼るのではなく、AI Sonar のベース URL をクライアント設定に直接指定してください。
+  </Accordion>
+</AccordionGroup>

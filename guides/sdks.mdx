@@ -1,0 +1,114 @@
+---
+title: "SDKs & Libraries"
+description: "Recommended SDKs and libraries for AI Sonar integrations"
+---
+
+## Overview
+
+AI Sonar is easiest to integrate by matching the SDK to the behavior you need:
+- official **Anthropic SDKs** for Claude-native `/v1/messages` behavior
+- official **Gemini / Google AI** tooling for Gemini-native request shapes
+- official **OpenAI SDKs** for OpenAI-compatible `/v1` routes and Responses-style usage
+
+Use the integration pages for support boundaries. In this docs set, "recommended" or "supported" means a documented setup path exists; it does not automatically mean every framework helper or provider-specific feature is regression-tested end-to-end in this repo.
+
+## Recommended SDKs
+
+<CardGroup cols={2}>
+  <Card title="OpenAI Python" icon="python" href="https://github.com/openai/openai-python">
+    `pip install openai`
+  </Card>
+  <Card title="OpenAI Node" icon="node-js" href="https://github.com/openai/openai-node">
+    `npm install openai`
+  </Card>
+  <Card title="OpenAI Go" icon="golang" href="https://github.com/openai/openai-go">
+    `go get github.com/openai/openai-go/v3`
+  </Card>
+  <Card title="Anthropic SDK" icon="robot" href="https://github.com/anthropics/anthropic-sdk-python">
+    Native Claude Messages API support
+  </Card>
+</CardGroup>
+
+## OpenAI SDK Example
+
+Use this when you are migrating an existing OpenAI-compatible client or want the `/v1` compatibility path. For Claude-native or Gemini-native features, use the matching native SDK instead.
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.responses.create(
+    model="gpt-5.4",
+    input="Explain AI Sonar in one sentence."
+)
+
+print(response.output_text)
+```
+
+## OpenAI Go Example
+
+```go
+package main
+
+import (
+    openai "github.com/openai/openai-go/v3"
+    "github.com/openai/openai-go/v3/option"
+)
+
+func main() {
+    client := openai.NewClient(
+        option.WithAPIKey("sk-your-api-key"),
+        option.WithBaseURL("https://api.aisonar.dev/v1"),
+    )
+
+    _ = client
+}
+```
+
+## Anthropic SDK Example
+
+```python
+from anthropic import Anthropic
+
+client = Anthropic(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev"
+)
+
+message = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+```
+
+## Which SDK Should You Use?
+
+| Goal | Recommended path |
+|------|------------------|
+| Provider-native behavior | Native provider SDK or route |
+| Existing OpenAI-compatible client | OpenAI SDK on AI Sonar `/v1` |
+| Portable chat / embeddings | OpenAI-compatible `/v1` routes |
+| Claude-native features | Anthropic SDK |
+| Gemini-native request shapes | Gemini-native API / SDK |
+| LangChain / LlamaIndex / Vercel AI SDK | Use the dedicated integration pages |
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Choose native routes when behavior matters">
+    Use Anthropic or Gemini native routes for provider-specific fields, tools, streaming details, and other behavior that should not be translated through another format.
+  </Accordion>
+
+  <Accordion title="Use OpenAI-compatible `/v1` for migration">
+    OpenAI-compatible SDKs are the best path for existing OpenAI-style clients, portable chat, and embeddings. Treat them as a compatibility route, not as the only AI Sonar API surface.
+  </Accordion>
+
+  <Accordion title="Keep base URLs explicit">
+    Pass AI Sonar base URLs directly in your client configuration instead of relying on older environment-variable aliases.
+  </Accordion>
+</AccordionGroup>

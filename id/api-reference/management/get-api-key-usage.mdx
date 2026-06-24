@@ -1,0 +1,44 @@
+---
+title: "Lihat penggunaan API key"
+openapi: "GET /v1/management/api-keys/{keyId}/usage"
+description: "Mengembalikan detail penggunaan yang dipaginasi untuk API key pengguna."
+---
+
+## Ikhtisar
+
+Endpoint ini mengembalikan detail penggunaan per API key tanpa mengekspos metadata routing fisik.
+
+## Parameter query
+
+| Parameter | Tipe | Default / batas | Deskripsi |
+|-----------|------|-----------------|-----------|
+| `page` | integer | default `1`, minimum `1` | Nomor halaman mulai dari 1 |
+| `limit` | integer | default `50`, minimum `1`, maksimum `100` | Ukuran halaman |
+| `logicalModel` | string | panjang maksimum `100` | Nama model logis yang diminta |
+| `modelVendor` | string | panjang maksimum `100` | Vendor model publik |
+| `scene` | enum | - | `chat`, `image`, `audio`, `video`, `embedding`, `rerank`, `translation`, `music`, `3d` |
+| `accessChannel` | enum | - | `platform` atau `byok` |
+| `startDate` | string | - | Batas bawah inklusif; menerima RFC3339 dengan timezone atau `YYYY-MM-DD` |
+| `endDate` | string | - | Batas atas inklusif; menerima RFC3339 dengan timezone atau `YYYY-MM-DD` |
+
+Jika `startDate` dan `endDate` dikirim bersamaan, `startDate` harus lebih awal atau sama dengan `endDate`.
+
+## Catatan
+
+- Respons ini dipaginasi.
+- Respons hanya mencakup field penagihan dan pelaporan yang bersifat publik.
+- Setiap item usage juga dapat menyertakan `billing_transaction_id` setelah request dasarnya mencapai status settlement selesai. Gunakan nilai ini bersama `request_id` untuk rekonsiliasi per request.
+- Metadata routing internal dan kanal fisik sengaja tidak ditampilkan.
+
+## Contoh
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/usage?page=1&limit=20&scene=video&accessChannel=platform&startDate=2026-03-01&endDate=2026-03-31" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## Request / Respons
+
+Gunakan panel OpenAPI interaktif di atas untuk melihat schema dan field respons yang tepat.

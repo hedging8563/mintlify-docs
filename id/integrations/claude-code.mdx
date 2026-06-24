@@ -1,0 +1,147 @@
+---
+title: "Claude Code"
+description: "Gunakan AI Sonar dengan CLI Claude Code milik Anthropic"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Gambaran Umum
+
+[Claude Code](https://docs.anthropic.com/en/docs/claude-code) adalah alat CLI resmi Anthropic untuk coding dengan bantuan AI. Anda dapat mengonfigurasinya untuk menggunakan AI Sonar sebagai penyedia API.
+
+
+<Note>
+**Jenis**: Alat coding
+
+**Jalur utama**: Anthropic-native
+
+**Tingkat dukungan**: Jalur native yang kuat
+</Note>
+
+## Instalasi
+
+Anthropic sekarang merekomendasikan installer native. Instalasi npm masih tersedia untuk kompatibilitas, tetapi sudah deprecated di upstream.
+
+```bash
+curl -fsSL https://claude.ai/install.sh | bash
+```
+
+Jika Anda secara khusus memerlukan package npm, gunakan:
+
+```bash
+npm install -g @anthropic-ai/claude-code
+```
+
+<Warning>
+Jangan gunakan `sudo npm install -g` untuk Claude Code.
+</Warning>
+
+## Konfigurasi
+
+### Variabel Environment
+
+Atur variabel environment berikut:
+
+```bash
+export ANTHROPIC_API_KEY="sk-your-api-key"
+export ANTHROPIC_BASE_URL="https://api.aisonar.dev"
+```
+
+Tambahkan ini ke profile shell Anda (`~/.bashrc`, `~/.zshrc`, dll.) agar tetap tersimpan.
+
+<Note>
+Untuk AI Sonar, pertahankan `ANTHROPIC_BASE_URL` pada `https://api.aisonar.dev` tanpa sufiks `/v1`. Ini sesuai dengan bentuk endpoint bergaya Anthropic dan pola gateway terpadu yang didokumentasikan oleh Claude Code.
+</Note>
+
+### File Konfigurasi
+
+Sebagai alternatif, buat atau edit `~/.claude/settings.json`:
+
+```json
+{
+  "env": {
+    "ANTHROPIC_API_KEY": "sk-your-api-key",
+    "ANTHROPIC_BASE_URL": "https://api.aisonar.dev"
+  }
+}
+```
+
+## Penggunaan
+
+Setelah konfigurasi, gunakan Claude Code seperti biasa:
+
+```bash
+# Start an interactive session
+claude
+
+# Run a single command
+claude "Explain this code" < main.py
+
+# Chat mode
+claude chat
+```
+
+Verifikasi instalasi jika diperlukan:
+
+```bash
+claude --version
+claude doctor
+```
+
+## Model yang Tersedia
+
+AI Sonar mendukung semua model Claude:
+
+| Model | Deskripsi |
+|-------|-------------|
+| `claude-opus-4-6` | Paling mumpuni, penalaran kompleks |
+| `claude-sonnet-4-6` | Performa seimbang, sangat baik untuk coding |
+| `claude-haiku-4-5` | Paling cepat, hemat biaya |
+
+## Pemilihan Model
+
+Tentukan model dengan flag `--model`:
+
+```bash
+claude --model claude-sonnet-4-6 "Review this PR"
+```
+
+Atau atur default dalam konfigurasi Anda:
+
+```json
+{
+  "env": {
+    "ANTHROPIC_API_KEY": "sk-your-api-key",
+    "ANTHROPIC_BASE_URL": "https://api.aisonar.dev"
+  },
+  "model": "claude-sonnet-4-6"
+}
+```
+
+## Pemikiran Mendalam
+
+Untuk tugas penalaran kompleks, gunakan model dengan extended thinking:
+
+```bash
+claude --model claude-opus-4-6 "Design a microservices architecture for..."
+```
+
+## Pemecahan Masalah
+
+<AccordionGroup>
+  <Accordion title="Kesalahan koneksi">
+    Verifikasi bahwa base URL adalah tepat `https://api.aisonar.dev` (tanpa sufiks `/v1` untuk request bergaya Anthropic).
+  </Accordion>
+
+  <Accordion title="API key tidak valid">
+    Pastikan API key AI Sonar Anda diawali dengan `sk-` dan memiliki saldo yang cukup.
+  </Accordion>
+
+  <Accordion title="Gateway memerlukan Authorization bearer token">
+    Mode gateway Claude Code juga mendukung `ANTHROPIC_AUTH_TOKEN`. Tetap gunakan `ANTHROPIC_API_KEY` untuk setup AI Sonar standar kecuali Anda memang sengaja mengubah perilaku auth gateway Anda.
+  </Accordion>
+
+  <Accordion title="Model tidak ditemukan">
+    Periksa bahwa nama model sudah benar. Gunakan format `claude-sonnet-4-6`.
+  </Accordion>
+</AccordionGroup>

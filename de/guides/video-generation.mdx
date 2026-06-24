@@ -1,0 +1,327 @@
+---
+title: "Video-Generierung"
+description: "Greifen Sie über einen einheitlichen öffentlichen Vertrag auf Text-zu-Video, Bild-zu-Video, Referenzbild-zu-Video, Start-/Endframe-Steuerung, Bewegungssteuerung und Video-zu-Video zu."
+---
+
+## Überblick
+
+AI Sonar bietet Video-Generierung über eine einheitliche API an. Die Generierung ist **asynchron**: Sie senden eine Anfrage, erhalten `task_id` und `poll_url` und pollen anschließend auf das Endergebnis.
+
+### Verfügbarkeit und Polling
+
+Den aktuellen Bestand öffentlicher Videomodelle finden Sie über die [Models API](/de/api-reference/models/list-models) oder auf der [Modellseite](https://aisonar.dev/models).
+
+Wenn eine Create-Response `poll_url` zurückgibt, verwenden Sie genau diese URL. Wenn sie auf `/v1/tasks/{id}` zeigt, behandeln Sie sie als kanonischen festen Status-Endpunkt.
+
+### Modell- und Medienverhalten
+
+Das Audioverhalten ist modellabhängig. In AI Sonar wird die Veo-3-Familie bei weggelassenem `output_audio` standardmäßig als audio-on behandelt. Andere öffentliche Modelle sind standardmäßig stumm oder veröffentlichen keinen stabilen Audio-Schalter.
+
+In Produktion sollten Sie für Bild-, Video- und Audioeingaben öffentlich erreichbare `https`-URLs bevorzugen. Kompatible Modelle akzeptieren weiterhin `data:`-URLs, aber URLs sind für Retry, Observability und Debugging in der Regel robuster.
+
+### Asynchroner Workflow
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant AI Sonar
+    participant Provider
+
+    Client->>AI Sonar: POST /v1/videos/generations
+    AI Sonar->>Provider: Normalisierte Anfrage weiterleiten
+    Provider-->>AI Sonar: task_id + pending
+    AI Sonar-->>Client: { task_id, poll_url, status: "pending" }
+
+    loop Alle 5-10 Sekunden pollen
+        Client->>AI Sonar: GET poll_url
+        AI Sonar->>Provider: Status abfragen
+        Provider-->>AI Sonar: Status-Update
+        AI Sonar-->>Client: { status, video_url? }
+    end
+```
+
+## Aktuelle öffentliche Operationen
+
+Der öffentliche Videovertrag von AI Sonar konzentriert sich derzeit auf diese Operationen:
+
+- `text-to-video`
+- `image-to-video`
+- `reference-to-video`
+- `start-end-to-video`
+- `video-to-video`
+- `motion-control`
+
+Der Vertrag akzeptiert außerdem `audio-to-video` und `video-extension` für modellspezifische Flows, aber in der aktuell allgemein aktivierten öffentlichen Modellliste dieses Docs-Builds gibt es kein breit aktiviertes Modell, das diese Fähigkeiten öffentlich anbietet.
+
+## Fähigkeitsmatrix
+
+**Legende**: ✅ In dieser Provider-Familie gibt es mindestens ein aktuell aktives öffentliches Modell mit dieser Fähigkeit | ❌ In den aktuell aktiven öffentlichen Modellen nicht öffentlich verfügbar
+
+| Serie | T2V | I2V | Referenz | Start-Ende | V2V | Bewegung |
+|--------|-----|-----|-----------|-----------|-----|--------|
+| OpenAI | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Kuaishou | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Google | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| ByteDance | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| MiniMax | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Alibaba | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Shengshu | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| xAI | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ |
+| Other | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
+
+### Begriffserläuterung
+
+- **T2V (Text-to-Video)**: Video aus einem Text-Prompt erzeugen
+- **I2V (Image-to-Video)**: Video aus einem Startbild erzeugen; aus Kompatibilitätsgründen wird `image_url` empfohlen
+- **Reference**: Konditionierung über ein oder mehrere Referenzbilder via `reference_images`
+- **Start-End**: Ersten und letzten Frame mit `start_image` und `end_image` steuern
+- **V2V (Video-to-Video)**: Ein bestehendes Video als Haupteingang verwenden
+- **Motion**: Motivbild und Bewegungsreferenzvideo gemeinsam verwenden
+
+## Aktueller öffentlicher Modellbestand
+
+
+### Kuaishou
+
+| Modell | Öffentliche Operationen |
+|-------|----------|
+| `kling-3.0-motion-control` | Bewegungssteuerung |
+| `kling-3.0-video` | Text-zu-Video, Bild-zu-Video, Start-Endbild-zu-Video, Elementreferenzen |
+| `kling-v2.1-master` | Text-zu-Video, Bild-zu-Video |
+| `kling-v2.1-pro` | Bild-zu-Video, Start-Endbild-zu-Video |
+| `kling-v2.1-standard` | Bild-zu-Video |
+| `kling-v2.5-turbo-pro` | Text-zu-Video, Bild-zu-Video, Start-Endbild-zu-Video |
+| `kling-v2.5-turbo-std` | Text-zu-Video, Bild-zu-Video |
+| `kling-v2.6-pro` | Text-zu-Video, Bild-zu-Video, Start-Endbild-zu-Video |
+| `kling-v2.6-std` | Text-zu-Video, Bild-zu-Video |
+| `kling-v3.0-pro` | Text-zu-Video, Bild-zu-Video, Start-Endbild-zu-Video |
+| `kling-v3.0-std` | Text-zu-Video, Bild-zu-Video, Start-Endbild-zu-Video |
+| `kling-video-o1-pro` | Text-zu-Video, Bild-zu-Video, Referenzbild-zu-Video, Start-Endbild-zu-Video, Video-zu-Video |
+| `kling-video-o1-std` | Text-zu-Video, Bild-zu-Video, Referenzbild-zu-Video, Start-Endbild-zu-Video, Video-zu-Video |
+
+### Google
+
+| Modell | Öffentliche Operationen |
+|-------|----------|
+| `veo3` | Text-zu-Video, Bild-zu-Video |
+| `veo3-fast` | Text-zu-Video, Bild-zu-Video |
+| `veo3-pro` | Text-zu-Video, Bild-zu-Video |
+| `veo3.1` | Text-zu-Video, Bild-zu-Video, Referenzbild-zu-Video, Start-Endbild-zu-Video |
+| `veo3.1-fast` | Text-zu-Video, Bild-zu-Video, Referenzbild-zu-Video, Start-Endbild-zu-Video |
+| `veo3.1-pro` | Text-zu-Video, Bild-zu-Video, Start-Endbild-zu-Video |
+
+### ByteDance
+
+| Modell | Öffentliche Operationen |
+|-------|----------|
+| `seedance-1.5-pro` | Text-zu-Video, Bild-zu-Video |
+
+### MiniMax
+
+| Modell | Öffentliche Operationen |
+|-------|----------|
+| `hailuo-2.3-fast` | Bild-zu-Video |
+| `hailuo-2.3-pro` | Text-zu-Video, Bild-zu-Video |
+| `hailuo-2.3-standard` | Text-zu-Video, Bild-zu-Video |
+
+### Alibaba
+
+| Modell | Öffentliche Operationen |
+|-------|----------|
+| `wan-2.2-plus` | Text-zu-Video, Bild-zu-Video |
+| `wan-2.5` | Text-zu-Video, Bild-zu-Video |
+| `wan-2.6` | Text-zu-Video, Bild-zu-Video, Referenzbild-zu-Video |
+
+### Shengshu
+
+| Modell | Öffentliche Operationen |
+|-------|----------|
+| `viduq2` | Text-zu-Video, Referenzbild-zu-Video |
+| `viduq2-pro` | Bild-zu-Video, Referenzbild-zu-Video, Start-Endbild-zu-Video |
+| `viduq2-pro-fast` | Bild-zu-Video, Start-Endbild-zu-Video |
+| `viduq2-turbo` | Bild-zu-Video, Start-Endbild-zu-Video |
+| `viduq3-pro` | Text-zu-Video, Bild-zu-Video, Start-Endbild-zu-Video |
+| `viduq3-turbo` | Text-zu-Video, Bild-zu-Video, Start-Endbild-zu-Video |
+
+### xAI
+
+| Modell | Öffentliche Operationen |
+|-------|----------|
+| `grok-imagine-video` | Text-zu-Video, Bild-zu-Video, Reference-to-Video, Video-to-Video |
+| `grok-imagine-video-1.5-preview` | Bild-zu-Video |
+| `grok-imagine-image-to-video` | Bild-zu-Video |
+| `grok-imagine-text-to-video` | Text-zu-Video |
+| `grok-imagine-upscale` | Video-zu-Video |
+
+### Sonstiges
+
+| Modell | Öffentliche Operationen |
+|-------|----------|
+| `topaz-video-upscale` | Video-zu-Video |
+
+## Verwendungsbeispiele
+
+### Text-zu-Video
+
+```python
+response = requests.post(f"{BASE}/videos/generations",
+    headers=headers,
+    json={
+        "model": "veo3.1",
+        "prompt": "A calm cinematic shot of a cat walking through a sunlit garden.",
+        "operation": "text-to-video",
+        "duration": 4,
+        "aspect_ratio": "16:9"
+    }
+)
+```
+
+### Bild-zu-Video
+
+```python
+response = requests.post(f"{BASE}/videos/generations",
+    headers=headers,
+    json={
+        "model": "hailuo-2.3-standard",
+        "prompt": "The scene begins from the provided image and adds gentle natural motion.",
+        "operation": "image-to-video",
+        "image_url": "https://example.com/portrait.jpg",
+        "duration": 6,
+        "aspect_ratio": "16:9"
+    }
+)
+```
+
+### Kling 3.0 Elements
+
+Verwenden Sie `kling_elements` mit `kling-3.0-video`, wenn Sie Elementreferenzen benötigen. Senden Sie eine bildkonditionierte Anfrage (`image_url`, `image_urls`, `start_image` oder `end_image`) und referenzieren Sie jedes Element im Prompt mit `@name`. Kombinieren Sie `kling_elements` nicht mit `output_audio=true`; lassen Sie `output_audio` weg oder setzen Sie es für Elementreferenzen auf `false`.
+
+```python
+response = requests.post(f"{BASE}/videos/generations",
+    headers=headers,
+    json={
+        "model": "kling-3.0-video",
+        "prompt": "Place @hero_bag on a studio turntable with soft product lighting.",
+        "operation": "image-to-video",
+        "image_url": "https://example.com/studio-start.png",
+        "duration": 5,
+        "resolution": "720p",
+        "kling_elements": [
+            {
+                "name": "hero_bag",
+                "description": "black leather handbag",
+                "element_input_urls": [
+                    "https://example.com/bag-front.png",
+                    "https://example.com/bag-side.png"
+                ]
+            }
+        ]
+    }
+)
+```
+
+### Referenzbild-zu-Video
+
+Für `seedance-2.0` und `seedance-2.0-fast` unterstützt AI Sonar derzeit bis zu 9 Referenzbilder sowie zusätzlich bis zu 3 Referenzvideos und 3 Referenzaudios. `duration` steuert nur die Länge des generierten Outputs und definiert kein separates Dauerlimit für Referenzvideo-Eingaben. Für `grok-imagine-video` akzeptiert reference-to-video bis zu 7 Bildreferenzen (`reference_images` oder `image_urls`) und `duration` ist auf 10 Sekunden begrenzt. Kombinieren Sie Referenzbilder nicht mit `image_url` / `image` als Startbild-Eingaben. `grok-imagine-video-1.5-preview` ist nur image-to-video.
+
+```python
+response = requests.post(f"{BASE}/videos/generations",
+    headers=headers,
+    json={
+        "model": "veo3.1",
+        "prompt": "Keep the same subject identity and palette while adding subtle motion.",
+        "operation": "reference-to-video",
+        "reference_images": [
+            "https://example.com/ref-a.jpg",
+            "https://example.com/ref-b.jpg"
+        ],
+        "duration": 8,
+        "resolution": "720p",
+        "aspect_ratio": "9:16"
+    }
+)
+```
+
+### Start- und Endframe-Steuerung
+
+```python
+response = requests.post(f"{BASE}/videos/generations",
+    headers=headers,
+    json={
+        "model": "viduq2-pro",
+        "prompt": "Smooth transition from day to night.",
+        "operation": "start-end-to-video",
+        "start_image": "https://example.com/city-day.jpg",
+        "end_image": "https://example.com/city-night.jpg",
+        "duration": 5,
+        "resolution": "720p",
+        "aspect_ratio": "16:9"
+    }
+)
+```
+
+### Video-zu-Video
+
+Für `grok-imagine-video` video-to-video senden Sie eine öffentliche HTTPS-`.mp4`-URL in `video_url`. AI Sonar übersetzt sie in den xAI-REST-Body `video.url`. Sie können `resolution` auf `480p` oder `720p` setzen; `duration` und `aspect_ratio` werden für diesen Edit-Flow nicht akzeptiert.
+
+```python
+response = requests.post(f"{BASE}/videos/generations",
+    headers=headers,
+    json={
+        "model": "topaz-video-upscale",
+        "operation": "video-to-video",
+        "video_url": "https://example.com/source.mp4",
+        "prompt": "Upscale this clip while preserving the original motion."
+    }
+)
+```
+
+### Bewegungssteuerung
+
+```python
+response = requests.post(f"{BASE}/videos/generations",
+    headers=headers,
+    json={
+        "model": "kling-3.0-motion-control",
+        "operation": "motion-control",
+        "prompt": "Keep the subject stable while following the motion reference.",
+        "image_url": "https://example.com/subject.png",
+        "video_url": "https://example.com/motion.mp4",
+        "resolution": "720p"
+    }
+)
+```
+
+## Hinweise zu Parametern
+
+| Parameter | Typ | Hinweis |
+|-----------|------|---------|
+| `operation` | string | In Produktion explizit angeben |
+| `image_url` | string | Robusteste Form für Bildeingaben |
+| `image` | string | `data:`-URL für lokale Tests und kleine Integrationen |
+| `reference_images` | string[] | Kanonisches öffentliches Feld für Referenzbild-Konditionierung |
+| `reference_image_type` | string | Optionaler `asset` / `style`-Schalter |
+| `video_url` | string | Für aktuelle öffentliche `video-to-video`- und `motion-control`-Modelle erforderlich |
+| `audio_url` | string | Für modellspezifische Audio-zu-Video-Flows |
+| `output_audio` | boolean | Veo-3-Familie behandelt Auslassung als `true`. `kling-3.0-video` akzeptiert diesen Selector für die Upstream-`sound`-Steuerung und bleibt bei Auslassung stumm. |
+
+## Hinweise zur Modellauswahl
+
+<CardGroup cols={2}>
+  <Card title="Höchste Qualität" icon="crown">
+    Wenn Qualität wichtiger ist als Geschwindigkeit, sind **veo3.1-pro**, **kling-video-o1-pro** und **viduq3-pro** starke Kandidaten.
+  </Card>
+  <Card title="Schnelle Iteration" icon="bolt">
+    Für schnelle Schleifen eignen sich **veo3.1-fast**, **hailuo-2.3-fast** und **viduq3-turbo**.
+  </Card>
+  <Card title="Referenzbild-Konditionierung" icon="images">
+    Für dedizierte Referenzbild-Steuerung sind **veo3.1**, **veo3.1-fast**, **wan-2.6** sowie **kling-video-o1-pro / std** gute Startpunkte.
+  </Card>
+  <Card title="Video-zu-Video" icon="film">
+    Die allgemein aktivierten öffentlichen `video-to-video`-Pfade sind derzeit vor allem **topaz-video-upscale**, **grok-imagine-upscale** und **kling-video-o1-pro / std**.
+  </Card>
+</CardGroup>
+
+## Abrechnung
+
+Die Abrechnung ist modellabhängig. Einige öffentliche Videomodelle verhalten sich effektiv wie requestbasierte Modelle, andere eher wie sekundenbasierte Modelle. Verlassen Sie sich für die aktuelle öffentliche Preisfläche auf die [Modellseite](https://aisonar.dev/models) oder die [Pricing API](/de/api-reference/pricing/get-pricing).

@@ -1,0 +1,168 @@
+---
+title: "Lấy Trạng thái Hình ảnh"
+openapi: "GET /v1/tasks/{id}"
+description: "Lấy trạng thái và kết quả của một tác vụ tạo hình ảnh bất đồng bộ"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Tham số Path
+
+<ParamField path="id" type="string" required>
+  ID của tác vụ được trả về từ yêu cầu tạo hình ảnh ban đầu.
+</ParamField>
+
+<Info>
+Nếu phản hồi tạo bao gồm `poll_url`, hãy ưu tiên gọi URL chính xác đó để thực hiện polling. Một số tác vụ hình ảnh có thể hiển thị `poll_url` dưới `/v1/tasks/{id}` thay vì đường dẫn trạng thái dành riêng cho hình ảnh.
+
+Bạn cũng có thể polling các ID tác vụ ảnh công khai như `ldtask_...` tại `/v1/images/{id}`. Alias tương thích này dùng cùng cơ chế xác thực, kiểm tra quyền sở hữu, header billing, snapshot terminal và dạng phản hồi như `/v1/images/generations/{id}`.
+
+
+Nếu tác vụ không còn tồn tại hoặc không thể được phân giải thông qua hợp đồng tác vụ bất đồng bộ công khai, AI Sonar trả về `async_task_not_found` với thông báo `Task not found or no longer available.`
+</Info>
+
+## Phản hồi
+
+<ResponseField name="created" type="integer">
+  Unix timestamp lúc tạo.
+</ResponseField>
+
+<ResponseField name="task_id" type="string">
+  Định danh của tác vụ.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Trạng thái tác vụ: `pending`, `processing`, `completed`, hoặc `failed`.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Mảng các hình ảnh đã tạo (được điền khi `status` là `completed`).
+
+  Mỗi đối tượng bao gồm:
+  - `url` (string): URL của hình ảnh đã tạo
+  - `revised_prompt` (string): Prompt đã được chỉnh sửa dùng để tạo hình ảnh
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  Thông báo lỗi (chỉ xuất hiện khi `status` là `failed`).
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+```python Python
+import requests
+
+response = requests.get(
+    "https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    headers={"Authorization": "Bearer sk-your-api-key"}
+)
+
+data = response.json()
+print(f"Status: {data['status']}")
+
+if data["status"] == "completed":
+    print(f"Image URL: {data['data'][0]['url']}")
+```
+
+```javascript JavaScript
+const response = await fetch(
+  'https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+  {
+    headers: {
+      'Authorization': 'Bearer sk-your-api-key'
+    }
+  }
+);
+
+const data = await response.json();
+console.log(`Status: ${data.status}`);
+
+if (data.status === 'completed') {
+  console.log(`Image URL: ${data.data[0].url}`);
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json Pending
+{
+  "created": 1706000000,
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "pending",
+  "data": [
+    {
+      "url": "",
+      "revised_prompt": "a beautiful sunset over mountains"
+    }
+  ]
+}
+```
+
+```json Completed
+{
+  "created": 1706000000,
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "completed",
+  "data": [
+    {
+      "url": "https://cdn.example.com/generated/image-abc123.png",
+      "revised_prompt": "a beautiful sunset over mountains with vibrant orange and purple colors"
+    }
+  ]
+}
+```
+
+```json Failed
+{
+  "created": 1706000000,
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "failed",
+  "error": "Content policy violation",
+  "data": []
+}
+```
+</ResponseExample>
+
+## Các thực hành tốt nhất về Polling
+
+<Tip>
+**Khoảng thời gian polling khuyến nghị**: 3-5 giây. Hầu hết các tác vụ tạo hình ảnh hoàn thành trong vòng 30-120 giây tùy thuộc vào mô hình và đường dẫn nhà cung cấp được điều hướng.
+</Tip>
+
+```python
+import requests
+import time
+
+def poll_image_task(task_id, api_key, max_wait=300, interval=3):
+    """Poll for image generation result with timeout."""
+    url = f"https://api.aisonar.dev/v1/tasks/{task_id}"
+    headers = {"Authorization": f"Bearer {api_key}"}
+
+    start_time = time.time()
+    while time.time() - start_time < max_wait:
+        response = requests.get(url, headers=headers)
+        data = response.json()
+
+        if data["status"] == "completed":
+            return data["data"][0]["url"]
+        elif data["status"] == "failed":
+            raise Exception(data.get("error", "Generation failed"))
+
+        time.sleep(interval)
+
+    raise TimeoutError(f"Task {task_id} did not complete within {max_wait}s")
+
+# Usage
+image_url = poll_image_task("ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "sk-your-api-key")
+print(f"Generated image: {image_url}")
+```

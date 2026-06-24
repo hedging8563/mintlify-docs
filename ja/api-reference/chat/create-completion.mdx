@@ -1,0 +1,279 @@
+---
+title: "チャット補完の作成"
+openapi: "POST /v1/chat/completions"
+description: "チャットメッセージの補完を作成します"
+---
+
+## リクエストボディ
+
+<ParamField body="model" type="string" required>
+  使用するモデルのID。利用可能なオプションについては [Models](https://aisonar.dev/models) を参照してください。
+</ParamField>
+
+<ParamField body="messages" type="array" required>
+  会話を構成するメッセージの一覧。
+
+  各メッセージオブジェクトは次を含みます:
+  - `role` (string): `system`, `user`, または `assistant`
+  - `content` (string | array): メッセージの内容
+
+  `content` が配列の場合、AI Sonar は互換モデル向けに構造化されたマルチモーダルブロックをサポートします:
+  - text: `{ "type": "text", "text": "..." }`
+  - 画像: `{ "type": "image_url", "image_url": { "url": "https://..." } }`
+  - 動画: `{ "type": "video_url", "video_url": { "url": "https://..." } }`
+  - 音声: `{ "type": "audio_url", "audio_url": { "url": "https://..." } }`
+
+  本番のマルチモーダルトラフィックでは、公開された `https` URL を優先してください。AI Sonar はこれらのメディアブロックを、ルーティングされた物理モデルが要求するプロバイダ固有のリクエスト形式に変換します。
+</ParamField>
+
+<ParamField body="temperature" type="number" default="1">
+  0〜2 の間のサンプリング温度。値が高いほど出力はよりランダムになります。
+</ParamField>
+
+<ParamField body="max_tokens" type="integer">
+  生成する最大トークン数。
+</ParamField>
+
+<ParamField body="stream" type="boolean" default="false">
+  true の場合、部分的なメッセージ差分が SSE イベントとして送信されます。
+</ParamField>
+
+<ParamField body="stream_options" type="object">
+  ストリーミングのオプション。`include_usage: true` を設定するとストリームチャンクでトークン使用量を受け取れます。
+</ParamField>
+
+<ParamField body="top_p" type="number" default="1">
+  Nucleus sampling のパラメータ。temperature または top_p のどちらかを変更することを推奨します（両方は推奨されません）。
+</ParamField>
+
+<ParamField body="frequency_penalty" type="number" default="0">
+  -2.0 から 2.0 の値。正の値は繰り返しトークンにペナルティを与えます。
+</ParamField>
+
+<ParamField body="presence_penalty" type="number" default="0">
+  -2.0 から 2.0 の値。正の値は既にテキスト内に存在するトークンにペナルティを与えます。
+</ParamField>
+
+<ParamField body="stop" type="string | array">
+  API がトークン生成を停止する最大 4 つのシーケンス。
+</ParamField>
+
+<ParamField body="tools" type="array">
+  モデルが呼び出す可能性のあるツールの一覧（関数呼び出し）。
+</ParamField>
+
+<ParamField body="tool_choice" type="string | object">
+  モデルがツールをどのように使用するかを制御します。オプション: `auto`, `none`, `required`, または特定のツールオブジェクト。
+</ParamField>
+
+<ParamField body="parallel_tool_calls" type="boolean" default="true">
+  並列での関数呼び出しを有効にするかどうか。false にすると関数を順次呼び出します。
+</ParamField>
+
+<ParamField body="max_completion_tokens" type="integer">
+  補完に使用される最大トークン数。`max_tokens` の代替で、新しい推論対応モデルファミリーに有用です。
+</ParamField>
+
+<ParamField body="reasoning_effort" type="string">
+  推論対応モデル向けの推論努力レベル。オプション: `low`, `medium`, `high`。
+</ParamField>
+
+<ParamField body="seed" type="integer">
+  決定論的サンプリングのためのランダムシード。
+</ParamField>
+
+<ParamField body="n" type="integer" default="1">
+  生成する補完の数 (1-128)。
+</ParamField>
+
+<ParamField body="logprobs" type="boolean">
+  ログ確率を返すかどうか。
+</ParamField>
+
+<ParamField body="top_logprobs" type="integer">
+  返す上位ログ確率の数 (0-20)。`logprobs: true` が必要です。
+</ParamField>
+
+<ParamField body="top_k" type="integer">
+  Top-K サンプリングのパラメータ（Anthropic/Gemini モデル向け）。
+</ParamField>
+
+<ParamField body="response_format" type="object">
+  レスポンス形式の仕様。JSON モードには `{"type": "json_object"}` を使用してください。`{"type": "json_schema", "json_schema": {...}}` は選択されたモデルとルーティングされた動作に依存するベストエフォートのパスとして扱われます。
+</ParamField>
+
+<ParamField body="logit_bias" type="object">
+  指定したトークンが出現する可能性を変更します。トークンID（文字列）を -100 から 100 のバイアス値にマップしてください。
+</ParamField>
+
+<ParamField body="user" type="string">
+  悪用監視のためにエンドユーザーを一意に識別する識別子。
+</ParamField>
+
+
+## レスポンス
+
+<ResponseField name="id" type="string">
+  補完の一意の識別子。
+</ResponseField>
+
+<ResponseField name="object" type="string">
+  常に `chat.completion`。
+</ResponseField>
+
+<ResponseField name="created" type="integer">
+  補完が作成された Unix タイムスタンプ。
+</ResponseField>
+
+<ResponseField name="model" type="string">
+  補完に使用されたモデル。
+</ResponseField>
+
+<ResponseField name="choices" type="array">
+  補完の選択肢の一覧。
+
+  各選択肢は次を含みます:
+  - `index` (integer): 選択肢のインデックス
+  - `message` (object): 生成されたメッセージ
+  - `finish_reason` (string): モデルが停止した理由（`stop`, `length`, `tool_calls`）
+</ResponseField>
+
+<ResponseField name="usage" type="object">
+  トークン使用状況の統計。
+
+  - `prompt_tokens` (integer): プロンプト内のトークン数
+  - `completion_tokens` (integer): 補完内のトークン数
+  - `total_tokens` (integer): 使用された合計トークン数
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/chat/completions" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o",
+    "messages": [
+      {"role": "system", "content": "You are a helpful assistant."},
+      {"role": "user", "content": "Hello!"}
+    ],
+    "temperature": 0.7,
+    "max_tokens": 1000
+  }'
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "Hello!"}
+    ],
+    temperature=0.7,
+    max_tokens=1000
+)
+
+print(response.choices[0].message.content)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.chat.completions.create({
+  model: 'gpt-4o',
+  messages: [
+    { role: 'system', content: 'You are a helpful assistant.' },
+    { role: 'user', content: 'Hello!' }
+  ],
+  temperature: 0.7,
+  max_tokens: 1000
+});
+
+console.log(response.choices[0].message.content);
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/chat/completions');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Content-Type: application/json',
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => json_encode([
+        'model' => 'gpt-4o',
+        'messages' => [
+            ['role' => 'system', 'content' => 'You are a helpful assistant.'],
+            ['role' => 'user', 'content' => 'Hello!']
+        ],
+        'temperature' => 0.7,
+        'max_tokens' => 1000
+    ])
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+echo $data['choices'][0]['message']['content'];
+```
+</RequestExample>
+
+## マルチモーダルの例
+
+```json
+{
+  "model": "gemini-2.5-pro",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        { "type": "text", "text": "Describe this video briefly." },
+        { "type": "video_url", "video_url": { "url": "https://example.com/demo.mp4" } }
+      ]
+    }
+  ],
+  "max_tokens": 64
+}
+```
+
+<ResponseExample>
+```json Response
+{
+  "id": "chatcmpl-abc123",
+  "object": "chat.completion",
+  "created": 1706000000,
+  "model": "gpt-4o",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "Hello! How can I help you today?"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 20,
+    "completion_tokens": 9,
+    "total_tokens": 29
+  }
+}
+```
+</ResponseExample>

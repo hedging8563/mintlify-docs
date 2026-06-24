@@ -1,0 +1,35 @@
+---
+title: "Daftar Batch"
+openapi: "GET /v1/batches"
+description: "Mendaftar pekerjaan batch untuk organisasi kunci API saat ini."
+---
+
+## Ikhtisar
+
+Endpoint ini adalah bagian dari Batch API yang kompatibel dengan OpenAI dari AI Sonar. Pekerjaan batch menggunakan file JSONL yang diunggah, dijalankan secara asinkron, dan dapat mengembalikan file output/error nanti.
+
+## Catatan
+
+- File input batch harus menggunakan `purpose=batch`.
+- `completion_window` saat ini adalah `24h`.
+- Urutan output tidak dijamin; selalu cocokkan dengan `custom_id`.
+- Streaming tidak didukung di dalam item batch.
+
+## Contoh
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/batches?limit=20" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+## Permintaan / Respons
+
+Gunakan panel OpenAPI interaktif di atas untuk skema yang tepat.
+
+## Tips Operasional
+
+- Gunakan `custom_id` untuk rekonsiliasi downstream yang idempotent.
+- Harapkan `output_file_id` dan `error_file_id` hanya setelah pekerja menyelesaikan batch.
+- Harga batch mungkin berbeda dari harga sinkron karena aturan diskon `isBatchRequest=true` berlaku.

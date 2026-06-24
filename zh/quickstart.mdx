@@ -1,0 +1,148 @@
+---
+title: "快速开始"
+description: "在 2 分钟内开始使用 AI Sonar API"
+---
+
+## 步骤 1：从免费试用开始
+
+<Steps>
+  <Step title="创建账号">
+    使用您的邮箱、Gmail 或 GitHub 账号在 [aisonar.dev](https://aisonar.dev) 注册。
+  </Step>
+  <Step title="使用赠送的试用额度">
+    新账号会获得用于首次小额测试请求的试用额度。Quickstart 之前不需要先充值。
+  </Step>
+  <Step title="创建或复制 API 密钥">
+    前往 **仪表板 → API 密钥** 创建新密钥，或复制已有密钥。请安全保存，因为完整密钥只显示一次。
+  </Step>
+</Steps>
+
+<Warning>
+请妥善保管您的 API 密钥。切勿在客户端代码或公共仓库中暴露它。
+</Warning>
+
+## 步骤 2：安装客户端
+
+<CodeGroup>
+
+```bash Python
+pip install openai
+```
+
+```bash JavaScript
+npm install openai
+```
+
+```bash Go
+go get github.com/openai/openai-go/v3
+```
+
+```bash PHP
+composer require openai-php/client
+```
+
+</CodeGroup>
+
+## 步骤 3：发出您的第一个请求
+
+对于大多数新的集成，请从 `POST /v1/chat/completions` 的 **Chat Completions** 开始。
+
+<CodeGroup>
+
+```bash cURL
+curl https://api.aisonar.dev/v1/chat/completions \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.4",
+    "messages": [
+      {"role": "user", "content": "What is the capital of France?"}
+    ]
+  }'
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "What is the capital of France?"}]
+)
+
+print(response.choices[0].message.content)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.chat.completions.create({
+  model: 'gpt-5.4',
+  messages: [{ role: 'user', content: 'What is the capital of France?' }],
+});
+
+console.log(response.choices[0].message.content);
+```
+
+</CodeGroup>
+
+<Note>
+仅当您明确需要 Responses 特定行为时才使用 `POST /v1/responses`。某些仅限 Responses 的字段取决于所选模型和路由路径。
+</Note>
+
+## 为生产使用充值
+
+赠送的试用额度用于首次小额测试。只有当您准备进入生产使用或更高频测试时，才需要在 **仪表板 → 账单** 中充值。
+
+## 尝试不同的模型
+
+AI Sonar 支持数百个模型。只需更改 `model` 字段：
+
+```python
+response = client.chat.completions.create(model="gpt-5.4", messages=[{"role": "user", "content": "Hello"}])
+response = client.chat.completions.create(model="gpt-5-mini", messages=[{"role": "user", "content": "Hello"}])
+response = client.chat.completions.create(model="claude-sonnet-4-6", messages=[{"role": "user", "content": "Hello"}])
+response = client.chat.completions.create(model="gemini-2.5-flash", messages=[{"role": "user", "content": "Hello"}])
+response = client.chat.completions.create(model="deepseek-r1", messages=[{"role": "user", "content": "Hello"}])
+```
+
+## 启用流式传输
+
+```python
+stream = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "Tell me a short story."}],
+    stream=True
+)
+
+for chunk in stream:
+    delta = chunk.choices[0].delta.content
+    if delta:
+        print(delta, end="")
+```
+
+## 接下来做什么？
+
+<CardGroup cols={2}>
+  <Card title="认证" icon="key" href="/authentication">
+    了解 API 密钥管理和安全性。
+  </Card>
+  <Card title="OpenAI SDK" icon="code" href="/integrations/openai-sdk">
+    用已有 OpenAI SDK 接入 OpenAI 兼容的 `/v1` 路由。
+  </Card>
+  <Card title="API 参考" icon="book" href="/api-reference/introduction">
+    查看完整的端点参考。
+  </Card>
+  <Card title="模型" icon="robot" href="https://aisonar.dev/models">
+    浏览当前模型可用性和定价。
+  </Card>
+</CardGroup>

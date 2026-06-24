@@ -1,0 +1,282 @@
+---
+title: "Penanganan Kesalahan"
+description: "Menangani kesalahan API dengan baik"
+---
+
+## Format Respon Kesalahan
+
+Semua kesalahan mengembalikan format JSON yang konsisten dengan opsi [petunjuk Agent-First](/guides/agent-first-api):
+
+```json
+{
+  "error": {
+    "message": "Human-readable error description",
+    "type": "error_type",
+    "code": "error_code",
+    "param": "parameter_name",
+    "did_you_mean": "suggested_model",
+    "suggestions": [{"id": "model-id"}],
+    "hint": "Next step guidance",
+    "retryable": true,
+    "retry_after": 30
+  }
+}
+```
+
+Field dasar (`message`, `type`, `code`, `param`) selalu hadir. Field petunjuk (`did_you_mean`, `suggestions`, `hint`, `retryable`, `retry_after`, `balance_usd`, `estimated_cost_usd`) adalah ekstensi opsional untuk koreksi mandiri agen AI. Lihat [panduan Agent-First API](/guides/agent-first-api) untuk detail.
+
+Endpoint yang kompatibel dengan OpenAI menggunakan tipe kesalahan gateway stabil AI Sonar. Endpoint yang kompatibel dengan Anthropic dan Gemini menggunakan keluarga kesalahan dan bentuk respons asli mereka sendiri.
+
+## Kode Status HTTP
+
+| Kode | Deskripsi |
+|------|-----------|
+| 400 | Bad Request - Parameter tidak valid |
+| 401 | Unauthorized - API key tidak valid atau hilang |
+| 402 | Payment Required - Saldo tidak mencukupi |
+| 403 | Forbidden - Akses ditolak atau model tidak diizinkan |
+| 404 | Not Found - Model atau sumber daya tidak ditemukan |
+| 413 | Muatan terlalu besar - Ukuran input atau file melebihi batas |
+| 429 | Too Many Requests - Batas laju terlampaui |
+| 500 | Kesalahan Server Internal |
+| 502 | Bad Gateway - Kesalahan penyedia upstream |
+| 503 | Service Unavailable - Layanan sementara tidak tersedia |
+| 504 | Gateway Timeout - Permintaan melebihi waktu tunggu |
+
+## Jenis Kesalahan
+
+### Kesalahan Otentikasi (401)
+
+| Tipe | Kode | Deskripsi |
+|------|------|-----------|
+| `invalid_api_key` | `invalid_api_key` | API key hilang atau tidak valid |
+| `expired_api_key` | `expired_api_key` | API key telah dicabut |
+
+```python
+from openai import OpenAI, AuthenticationError
+
+try:
+    response = client.chat.completions.create(...)
+except AuthenticationError as e:
+    print(f"Authentication failed: {e.message}")
+```
+
+### Kesalahan Pembayaran (402)
+
+| Tipe | Kode | Deskripsi |
+|------|------|-----------|
+| `insufficient_balance` | `insufficient_balance` | Saldo akun terlalu rendah |
+| `quota_exceeded` | `quota_exceeded` | Batas penggunaan API key tercapai |
+
+```python
+from openai import OpenAI, APIStatusError
+
+try:
+    response = client.chat.completions.create(...)
+except APIStatusError as e:
+    if e.status_code == 402:
+        print("Please top up your account balance")
+```
+
+### Kesalahan Akses (403)
+
+| Tipe | Kode | Deskripsi |
+|------|------|-----------|
+| `access_denied` | `access_denied` | Akses ke sumber daya ditolak |
+| `access_denied` | `model_not_allowed` | Model tidak diizinkan untuk API key ini |
+
+```json
+{
+  "error": {
+    "message": "You don't have permission to access this model",
+    "type": "access_denied",
+    "code": "model_not_allowed"
+  }
+}
+```
+
+### Kesalahan Validasi (400)
+
+| Tipe | Deskripsi |
+|------|-----------|
+| `invalid_request_error` | Parameter permintaan tidak valid |
+| `context_length_exceeded` | Input terlalu panjang untuk model |
+| `model_not_found` | Model yang diminta tidak tersedia dalam kontrak publik saat ini |
+
+```json
+{
+  "error": {
+    "message": "Model not found: please check the model name",
+    "type": "invalid_request_error",
+    "param": "model",
+    "code": "model_not_found",
+    "did_you_mean": "gpt-5.4",
+    "suggestions": [{"id": "gpt-5.4"}, {"id": "gpt-5-mini"}],
+    "hint": "Did you mean 'gpt-5.4'? Use GET https://api.aisonar.dev/v1/models to list all available models."
+  }
+}
+```
+
+Rute publik tidak membedakan keadaan model yang salah ketik, tersembunyi, ditunda, atau tidak publik dalam badan respons. Jika sebuah model saat ini tidak tersedia melalui kontrak publik, AI Sonar mengembalikan `model_not_found`.
+
+### Kesalahan Batas Laju (429)
+
+Ketika Anda melewati batas laju:
+
+```json
+{
+  "error": {
+    "message": "Rate limit: 60 rpm exceeded",
+    "type": "rate_limit_exceeded",
+    "code": "rate_limit_exceeded",
+    "retryable": true,
+    "retry_after": 8,
+    "hint": "Rate limited. Retry after 8s. Current limit: 60/min for user role."
+  }
+}
+```
+
+**Header yang disertakan:**
+
+```
+Retry-After: 8
+```
+
+Header `Retry-After` dan field `retry_after` keduanya menunjukkan jumlah detik yang tepat untuk menunggu sebelum mencoba lagi.
+
+### Payload Terlalu Besar (413)
+
+Ketika ukuran input atau file melebihi batas:
+
+```json
+{
+  "error": {
+    "message": "Input size exceeds maximum allowed",
+    "type": "invalid_request_error",
+    "code": "payload_too_large"
+  }
+}
+```
+
+Penyebab umum:
+- File gambar terlalu besar (max 20MB)
+- File audio terlalu besar (max 25MB)
+- Teks input melebihi panjang konteks model
+
+### Kesalahan Upstream (502, 503)
+
+| Tipe | Deskripsi |
+|------|-----------|
+| `upstream_error` | Penyedia mengembalikan kesalahan |
+| `all_channels_failed` | Tidak ada penyedia yang tersedia |
+| `timeout_error` | Permintaan melebihi waktu tunggu |
+
+Ketika semua kanal gagal, respons menyertakan model alternatif:
+
+```json
+{
+  "error": {
+    "message": "Model claude-opus-4-6 temporarily unavailable",
+    "code": "all_channels_failed",
+    "retryable": true,
+    "retry_after": 30,
+    "alternatives": [
+      {"id": "claude-sonnet-4-6", "status": "available", "tags": []},
+      {"id": "gpt-5-mini", "status": "available", "tags": []}
+    ],
+    "hint": "Retry in 30s or switch to an available model."
+  }
+}
+```
+
+## Menangani Kesalahan di Python
+
+```python
+from openai import OpenAI, APIError, RateLimitError, APIConnectionError
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+def chat_with_retry(messages, max_retries=3):
+    for attempt in range(max_retries):
+        try:
+            return client.chat.completions.create(
+                model="gpt-4o",
+                messages=messages
+            )
+        except RateLimitError as e:
+            if attempt < max_retries - 1:
+                import time
+                time.sleep(2 ** attempt)  # Exponential backoff
+                continue
+            raise
+        except APIConnectionError as e:
+            print(f"Connection error: {e}")
+            raise
+        except APIError as e:
+            print(f"API error: {e.status_code} - {e.message}")
+            raise
+```
+
+## Menangani Kesalahan di JavaScript
+
+```javascript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+async function chatWithRetry(messages, maxRetries = 3) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await client.chat.completions.create({
+        model: 'gpt-4o',
+        messages
+      });
+    } catch (error) {
+      if (error instanceof OpenAI.RateLimitError) {
+        if (attempt < maxRetries - 1) {
+          await new Promise(r => setTimeout(r, 2 ** attempt * 1000));
+          continue;
+        }
+      }
+      throw error;
+    }
+  }
+}
+```
+
+## Praktik Terbaik
+
+<AccordionGroup>
+  <Accordion title="Terapkan penundaan eksponensial">
+    Saat dibatasi oleh laju, tunggu semakin lama antara percobaan ulang:
+    ```python
+    wait_time = 2 ** attempt  # 1s, 2s, 4s, 8s...
+    ```
+  </Accordion>
+
+  <Accordion title="Tetapkan batas waktu">
+    Selalu tetapkan batas waktu yang wajar untuk menghindari permintaan yang menggantung:
+    ```python
+    client = OpenAI(timeout=60.0)  # 60 second timeout
+    ```
+  </Accordion>
+
+  <Accordion title="Catat kesalahan untuk debugging">
+    Catat respons kesalahan lengkap termasuk ID permintaan untuk dukungan:
+    ```python
+    except APIError as e:
+        logger.error(f"API Error: {e.status_code} - {e.message}")
+    ```
+  </Accordion>
+
+  <Accordion title="Tangani kesalahan spesifik model">
+    Beberapa model memiliki persyaratan khusus (mis. max tokens, format gambar).
+    Validasi input sebelum membuat permintaan.
+  </Accordion>
+</AccordionGroup>

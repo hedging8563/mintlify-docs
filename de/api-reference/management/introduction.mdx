@@ -1,0 +1,142 @@
+---
+title: "Management API"
+description: "Verwalten Sie Organisationsguthaben, API-Keys sowie Nutzungs- und Abrechnungsdaten pro Key mit einem Management-Token."
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Überblick
+
+Mit der Management API können Sie Organisationsguthaben abrufen, Organisations-API-Keys verwalten und Nutzung sowie Billing für einen bestimmten Key abrufen, ohne einen normalen Inference-API-Key zu verwenden.
+
+Verwenden Sie ein Management-Token von der **Settings**-Seite im Dashboard:
+
+```bash
+Authorization: Bearer mt-your-management-token
+```
+
+<Warning>
+Management-Tokens sind nicht dasselbe wie Inference-API-Keys. Verwenden Sie `mt-...` für `/v1/management/*` und `sk-...` für Modell-Inference-Endpunkte wie `/v1/responses`.
+</Warning>
+
+## Verfügbare Endpunkte
+
+| Endpoint | Method | Beschreibung |
+|----------|--------|--------------|
+| `/v1/management/balance` | GET | Ruft aktuelle Guthabensummen der Organisation ab |
+| `/v1/management/api-keys` | GET | Listet benutzerverwaltete API-Keys in der aktuellen Organisation auf |
+| `/v1/management/api-keys` | POST | Erstellt einen neuen Benutzer-API-Key |
+| `/v1/management/api-keys/{keyId}` | PATCH | Aktualisiert Name, Nutzungslimit, erlaubte Modelle, Ablaufzeit oder Status |
+| `/v1/management/api-keys/{keyId}/usage` | GET | Ruft paginierte Nutzungsdetails für einen bestimmten Key ab |
+| `/v1/management/api-keys/{keyId}/billing` | GET | Ruft aggregierte Billing-Aufschlüsselungen für einen bestimmten Key ab |
+
+## Vertragsdetails für Nutzungsfilter
+
+`GET /v1/management/api-keys/{keyId}/usage` unterstützt die folgenden Query-Parameter:
+
+| Parameter | Typ | Standard / Grenzen | Beschreibung |
+|-----------|-----|--------------------|--------------|
+| `page` | integer | Standard `1`, min. `1` | Seitennummer ab 1 |
+| `limit` | integer | Standard `50`, min. `1`, max. `100` | Seitengröße |
+| `logicalModel` | string | max. Länge `100` | Angeforderter logischer Modellname |
+| `modelVendor` | string | max. Länge `100` | Öffentlicher Modellanbieter |
+| `scene` | enum | - | `chat`, `image`, `audio`, `video`, `embedding`, `rerank`, `translation`, `music`, `3d` |
+| `accessChannel` | enum | - | `platform` oder `byok` |
+| `startDate` | string | - | Inklusive Untergrenze; akzeptiert RFC3339 mit Zeitzone oder `YYYY-MM-DD` |
+| `endDate` | string | - | Inklusive Obergrenze; akzeptiert RFC3339 mit Zeitzone oder `YYYY-MM-DD` |
+
+Wenn `startDate` und `endDate` zusammen angegeben werden, muss `startDate` kleiner oder gleich `endDate` sein.
+
+## API-Key-Body-Vertrag
+
+### POST /v1/management/api-keys
+
+| Feld | Typ | Standard / Grenzen | Beschreibung |
+|------|-----|--------------------|--------------|
+| `name` | string | erforderlich, Standard `Default Key`, Länge `1-50` | Anzeigename; führende und nachgestellte Leerzeichen werden serverseitig entfernt |
+| `limitAmount` | number \| null | min. `0`, Eingabe max. `1000000` | `null` oder weggelassen = unbegrenzt, `0` = Nullkontingent. Positive Werte werden auf ein gespeichertes Limit normalisiert, das 100000 USD Gegenwert nicht überschreiten kann. |
+| `limitCurrency` | enum | Standardwert `USD` | Nur USD. Das Senden von `CNY` gibt `400 currency_retired` zurück. |
+| `models` | string[] | Standard `[]` | Optionale Allowlist für logische Modelle |
+| `expiresAt` | string \| null | RFC3339-Datetime | `null` bedeutet ohne Ablaufzeit |
+
+### PATCH /v1/management/api-keys/{keyId}
+
+| Feld | Typ | Standard / Grenzen | Beschreibung |
+|------|-----|--------------------|--------------|
+| `status` | enum | - | `active`, `inactive`, `suspended`, `revoked` |
+| `name` | string | Länge `1-50` | Aktualisierter Anzeigename |
+| `limitAmount` | number \| null | min. `0`, Eingabe max. `1000000` | `null` = unbegrenzt, `0` = Nullkontingent. Positive Werte werden auf ein gespeichertes Limit normalisiert, das 100000 USD Gegenwert nicht überschreiten kann. |
+| `limitCurrency` | enum | Standardwert `USD` | Nur USD. Das Senden von `CNY` gibt `400 currency_retired` zurück. |
+| `models` | string[] | - | Aktualisierte Allowlist für logische Modelle |
+| `expiresAt` | string \| null | RFC3339-Datetime | `null` entfernt die Ablaufzeit |
+
+Mindestens ein PATCH-Feld muss angegeben werden.
+
+## Währungs-Vertrag
+
+
+## Reporting-Semantik
+
+- `logicalModel` bezeichnet das öffentliche logische Modell, das vom Aufrufer angefordert wurde.
+- `modelVendor` bezeichnet den öffentlichen Modellanbieter, nicht die verborgene physische Route.
+- `scene` ist die öffentliche Request-Szene, die aus Endpoint oder Task-Typ abgeleitet wird.
+- `accessChannel=platform` bedeutet, dass die Anfrage über AI Sonars Plattformkanal abgerechnet wurde.
+- `accessChannel=byok` bedeutet, dass die Anfrage Ihren eigenen Upstream-Provider-Key verwendet hat.
+
+Die Antworten geben nur öffentliche Billing- und Reporting-Felder zurück. Interne Routing-Details und Metadaten physischer Provider bleiben verborgen.
+- Einzelne `/usage`-Zeilen können `billing_transaction_id` enthalten, sobald die zugrunde liegende Anfrage den abgerechneten Zustand erreicht hat. Verwenden Sie `request_id` + `billing_transaction_id` für den Abgleich auf Anfrageebene.
+
+## Hinweis zur Billing-Paginierung
+
+`/usage` ist paginiert. `/billing` ist derzeit ein aggregierter Breakdown-Endpunkt und liefert keine `page` / `limit`-Paginierungsmetadaten. Wenn Sie Einzelzeilen benötigen, verwenden Sie `/usage`.
+
+## Schnellbeispiel
+
+Prüfen Sie zunächst das Organisationsguthaben mit dem aktuellen Management-Token:
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/management/balance" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+Listen Sie danach die API-Keys auf, die demselben Management-Token zur Verfügung stehen:
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/management/api-keys" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response (200)
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "key_abc123def456",
+      "name": "Backend Worker",
+      "key_prefix": "sk-abc123...",
+      "status": "active",
+      "limit_amount": 500.0,
+      "used_amount": 148.25,
+      "models": ["gpt-4o-mini", "claude-3-7-sonnet"],
+      "expires_at": "2026-04-30T00:00:00.000Z",
+      "last_used_at": "2026-03-27T08:12:45.000Z",
+      "created_at": "2026-03-01T10:00:00.000Z"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## Nächste Schritte
+
+- [Organisationsguthaben abrufen](/de/api-reference/management/get-balance)
+- [API-Keys auflisten](/de/api-reference/management/list-api-keys)
+- [API-Key erstellen](/de/api-reference/management/create-api-key)
+- [API-Key aktualisieren](/de/api-reference/management/update-api-key)
+- [API-Key-Nutzung abrufen](/de/api-reference/management/get-api-key-usage)
+- [API-Key-Billing abrufen](/de/api-reference/management/get-api-key-billing)

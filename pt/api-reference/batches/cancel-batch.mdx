@@ -1,0 +1,35 @@
+---
+title: "Cancelar Lote"
+openapi: "POST /v1/batches/{batch_id}/cancel"
+description: "Cancela um trabalho de lote em fila ou em execução."
+---
+
+## Visão Geral
+
+Este endpoint faz parte da API de Lote compatível com OpenAI da AI Sonar. Trabalhos de lote utilizam arquivos JSONL carregados, são executados de forma assíncrona e podem retornar arquivos de saída/erro posteriormente.
+
+## Notas
+
+- Os arquivos de entrada do lote devem usar `purpose=batch`.
+- `completion_window` é atualmente `24h`.
+- A ordenação da saída não é garantida; sempre combine pelo `custom_id`.
+- Streaming não é suportado dentro dos itens de lote.
+
+## Exemplo
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/batches/batch_abc123/cancel" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+## Solicitação / Resposta
+
+Use o painel interativo do OpenAPI acima para o esquema exato.
+
+## Dicas Operacionais
+
+- Use `custom_id` para reconciliação idempotente a montante.
+- Espere `output_file_id` e `error_file_id` apenas após o trabalhador finalizar o lote.
+- A precificação de lote pode diferir da precificação síncrona porque as regras de desconto `isBatchRequest=true` se aplicam.

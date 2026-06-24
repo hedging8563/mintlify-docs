@@ -1,0 +1,231 @@
+---
+title: 'API 参考'
+description: 'AI Sonar API 的完整参考'
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## 概述
+
+AI Sonar API 是**原生优先，同时兼容 OpenAI** 的。需要提供商原生行为时，使用 Anthropic 的 `POST /v1/messages` 或 Gemini 的 `/v1beta/models/...:generateContent`；迁移已有 OpenAI 风格 SDK 或工具时，使用 OpenAI 兼容的 `/v1` 端点。`POST /v1/responses` 仍是需要 Responses 特定行为时的高级可选路径。
+
+## 基础 URL
+
+```
+https://api.aisonar.dev
+```
+
+## 认证
+
+所有 API 端点都需要使用 Bearer token 进行认证：
+
+```bash
+Authorization: Bearer sk-your-api-key
+```
+
+从 [Dashboard](https://console.aisonar.dev) 获取你的 API 密钥。
+
+<Warning>
+**关于交互式 Playground**：此文档站点上的 playground 仅用于演示目的，不支持输入 API 密钥。要测试 API，请使用：
+- **cURL** - 复制示例命令并将 `sk-your-api-key` 替换为你的实际密钥
+- **Postman** - 导入我们的 [OpenAPI spec](/openapi.json)
+- **SDK** - 使用 OpenAI/Anthropic SDK 并使用我们的 base URL
+</Warning>
+
+## 支持的端点
+
+### 聊天与文本生成
+
+| 端点 | 方法 | 说明 |
+|----------|--------|-------------|
+| `/v1/chat/completions` | POST | OpenAI 兼容 聊天补全 |
+| `/v1/messages` | POST | 兼容 Anthropic 的 messages API |
+| `/v1/responses` | POST | OpenAI Responses API |
+
+### 嵌入与重排序
+
+| 端点 | 方法 | 说明 |
+|----------|--------|-------------|
+| `/v1/embeddings` | POST | 创建文本嵌入 |
+| `/v1/rerank` | POST | 对文档进行重排序 |
+
+### 图像
+
+| 端点 | 方法 | 说明 |
+|----------|--------|-------------|
+| `/v1/images/generations` | POST | 从文本生成图像 |
+| `/v1/images/edits` | POST | 编辑图像 |
+| `/v1/images/generations/{id}` | GET | 基于任务的图像响应的图像任务状态路径 |
+
+<Info>
+某些图像模型可能返回内联结果，某些可能返回基于任务的响应，具体行为可能取决于路由到的提供者路径。如果创建响应包含 `poll_url`，请严格按照其指示进行轮询。
+</Info>
+
+### 音频
+
+| 端点 | 方法 | 说明 |
+|----------|--------|-------------|
+| `/v1/audio/speech` | POST | 文本转语音 (TTS) |
+| `/v1/audio/transcriptions` | POST | 语音转文本 (STT) |
+
+### 实时
+
+| 端点 | 方法 | 说明 |
+|----------|--------|-------------|
+| `/v1/realtime?model={model}` | WS | 实时 WebSocket 会话 |
+
+<Info>
+使用 `/v1/realtime` 发起 WebSocket 升级请求。普通 `GET /v1/realtime` 会返回端点元信息，方便无法直接检查 WebSocket 路由的客户端使用。
+</Info>
+
+### 视频
+
+| 端点 | 方法 | 说明 |
+|----------|--------|-------------|
+| `/v1/videos/generations` | POST | 创建视频生成任务 |
+| `/v1/tasks/{id}` | GET | 获取视频作业的异步任务状态 |
+| `/v1/videos/generations/{id}` | GET | 向后兼容的视频任务状态路径 |
+
+<Info>
+对于新客户端，优先使用 `/v1/tasks/{id}` 并遵循创建响应返回的 `poll_url`。保留 `/v1/videos/generations/{id}` 仅用于向后兼容。
+</Info>
+
+### 异步任务
+
+| 端点 | 方法 | 说明 |
+|----------|--------|-------------|
+| `/v1/tasks/{id}` | GET | 统一的异步任务状态端点。建议在遵循返回的 `poll_url` 时使用 |
+
+<Info>
+此端点不限于视频、音乐和 3D。某些图像任务也可能使用 `/v1/tasks/{id}` 作为规范的轮询路径。
+</Info>
+
+### 音乐
+
+| 端点 | 方法 | 说明 |
+|----------|--------|-------------|
+| `/v1/music/generations` | POST | 创建音乐生成任务 |
+| `/v1/music/generations/{id}` | GET | 音乐专用的状态路径 |
+
+<Info>
+对于新客户端，优先使用返回的 `poll_url`。如果需要固定的任务状态端点，请使用 `/v1/tasks/{id}`；保留 `/v1/music/generations/{id}` 以用于音乐专用的兼容路径。
+</Info>
+
+### 3D 生成
+
+| 端点 | 方法 | 说明 |
+|----------|--------|-------------|
+| `/v1/3d/generations` | POST | 创建 3D 模型生成任务 |
+| `/v1/3d/generations/{id}` | GET | 3D 专用的状态路径 |
+
+<Info>
+对于新客户端，优先使用返回的 `poll_url`。如果需要固定的任务状态端点，请使用 `/v1/tasks/{id}`；保留 `/v1/3d/generations/{id}` 以用于 3D 专用的兼容路径。
+</Info>
+
+### 模型
+
+| 端点 | 方法 | 说明 |
+|----------|--------|-------------|
+| `/v1/models` | GET | 列出所有可用模型 |
+| `/v1/models/{model}` | GET | 获取特定模型信息 |
+
+### Gemini (v1beta)
+
+原生 Google Gemini API 格式支持：
+
+| 端点 | 方法 | 说明 |
+|----------|--------|-------------|
+| `/v1beta/models/{model}:generateContent` | POST | 生成内容（Gemini 格式） |
+| `/v1beta/models/{model}:streamGenerateContent` | POST | 流式生成内容（Gemini 格式） |
+
+<Note>
+Gemini 端点除标准的 Bearer token 外，还支持 `?key=` 查询参数认证。
+</Note>
+
+## 响应格式
+
+所有响应遵循一致的格式：
+
+### 成功响应
+
+```json
+{
+  "id": "chatcmpl-abc123",
+  "object": "chat.completion",
+  "created": 1234567890,
+  "model": "gpt-4o",
+  "choices": [...],
+  "usage": {
+    "prompt_tokens": 10,
+    "completion_tokens": 20,
+    "total_tokens": 30
+  }
+}
+```
+
+### 路由透明性
+
+所有响应都包含带有通道信息的 `_routing` 字段：
+
+```json
+{
+  "id": "chatcmpl-abc123",
+  ...,
+  "_routing": {
+    "channel": {
+      "id": "ch_xxx",
+      "name": "channel-name",
+      "provider": "openai",
+      "channelType": "PLATFORM"
+    },
+    "cached": false,
+    "retryCount": 0
+  }
+}
+```
+
+| 字段 | 说明 |
+|-------|-------------|
+| `channel.id` | 使用的通道标识 |
+| `channel.provider` | 上游提供者（openai、anthropic 等） |
+| `channel.channelType` | `PLATFORM`（AI Sonar）或 `PRIVATE`（BYOK） |
+| `cached` | 响应是否来自缓存 |
+| `retryCount` | 重试次数（如果有） |
+
+### 错误响应
+
+```json
+{
+  "error": {
+    "message": "Invalid API key provided",
+    "type": "invalid_api_key",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+## 速率限制
+
+速率限制基于角色，并可由管理员配置。默认值：
+
+| 角色 | 请求/分钟 |
+|------|-------------|
+| 用户 | 60 |
+| 合作伙伴 | 300 |
+| VIP | 1,000 |
+
+<Note>
+如需自定义速率限制，请联系支持。确切值可能因账户配置而异。
+</Note>
+
+当超出速率限制时，API 会返回 `429` 状态码，并带有 `Retry-After` 头，指示需要等待的时间。
+
+## OpenAPI 规范
+
+<Card
+  title="OpenAPI 规范"
+  icon="file-code"
+  href="/openapi.json"
+>
+  下载完整的 OpenAPI 3.0 规范
+</Card>

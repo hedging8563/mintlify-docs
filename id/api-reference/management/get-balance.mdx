@@ -1,0 +1,27 @@
+---
+title: "Lihat saldo organisasi"
+openapi: "GET /v1/management/balance"
+description: "Mengembalikan total saldo organisasi saat ini untuk management token."
+---
+
+## Ikhtisar
+
+Endpoint ini mengembalikan total saldo saat ini untuk organisasi yang terkait dengan management token. Endpoint ini memakai sumber kebenaran saldo organisasi yang sama dengan billing dan settlement.
+
+## Catatan
+
+- Field moneter utama dikembalikan dalam USD: `balance`, `total_recharge`, dan `total_used`.
+- `preferred_currency` mencerminkan preferensi tampilan Dashboard organisasi; field utama USD tidak berubah.
+
+## Contoh
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/management/balance" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## Permintaan / Respons
+
+Gunakan panel OpenAPI interaktif di atas untuk skema yang tepat.

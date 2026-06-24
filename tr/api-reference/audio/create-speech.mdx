@@ -1,0 +1,123 @@
+---
+title: "Konuşma Oluştur"
+openapi: "POST /v1/audio/speech"
+description: "Girdi metninden ses üretir"
+---
+
+## İstek Gövdesi
+
+**Senkron istek zaman aşımı:** Bu chat dışı endpoint, yönlendirilen modelin tamamlanmasını bekler. Büyük girdiler, uzun sesler veya büyük batch’ler yaygın 30s istemci varsayılanlarını aşabilir; bu yüzden HTTP istemcisi zaman aşımını en az `120s` olarak ayarlayın.
+
+<ParamField body="model" type="string" default="tts-1">
+  TTS modeli: `tts-1` (standart) veya `tts-1-hd` (daha yüksek kalite).
+</ParamField>
+
+<ParamField body="input" type="string" required>
+  Ses üretilecek metin. Maksimum 4096 karakter.
+</ParamField>
+
+<ParamField body="voice" type="string" required>
+  Kullanılacak ses: `alloy`, `ash`, `ballad`, `coral`, `echo`, `fable`, `nova`, `onyx`, `sage`, `shimmer`, `verse`.
+</ParamField>
+
+<ParamField body="response_format" type="string" default="mp3">
+  Ses formatı: `mp3`, `opus`, `aac`, `flac`, `wav`, `pcm`.
+</ParamField>
+
+<ParamField body="speed" type="number" default="1.0">
+  Ses hızı (0.25 ile 4.0 arası).
+</ParamField>
+
+## Yanıt
+
+İstenen formatta ses dosyasını döndürür.
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/audio/speech" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "tts-1-hd",
+    "voice": "nova",
+    "input": "Hello, welcome to AI Sonar!"
+  }' \
+  --output speech.mp3
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.audio.speech.create(
+    model="tts-1-hd",
+    voice="nova",
+    input="Hello, welcome to AI Sonar!"
+)
+
+response.stream_to_file("speech.mp3")
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+import fs from 'fs';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.audio.speech.create({
+  model: 'tts-1-hd',
+  voice: 'nova',
+  input: 'Hello, welcome to AI Sonar!'
+});
+
+const buffer = Buffer.from(await response.arrayBuffer());
+fs.writeFileSync('speech.mp3', buffer);
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/audio/speech');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Content-Type: application/json',
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => json_encode([
+        'model' => 'tts-1-hd',
+        'voice' => 'nova',
+        'input' => 'Hello, welcome to AI Sonar!'
+    ])
+]);
+
+$audio = curl_exec($ch);
+curl_close($ch);
+
+file_put_contents('speech.mp3', $audio);
+```
+</RequestExample>
+
+## Ses Örnekleri
+
+| Ses | Açıklama |
+|-------|-------------|
+| `alloy` | Nötr, dengeli |
+| `ash` | Sakin, ölçülü |
+| `ballad` | Melodik, etkileyici |
+| `coral` | Sıcak, davetkar |
+| `echo` | Sıcak, konuşma tarzında |
+| `fable` | Etkileyici, anlatımsal |
+| `nova` | Dostane, net |
+| `onyx` | Derin, otoriter |
+| `sage` | Bilge, düşünceli |
+| `shimmer` | Yumuşak, nazik |
+| `verse` | Dinamik, çok yönlü |

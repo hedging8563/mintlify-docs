@@ -1,0 +1,154 @@
+---
+title: "Límites de tasa"
+description: "Comprender y manejar los límites de tasa"
+---
+
+## Resumen
+
+AI Sonar implementa límites de tasa para garantizar un uso justo y la estabilidad de la plataforma. Los límites varían según el nivel de cuenta.
+
+## Niveles de límites de tasa
+
+| Nivel | Solicitudes/min | Descripción |
+|------|-------------|-------------|
+| **Usuario** | 1,000 | Nivel predeterminado para todas las cuentas |
+| **Partner** | 3,000 | Para partners de integración |
+| **VIP** | 10,000 | Usuarios de alto volumen |
+
+<Note>
+  Los límites de tasa están sujetos a cambios. Contacta a support@aisonar.dev para límites personalizados.
+</Note>
+
+## Respuesta de límite de tasa
+
+Cuando superas el límite de tasa, la API devuelve un código de estado `429` con un header `Retry-After` que indica cuánto tiempo debes esperar antes de reintentar.
+
+## Límite de tasa excedido
+
+Cuando superas el límite, recibirás una respuesta `429`:
+
+```json
+{
+  "error": {
+    "message": "Rate limit exceeded. Please retry later.",
+    "type": "rate_limit_exceeded",
+    "code": "rate_limit_exceeded"
+  }
+}
+```
+
+La respuesta incluye un header `Retry-After`:
+```
+Retry-After: 60  # Seconds to wait before retrying
+```
+
+## Manejo de límites de tasa
+
+### Backoff exponencial
+
+Implementa backoff exponencial para reintentos automáticos:
+
+```python
+import time
+from openai import OpenAI, RateLimitError
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+def make_request_with_backoff(messages, max_retries=5):
+    for attempt in range(max_retries):
+        try:
+            return client.chat.completions.create(
+                model="gpt-4o",
+                messages=messages
+            )
+        except RateLimitError as e:
+            if attempt == max_retries - 1:
+                raise
+
+            wait_time = 2 ** attempt  # 1, 2, 4, 8, 16 seconds
+            print(f"Rate limited. Waiting {wait_time}s...")
+            time.sleep(wait_time)
+```
+
+### Encolado de solicitudes
+
+Para aplicaciones de alto volumen, implementa una cola de solicitudes:
+
+```python
+import asyncio
+from collections import deque
+
+class RateLimitedClient:
+    def __init__(self, requests_per_minute=60):
+        self.rpm = requests_per_minute
+        self.interval = 60 / requests_per_minute
+        self.last_request = 0
+
+    async def request(self, messages):
+        # Wait if needed to respect rate limit
+        now = asyncio.get_event_loop().time()
+        wait_time = max(0, self.last_request + self.interval - now)
+        if wait_time > 0:
+            await asyncio.sleep(wait_time)
+
+        self.last_request = asyncio.get_event_loop().time()
+        return await self.client.chat.completions.create(
+            model="gpt-4o",
+            messages=messages
+        )
+```
+
+### Procesamiento por lotes
+
+Para operaciones masivas, procesa en lotes con retrasos:
+
+```python
+def process_batch(items, batch_size=50, delay=1):
+    results = []
+    for i in range(0, len(items), batch_size):
+        batch = items[i:i + batch_size]
+        for item in batch:
+            result = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[{"role": "user", "content": item}]
+            )
+            results.append(result)
+        time.sleep(delay)  # Pause between batches
+    return results
+```
+
+## Mejores prácticas
+
+<AccordionGroup>
+  <Accordion title="Monitorea tu uso">
+    Haz seguimiento de los headers de límite de tasa para mantenerte proactivamente por debajo de los límites.
+  </Accordion>
+
+  <Accordion title="Implementa caching">
+    Almacena en caché las respuestas para solicitudes idénticas para reducir las llamadas a la API.
+  </Accordion>
+
+  <Accordion title="Usa modelos apropiados">
+    Los modelos más rápidos (como gpt-5-mini) permiten un mayor throughput.
+  </Accordion>
+
+  <Accordion title="Contáctanos para límites más altos">
+    Si necesitas límites más altos, contacta a support@aisonar.dev.
+  </Accordion>
+</AccordionGroup>
+
+## Subir de nivel tu cuenta
+
+Para solicitar una mejora de nivel:
+
+1. Inicia sesión en tu [Dashboard](https://console.aisonar.dev)
+2. Ve a **Settings → Account**
+3. Contacta a soporte con tu caso de uso
+
+O envía un email a support@aisonar.dev con:
+- El email de tu cuenta
+- Volumen esperado de solicitudes
+- Descripción del caso de uso

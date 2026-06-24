@@ -1,0 +1,282 @@
+---
+title: "Manejo de errores"
+description: "Manejar errores de la API de forma adecuada"
+---
+
+## Formato de respuesta de error
+
+Todos los errores devuelven un formato JSON consistente con extensiones opcionales de [Agent-First hints](/guides/agent-first-api):
+
+```json
+{
+  "error": {
+    "message": "Human-readable error description",
+    "type": "error_type",
+    "code": "error_code",
+    "param": "parameter_name",
+    "did_you_mean": "suggested_model",
+    "suggestions": [{"id": "model-id"}],
+    "hint": "Next step guidance",
+    "retryable": true,
+    "retry_after": 30
+  }
+}
+```
+
+Los campos base (`message`, `type`, `code`, `param`) siempre están presentes. Los campos de sugerencias (`did_you_mean`, `suggestions`, `hint`, `retryable`, `retry_after`, `balance_usd`, `estimated_cost_usd`) son extensiones opcionales para la autocorrección de agentes de IA. Consulta la [Guía Agent-First API](/guides/agent-first-api) para más detalles.
+
+Los endpoints compatibles con OpenAI usan los tipos de error del gateway estable de AI Sonar. Los endpoints compatibles con Anthropic y Gemini usan sus propias familias de errores y formatos de respuesta nativos.
+
+## Códigos de estado HTTP
+
+| Código | Descripción |
+|------|-------------|
+| 400 | Solicitud incorrecta - Parámetros inválidos |
+| 401 | No autorizado - API key inválida o ausente |
+| 402 | Pago requerido - Saldo insuficiente |
+| 403 | Prohibido - Acceso denegado o modelo no permitido |
+| 404 | No encontrado - Modelo o recurso no encontrado |
+| 413 | Carga útil demasiado grande - Tamaño de entrada o archivo excedido |
+| 429 | Demasiadas solicitudes - Límite de tasa excedido |
+| 500 | Error interno del servidor |
+| 502 | Puerta de enlace incorrecta - Error del proveedor upstream |
+| 503 | Servicio no disponible - Servicio temporalmente no disponible |
+| 504 | Tiempo de espera de la puerta de enlace - La solicitud excedió el tiempo de espera |
+
+## Tipos de error
+
+### Errores de autenticación (401)
+
+| Tipo | Código | Descripción |
+|------|------|-------------|
+| `invalid_api_key` | `invalid_api_key` | Falta la API key o no es válida |
+| `expired_api_key` | `expired_api_key` | La API key ha sido revocada |
+
+```python
+from openai import OpenAI, AuthenticationError
+
+try:
+    response = client.chat.completions.create(...)
+except AuthenticationError as e:
+    print(f"Authentication failed: {e.message}")
+```
+
+### Errores de pago (402)
+
+| Tipo | Código | Descripción |
+|------|------|-------------|
+| `insufficient_balance` | `insufficient_balance` | El saldo de la cuenta es insuficiente |
+| `quota_exceeded` | `quota_exceeded` | Se alcanzó el límite de uso de la API key |
+
+```python
+from openai import OpenAI, APIStatusError
+
+try:
+    response = client.chat.completions.create(...)
+except APIStatusError as e:
+    if e.status_code == 402:
+        print("Please top up your account balance")
+```
+
+### Errores de acceso (403)
+
+| Tipo | Código | Descripción |
+|------|------|-------------|
+| `access_denied` | `access_denied` | Acceso al recurso denegado |
+| `access_denied` | `model_not_allowed` | Modelo no permitido para esta API key |
+
+```json
+{
+  "error": {
+    "message": "You don't have permission to access this model",
+    "type": "access_denied",
+    "code": "model_not_allowed"
+  }
+}
+```
+
+### Errores de validación (400)
+
+| Tipo | Descripción |
+|------|-------------|
+| `invalid_request_error` | Los parámetros de la solicitud no son válidos |
+| `context_length_exceeded` | Entrada demasiado larga para el modelo |
+| `model_not_found` | El modelo solicitado no está disponible en el contrato público actual |
+
+```json
+{
+  "error": {
+    "message": "Model not found: please check the model name",
+    "type": "invalid_request_error",
+    "param": "model",
+    "code": "model_not_found",
+    "did_you_mean": "gpt-5.4",
+    "suggestions": [{"id": "gpt-5.4"}, {"id": "gpt-5-mini"}],
+    "hint": "Did you mean 'gpt-5.4'? Use GET https://api.aisonar.dev/v1/models to list all available models."
+  }
+}
+```
+
+Las rutas públicas no distinguen en el cuerpo de la respuesta entre errores tipográficos, modelos ocultos, diferidos o no públicos. Si un modelo no está disponible actualmente a través del contrato público, AI Sonar devuelve `model_not_found`.
+
+### Errores por límite de tasa (429)
+
+Cuando excedes los límites de tasa:
+
+```json
+{
+  "error": {
+    "message": "Rate limit: 60 rpm exceeded",
+    "type": "rate_limit_exceeded",
+    "code": "rate_limit_exceeded",
+    "retryable": true,
+    "retry_after": 8,
+    "hint": "Rate limited. Retry after 8s. Current limit: 60/min for user role."
+  }
+}
+```
+
+**Encabezados incluidos:**
+
+```
+Retry-After: 8
+```
+
+El encabezado `Retry-After` y el campo `retry_after` indican ambos los segundos exactos que debes esperar antes de reintentar.
+
+### Carga útil demasiado grande (413)
+
+Cuando el tamaño de entrada o del archivo excede los límites:
+
+```json
+{
+  "error": {
+    "message": "Input size exceeds maximum allowed",
+    "type": "invalid_request_error",
+    "code": "payload_too_large"
+  }
+}
+```
+
+Causas comunes:
+- Archivo de imagen demasiado grande (máx. 20MB)
+- Archivo de audio demasiado grande (máx. 25MB)
+- El texto de entrada excede la longitud de contexto del modelo
+
+### Errores del proveedor upstream (502, 503)
+
+| Tipo | Descripción |
+|------|-------------|
+| `upstream_error` | El proveedor devolvió un error |
+| `all_channels_failed` | No hay proveedores disponibles |
+| `timeout_error` | La solicitud excedió el tiempo de espera |
+
+Cuando todos los canales fallan, la respuesta incluye modelos alternativos:
+
+```json
+{
+  "error": {
+    "message": "Model claude-opus-4-6 temporarily unavailable",
+    "code": "all_channels_failed",
+    "retryable": true,
+    "retry_after": 30,
+    "alternatives": [
+      {"id": "claude-sonnet-4-6", "status": "available", "tags": []},
+      {"id": "gpt-5-mini", "status": "available", "tags": []}
+    ],
+    "hint": "Retry in 30s or switch to an available model."
+  }
+}
+```
+
+## Manejo de errores en Python
+
+```python
+from openai import OpenAI, APIError, RateLimitError, APIConnectionError
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+def chat_with_retry(messages, max_retries=3):
+    for attempt in range(max_retries):
+        try:
+            return client.chat.completions.create(
+                model="gpt-4o",
+                messages=messages
+            )
+        except RateLimitError as e:
+            if attempt < max_retries - 1:
+                import time
+                time.sleep(2 ** attempt)  # Exponential backoff
+                continue
+            raise
+        except APIConnectionError as e:
+            print(f"Connection error: {e}")
+            raise
+        except APIError as e:
+            print(f"API error: {e.status_code} - {e.message}")
+            raise
+```
+
+## Manejo de errores en JavaScript
+
+```javascript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+async function chatWithRetry(messages, maxRetries = 3) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await client.chat.completions.create({
+        model: 'gpt-4o',
+        messages
+      });
+    } catch (error) {
+      if (error instanceof OpenAI.RateLimitError) {
+        if (attempt < maxRetries - 1) {
+          await new Promise(r => setTimeout(r, 2 ** attempt * 1000));
+          continue;
+        }
+      }
+      throw error;
+    }
+  }
+}
+```
+
+## Mejores prácticas
+
+<AccordionGroup>
+  <Accordion title="Implementar retroceso exponencial">
+    Cuando se aplica limitación de tasa, espera intervalos progresivamente mayores entre reintentos:
+    ```python
+    wait_time = 2 ** attempt  # 1s, 2s, 4s, 8s...
+    ```
+  </Accordion>
+
+  <Accordion title="Establecer timeouts">
+    Siempre establece timeouts razonables para evitar solicitudes colgadas:
+    ```python
+    client = OpenAI(timeout=60.0)  # 60 second timeout
+    ```
+  </Accordion>
+
+  <Accordion title="Registrar errores para depuración">
+    Registra la respuesta de error completa, incluyendo el ID de la solicitud, para soporte:
+    ```python
+    except APIError as e:
+        logger.error(f"API Error: {e.status_code} - {e.message}")
+    ```
+  </Accordion>
+
+  <Accordion title="Gestionar errores específicos del modelo">
+    Algunos modelos tienen requisitos específicos (p. ej., max tokens, formatos de imagen).
+    Valida las entradas antes de realizar las solicitudes.
+  </Accordion>
+</AccordionGroup>

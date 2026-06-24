@@ -1,0 +1,38 @@
+---
+title: "Retrieve File Content"
+openapi: "GET /v1/files/{file_id}/content"
+description: "Downloads the original content for an uploaded file."
+---
+
+## Overview
+
+This endpoint primarily serves AI Sonar's OpenAI-compatible Batch API file content retrieval.
+
+When the request opts into Anthropic Files compatibility mode, the same route can proxy the original stored file content for the bound workspace.
+
+## Notes
+
+- Batch input files must use `purpose=batch`.
+- `completion_window` is currently `24h`.
+- Output ordering is not guaranteed; always match by `custom_id`.
+- Streaming is not supported inside batch items.
+
+## Example
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/files/file_abc123/content" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  --output batch-output.jsonl
+```
+</RequestExample>
+
+## Request / Response
+
+Use the interactive OpenAPI panel above for the exact schema.
+
+## Operational Tips
+
+- Use `custom_id` for idempotent downstream reconciliation.
+- Expect `output_file_id` and `error_file_id` only after the worker finalizes the batch.
+- Batch pricing may differ from synchronous pricing because `isBatchRequest=true` discount rules apply.

@@ -1,0 +1,188 @@
+---
+title: "Gemini CLI"
+description: "تكوين Google Gemini CLI لاستخدام AI Sonar API"
+---
+
+## نظرة عامة
+
+
+
+<Note>
+**النوع**: أداة برمجة
+
+**المسار الرئيسي**: Gemini-native
+
+**مستوى الدعم**: توافق أفضل جهد
+</Note>
+
+Google Gemini CLI هي أداة سطر أوامر للتفاعل مع نماذج Gemini. توفر AI Sonar نقطة نهاية متوافقة تتيح لك استخدام Gemini CLI مع الوصول إلى مئات النماذج.
+
+
+<Warning>
+تعامل مع هذا التكامل على أنه تجريبي: لا يوثق Gemini CLI حاليًا مسارًا ثابتًا لاستخدام Base URL مخصص بأسلوب AI Sonar. إذا كنت تحتاج إلى تكامل AI Sonar مدعوم على الطرفية، فاختر Codex CLI أو Claude Code أو OpenCode.
+</Warning>
+
+## متطلبات النظام
+
+- **Node.js**: الإصدار 20.0+
+- **نظام التشغيل**: Windows 10/11، macOS 10.15+، Ubuntu 20.04+، أو Debian 10+
+
+## التثبيت
+
+```bash
+npm install -g @google/gemini-cli
+```
+
+التحقق من التثبيت:
+
+```bash
+gemini --version
+```
+
+## التكوين
+
+### الخطوة 1: احصل على مفتاح API الخاص بك
+
+1. سجّل الدخول إلى [لوحة تحكم AI Sonar](https://console.aisonar.dev)
+2. انتقل إلى [مفاتيح API](https://console.aisonar.dev/api)
+3. أنشئ وانسخ مفتاح API الخاص بك (التنسيق: `sk-...`)
+
+### الخطوة 2: تعيين متغيرات البيئة
+
+**مؤقت (الجلسة الحالية):**
+
+```bash
+export GEMINI_API_KEY="sk-your-api-key"
+export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"
+```
+
+**تكوين دائم:**
+
+أضف إلى ملف تكوين الصدفة (shell) الخاص بك:
+
+<Tabs>
+  <Tab title="Bash">
+    ```bash
+    echo 'export GEMINI_API_KEY="sk-your-api-key"' >> ~/.bashrc
+    echo 'export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"' >> ~/.bashrc
+    source ~/.bashrc
+    ```
+  </Tab>
+  <Tab title="Zsh">
+    ```bash
+    echo 'export GEMINI_API_KEY="sk-your-api-key"' >> ~/.zshrc
+    echo 'export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"' >> ~/.zshrc
+    source ~/.zshrc
+    ```
+  </Tab>
+  <Tab title="Fish">
+    ```bash
+    set -Ux GEMINI_API_KEY "sk-your-api-key"
+    set -Ux GOOGLE_GEMINI_BASE_URL "https://api.aisonar.dev"
+    ```
+  </Tab>
+</Tabs>
+
+<Warning>
+أعد تشغيل الجهاز الطرفي (terminal) بعد التكوين لتفعيل التغييرات.
+</Warning>
+
+<Note>
+**قيد معروف**: في بعض الحالات، قد لا يحترم Gemini CLI قيمة `GOOGLE_GEMINI_BASE_URL` إذا كانت هناك جلسة Google مخزنة مؤقتاً. إذا واجهت مشكلات في الاتصال، جرّب مسح ذاكرة التخزين المؤقت لـ CLI أو بدء جلسة terminal جديدة.
+</Note>
+
+## الاستخدام الأساسي
+
+ابدأ Gemini CLI من دليل المشروع الخاص بك:
+
+```bash
+cd your-project
+gemini
+```
+
+عند التشغيل الأول، ستقوم بـ:
+1. اختيار سمة (theme)
+2. تأكيد إشعار السلامة
+3. الوثوق بدليل العمل
+
+## النماذج المتاحة
+
+| النموذج | الوصف |
+|-------|-------------|
+| `gemini-2.5-pro` | أقوى نموذج Gemini |
+| `gemini-2.5-flash` | سريع وفعال لمعظم المهام |
+| `gemini-2.0-flash` | الجيل السابق، مستقر |
+
+## الأوامر الشائعة
+
+**طرح سؤال:**
+
+```
+> What is the best way to structure a React app?
+```
+
+**تحليل الكود:**
+
+```
+> Explain the code in src/main.ts
+```
+
+**توليد الكود:**
+
+```
+> Create a Python function to parse JSON files
+```
+
+**مراجعة التغييرات:**
+
+```
+> Review the recent git changes and suggest improvements
+```
+
+## التحقق من التكوين
+
+```bash
+# التحقق من متغيرات البيئة
+echo $GEMINI_API_KEY
+echo $GOOGLE_GEMINI_BASE_URL
+
+# اختبار الاتصال
+gemini
+```
+
+## استكشاف الأخطاء وإصلاحها
+
+<AccordionGroup>
+  <Accordion title="خطأ في الاتصال">
+    - تحقق من أن `GOOGLE_GEMINI_BASE_URL` مضبوط على `https://api.aisonar.dev`
+    - ملاحظة: لا تضف لاحقة `/v1` لنقطة نهاية Gemini
+    - تحقق من اتصال الشبكة
+  </Accordion>
+
+  <Accordion title="فشل المصادقة">
+    - تحقق من تعيين متغير البيئة `GEMINI_API_KEY`
+    - تأكد من أن المفتاح يبدأ بـ `sk-`
+    - تأكد من أن المفتاح نشط في لوحة تحكم AI Sonar
+  </Accordion>
+
+  <Accordion title="النموذج غير متاح">
+    - تحقق من توفر نماذج Gemini على [aisonar.dev/en/models](https://aisonar.dev/models)
+    - جرّب نسخة مختلفة من نموذج Gemini
+  </Accordion>
+</AccordionGroup>
+
+## أفضل الممارسات
+
+<AccordionGroup>
+  <Accordion title="استخدم في دليل المشروع">
+    قم دائماً بتشغيل Gemini CLI من جذر المشروع لفهم أفضل للسياق.
+  </Accordion>
+
+  <Accordion title="ثق بالأدلة بحذر">
+    ثق فقط بالأدلة التي تملكها. يمكن لـ Gemini CLI قراءة وتعديل الملفات.
+  </Accordion>
+
+  <Accordion title="مراجعة الكود المولد">
+    راجع دائماً الكود المولد بواسطة الذكاء الاصطناعي قبل اعتماده في مشروعك.
+  </Accordion>
+</AccordionGroup>

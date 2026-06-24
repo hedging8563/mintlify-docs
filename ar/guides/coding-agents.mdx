@@ -1,0 +1,66 @@
+---
+title: "Coding Agents"
+description: "خفّض تكاليف Coding Agent بنسبة تصل إلى 90% عبر التوجيه الذكي والتخزين المؤقت واختيار النماذج"
+---
+
+## لماذا تُعدّ Coding Agents مكلفة؟
+
+أدوات مثل Claude Code وCursor وCodex CLI قوية للغاية — لكنها تستهلك الـ tokens بمعدل يفاجئ معظم الفرق.
+
+**سياق طويل في كل طلب.** كل استدعاء يتضمن system prompt وملفات المشروع وسجل المحادثة — غالبًا 10,000–100,000+ token قبل أن يبدأ النموذج في التفكير.
+
+**استدعاءات متكررة.** جلسة برمجة واحدة تُطلق عشرات استدعاءات API: توليد الكود، البحث، المراجعة، الإكمال التلقائي، واستخدام الأدوات. جلسة مدتها ساعة واحدة قد تتجاوز 200+ طلب.
+
+**تراكم المحادثة.** كل دور يُعيد إرسال كامل سجل الرسائل. بحلول الدور العشرين، أنت تدفع مقابل نفس السياق 20 مرة.
+
+<Info>
+جلسة Claude Code نموذجية لمدة ساعة قد تستهلك 2–5 مليون token. بأسعار API المباشرة، هذا يعني $6–30+ في الساعة حسب النموذج.
+</Info>
+
+## كيف تساعد AI Sonar
+
+<CardGroup cols={2}>
+  <Card title="التوجيه متعدد المزوّدين" icon="route" href="/ar/guides/coding-agent-cost#smart-model-selection">
+    توجيه تلقائي إلى أرخص مزود متاح لكل نموذج. نفس النموذج، سعر أقل.
+  </Card>
+  <Card title="تمرير Prompt Cache" icon="bolt" href="/ar/guides/prompt-cache">
+    التخزين المؤقت للبادئة من المزودين (Anthropic وOpenAI وDeepSeek) يعمل تلقائيًا — system prompts الطويلة تُخزَّن على مستوى المزود.
+  </Card>
+  <Card title="التحويل الاحتياطي للنموذج" icon="arrows-rotate" href="/ar/guides/coding-agent-models#how-aisonar-routing-works">
+    إذا كان مزود غير متاح أو بطيئًا، تنتقل الطلبات تلقائيًا إلى المزود التالي. صفر توقف.
+  </Card>
+</CardGroup>
+
+## أدوات البرمجة المدعومة
+
+<CardGroup cols={3}>
+  <Card title="Cursor" icon="text-slash" href="/ar/integrations/cursor">
+    بيئة تطوير مدعومة بالذكاء الاصطناعي مع إكمال تلقائي ودردشة
+  </Card>
+  <Card title="Claude Code" icon="terminal" href="/ar/integrations/claude-code">
+    Coding Agent الرسمي من Anthropic عبر سطر الأوامر
+  </Card>
+  <Card title="Codex CLI" icon="code" href="/ar/integrations/codex-cli">
+    Coding Agent من OpenAI يعمل في الطرفية
+  </Card>
+  <Card title="Gemini CLI" icon="gem" href="/ar/integrations/gemini-cli">
+    مساعد البرمجة من Google عبر سطر الأوامر
+  </Card>
+  <Card title="OpenCode" icon="laptop-code" href="/ar/integrations/opencode">
+    Coding Agent مفتوح المصدر يعمل في الطرفية
+  </Card>
+  <Card title="AI Sonar API Skill" icon="lemon" href="/ar/integrations/coding-agent-skill">
+    استخدم مهارة تكامل AI Sonar API المشتركة
+  </Card>
+</CardGroup>
+
+## تعمّق أكثر
+
+<CardGroup cols={2}>
+  <Card title="دليل تحسين التكاليف" icon="piggy-bank" href="/ar/guides/coding-agent-cost">
+    استراتيجيات عملية لتخفيض فاتورة Coding Agent: اختيار النماذج، التخزين المؤقت، إدارة الـ tokens، ومقارنات التكاليف الفعلية.
+  </Card>
+  <Card title="دليل اختيار النماذج" icon="microchip" href="/ar/guides/coding-agent-models">
+    أي نموذج لأي مهمة برمجية؟ جدول مقارنة، توصيات حسب المهمة، وإعداد لكل أداة.
+  </Card>
+</CardGroup>

@@ -1,0 +1,122 @@
+---
+title: "Introducción"
+description: "Accede a cientos de modelos de IA a través de una API unificada"
+---
+
+## ¿Qué es AI Sonar?
+
+AI Sonar es una plataforma de agregación de APIs de IA que te brinda acceso unificado a **cientos de modelos de IA** de proveedores como OpenAI, Anthropic, Google, DeepSeek, Moonshot, MiniMax y más.
+
+<CardGroup cols={2}>
+  <Card title="Nativo + compatible" icon="plug">
+    Usa rutas nativas de Anthropic/Gemini cuando importe el comportamiento del proveedor, o rutas /v1 compatibles con OpenAI para herramientas existentes de estilo OpenAI.
+  </Card>
+  <Card title="Formatos nativos" icon="shuffle">
+    Llama endpoints estilo OpenAI, Anthropic, Gemini y Responses desde una única plataforma.
+  </Card>
+  <Card title="Paga por uso" icon="coins">
+    Sin suscripciones. Solo pagas por lo que realmente usas.
+  </Card>
+  <Card title="Alta disponibilidad" icon="shield-check">
+    Enrutamiento inteligente, failover y soporte multicanal para mejorar la fiabilidad.
+  </Card>
+</CardGroup>
+
+## Capacidades compatibles
+
+| Capacidad | Descripción | Modelos de ejemplo |
+|------------|-------------|----------------|
+| **Chat y razonamiento** | Generación de texto, planificación, herramientas | `gpt-5.4`, `claude-sonnet-4-6`, `deepseek-r1` |
+| **Visión** | Comprensión de imágenes y chat multimodal | `gpt-4o`, `claude-sonnet-4-6`, `gemini-2.5-flash` |
+| **Generación de imágenes** | Texto a imagen y edición de imágenes | `dall-e-3`, `flux-pro`, `midjourney` |
+| **Audio** | TTS y transcripción | `gpt-4o-mini-tts`, `whisper-1`, `gpt-4o-transcribe` |
+| **Embeddings** | Vectorización de texto | `text-embedding-3-small`, `text-embedding-3-large` |
+| **Música** | Generación de música por IA | `suno` |
+| **3D** | Generación de activos 3D | `tripo3d` |
+
+## Elige el formato de solicitud
+
+Empieza por la ruta que coincida con el comportamiento que necesitas. Usa rutas nativas Anthropic/Gemini para funciones nativas del proveedor; usa /v1/chat/completions compatible con OpenAI al migrar código de chat estilo OpenAI.
+
+<CodeGroup>
+
+```bash cURL
+curl https://api.aisonar.dev/v1/chat/completions \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.4",
+    "messages": [
+      {"role": "user", "content": "Explain what AI Sonar does in one sentence."}
+    ]
+  }'
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "Explain what AI Sonar does in one sentence."}]
+)
+
+print(response.choices[0].message.content)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.chat.completions.create({
+  model: 'gpt-5.4',
+  messages: [{ role: 'user', content: 'Explain what AI Sonar does in one sentence.' }],
+});
+
+console.log(response.choices[0].message.content);
+```
+
+<Note>
+Usa `POST /v1/responses` solo cuando necesites explícitamente un comportamiento específico de Responses. No es la ruta de compatibilidad predeterminada para todos los modelos.
+</Note>
+
+</CodeGroup>
+
+## Características clave
+
+<CardGroup cols={2}>
+  <Card title="Múltiples formatos de API" icon="layers" href="/guides/api-formats">
+    Usa formatos nativos de OpenAI, Anthropic, Gemini o Responses con una sola cuenta.
+  </Card>
+  <Card title="Errores orientados a agentes" icon="wand-magic-sparkles" href="/guides/agent-first-api">
+    Pistas estructuradas ayudan a que los agentes de codificación se autocorrijan más rápido.
+  </Card>
+  <Card title="Cobertura de integraciones" icon="toolbox" href="/guides/ide-sdk-compatibility">
+    Conecta IDEs, SDKs, frameworks y aplicaciones de chat con menos cambios específicos por proveedor.
+  </Card>
+</CardGroup>
+
+## Siguientes pasos
+
+<CardGroup cols={2}>
+  <Card title="Inicio rápido" icon="rocket" href="/quickstart">
+    Pon en marcha tu primera solicitud en un par de minutos.
+  </Card>
+  <Card title="Referencia de la API" icon="book" href="/api-reference/introduction">
+    Explora la referencia detallada por endpoint.
+  </Card>
+  <Card title="Integraciones" icon="puzzle-piece" href="/integrations/openai-sdk">
+    Comienza con integraciones de SDK, IDE y aplicaciones.
+  </Card>
+  <Card title="Modelos" icon="robot" href="https://aisonar.dev/models">
+    Consulta la disponibilidad y precios actuales de los modelos.
+  </Card>
+</CardGroup>

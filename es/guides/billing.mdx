@@ -1,0 +1,196 @@
+---
+title: "Facturación y Precios"
+description: "Comprenda el modelo de precios de pago por uso de AI Sonar"
+---
+
+## Resumen
+
+AI Sonar utiliza un **modelo de precios de pago por uso**. Solo paga por lo que utiliza, sin suscripciones ni compromisos mínimos.
+
+## Cómo funciona la facturación
+
+1. **Añada créditos** a su cuenta
+2. **Use la API** - los costes se deducen por solicitud
+3. **Monitoree el uso** en su panel de control
+4. **Recargue** cuando su saldo sea bajo
+
+## Modelos de precios
+
+### Precios por token
+
+La mayoría de los modelos de generación de texto tienen un precio por millón de tokens:
+
+| Modelo | Entrada (por 1M de tokens) | Salida (por 1M de tokens) |
+|-------|----------------------|------------------------|
+| GPT-4o | $1.75 | $7.00 |
+| GPT-4o-mini | $0.105 | $0.42 |
+| Claude Opus 4.5 | $3.50 | $17.50 |
+| Claude Sonnet 4.5 | $2.10 | $10.50 |
+| Claude Haiku 4.5 | $0.70 | $3.50 |
+| Gemini 2.5 Pro | $0.875 | $7.00 |
+| Gemini 2.5 Flash | $0.1225 | $0.525 |
+| DeepSeek R1 | $0.385 | $1.533 |
+| DeepSeek V3.2 | $0.196 | $0.294 |
+
+<Note>
+  Los precios mostrados son precios de plataforma con descuento. Los precios reales pueden variar. Consulte la [página de precios](https://aisonar.dev/es/pricing) para conocer las tarifas actuales.
+</Note>
+
+### Precios por solicitud
+
+Los modelos de imagen, vídeo y audio tienen un precio por solicitud:
+
+| Modelo | Precio por solicitud |
+|-------|-------------------|
+| DALL-E 3 (1024x1024) | $0.04 |
+| Midjourney | $0.05 |
+| Whisper (por minuto) | $0.006 |
+| TTS-1 | $0.015 |
+
+### Facturación de tareas asíncronas (Vídeo/Música/3D y algunos modelos de imagen)
+
+<Note>
+  En la generación basada en tareas, crear la tarea puede reservar o predescontar el coste estimado. La liquidación final solo ocurre después de que la tarea asíncrona alcance un estado terminal exitoso durante el polling o la finalización.
+</Note>
+
+Para flujos de generación basados en tareas (vídeo, música, 3D y algunos modelos de imagen):
+
+1. Envía la tarea. AI Sonar puede aplicar una reserva o predescuento estimado para verificar el saldo y los límites de gasto de la API Key.
+2. Consulta la `poll_url` devuelta, o llama a `GET /v1/tasks/{id}`, hasta que la tarea alcance un estado terminal.
+3. Cuando la tarea se completa correctamente, la liquidación final registra el uso y la respuesta de la tarea incluye `billing_transaction_id`.
+4. Si la creación falla o el estado terminal es failed, el importe pendiente se reembolsa o libera y la solicitud se marca como no facturable.
+
+Si el dashboard no refleja la liquidación o el reembolso después de que el estado terminal sea visible, contacta con support@aisonar.dev.
+
+```python
+# Ejemplo: Facturación de generación de vídeo
+response = client.post("/v1/videos/generations", json={
+    "model": "veo3.1",
+    "prompt": "A sunset over the ocean"
+})
+# El coste estimado puede reservarse ahora; la facturación final aparece después del éxito.
+
+poll_url = response.json()["poll_url"]
+task_id = response.json()["task_id"]
+# Consulta poll_url para ver el estado; billing_transaction_id aparece tras la liquidación.
+```
+
+### ID de transacción de facturación
+
+Las respuestas JSON facturables, no streaming y compatibles con OpenAI incluyen `billing_transaction_id` cuando la liquidación se completa antes de finalizar la respuesta. El mismo valor también se expone en el header `X-Billing-Transaction-ID`, para integraciones en navegador y servidor. Las rutas de compatibilidad nativa, como Gemini `/v1beta`, pueden exponer el valor solo por header para conservar la forma nativa de respuesta del proveedor. Para tareas multimedia asíncronas, consulta el `poll_url` devuelto o `GET /v1/tasks/{id}`; la respuesta de la tarea incluye `billing_transaction_id` cuando la liquidación termina. Las respuestas streaming pueden liquidarse después de que el stream ya fue enviado; si el header no está presente, usa los logs de uso del dashboard para reconciliación.
+
+## Conteo de tokens
+
+Los tokens son las unidades básicas del procesamiento de texto:
+
+- ~4 caracteres = 1 token (Inglés)
+- ~1-2 caracteres = 1 token (Chino)
+- 1 imagen = varía según el tamaño y el detalle
+
+### Estimación de tokens
+
+```python
+# Estimación aproximada
+def estimate_tokens(text):
+    return len(text) / 4  # Aproximado para inglés
+
+# Conteo real (para modelos de OpenAI)
+import tiktoken
+encoder = tiktoken.encoding_for_model("gpt-4o")
+tokens = encoder.encode("Your text here")
+print(f"Token count: {len(tokens)}")
+```
+
+## Seguimiento de uso
+
+### Panel de control
+
+Monitoree su uso en el [Panel de control](https://console.aisonar.dev):
+
+- Saldo en tiempo real
+- Historial de uso por modelo
+- Desglose de costes
+- Uso de claves API
+
+### Respuesta de la API
+
+Cada respuesta incluye información de uso:
+
+```json
+{
+  "usage": {
+    "prompt_tokens": 50,
+    "completion_tokens": 100,
+    "total_tokens": 150
+  }
+}
+```
+
+## Optimización de costes
+
+<AccordionGroup>
+  <Accordion title="Use modelos adecuados">
+    Utilice modelos más pequeños (GPT-4o-mini, Gemini Flash) para tareas sencillas.
+  </Accordion>
+
+  <Accordion title="Implemente el almacenamiento en caché">
+    Almacene en caché las respuestas para solicitudes idénticas repetidas.
+  </Accordion>
+
+  <Accordion title="Optimice los prompts">
+    Mantenga los prompts concisos manteniendo la claridad.
+  </Accordion>
+
+  <Accordion title="Establezca max_tokens">
+    Limite la longitud de la respuesta cuando no se necesiten respuestas completas.
+  </Accordion>
+
+  <Accordion title="Use streaming para respuestas largas">
+    El streaming no tiene un coste adicional pero mejora el rendimiento percibido.
+  </Accordion>
+</AccordionGroup>
+
+## Alertas de saldo bajo
+
+Configure alertas para cuando su saldo disminuya:
+
+1. Vaya a **Panel de control → Configuración → Notificaciones**
+2. Establezca su cantidad de umbral
+3. Reciba notificaciones por correo electrónico
+
+## Añadir créditos
+
+### Métodos de pago
+
+- Stripe (Visa, Mastercard)
+
+### Pasos
+
+1. Inicie sesión en el [Panel de control](https://console.aisonar.dev)
+2. Haga clic en **Añadir créditos**
+3. Seleccione la cantidad y el método de pago
+4. Complete el pago
+
+Los créditos se añaden instantáneamente tras la confirmación del pago.
+
+## Límites de claves API
+
+Puede establecer límites de gasto en claves API individuales:
+
+1. Vaya a **Panel de control → Claves API**
+2. Haga clic en una clave para editarla
+3. Establezca el **Límite de uso**
+
+Cuando se alcance el límite, las solicitudes con esa clave devolverán `402 Payment Required`.
+
+## Facturas
+
+Para cuentas de empresa, las facturas están disponibles:
+
+1. Vaya a **Panel de control → Facturación**
+2. Vea el historial de transacciones
+3. Descargue las facturas como PDF
+
+## ¿Preguntas?
+
+Póngase en contacto con support@aisonar.dev para consultas de facturación.

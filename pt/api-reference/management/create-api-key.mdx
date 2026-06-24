@@ -1,0 +1,47 @@
+---
+title: "Criar chave API"
+openapi: "POST /v1/management/api-keys"
+description: "Cria uma nova API Key de usuário para a organização atual."
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Visão geral
+
+Este endpoint cria uma nova API Key `type=user` na organização associada ao token de gerenciamento atual.
+
+## Corpo da requisição
+
+| Campo | Tipo | Padrões / limites | Descrição |
+|-------|------|-------------------|-----------|
+| `name` | string | obrigatório, padrão `Default Key`, tamanho `1-50` | Nome de exibição; o servidor remove espaços no início e no fim |
+| `limitAmount` | number \| null | mínimo `0`, máximo de entrada `1000000` | `null` ou omitido = ilimitado, `0` = quota zero. Valores positivos são normalizados para um teto armazenado que não pode exceder `100000` USD equivalente. |
+| `limitCurrency` | enum | default `USD` | Apenas USD. Enviar `CNY` retorna `400 currency_retired`. |
+| `models` | string[] | padrão `[]` | Allowlist opcional de modelos lógicos |
+| `expiresAt` | string \| null | datetime RFC3339 | `null` significa sem expiração |
+
+## Observações
+
+- O valor completo da API Key aparece apenas uma vez na resposta.
+- `models: []` significa que a chave não possui restrição adicional de modelos além da política da organização.
+- `limitAmount: 0` cria uma chave válida, mas sem quota utilizável até que seja atualizada.
+
+## Exemplo
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/management/api-keys" \
+  -H "Authorization: Bearer mt-your-management-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Backend Worker",
+    "limitAmount": 500,
+    "models": ["veo3.1", "kling-3.0-video"],
+    "expiresAt": "2026-12-31T23:59:59Z"
+  }'
+```
+</RequestExample>
+
+## Requisição / Resposta
+
+Consulte o painel interativo de OpenAPI acima para ver o schema exato e os campos da resposta.

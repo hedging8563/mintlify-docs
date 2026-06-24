@@ -1,0 +1,74 @@
+---
+title: "Cancelar tarefa"
+openapi: "DELETE /v1/tasks/{id}"
+description: "Cancele uma tarefa assíncrona em fila quando o provedor e o modelo oferecem suporte"
+---
+
+## Visão geral
+
+Use `DELETE /v1/tasks/{id}` para cancelar uma tarefa assíncrona que ainda não começou a executar. Use o mesmo ID de tarefa da resposta create ou o ID incluído em `poll_url`.
+
+## Tarefas suportadas
+
+O cancelamento atualmente é suportado para tarefas de vídeo Volcengine Seedance em fila com `seedance-1.5-pro`, `seedance-2.0` ou `seedance-2.0-fast`. Tarefas que já estão em `processing`/running não podem ser canceladas. Tarefas concluídas, com falha, expiradas ou não suportadas permanecem consultáveis para status e conciliação de cobrança, em vez de excluir registros upstream.
+
+## Parâmetros de caminho
+
+<ParamField path="id" type="string" required>
+  ID da tarefa assíncrona retornado pela solicitação create ou incluído em `poll_url`.
+</ParamField>
+
+## Resposta
+
+<ResponseField name="id" type="string">
+  Identificador canônico da tarefa assíncrona.
+</ResponseField>
+
+<ResponseField name="task_id" type="string">
+  Alias do identificador da tarefa assíncrona.
+</ResponseField>
+
+<ResponseField name="poll_url" type="string">
+  URL de polling preferida para a tarefa. Ela permanece válida após o cancelamento.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Status da tarefa. Uma tarefa cancelada com sucesso é retornada como `failed` com `cancelled: true` para compatibilidade com os valores de status existentes.
+</ResponseField>
+
+<ResponseField name="cancelled" type="boolean">
+  `true` quando a tarefa foi cancelada antes da execução.
+</ResponseField>
+
+<ResponseField name="cancellation_status" type="string">
+  Marcador de cancelamento. O valor é `cancelled` quando o cancelamento é bem-sucedido.
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  Motivo do cancelamento ou mensagem de falha da tarefa.
+</ResponseField>
+
+## Comportamento de erro
+
+`400 unsupported_task_cancel` significa que o tipo de tarefa, provedor ou modelo não suporta cancelamento. `409 task_not_cancellable` significa que a tarefa já está sendo processada, está terminal ou não pode mais ser cancelada. `403` significa que a API key não pode acessar a tarefa.
+
+## Exemplo
+
+<RequestExample>
+```bash cURL
+curl -X DELETE "https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+```json Response
+{
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "failed",
+  "cancelled": true,
+  "cancellation_status": "cancelled",
+  "error": "Task cancelled before execution"
+}
+```

@@ -1,0 +1,53 @@
+---
+title: "Tải Lên Tệp"
+openapi: "POST /v1/files"
+description: "Tải lên một tệp đầu vào JSONL theo lô để tạo theo lô sau."
+---
+
+## Tổng Quan
+
+Điểm cuối này là một phần của Batch API tương thích với OpenAI của AI Sonar. Các công việc theo lô sử dụng các tệp JSONL đã tải lên, chạy không đồng bộ và có thể trả về các tệp đầu ra/lỗi sau.
+
+## Ghi Chú
+
+- Các tệp đầu vào theo lô phải sử dụng `purpose=batch`.
+- `completion_window` hiện tại là `24h`.
+- Thứ tự đầu ra không được đảm bảo; luôn khớp theo `custom_id`.
+- Streaming không được hỗ trợ bên trong các mục theo lô.
+
+## Ví Dụ
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/files" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F "purpose=batch" \
+  -F "file=@batch-input.jsonl;type=application/jsonl"
+```
+</RequestExample>
+
+## Yêu Cầu / Phản Hồi
+
+Sử dụng bảng điều khiển OpenAPI tương tác ở trên để có sơ đồ chính xác.
+
+## Mẹo Vận Hành
+
+- Sử dụng `custom_id` cho việc đối chiếu không thay đổi ở phía hạ nguồn.
+- Mong đợi `output_file_id` và `error_file_id` chỉ sau khi công nhân hoàn tất lô.
+- Giá theo lô có thể khác với giá đồng bộ vì các quy tắc giảm giá `isBatchRequest=true` áp dụng.
+## Đầu vào tệp hình ảnh
+
+Cùng route `/v1/files` này cũng có thể tải lên tệp hình ảnh tham chiếu cho `/v1/images/edits`.
+
+- Dùng `purpose=user_data` hoặc `purpose=vision`.
+- Có thể thêm `model` để chọn mô hình chỉnh sửa ảnh; mặc định là `gpt-image-2`.
+- `file_id` trả về được gắn với kênh chỉnh sửa ảnh upstream đã chọn và có thể dùng lại trong `images[].file_id`.
+
+## Chế độ Anthropic Files API
+
+Chính route `/v1/files` này cũng hỗ trợ đường dẫn Anthropic Files API.
+
+- Thêm header `anthropic-beta: files-api-2025-04-14` để chuyển sang chế độ Anthropic.
+- Ở chế độ Anthropic, hãy tải trực tiếp file gốc lên và không gửi `purpose=batch`.
+- `file_id` trả về sẽ được gắn với cùng kênh/workspace Anthropic chính thức và nên được tái sử dụng trong các request `/v1/messages`.
+- Nếu bạn định tham chiếu file này trong nội dung message Anthropic, hãy tiếp tục dùng các header Anthropic gốc (`x-api-key`, `anthropic-version` và beta header khi cần).

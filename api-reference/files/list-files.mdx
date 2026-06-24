@@ -1,0 +1,38 @@
+---
+title: "List Files"
+openapi: "GET /v1/files"
+description: "Lists uploaded files for batch workflows and supported file-backed compatibility modes."
+---
+
+## Overview
+
+This endpoint primarily serves AI Sonar's OpenAI-compatible Batch API, including uploaded batch inputs and generated output or error files.
+
+When the request opts into Anthropic Files compatibility mode, the same route can also list Anthropic-style files available to the bound workspace.
+
+## Notes
+
+- Batch input files must use `purpose=batch`.
+- Use `purpose=batch_output` to focus on generated output files.
+- `completion_window` is currently `24h`.
+- Output ordering is not guaranteed; always match by `custom_id`.
+- Streaming is not supported inside batch items.
+
+## Example
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/files?purpose=batch&limit=20" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+## Request / Response
+
+Use the interactive OpenAPI panel above for the exact schema.
+
+## Operational Tips
+
+- Use `custom_id` for idempotent downstream reconciliation.
+- Expect `output_file_id` and `error_file_id` only after the worker finalizes the batch.
+- Batch pricing may differ from synchronous pricing because `isBatchRequest=true` discount rules apply.

@@ -1,0 +1,359 @@
+---
+title: "Compatibilidade de IDE e SDK"
+description: "Orientações de compatibilidade baseadas em evidências para ferramentas de codificação AI, SDKs e frameworks"
+---
+
+## Visão Geral
+
+AI Sonar expõe múltiplos formatos de API para que ferramentas comuns de codificação, SDKs e frameworks possam se integrar com código auxiliar mínimo.
+
+Esta página é intencionalmente mais restrita do que uma matriz de marketing:
+
+- **Suportado** significa que documentamos um caminho de configuração concreto e que a AI Sonar expõe o formato de protocolo que esse caminho espera.
+- **Caminho nativo forte** significa que o repositório também possui adaptador direto ou evidência de formato de requisição para essa família de protocolos.
+- **Melhor esforço** significa que a integração pode funcionar, mas o cliente upstream não trata esse fluxo de gateway customizado como um contrato estável.
+
+<Note>
+  Campos não suportados não são tratados de forma uniforme. Nas rotas de compatibilidade, alguns campos são ignorados ou normalizados. Em `/v1/responses`, campos não suportados podem retornar erros explícitos `400` ou `503` quando essa rota não pode garantir o comportamento solicitado.
+</Note>
+
+## Formatos de API Suportados
+
+| Rota | Formato | Caso de Uso |
+|------|---------|-------------|
+| `/v1/chat/completions` | OpenAI Chat | Compatibilidade universal |
+| `/v1/responses` | OpenAI Responses | Conversas com estado |
+| `/v1/messages` | Anthropic Messages | Recursos nativos do Claude |
+| `/v1beta/models/:model:generateContent` | Google Gemini | Recursos nativos do Gemini |
+
+## Compatibilidade de IDE & CLI
+
+### Caminhos de Ferramentas Documentados
+
+| Ferramenta | Nível de Suporte | Formato | Observações |
+|-----------|------------------|---------|-------------|
+| **Cursor** | Suportado com limites | Compatível com OpenAI | Funciona para fluxos padrão BYOK de chat/editores, não substitui recursos gerenciados pelo Cursor como Tab Completion |
+| **Claude Code CLI** | Caminho nativo forte | Anthropic | Rota nativa `/v1/messages` com cobertura de adaptador para thinking e `tool_choice` |
+| **Codex CLI** | Suportado com limites de modelo/rota | OpenAI Responses | Considere `/v1/responses` como um caminho avançado para fluxos específicos do Codex; alguns campos exclusivos de Responses não são garantidos em todos os modelos e rotas |
+| **Gemini CLI** | Melhor esforço / experimental | Gemini | O fluxo com URL base personalizada da AI Sonar não é um contrato estável a montante |
+| **OpenCode** | Suportado | Compatível com OpenAI | Use um provedor compatível com OpenAI por padrão; mude para um provedor baseado em Responses somente quando precisar explicitamente |
+
+<Note>
+  Outros editores compatíveis com OpenAI e ferramentas de agentes frequentemente funcionam com o mesmo padrão de URL base, mas este repositório não mantém atualmente cobertura de regressão específica por ferramenta para Windsurf, Aider, Continue.dev, Cline/Roo Code, GitHub Copilot e clientes similares.
+</Note>
+
+### Exemplos de Configuração
+
+<Tabs>
+  <Tab title="Cursor">
+    ```
+    Base URL: https://api.aisonar.dev/v1
+    API Key: sk-your-api-key
+    ```
+    O Cursor usa internamente o formato de ferramentas no estilo Anthropic. A AI Sonar suporta ambos:
+    - Formato OpenAI: `{ type: "function", function: { name, parameters } }`
+    - Formato Anthropic: `{ name, input_schema }` (sem o campo type)
+  </Tab>
+  <Tab title="Claude Code">
+    ```bash
+    export ANTHROPIC_BASE_URL="https://api.aisonar.dev"
+    export ANTHROPIC_API_KEY="sk-your-api-key"
+    ```
+  </Tab>
+  <Tab title="OpenCode">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export LOCAL_ENDPOINT="https://api.aisonar.dev/v1"
+    ```
+  </Tab>
+  <Tab title="Aider">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export OPENAI_BASE_URL="https://api.aisonar.dev/v1"
+    aider --model gpt-5.4
+    ```
+  </Tab>
+</Tabs>
+
+## Compatibilidade de SDK
+
+### Caminhos de SDK & Framework Documentados
+
+| SDK / Framework | Linguagem | Nível de Suporte | Observações |
+|-----------------|-----------|------------------|-------------|
+| **OpenAI SDK** | Python/JS/Go | Caminho central suportado | Chat Completions e Embeddings são o caminho padrão documentado; alguns campos exclusivos de Responses não são garantidos em todos os modelos e rotas |
+| **Anthropic SDK** | Python/JS | Caminho nativo forte | Rota Messages nativa com evidência direta para tools, thinking e cache de prompts |
+| **Vercel AI SDK** | TypeScript | Padrão de integração recomendado | Prefira `@ai-sdk/openai-compatible`; use `@ai-sdk/openai` somente quando desejar explicitamente comportamento nativo de Responses |
+| **LangChain** | Python/JS | Superfícies padrão suportadas | `ChatOpenAI` e `OpenAIEmbeddings` são o escopo pretendido; extras nativos do fornecedor estão fora do escopo |
+| **LlamaIndex** | Python | Suportado via `OpenAILike` | Use `OpenAILike`, não as classes OpenAI embutidas, para gateways de terceiros como AI Sonar |
+| **Dify** | - | Suportado com limites de escopo | O provedor OpenAI e fluxos orientados a chat-completions são o caminho pretendido; não é adequado para Responses específicos do Codex ou comportamento via WebSocket |
+
+## Parâmetros de Chat Completions
+
+### Parâmetros Básicos
+
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `model` | string | Identificador do modelo (obrigatório) |
+| `messages` | array | Mensagens da conversa (obrigatório) |
+| `max_tokens` | integer | Máximo de tokens de saída |
+| `temperature` | number | Temperatura de amostragem (0-2) |
+| `top_p` | number | Amostragem nucleus (0-1) |
+| `stream` | boolean | Habilitar streaming |
+
+### Chamada de Ferramenta
+
+```json
+{
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_weather",
+        "description": "Get weather for a location",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "location": { "type": "string" }
+          }
+        },
+        "strict": true
+      }
+    }
+  ],
+  "tool_choice": "auto",
+  "parallel_tool_calls": true
+}
+```
+
+### Opções de Escolha de Ferramenta
+
+| Formato | Exemplo | Descrição |
+|--------|---------|----------|
+| String | `"auto"`, `"none"`, `"required"` | Seleção simples |
+| OpenAI Object | `{ "type": "function", "function": { "name": "fn" } }` | Forçar função específica |
+| Anthropic Object | `{ "type": "tool", "name": "fn", "disable_parallel_tool_use": true }` | Formato nativo Anthropic |
+
+### Parâmetros Avançados
+
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `stream_options` | object | `{ include_usage: true }` para contagem de tokens |
+| `reasoning_effort` | string | `"low"`, `"medium"`, `"high"` para modelos GPT-5 com raciocínio habilitado |
+| `service_tier` | string | `"auto"` ou `"default"` |
+| `seed` | integer | Saídas determinísticas |
+| `logprobs` | boolean | Retorna probabilidades logarítmicas |
+| `top_logprobs` | integer | Número de top logprobs (0-20) |
+| `logit_bias` | object | Mapa de viés por token (-100 a 100) |
+| `frequency_penalty` | number | Penalidade por repetição (-2 a 2) |
+| `presence_penalty` | number | Penalidade por tópico (-2 a 2) |
+| `stop` | string/array | Sequências de parada |
+| `n` | integer | Número de completions (1-128) |
+| `user` | string | Identificador do usuário para rastreamento |
+
+### Recursos Avançados do OpenAI
+
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `modalities` | array | `["text", "audio"]` para multimodal |
+| `audio` | object | Configuração de saída de áudio (voz, formato) |
+| `prediction` | object | Saída prevista para conclusão mais rápida |
+| `metadata` | object | Pares chave-valor para rastreamento |
+| `store` | boolean | Armazenar para recuperação posterior |
+
+### Opções Específicas do Provedor
+
+```json
+{
+  "anthropic_options": {
+    "thinking": {
+      "type": "enabled",
+      "budget_tokens": 10000
+    },
+    "prompt_caching": true
+  },
+  "google_options": {
+    "safety_settings": [...],
+    "google_search": true,
+    "code_execution": true
+  }
+}
+```
+
+## Parâmetros de Anthropic Messages
+
+### Parâmetros Básicos
+
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `model` | string | Identificador do modelo |
+| `messages` | array | Mensagens da conversa |
+| `max_tokens` | integer | Saída máxima (até 128000) |
+| `system` | string/array | Prompt do sistema |
+| `stream` | boolean | Habilitar streaming |
+
+### Chamada de Ferramenta
+
+```json
+{
+  "tools": [
+    {
+      "name": "get_weather",
+      "description": "Get weather",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "location": { "type": "string" }
+        }
+      }
+    }
+  ],
+  "tool_choice": {
+    "type": "auto",
+    "disable_parallel_tool_use": false
+  }
+}
+```
+
+### Pensamento Estendido
+
+```json
+{
+  "model": "claude-opus-4-6",
+  "thinking": {
+    "type": "enabled",
+    "budget_tokens": 10000
+  }
+}
+```
+
+## Parâmetros da API Responses
+
+### Parâmetros Básicos
+
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `model` | string | Identificador do modelo |
+| `input` | string/array | Conteúdo de entrada |
+| `instructions` | string | Instruções do sistema |
+| `max_output_tokens` | integer | Máximo de tokens de saída |
+| `previous_response_id` | string | Continuar a conversa |
+
+### Parâmetros Avançados
+
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `truncation_strategy` | string | `"auto"` ou `"disabled"` |
+| `include` | array | `["reasoning.encrypted_content"]` |
+| `reasoning_effort` | string | Para modelos de raciocínio |
+| `service_tier` | string | Nível de prioridade |
+
+### Formato de Ferramenta
+
+Suporta ambos os formatos de ferramenta OpenAI e Anthropic:
+
+```json
+// OpenAI format
+{ "type": "function", "name": "fn", "parameters": {...} }
+
+// Anthropic format (Cursor compatibility)
+{ "name": "fn", "input_schema": {...} }
+```
+
+## Parâmetros da API Gemini
+
+### Parâmetros Básicos
+
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `contents` | array | Conteúdo da conversa |
+| `systemInstruction` | object | Prompt do sistema |
+| `generationConfig` | object | Configurações de geração |
+
+### Ferramentas
+
+```json
+{
+  "tools": [{
+    "functionDeclarations": [{
+      "name": "search",
+      "description": "Search the web",
+      "parameters": {...}
+    }],
+    "codeExecution": {},
+    "googleSearch": {}
+  }],
+  "toolConfig": {
+    "functionCallingConfig": {
+      "mode": "AUTO"
+    }
+  }
+}
+```
+
+### Configurações de Segurança
+
+```json
+{
+  "safetySettings": [
+    {
+      "category": "HARM_CATEGORY_HARASSMENT",
+      "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+    }
+  ]
+}
+```
+
+### Parâmetros Adicionais
+
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `cachedContent` | string | Referência de conteúdo em cache |
+| `responseMimeType` | string | `"text/plain"` ou `"application/json"` |
+| `responseSchema` | object | JSON schema para saída estruturada |
+
+## Streaming
+
+Todos os endpoints suportam streaming via Server-Sent Events (SSE):
+
+```bash
+# Chat Completions
+curl https://api.aisonar.dev/v1/chat/completions \
+  -H "Authorization: Bearer sk-xxx" \
+  -d '{"model": "gpt-4o", "messages": [...], "stream": true}'
+
+# With usage tracking
+-d '{"...", "stream_options": {"include_usage": true}}'
+```
+
+## Tratamento de Erros
+
+A AI Sonar retorna respostas de erro compatíveis com OpenAI:
+
+```json
+{
+  "error": {
+    "message": "Invalid API key",
+    "type": "invalid_api_key",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+Veja [Guia de Tratamento de Erros](/guides/error-handling) para detalhes.
+
+## Melhores Práticas
+
+<AccordionGroup>
+  <Accordion title="Use passthrough para parâmetros desconhecidos">
+    Todos os schemas usam `.passthrough()` - parâmetros desconhecidos são encaminhados para provedores upstream.
+  </Accordion>
+
+  <Accordion title="Prefira stream_options para cobrança precisa">
+    Habilite `stream_options.include_usage` para contagens de tokens precisas em respostas com streaming.
+  </Accordion>
+
+  <Accordion title="Use o formato apropriado de tool_choice">
+    Combine com o formato esperado pelo seu SDK. A AI Sonar aceita ambos os formatos OpenAI e Anthropic.
+  </Accordion>
+</AccordionGroup>

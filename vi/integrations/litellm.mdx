@@ -1,0 +1,55 @@
+---
+title: "LiteLLM"
+description: "Dùng LiteLLM với AI Sonar như provider upstream hoặc lớp gateway nội bộ"
+---
+
+## Tổng quan
+
+LiteLLM và AI Sonar thường kết hợp theo hai cách.
+
+- dùng AI Sonar làm **upstream tương thích OpenAI** phía sau LiteLLM
+- đặt LiteLLM phía trước AI Sonar để xử lý virtual key, routing bổ sung hoặc observability tập trung
+
+Với AI Sonar, đường mặc định gọn nhất là dùng chế độ **custom OpenAI / tương thích OpenAI** của LiteLLM với `api_base = https://api.aisonar.dev/v1`.
+
+<Note>
+Nếu bạn thực sự cần request shape Claude-native hoặc Gemini-native, hãy ưu tiên các tích hợp native của AI Sonar thay vì ép các luồng đó đi qua lớp trừu tượng tương thích OpenAI của LiteLLM.
+</Note>
+
+<Note>
+**Loại**: Framework hoặc nền tảng
+
+**Đường chính**: upstream tương thích OpenAI
+
+**Mức hỗ trợ**: Đường được hỗ trợ
+</Note>
+
+## Cài đặt
+
+```bash
+pip install 'litellm[proxy]'
+```
+
+## Cấu hình proxy
+
+```yaml
+model_list:
+  - model_name: aisonar-gpt-5.4
+    litellm_params:
+      model: custom_openai/gpt-5.4
+      api_base: https://api.aisonar.dev/v1
+      api_key: os.environ/OPENAI_API_KEY
+```
+
+Khởi động:
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+litellm --config litellm-config.yaml --port 4000
+```
+
+## Thực tiễn tốt nhất
+
+- Hãy coi AI Sonar trước hết là upstream `custom_openai`
+- Chỉ đặt LiteLLM phía trước khi bạn thực sự cần thêm một lớp gateway
+- Đừng mặc định kỳ vọng mọi chi tiết provider-native đều có trên đường tương thích OpenAI

@@ -1,0 +1,47 @@
+---
+title: "Tạo API key"
+openapi: "POST /v1/management/api-keys"
+description: "Tạo một API key người dùng mới cho tổ chức hiện tại."
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Tổng Quan
+
+Tạo một API key `type=user` mới trong tổ chức gắn với management token hiện tại.
+
+## Thân Yêu Cầu
+
+| Trường | Kiểu | Mặc định / Giới hạn | Ghi chú |
+|-------|------|---------------------|------|
+| `name` | string | bắt buộc, mặc định `Default Key`, độ dài `1-50` | Tên hiển thị, server sẽ trim khoảng trắng |
+| `limitAmount` | number \| null | tối thiểu `0`, input tối đa `1000000` | `null` hoặc bỏ qua = không giới hạn, `0` = quota bằng 0. Giá trị dương được chuẩn hoá thành trần lưu trữ không vượt quá tương đương `100000` USD |
+| `limitCurrency` | enum | default `USD` | Chỉ hỗ trợ USD. Gửi `CNY` sẽ trả về `400 currency_retired`. |
+| `models` | string[] | mặc định `[]` | Danh sách cho phép model logic tùy chọn |
+| `expiresAt` | string \| null | datetime RFC3339 | `null` nghĩa là không hết hạn |
+
+## Ghi Chú
+
+- Giá trị đầy đủ của API key chỉ hiển thị một lần trong response.
+- `models: []` nghĩa là key không có hạn chế model bổ sung nào ngoài chính sách của tổ chức.
+- `limitAmount: 0` tạo ra một key hợp lệ nhưng chưa thể chi tiêu quota cho đến khi được cập nhật.
+
+## Ví Dụ
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/management/api-keys" \
+  -H "Authorization: Bearer mt-your-management-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Backend Worker",
+    "limitAmount": 500,
+    "models": ["veo3.1", "kling-3.0-video"],
+    "expiresAt": "2026-12-31T23:59:59Z"
+  }'
+```
+</RequestExample>
+
+## Yêu Cầu / Phản Hồi
+
+Sử dụng bảng OpenAPI tương tác ở trên để xem schema và các trường response chính xác.

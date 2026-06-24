@@ -1,0 +1,26 @@
+---
+title: "APIキー請求情報を取得"
+openapi: "GET /v1/management/api-keys/{keyId}/billing"
+description: "ユーザー API キーの集計済み請求内訳を返します。"
+---
+
+## 概要
+
+このエンドポイントは、選択した API キーに対する消費ベースの請求集計を返します。総コスト、総リクエスト数、課金単位別の使用量、リクエストで指定するモデル名（`model`）、ベンダー、`scene`、`accessChannel`、キャッシュ種別ごとの内訳、および日次コスト推移が含まれます。
+
+## 注意事項
+
+- チャージ、請求書、その他の組織レベルの財務記録は含まれません。
+
+## 例
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/billing?startDate=2026-01-01&endDate=2026-01-31" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## リクエスト / レスポンス
+
+正確なスキーマについては、上記のインタラクティブな OpenAPI パネルを使用してください。

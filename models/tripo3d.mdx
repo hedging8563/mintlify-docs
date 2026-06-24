@@ -1,0 +1,35 @@
+---
+title: "Tripo3D"
+description: "Text/Image to 3D models"
+---
+
+## Overview
+
+AI Sonar provides access to Tripo3D models. Total: **1 models** available.
+
+## 3D Generation
+
+| Model ID | Pricing |
+|----------|--------|
+| `tripo3d-v2.5` | See dashboard |
+
+
+## Usage
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="tripo3d-v2.5",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+```
+
+<Note>
+Prices shown are platform prices (~70% of official rates).
+</Note>

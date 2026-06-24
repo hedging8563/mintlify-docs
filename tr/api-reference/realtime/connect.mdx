@@ -1,0 +1,54 @@
+---
+title: "Realtime WebSocket"
+openapi: "GET /v1/realtime"
+description: "WebSocket ile gerçek zamanlı ses ve çok modlu oturumlara bağlanın"
+---
+
+## Genel bakış
+
+Bu endpoint gerçek zamanlı konuşma tanıma, konuşma sentezi, konuşma çevirisi veya çok modlu realtime modeller için kullanılır. Normal `GET` istekleri metadata döndürür; WebSocket upgrade istekleri yönlendirilen upstream oturumuna proxy edilir.
+
+<Note>Agent’lar socket açmadan önce `/v1/models` ile realtime destekli modeli bulmalıdır.</Note>
+
+## Bağlantı
+
+<ParamField query="model" type="string" required>
+  Gerçek zamanlı model ID’si. Genel sözleşmesinde realtime desteği bulunan bir model kullanın.
+</ParamField>
+
+<ParamField header="Authorization" type="string" required>
+  Bearer API anahtarı. WebSocket istemcileri upgrade isteğinde `Authorization: Bearer sk-your-api-key` göndermelidir.
+</ParamField>
+
+<RequestExample>
+```javascript JavaScript
+import WebSocket from 'ws';
+
+const socket = new WebSocket('wss://api.aisonar.dev/v1/realtime?model=qwen-tts-realtime', {
+  headers: { Authorization: 'Bearer sk-your-api-key' }
+});
+
+socket.on('open', () => {
+  socket.send(JSON.stringify({ type: 'session.start' }));
+});
+
+socket.on('message', (data) => {
+  console.log('realtime event', data.toString());
+});
+```
+
+```bash cURL
+curl "https://api.aisonar.dev/v1/realtime" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+## Mesajlar
+
+AI Sonar, istemciniz ile yönlendirilen realtime sağlayıcı arasında WebSocket mesajlarını aktarır. Seçilen modelin resmi event biçimlerini koruyun ve `model` değerini query string içinde gönderin.
+
+## Ücretlendirme ve kapatma
+
+Realtime oturumlar aynı API key bakiyesini kullanır. AI Sonar socket açıldığında küçük bir tahmini tutarı önceden düşer, oturum kapanınca kesinleştirir veya iade eder.
+
+Oturum tamamlandığında client socket’i kapatın. Upstream önce kapatırsa AI Sonar mümkün olduğunda close code’u iletir.

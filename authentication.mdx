@@ -1,0 +1,141 @@
+---
+title: "Authentication"
+description: "Secure your AI Sonar API requests with API keys"
+---
+
+## API Keys
+
+All AI Sonar API requests require an API key.
+
+For OpenAI-compatible endpoints, send it as:
+
+```bash
+Authorization: Bearer sk-your-api-key
+```
+
+For Anthropic-compatible `/v1/messages` requests, you can also use:
+
+```bash
+x-api-key: sk-your-api-key
+```
+
+## Management Tokens
+
+Management API endpoints use a separate token type:
+
+```bash
+Authorization: Bearer mt-your-management-token
+```
+
+Use management tokens only with `/v1/management/*` endpoints. They are created from the **Settings** page in your Dashboard and are shown in full only once when generated or rotated.
+
+<Note>
+Management tokens cannot be used for model inference, and standard `sk-...` API keys cannot be used for the Management API.
+</Note>
+
+## Getting Your API Key
+
+1. Log in to your [AI Sonar Dashboard](https://console.aisonar.dev)
+2. Open **API Keys**
+3. Create a new key
+4. Give it a descriptive name
+5. Copy it immediately because it is shown only once
+
+<Warning>
+- Never expose API keys in client-side code
+- Never commit API keys to version control
+- Use environment variables or a secret manager
+- Rotate keys periodically
+- Delete unused keys
+</Warning>
+
+## Using API Keys
+
+<CodeGroup>
+
+```bash cURL
+curl https://api.aisonar.dev/v1/responses \
+  -H "Authorization: Bearer $TOKENLAB_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.4",
+    "input": "Hello!"
+  }'
+```
+
+```python Python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ.get("TOKENLAB_API_KEY"),
+    base_url="https://api.aisonar.dev/v1"
+)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: process.env.TOKENLAB_API_KEY,
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+```
+
+</CodeGroup>
+
+## API Key Features
+
+### Usage Limits
+
+You can set a usage limit on each API key:
+
+| Setting | Description |
+|---------|-------------|
+| **No Limit** | Key uses your account balance without restrictions |
+| **Fixed Limit** | Key stops working after reaching the specified amount |
+
+### Key Prefix
+
+All AI Sonar API keys start with `sk-`.
+
+## Anthropic Compatibility
+
+For the `/v1/messages` endpoint, the Anthropic-style header works as expected:
+
+```bash
+curl https://api.aisonar.dev/v1/messages \
+  -H "x-api-key: sk-your-api-key" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-sonnet-4-6",
+    "max_tokens": 1024,
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'
+```
+
+<Note>
+Use `Authorization: Bearer ...` for OpenAI-compatible endpoints such as `/v1/responses`, `/v1/chat/completions`, `/v1/models`, and most other AI Sonar routes.
+</Note>
+
+## Error Responses
+
+| Status Code | Type | Code | Description |
+|-------------|------|------|-------------|
+| 401 | `invalid_api_key` | `invalid_api_key` | Missing or invalid API key |
+| 401 | `expired_api_key` | `expired_api_key` | API key has been revoked |
+| 402 | `insufficient_balance` | `insufficient_balance` | Account balance is insufficient |
+| 402 | `quota_exceeded` | `quota_exceeded` | API key usage limit reached |
+
+Example:
+
+```json
+{
+  "error": {
+    "message": "Invalid API key provided",
+    "type": "invalid_api_key",
+    "code": "invalid_api_key"
+  }
+}
+```

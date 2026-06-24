@@ -1,0 +1,66 @@
+---
+title: "코딩 에이전트"
+description: "스마트 라우팅, 캐싱, 모델 선택으로 코딩 에이전트 비용을 최대 90% 절감"
+---
+
+## 코딩 에이전트가 비싼 이유
+
+Claude Code, Cursor, Codex CLI 같은 코딩 에이전트는 강력하지만, 토큰 소비 속도는 대부분의 팀을 놀라게 합니다.
+
+**요청당 긴 컨텍스트.** 매 호출마다 시스템 프롬프트, 프로젝트 파일, 대화 기록이 포함되어 모델이 생각을 시작하기 전에 이미 10,000~100,000+ 토큰이 필요합니다.
+
+**높은 호출 빈도.** 한 번의 코딩 세션에서 수십 건의 API 호출이 발생합니다: 코드 생성, 검색, 리뷰, 자동완성, 도구 사용. 1시간 세션에서 200건 이상의 요청이 쉽게 발생합니다.
+
+**대화 누적.** 매 턴마다 전체 메시지 기록이 재전송됩니다. 20번째 턴에는 같은 컨텍스트에 대해 20번 비용을 지불하게 됩니다.
+
+<Info>
+일반적인 1시간 Claude Code 세션은 2~5M 토큰을 소비합니다. 직접 API 요금으로는 모델에 따라 시간당 $6~30 이상입니다.
+</Info>
+
+## AI Sonar의 도움
+
+<CardGroup cols={2}>
+  <Card title="멀티 프로바이더 라우팅" icon="route" href="/ko/guides/coding-agent-cost#smart-model-selection">
+    각 모델에 대해 가장 저렴한 사용 가능 프로바이더로 자동 라우팅. 같은 모델, 더 낮은 가격.
+  </Card>
+  <Card title="Prompt Cache 패스스루" icon="bolt" href="/ko/guides/prompt-cache">
+    업스트림 프리픽스 캐싱(Anthropic, OpenAI, DeepSeek)이 자동으로 작동하여 긴 시스템 프롬프트가 프로바이더 수준에서 캐시됩니다.
+  </Card>
+  <Card title="모델 폴백" icon="arrows-rotate" href="/ko/guides/coding-agent-models#how-aisonar-routing-works">
+    프로바이더가 다운되거나 느리면 요청이 자동으로 다음 사용 가능한 프로바이더로 전환됩니다. 제로 다운타임.
+  </Card>
+</CardGroup>
+
+## 지원 코딩 도구
+
+<CardGroup cols={3}>
+  <Card title="Cursor" icon="text-slash" href="/ko/integrations/cursor">
+    탭 완성과 채팅 기능을 갖춘 AI IDE
+  </Card>
+  <Card title="Claude Code" icon="terminal" href="/ko/integrations/claude-code">
+    Anthropic 공식 CLI 코딩 에이전트
+  </Card>
+  <Card title="Codex CLI" icon="code" href="/ko/integrations/codex-cli">
+    OpenAI의 터미널 기반 코딩 에이전트
+  </Card>
+  <Card title="Gemini CLI" icon="gem" href="/ko/integrations/gemini-cli">
+    Google의 커맨드라인 코딩 어시스턴트
+  </Card>
+  <Card title="OpenCode" icon="laptop-code" href="/ko/integrations/opencode">
+    오픈소스 터미널 코딩 에이전트
+  </Card>
+  <Card title="AI Sonar API Skill" icon="lemon" href="/ko/integrations/coding-agent-skill">
+    AI Sonar 공유 API 통합 스킬 사용
+  </Card>
+</CardGroup>
+
+## 더 알아보기
+
+<CardGroup cols={2}>
+  <Card title="비용 최적화 가이드" icon="piggy-bank" href="/ko/guides/coding-agent-cost">
+    코딩 에이전트 비용을 줄이는 구체적인 전략: 모델 선택, 캐싱, 토큰 관리, 실제 비용 비교.
+  </Card>
+  <Card title="모델 선택 가이드" icon="microchip" href="/ko/guides/coding-agent-models">
+    어떤 코딩 작업에 어떤 모델? 비교 표, 작업별 추천, 도구별 설정.
+  </Card>
+</CardGroup>

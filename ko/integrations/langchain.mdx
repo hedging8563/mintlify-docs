@@ -1,0 +1,193 @@
+---
+title: "LangChain"
+description: "표준 OpenAI 호환 chat 및 embeddings를 사용하여 AI Sonar를 LangChain과 통합합니다"
+---
+
+## 개요
+
+AI Sonar는 표준 OpenAI 호환 chat 및 embeddings 인터페이스를 사용할 때 LangChain의 `ChatOpenAI` 및 `OpenAIEmbeddings` 통합과 잘 동작합니다.
+
+<Note>
+현재 LangChain 문서에서는 `ChatOpenAI`가 공식 OpenAI 호환 request/response 형식을 대상으로 한다고 안내합니다. 프로바이더별 비표준 response 필드가 필요한 경우, `ChatOpenAI`에 의존하는 대신 프로바이더별 LangChain 통합을 사용하세요.
+</Note>
+
+<Note>
+**유형**: 프레임워크 / 플랫폼
+
+**주요 경로**: OpenAI 호환 표준 surface
+
+**지원 수준**: 표준 surface 지원
+</Note>
+
+이 페이지는 표준 OpenAI 호환 LangChain 인터페이스만 다루며, 그 범위를 넘어서는 제공자별 LangChain 기능까지 약속하지는 않습니다.
+
+## 설치
+
+```bash
+pip install langchain langchain-openai langchain-community faiss-cpu
+```
+
+## 기본 구성
+
+```python
+from langchain_openai import ChatOpenAI
+
+llm = ChatOpenAI(
+    model="gpt-5.4",
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1",
+)
+
+response = llm.invoke("Explain AI Sonar in one sentence.")
+print(response.content)
+```
+
+## 다양한 모델 사용
+
+```python
+from langchain_openai import ChatOpenAI
+
+gpt = ChatOpenAI(
+    model="gpt-5.4",
+    api_key="sk-your-key",
+    base_url="https://api.aisonar.dev/v1",
+)
+
+claude = ChatOpenAI(
+    model="claude-sonnet-4-6",
+    api_key="sk-your-key",
+    base_url="https://api.aisonar.dev/v1",
+)
+
+gemini = ChatOpenAI(
+    model="gemini-2.5-flash",
+    api_key="sk-your-key",
+    base_url="https://api.aisonar.dev/v1",
+)
+
+deepseek = ChatOpenAI(
+    model="deepseek-r1",
+    api_key="sk-your-key",
+    base_url="https://api.aisonar.dev/v1",
+)
+```
+
+## 메시지 기록
+
+```python
+from langchain_core.messages import HumanMessage, SystemMessage
+
+messages = [
+    SystemMessage(content="You are a helpful assistant."),
+    HumanMessage(content="What is the capital of France?")
+]
+
+response = llm.invoke(messages)
+print(response.content)
+```
+
+## 스트리밍
+
+```python
+for chunk in llm.stream("Write a short poem about coding."):
+    if chunk.content:
+        print(chunk.content, end="", flush=True)
+```
+
+## 임베딩
+
+```python
+from langchain_openai import OpenAIEmbeddings
+
+embeddings = OpenAIEmbeddings(
+    model="text-embedding-3-small",
+    api_key="sk-your-key",
+    base_url="https://api.aisonar.dev/v1",
+)
+
+vector = embeddings.embed_query("Hello world")
+print(vector[:5])
+```
+
+## 간단한 RAG 예제
+
+```python
+from langchain_openai import OpenAIEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnablePassthrough
+
+embeddings = OpenAIEmbeddings(
+    model="text-embedding-3-small",
+    api_key="sk-your-key",
+    base_url="https://api.aisonar.dev/v1",
+)
+
+texts = [
+    "AI Sonar provides one API for many AI models.",
+    "AI Sonar supports OpenAI-compatible integrations."
+]
+
+vectorstore = FAISS.from_texts(texts, embeddings)
+retriever = vectorstore.as_retriever()
+
+prompt = ChatPromptTemplate.from_template(
+    "Answer using the context below.\\n\\nContext:\\n{context}\\n\\nQuestion:\\n{question}"
+)
+
+rag_chain = (
+    {"context": retriever, "question": RunnablePassthrough()}
+    | prompt
+    | llm
+)
+
+response = rag_chain.invoke("What does AI Sonar provide?")
+print(response.content)
+```
+
+## 에이전트
+
+<Note>
+새로운 agentic 프로젝트의 경우, LangChain은 장시간 실행되거나 tool을 사용하는 workflow를 더 명시적으로 제어할 수 있는 LangGraph를 고려할 것을 권장합니다.
+</Note>
+
+```python
+from langchain.agents import create_openai_tools_agent, AgentExecutor
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.tools import tool
+
+@tool
+def search(query: str) -> str:
+    """Search for information."""
+    return f"Search results for: {query}"
+
+tools = [search]
+
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a helpful assistant with access to tools."),
+    ("human", "{input}"),
+    ("placeholder", "{agent_scratchpad}")
+])
+
+agent = create_openai_tools_agent(llm, tools, prompt)
+executor = AgentExecutor(agent=agent, tools=tools)
+
+result = executor.invoke({"input": "Search for AI Sonar pricing"})
+print(result["output"])
+```
+
+## 모범 사례
+
+<AccordionGroup>
+  <Accordion title="`base_url`을 명시적으로 전달">
+    가장 안정적인 AI Sonar 설정은 오래된 environment-variable alias에 의존하는 대신 `base_url="https://api.aisonar.dev/v1"`를 `ChatOpenAI`와 `OpenAIEmbeddings`에 직접 전달하는 것입니다.
+  </Accordion>
+
+  <Accordion title="여기서는 표준 기능 사용">
+    `ChatOpenAI`에서는 표준 chat, tool calling, streaming, embeddings를 사용하세요. vendor 고유의 추가 기능이 필요하다면 해당 vendor의 자체 LangChain 통합으로 전환하세요.
+  </Accordion>
+
+  <Accordion title="검색에는 더 저렴한 모델 사용">
+    검색에는 `text-embedding-3-small` 같은 embedding 모델을 사용하고, 더 강력한 chat 모델은 최종 답변 단계에 남겨두세요.
+  </Accordion>
+</AccordionGroup>

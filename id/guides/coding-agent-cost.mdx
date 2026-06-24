@@ -1,0 +1,146 @@
+---
+title: "Optimasi Biaya Coding Agent"
+description: "Strategi praktis untuk mengurangi biaya API coding agent sebesar 60–90%"
+---
+
+## Masalah Biaya
+
+Sesi coding agent yang tipikal menghabiskan token dengan cepat:
+
+| Aktivitas | Token per panggilan | Panggilan per jam | Token per jam |
+|-----------|---------------------|-------------------|---------------|
+| Pembuatan kode | 5.000–50.000 | 10–30 | 150K–1,5M |
+| Pencarian codebase | 2.000–20.000 | 20–50 | 100K–1M |
+| Review kode | 10.000–80.000 | 5–10 | 100K–800K |
+| Autocomplete | 500–3.000 | 50–200 | 50K–600K |
+| **Total** | | | **400K–4M+** |
+
+Dengan tarif model premium, itu berarti $3–30/jam per developer. Untuk tim 10 orang, itu $500–5.000/bulan.
+
+## Pemilihan Model yang Cerdas
+
+Tidak setiap tugas coding membutuhkan model paling mahal. Sesuaikan tugas dengan tier yang tepat:
+
+| Tugas | Rekomendasi | Tier Biaya | Alasan |
+|-------|-------------|------------|--------|
+| Desain arsitektur | `claude-opus-4-6`, `gpt-5.4` | $$$$ Premium | Membutuhkan penalaran kompleks |
+| Pembuatan kode | `claude-sonnet-4-6`, `gemini-3-pro-preview` | $$$ Standard | Keseimbangan kualitas/biaya terbaik |
+| Review kode | `claude-sonnet-4-6`, `deepseek-r1` | $$–$$$ | Pencocokan pola, kreativitas lebih rendah |
+| Perbaikan bug | `claude-sonnet-4-6`, `gpt-5-mini` | $$–$$$ | Tugas terfokus dan terdefinisi dengan baik |
+| Tab completion | `gpt-5-mini`, `gemini-3-flash-preview` | $$ Budget | Kecepatan lebih penting dari kedalaman |
+| Boilerplate | `deepseek-v3.2`, `gpt-5-mini` | $ Economy | Pola sederhana dan berulang |
+
+<Tip>
+Lihat [Panduan Pemilihan Model](/id/guides/coding-agent-models) untuk perbandingan model terperinci dan konfigurasi per tool.
+</Tip>
+
+## Strategi Caching
+
+Coding agents sangat ideal untuk caching karena mereka terus-menerus mengulang pola yang serupa.
+
+### Prompt Cache (Level Provider)
+
+[Prompt caching upstream](/id/guides/prompt-cache) berjalan otomatis melalui AI Sonar. System prompt panjang — yang selalu disertakan coding agents — di-cache di level provider:
+
+| Penyedia | Diskon Cache | Min Token |
+|----------|-------------|-----------|
+| Anthropic | 90% off reads | 1.024 |
+| OpenAI | 50% off reads | 1.024 |
+| DeepSeek | 90% diskon untuk pembacaan | 64 |
+
+Karena coding agents mengirim system prompt + konteks proyek yang sama di setiap panggilan, tingkat cache hit prompt biasanya **70–90%**.
+
+### Contoh Penghematan Gabungan
+
+Untuk permintaan dengan 50.000 input token (panggilan coding agent yang tipikal):
+
+```
+API langsung (tanpa caching):
+  50.000 token × $3,00/1M = $0,150
+
+Dengan prompt cache (40.000 cached + 10.000 baru):
+  Cached:  40.000 × $0,30/1M = $0,012
+  Baru:    10.000 × $3,00/1M = $0,030
+  Total: $0,042 (hemat 72%)
+```
+
+## Perbandingan Biaya Nyata
+
+Estimasi biaya untuk sesi coding 1 jam yang tipikal (~3 juta token):
+
+| Setup | Biaya per Jam | Bulanan (160 jam) |
+|-------|---------------|-------------------|
+| API langsung (model premium) | ~$15–25 | ~$2.400–4.000 |
+| AI Sonar (smart routing) | ~$10–18 | ~$1.600–2.900 |
+| AI Sonar + prompt cache | ~$4–8 | ~$640–1.280 |
+| AI Sonar + kedua cache | ~$2–5 | ~$320–800 |
+
+<Warning>
+Ini adalah estimasi ilustratif. Biaya aktual bergantung pada pilihan model, pola penggunaan, dan tingkat cache hit Anda. Periksa [harga real-time](/api-reference/pricing/get-pricing) untuk tarif terkini.
+</Warning>
+
+## Tips Manajemen Token
+
+### Atur max_tokens
+
+Cegah pembuatan yang tidak terkendali:
+
+```json
+{
+  "model": "claude-sonnet-4-6",
+  "max_tokens": 4096,
+  "messages": [...]
+}
+```
+
+Sebagian besar tugas coding membutuhkan 1.000–4.000 output token. Menetapkan batas mencegah model menghasilkan respons yang terlalu panjang.
+
+### Gunakan Auto-Compact
+
+Sebagian besar coding agents mendukung pemadatan konteks — merangkum giliran percakapan lama untuk mengurangi jumlah token. Aktifkan fitur ini:
+
+- **Claude Code**: Auto-compact bawaan aktif saat batas konteks tercapai
+- **Cursor**: Manajemen konteks otomatis
+- **Codex CLI**: Gunakan flag `--max-context`
+
+### Hindari Context Bloat
+
+- Jangan tempel seluruh file jika satu fungsi sudah cukup
+- Gunakan pola seperti `.gitignore` untuk mengecualikan file yang tidak relevan dari konteks agent
+- Hapus riwayat percakapan saat beralih tugas
+
+## Konfigurasi Cepat
+
+Setiap tool hanya membutuhkan beberapa baris untuk terhubung melalui AI Sonar:
+
+<AccordionGroup>
+  <Accordion title="Claude Code">
+    ```bash
+    export ANTHROPIC_API_KEY="sk-your-api-key"
+    export ANTHROPIC_BASE_URL="https://api.aisonar.dev"
+    ```
+    [Panduan setup lengkap →](/integrations/claude-code)
+  </Accordion>
+
+  <Accordion title="Cursor">
+    Pengaturan → Model → Kunci API OpenAI: `sk-your-key`, Base URL: `https://api.aisonar.dev/v1`
+
+    [Panduan setup lengkap →](/integrations/cursor)
+  </Accordion>
+
+  <Accordion title="Codex CLI">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export OPENAI_BASE_URL="https://api.aisonar.dev/v1"
+    ```
+    [Panduan setup lengkap →](/integrations/codex-cli)
+  </Accordion>
+
+  <Accordion title="Gemini CLI">
+    ```bash
+    export GEMINI_API_KEY="sk-your-api-key"
+    export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"
+    ```
+    [Panduan setup lengkap →](/integrations/gemini-cli)
+  </Accordion>
+</AccordionGroup>

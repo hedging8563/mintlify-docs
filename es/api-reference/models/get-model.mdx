@@ -1,0 +1,153 @@
+---
+title: "Obtener modelo"
+openapi: "GET /v1/models/{model}"
+description: "Recupera una instancia de modelo"
+---
+
+## Parámetros de ruta
+
+<ParamField path="model" type="string" required>
+  El ID del modelo que se va a recuperar (por ejemplo, `gpt-5.4`, `claude-sonnet-4-6`).
+</ParamField>
+
+## Respuesta
+
+<ResponseField name="id" type="string">
+  Identificador del modelo.
+</ResponseField>
+
+<ResponseField name="object" type="string">
+  Siempre `model`.
+</ResponseField>
+
+<ResponseField name="created" type="integer">
+  Marca de tiempo de creación.
+</ResponseField>
+
+<ResponseField name="owned_by" type="string">
+  Proveedor del modelo.
+</ResponseField>
+
+<ResponseField name="aisonar" type="object">
+  Metadatos públicos específicos de AI Sonar. La ruta de detalle puede incluir `category`, `pricing_unit`, `capability_flags`, `supported_operations`, `pricing_provenance`, `public_contract_summary`, el `public_contract` completo y `agent_preferences` a nivel de escena para instantáneas de recomendación no chat.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/models/gpt-5.4" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+model = client.models.retrieve("gpt-5.4")
+print(f"Model: {model.id}, Provider: {model.owned_by}")
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const model = await client.models.retrieve('gpt-5.4');
+console.log(`Model: ${model.id}, Provider: ${model.owned_by}`);
+```
+
+```go Go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "net/http"
+)
+
+func main() {
+    req, _ := http.NewRequest("GET", "https://api.aisonar.dev/v1/models/gpt-5.4", nil)
+    req.Header.Set("Authorization", "Bearer sk-your-api-key")
+
+    resp, _ := http.DefaultClient.Do(req)
+    defer resp.Body.Close()
+
+    var model map[string]interface{}
+    json.NewDecoder(resp.Body).Decode(&model)
+    fmt.Printf("Model: %s, Provider: %s\n", model["id"], model["owned_by"])
+}
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/models/gpt-5.4');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer sk-your-api-key'
+    ]
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$model = json_decode($response, true);
+echo "Model: {$model['id']}, Provider: {$model['owned_by']}\n";
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "id": "gpt-5.4",
+  "object": "model",
+  "created": 1706000000,
+  "owned_by": "openai"
+}
+```
+</ResponseExample>
+
+## Manejo de errores
+
+Si el modelo no existe, recibirás un error 404:
+
+```json
+{
+  "error": {
+    "message": "Model 'invalid-model' not found",
+    "type": "invalid_request_error",
+    "code": "model_not_found"
+  }
+}
+```
+
+## Metadatos de recomendación para no chat
+
+Para modelos no chat, la ruta de detalle también devuelve `aisonar.agent_preferences.<scene>`.
+
+Úsalo para inspeccionar:
+
+- `preferred_rank`
+- `success_rate_24h`
+- `sample_count_24h`
+- `status`
+- `updated_at`
+
+La respuesta pública mantiene `basis.channel_id` y `basis.physical_model` como `null` de forma intencional para que los agentes puedan consumir la señal de recomendación sin conocer identificadores internos de enrutamiento.
+
+## Metadatos públicos de detalle
+
+En comparación con `GET /v1/models`, la ruta de detalle también puede devolver:
+
+- `aisonar.capability_flags`
+- `aisonar.supported_operations`
+- `aisonar.pricing_provenance`
+- `aisonar.public_contract_summary`
+- `aisonar.public_contract`

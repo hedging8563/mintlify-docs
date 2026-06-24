@@ -1,0 +1,47 @@
+---
+title: "إنشاء مفتاح API"
+openapi: "POST /v1/management/api-keys"
+description: "ينشئ مفتاح API جديدًا للمستخدم في المؤسسة الحالية."
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## نظرة عامة
+
+ينشئ هذا الـ endpoint مفتاح API جديدًا من نوع `type=user` داخل المؤسسة المرتبطة برمز الإدارة الحالي.
+
+## جسم الطلب
+
+| الحقل | النوع | القيم الافتراضية / القيود | الوصف |
+|-------|------|----------------------------|-------|
+| `name` | string | مطلوب، الافتراضي `Default Key`، الطول `1-50` | اسم العرض؛ تتم إزالة المسافات من البداية والنهاية على الخادم |
+| `limitAmount` | number \| null | الحد الأدنى `0`، الحد الأقصى للإدخال `1000000` | `null` أو الحذف = غير محدود، `0` = حصة صفرية. تُطبّع القيم الموجبة إلى حد مخزن لا يمكن أن يتجاوز ما يعادل `100000` دولارًا أمريكيًا. |
+| `limitCurrency` | تعداد | افتراضي `USD` | USD فقط. إرسال `CNY` يُرجع `400 currency_retired`. |
+| `models` | string[] | الافتراضي `[]` | قائمة اختيارية للنماذج المنطقية المسموح بها |
+| `expiresAt` | string \| null | تاريخ ووقت RFC3339 | `null` يعني عدم وجود انتهاء |
+
+## ملاحظات
+
+- تظهر القيمة الكاملة لمفتاح API مرة واحدة فقط في الاستجابة.
+- تعني `models: []` أن المفتاح لا يفرض قيودًا إضافية على النماذج خارج سياسة المؤسسة.
+- تؤدي `limitAmount: 0` إلى إنشاء مفتاح صالح لكن من دون حصة قابلة للاستخدام إلى أن يتم تحديثه لاحقًا.
+
+## مثال
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/management/api-keys" \
+  -H "Authorization: Bearer mt-your-management-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Backend Worker",
+    "limitAmount": 500,
+    "models": ["veo3.1", "kling-3.0-video"],
+    "expiresAt": "2026-12-31T23:59:59Z"
+  }'
+```
+</RequestExample>
+
+## الطلب / الاستجابة
+
+استخدم لوحة OpenAPI التفاعلية أعلاه للاطلاع على المخطط الدقيق وحقول الاستجابة.

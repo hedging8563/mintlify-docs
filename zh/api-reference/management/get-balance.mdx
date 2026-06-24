@@ -1,0 +1,27 @@
+---
+title: "获取组织余额"
+openapi: "GET /v1/management/balance"
+description: "返回当前管理令牌所属组织的余额汇总。"
+---
+
+## 概览
+
+这个端点返回当前管理令牌所属组织的余额汇总。它使用与计费和结算相同的组织余额事实源。
+
+## 注意事项
+
+- 金额真值字段以 USD 返回：`balance`、`total_recharge`、`total_used`。
+- `preferred_currency` 表示组织在 Dashboard 中的展示偏好，不会改变 USD 真值字段。
+
+## 示例
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/management/balance" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## 请求 / 响应
+
+使用上面的交互式 OpenAPI 面板获取确切的模式。

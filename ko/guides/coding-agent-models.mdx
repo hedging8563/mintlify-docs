@@ -1,0 +1,138 @@
+---
+title: "코딩 에이전트 모델 선택"
+description: "각 코딩 작업에 적합한 모델 선택 — 비교 표, 추천, 설정"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## 코딩용 모델 비교
+
+| 모델 | 속도 | 코드 품질 | 비용 | 컨텍스트 윈도우 | 최적 용도 |
+|------|------|---------|------|--------------|---------|
+| `claude-opus-4-6` | 보통 | 우수 | $$$$ | 200K | 아키텍처, 복잡한 리팩토링 |
+| `gpt-5.4` | 보통 | 우수 | $$$$ | 200K | 복잡한 추론, 계획 |
+| `claude-sonnet-4-6` | 빠름 | 매우 좋음 | $$$ | 200K | 일반 코딩, 리뷰 |
+| `gemini-3-pro-preview` | 빠름 | 매우 좋음 | $$$ | 1M | 대규모 코드베이스 분석 |
+| `gpt-5-mini` | 매우 빠름 | 좋음 | $$ | 128K | 빠른 편집, 완성 |
+| `gemini-3-flash-preview` | 매우 빠름 | 좋음 | $$ | 1M | 빠른 반복, 검색 |
+| `deepseek-r1` | 보통 | 매우 좋음 | $ | 64K | 추론 중심 작업 |
+| `deepseek-v3.2` | 빠름 | 좋음 | $ | 128K | 대량 생성, 보일러플레이트 |
+
+## 작업별 추천
+
+<AccordionGroup>
+  <Accordion title="코드 생성 / 스캐폴딩">
+    **추천**: `claude-sonnet-4-6`, `gemini-3-pro-preview`
+
+    깔끔하고 구조화된 코드 생성. 복잡한 멀티파일 스캐폴딩에는 `claude-opus-4-6` 고려.
+
+    예산 대안: `deepseek-v3.2`는 보일러플레이트를 저비용으로 처리.
+  </Accordion>
+
+  <Accordion title="코드 리뷰 / 리팩토링">
+    **추천**: `claude-sonnet-4-6`, `deepseek-r1`
+
+    `deepseek-r1`은 사고 연쇄 접근으로 미묘한 문제를 감지하며 비용 효율적.
+
+    보안 리뷰: `claude-opus-4-6` 또는 `gpt-5.4`.
+  </Accordion>
+
+  <Accordion title="버그 수정 / 디버깅">
+    **추천**: `claude-sonnet-4-6`, `gpt-5-mini`
+
+    버그 수정은 보통 범위가 명확. 스탠다드 모델로 충분. 복잡한 멀티파일 버그에만 프리미엄 모델 사용.
+  </Accordion>
+
+  <Accordion title="아키텍처 설계">
+    **추천**: `claude-opus-4-6`, `gpt-5.4`
+
+    아키텍처 결정은 최강의 추론 능력이 필요. 빈도는 낮지만 영향이 큼.
+  </Accordion>
+
+  <Accordion title="빠른 편집 / 탭 완성">
+    **추천**: `gpt-5-mini`, `gemini-3-flash-preview`
+
+    인터랙티브 사용에서는 속도가 핵심. 빠른 응답의 버짓 모델이 최적.
+  </Accordion>
+</AccordionGroup>
+
+## AI Sonar 라우팅 작동 방식
+
+### 라우팅 전략
+
+| 전략 | 동작 | 최적 용도 |
+|------|------|---------|
+| **PRIORITY** | 최고 우선순위 사용 가능 프로바이더로 라우팅 | 안정성 중시 |
+| **COST** | 최저가 사용 가능 프로바이더로 라우팅 | 비용 중시 |
+
+### 자동 폴백
+
+```
+요청: claude-sonnet-4-6
+  → Provider A (기본): 503 에러
+  → Provider B (폴백): ✓ 성공
+```
+
+### 네이티브 포맷 라우팅
+
+선택한 모델과 라우팅된 채널이 지원하는 경우, AI Sonar는 해당 모델 패밀리의 네이티브 API 형식으로 요청을 라우팅해 호환성을 높일 수 있습니다:
+
+| 모델 패밀리 | API Format | Base URL |
+|-------------|------------|----------|
+| Claude | Anthropic Messages | `https://api.aisonar.dev` |
+| GPT | OpenAI Responses | `https://api.aisonar.dev/v1` |
+| Gemini | Gemini Native API | 클라이언트 경로에 따라 `https://api.aisonar.dev` 또는 `https://api.aisonar.dev/v1beta` |
+| DeepSeek | OpenAI Chat | `https://api.aisonar.dev/v1` |
+
+Claude Code는 강한 Anthropic-native 경로입니다. Gemini-native API도 존재하지만, Gemini CLI 자체는 여전히 best-effort 호환 경로일 뿐 장기적으로 안정적인 워크플로로 간주하면 안 됩니다.
+
+## 도구별 설정
+
+<AccordionGroup>
+  <Accordion title="Claude Code">
+    ```bash
+    export ANTHROPIC_API_KEY="sk-your-api-key"
+    export ANTHROPIC_BASE_URL="https://api.aisonar.dev"
+    ```
+    모델 선택: `claude --model claude-sonnet-4-6`
+
+    [전체 가이드 →](/ko/integrations/claude-code)
+  </Accordion>
+
+  <Accordion title="Cursor">
+    Settings → Models:
+    - API Key: `sk-your-api-key`
+    - Base URL: `https://api.aisonar.dev/v1`
+
+    [전체 가이드 →](/ko/integrations/cursor)
+  </Accordion>
+
+  <Accordion title="Codex CLI">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export OPENAI_BASE_URL="https://api.aisonar.dev/v1"
+    ```
+    [전체 가이드 →](/ko/integrations/codex-cli)
+  </Accordion>
+
+  <Accordion title="Gemini CLI">
+    ```bash
+    export GEMINI_API_KEY="sk-your-api-key"
+    export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"
+    ```
+
+    이 경로는 안정적인 upstream 계약이 아니라 best-effort 호환 경로로 보세요.
+    [전체 가이드 →](/ko/integrations/gemini-cli)
+  </Accordion>
+
+  <Accordion title="OpenCode">
+    ```json
+    {
+      "provider": "openai",
+      "apiKey": "sk-your-api-key",
+      "baseURL": "https://api.aisonar.dev/v1"
+    }
+    ```
+    [전체 가이드 →](/ko/integrations/opencode)
+  </Accordion>
+</AccordionGroup>

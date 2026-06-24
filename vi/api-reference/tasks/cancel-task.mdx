@@ -1,0 +1,74 @@
+---
+title: "Hủy tác vụ"
+openapi: "DELETE /v1/tasks/{id}"
+description: "Hủy tác vụ bất đồng bộ đang chờ khi nhà cung cấp và model hỗ trợ"
+---
+
+## Tổng quan
+
+Dùng `DELETE /v1/tasks/{id}` để hủy một tác vụ bất đồng bộ chưa bắt đầu chạy. Dùng cùng task ID từ phản hồi create hoặc ID trong `poll_url`.
+
+## Tác vụ được hỗ trợ
+
+Hiện tại việc hủy chỉ hỗ trợ các tác vụ video Volcengine Seedance đang trong hàng đợi với `seedance-1.5-pro`, `seedance-2.0` hoặc `seedance-2.0-fast`. Tác vụ đã ở trạng thái `processing`/running không thể hủy. Tác vụ đã hoàn tất, thất bại, hết hạn hoặc không được hỗ trợ vẫn có thể truy vấn để đối soát trạng thái và billing, thay vì xóa bản ghi upstream.
+
+## Tham số đường dẫn
+
+<ParamField path="id" type="string" required>
+  Async task ID do yêu cầu create trả về hoặc nằm trong `poll_url`.
+</ParamField>
+
+## Phản hồi
+
+<ResponseField name="id" type="string">
+  Định danh async task chính tắc.
+</ResponseField>
+
+<ResponseField name="task_id" type="string">
+  Bí danh của định danh async task.
+</ResponseField>
+
+<ResponseField name="poll_url" type="string">
+  Polling URL ưu tiên cho tác vụ. URL vẫn hợp lệ sau khi hủy.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Trạng thái tác vụ. Tác vụ hủy thành công được trả về là `failed` với `cancelled: true` để tương thích với các giá trị trạng thái hiện có.
+</ResponseField>
+
+<ResponseField name="cancelled" type="boolean">
+  `true` khi tác vụ được hủy trước khi thực thi.
+</ResponseField>
+
+<ResponseField name="cancellation_status" type="string">
+  Dấu hiệu hủy. Giá trị là `cancelled` khi hủy thành công.
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  Lý do hủy hoặc thông báo lỗi của tác vụ.
+</ResponseField>
+
+## Hành vi lỗi
+
+`400 unsupported_task_cancel` nghĩa là loại tác vụ, nhà cung cấp hoặc model không hỗ trợ hủy. `409 task_not_cancellable` nghĩa là tác vụ đã xử lý, đã ở trạng thái cuối hoặc không còn hủy được. `403` nghĩa là API key không có quyền truy cập tác vụ.
+
+## Ví dụ
+
+<RequestExample>
+```bash cURL
+curl -X DELETE "https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+```json Response
+{
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "failed",
+  "cancelled": true,
+  "cancellation_status": "cancelled",
+  "error": "Task cancelled before execution"
+}
+```

@@ -1,0 +1,121 @@
+---
+title: "Get Task Status"
+openapi: "GET /v1/tasks/{id}"
+description: "Retrieve the status and result of any async task using the poll_url returned by create endpoints"
+---
+
+## Overview
+
+Use this endpoint for unified async polling across task types such as video, image, music, and 3D generation.
+
+If a create response includes `poll_url`, call that exact path. Some image models may return task-based responses under either an image-specific status path or `/v1/tasks/{id}`.
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The task ID returned by the create request.
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="string">
+  Canonical async task identifier.
+</ResponseField>
+
+<ResponseField name="task_id" type="string">
+  Async task identifier alias.
+</ResponseField>
+
+<ResponseField name="poll_url" type="string">
+  Preferred polling URL when the create response supplies one.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Task status such as `pending`, `processing`, `completed`, or `failed`. Cancelled tasks are represented as `failed` with `cancelled: true`.
+</ResponseField>
+
+<ResponseField name="cancelled" type="boolean">
+  `true` when a queued async task was cancelled before execution.
+</ResponseField>
+
+<ResponseField name="cancellation_status" type="string">
+  Cancellation marker. Present as `cancelled` when cancellation succeeds.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  For completed image tasks, generated image results are returned here. Image tasks return URLs in `data[].url`.
+</ResponseField>
+
+<ResponseField name="progress" type="number">
+  Progress percentage when available.
+</ResponseField>
+
+<ResponseField name="video_url" type="string">
+  Result asset URL when the task completes and produces a video.
+</ResponseField>
+
+<ResponseField name="video" type="object">
+  Single video payload with `url`, `duration`, `width`, and `height` when available.
+</ResponseField>
+
+<ResponseField name="videos" type="array">
+  Multiple video payloads when more than one output is available.
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  Error message when the task fails.
+</ResponseField>
+
+<ResponseField name="created" type="integer">
+  Creation timestamp when available.
+</ResponseField>
+
+<ResponseField name="updated" type="integer">
+  Last update timestamp when available.
+</ResponseField>
+
+<ResponseField name="model" type="string">
+  Model used by the task when available.
+</ResponseField>
+
+## Error Behavior
+
+If the task no longer exists, has expired, or cannot be resolved through the public async-task contract, AI Sonar returns:
+
+```json
+{
+  "error": {
+    "message": "Task not found or no longer available.",
+    "type": "invalid_request_error",
+    "code": "async_task_not_found"
+  }
+}
+```
+
+## Examples
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+```python Python
+import requests
+
+poll_url = "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+response = requests.get(
+    f"https://api.aisonar.dev{poll_url}",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+)
+print(response.json())
+```
+
+```javascript JavaScript
+const pollUrl = '/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+const response = await fetch(`https://api.aisonar.dev${pollUrl}`, {
+  headers: { Authorization: 'Bearer sk-your-api-key' },
+});
+console.log(await response.json());
+```

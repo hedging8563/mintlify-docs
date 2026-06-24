@@ -1,0 +1,41 @@
+---
+title: "배치 생성"
+openapi: "POST /v1/batches"
+description: "업로드된 입력 파일에서 OpenAI 호환 배치 작업을 생성합니다."
+---
+
+## 개요
+
+이 엔드포인트는 AI Sonar의 OpenAI 호환 배치 API의 일부입니다. 배치 작업은 업로드된 JSONL 파일을 사용하며 비동기적으로 실행되며 나중에 출력/오류 파일을 반환할 수 있습니다.
+
+## 주의사항
+
+- 배치 입력 파일은 `purpose=batch`를 사용해야 합니다.
+- `completion_window`는 현재 `24h`입니다.
+- 출력 순서는 보장되지 않으며, 항상 `custom_id`로 일치시켜야 합니다.
+- 배치 항목 내에서 스트리밍은 지원되지 않습니다.
+
+## 예시
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/batches" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input_file_id": "file_abc123",
+    "endpoint": "/v1/chat/completions",
+    "completion_window": "24h"
+  }'
+```
+</RequestExample>
+
+## 요청 / 응답
+
+정확한 스키마는 위의 대화형 OpenAPI 패널을 사용하세요.
+
+## 운영 팁
+
+- 멱등성 있는 다운스트림 조정을 위해 `custom_id`를 사용하세요.
+- 작업자가 배치를 완료한 후에만 `output_file_id`와 `error_file_id`를 기대하세요.
+- 배치 가격은 `isBatchRequest=true` 할인 규칙이 적용되기 때문에 동기식 가격과 다를 수 있습니다.

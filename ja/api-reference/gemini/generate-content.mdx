@@ -1,0 +1,345 @@
+---
+title: "コンテンツの生成"
+openapi: "POST /v1beta/models/{model}:generateContent"
+description: "Google Gemini API形式を使用してコンテンツを生成します"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+AI Sonarは、Geminiモデル向けのネイティブなGoogle Gemini API形式をサポートしています。これにより、Google AI SDKとの直接的な互換性が確保されます。
+
+## パスパラメータ
+
+<ParamField path="model" type="string" required>
+  モデル名 (例: `gemini-2.5-pro`、`gemini-2.5-flash`)。
+
+
+  本番環境の統合では、公開 `fileData` URL を使う URL ベースの `file_data` / `https` メディアパーツを優先してください。
+  AI Sonar は、可能な場合はサポート対象の Gemini ネイティブチャネルをネイティブパスにルーティングし、そのマルチモーダル要求に対してネイティブ対応ルートが利用できない場合は、互換性のある内部変換パスへ自動的にフォールバックします。
+
+</ParamField>
+
+## クエリパラメータ
+
+<ParamField query="key" type="string">
+  APIキー（ヘッダー認証の代替）。
+</ParamField>
+
+## 認証
+
+Geminiエンドポイントは、複数の認証方法をサポートしています：
+- `?key=YOUR_API_KEY` クエリパラメータ
+- `x-goog-api-key: YOUR_API_KEY` ヘッダー
+- `Authorization: Bearer YOUR_API_KEY` ヘッダー
+
+## リクエストボディ
+
+<ParamField body="contents" type="array" required>
+  会話の内容。
+
+  各コンテンツオブジェクトには以下が含まれます：
+  - `role` (string)：`user` または `model`
+  - `parts` (array)：コンテンツ part。AI Sonar では現在次をサポートします：
+    - テキスト part：`{ "text": "..." }`
+    - インライン媒体 part：`inlineData` / `inline_data`
+    - URL ベースのファイル part：`fileData` / `file_data`
+
+  媒体 part では、AI Sonar は現在 image / audio / video の MIME type を受け付け、Gemini 互換の公共契約として下流へ転送します。
+
+  `user` と `model` の role 値は大文字小文字を区別せず正規化されます。`application/octet-stream` の `inlineData` / `inline_data` は、AI Sonar が対応する画像または動画バイト列として識別できる場合のみ受け付けます。それ以外はルーティング前に失敗します。ネイティブ画像出力リクエストでは Google search/maps 系ツールのみ受け付け、非対応のツール組み合わせは上流リトライ前に失敗します。
+</ParamField>
+
+<ParamField body="systemInstruction" type="object">
+  モデルへのシステム指示。
+</ParamField>
+
+<ParamField body="generationConfig" type="object">
+  生成設定：
+  - `temperature` (number): サンプリング温度
+  - `topP` (number): 核サンプリング（Nucleus sampling）確率
+  - `topK` (integer): Top-Kサンプリング
+  - `maxOutputTokens` (integer): 最大出力トークン数
+  - `stopSequences` (array): 停止シーケンス
+</ParamField>
+
+<ParamField body="safetySettings" type="array">
+  セーフティフィルター設定。
+</ParamField>
+
+## レスポンス
+
+<ResponseField name="candidates" type="array">
+  生成されたコンテンツの候補。
+</ResponseField>
+
+<ResponseField name="usageMetadata" type="object">
+  トークン使用状況の情報。
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1beta/models/gemini-2.5-pro:generateContent?key=sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "contents": [
+      {
+        "parts": [{"text": "Hello, Gemini!"}]
+      }
+    ],
+    "generationConfig": {
+      "temperature": 0.7,
+      "maxOutputTokens": 1024
+    }
+  }'
+```
+
+```python Python
+import google.generativeai as genai
+
+genai.configure(
+    api_key="sk-your-api-key",
+    transport="rest",
+    client_options={"api_endpoint": "api.aisonar.dev"}
+)
+
+model = genai.GenerativeModel("gemini-2.5-pro")
+response = model.generate_content("Hello, Gemini!")
+
+print(response.text)
+```
+
+```javascript JavaScript
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+const genAI = new GoogleGenerativeAI("sk-your-api-key", {
+  baseUrl: "https://api.aisonar.dev"
+});
+
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+const result = await model.generateContent("Hello, Gemini!");
+
+console.log(result.response.text());
+```
+
+```go Go
+package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "fmt"
+    "io"
+    "net/http"
+)
+
+func main() {
+    payload := map[string]interface{}{
+        "contents": []map[string]interface{}{
+            {
+                "parts": []map[string]string{
+                    {"text": "Hello, Gemini!"},
+                },
+            },
+        },
+        "generationConfig": map[string]interface{}{
+            "temperature":    0.7,
+            "maxOutputTokens": 1024,
+        },
+    }
+
+    jsonData, _ := json.Marshal(payload)
+    req, _ := http.NewRequest("POST",
+        "https://api.aisonar.dev/v1beta/models/gemini-2.5-pro:generateContent?key=sk-your-api-key",
+        bytes.NewBuffer(jsonData))
+    req.Header.Set("Content-Type", "application/json")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+
+    body, _ := io.ReadAll(resp.Body)
+    fmt.Println(string(body))
+}
+```
+
+```php PHP
+<?php
+$payload = [
+    'contents' => [
+        [
+            'parts' => [
+                ['text' => 'Hello, Gemini!']
+            ]
+        ]
+    ],
+    'generationConfig' => [
+        'temperature' => 0.7,
+        'maxOutputTokens' => 1024
+    ]
+];
+
+$ch = curl_init('https://api.aisonar.dev/v1beta/models/gemini-2.5-pro:generateContent?key=sk-your-api-key');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Content-Type: application/json'
+    ],
+    CURLOPT_POSTFIELDS => json_encode($payload)
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+echo $data['candidates'][0]['content']['parts'][0]['text'];
+```
+</RequestExample>
+
+
+
+## マルチモーダル入力例
+
+Gemini のマルチモーダルリクエストでは、媒体を `contents[].parts[]` に入れ、インラインバイトまたは URL ベースのファイル参照のどちらかで渡します。
+
+現在の公共 Gemini 契約でサポートしている媒体カテゴリ：
+- 画像
+- 音声
+- 動画
+
+インライン媒体では `inlineData` または `inline_data` を使い、Base64 化したファイルバイトを渡します。
+
+URL 媒体では `fileData` または `file_data` を使い、公開到達可能な `https` URL を渡します。
+
+### 画像入力例
+
+```json
+{
+  "contents": [
+    {
+      "role": "user",
+      "parts": [
+        { "text": "この画像を説明してください。" },
+        {
+          "inlineData": {
+            "mimeType": "image/jpeg",
+            "data": "/9j/4AAQSkZJRgABAQ..."
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+### 音声入力例
+
+```json
+{
+  "contents": [
+    {
+      "role": "user",
+      "parts": [
+        { "text": "この音声を文字起こしして要約してください。" },
+        {
+          "file_data": {
+            "mime_type": "audio/mpeg",
+            "file_uri": "https://example.com/sample.mp3"
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+### 動画入力例
+
+```json
+{
+  "contents": [
+    {
+      "role": "user",
+      "parts": [
+        { "text": "この動画を簡潔に説明してください。" },
+        {
+          "fileData": {
+            "mimeType": "video/mp4",
+            "fileUri": "https://example.com/sample.mp4"
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+<ResponseExample>
+```json Response
+{
+  "candidates": [
+    {
+      "content": {
+        "role": "model",
+        "parts": [
+          {"text": "Hello! How can I assist you today?"}
+        ]
+      },
+      "finishReason": "STOP",
+      "safetyRatings": [
+        {"category": "HARM_CATEGORY_HARASSMENT", "probability": "NEGLIGIBLE"}
+      ]
+    }
+  ],
+  "usageMetadata": {
+    "promptTokenCount": 5,
+    "candidatesTokenCount": 10,
+    "totalTokenCount": 15
+  }
+}
+```
+</ResponseExample>
+
+
+## 動画入力の例
+
+```json
+{
+  "contents": [
+    {
+      "role": "user",
+      "parts": [
+        { "text": "Please describe this video." },
+        {
+          "fileData": {
+            "mimeType": "video/mp4",
+            "fileUri": "https://example.com/demo.mp4"
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+## 音声入力の例
+
+```json
+{
+  "contents": [
+    {
+      "role": "user",
+      "parts": [
+        { "text": "Please describe this audio." },
+        {
+          "fileData": {
+            "mimeType": "audio/mpeg",
+            "fileUri": "https://example.com/demo.mp3"
+          }
+        }
+      ]
+    }
+  ]
+}
+```

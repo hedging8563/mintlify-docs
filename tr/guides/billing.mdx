@@ -1,0 +1,196 @@
+---
+title: "Faturalandırma ve Fiyatlandırma"
+description: "AI Sonar'nın kullandıkça öde fiyatlandırmasını anlayın"
+---
+
+## Genel Bakış
+
+AI Sonar **kullandıkça öde fiyatlandırması** kullanır. Abonelik veya minimum taahhüt olmadan yalnızca kullandığınız kadar ödersiniz.
+
+## Faturalandırma Nasıl Çalışır
+
+1. Hesabınıza **kredi ekleyin**
+2. **API'yi kullanın** - maliyetler istek başına düşülür
+3. Panelinizden **kullanımı izleyin**
+4. Bakiyeniz azaldığında **yükleme yapın**
+
+## Fiyatlandırma Modelleri
+
+### Token Başına Fiyatlandırma
+
+Çoğu metin oluşturma modeli, milyon token başına fiyatlandırılır:
+
+| Model | Girdi (1M token başına) | Çıktı (1M token başına) |
+|-------|----------------------|------------------------|
+| GPT-4o | $1.75 | $7.00 |
+| GPT-4o-mini | $0.105 | $0.42 |
+| Claude Opus 4.5 | $3.50 | $17.50 |
+| Claude Sonnet 4.5 | $2.10 | $10.50 |
+| Claude Haiku 4.5 | $0.70 | $3.50 |
+| Gemini 2.5 Pro | $0.875 | $7.00 |
+| Gemini 2.5 Flash | $0.1225 | $0.525 |
+| DeepSeek R1 | $0.385 | $1.533 |
+| DeepSeek V3.2 | $0.196 | $0.294 |
+
+<Note>
+  Gösterilen fiyatlar indirimli platform fiyatlarıdır. Gerçek fiyatlar değişiklik gösterebilir. Güncel oranlar için [fiyatlandırma sayfasını](https://aisonar.dev/tr/pricing) kontrol edin.
+</Note>
+
+### İstek Başına Fiyatlandırma
+
+Görüntü, video ve ses modelleri istek başına fiyatlandırılır:
+
+| Model | İstek Başına Fiyat |
+|-------|-------------------|
+| DALL-E 3 (1024x1024) | $0.04 |
+| Midjourney | $0.05 |
+| Whisper (dakika başına) | $0.006 |
+| TTS-1 | $0.015 |
+
+### Asenkron Görev Faturalandırması (Video/Müzik/3D ve Bazı Görüntü Modelleri)
+
+<Note>
+  Görev tabanlı oluşturma sırasında görev oluşturma, tahmini maliyeti rezerve edebilir veya önceden düşebilir. Nihai mutabakat yalnızca asenkron görev polling veya finalization sırasında başarılı terminal duruma ulaştıktan sonra yapılır.
+</Note>
+
+Görev tabanlı oluşturma akışları için (video, müzik, 3D ve bazı görüntü modelleri):
+
+1. Görevi gönderin. AI Sonar bakiye ve API Key harcama limitlerini doğrulamak için tahmini bir ön kesinti veya rezervasyon yapabilir.
+2. Görev terminal duruma ulaşana kadar dönen `poll_url` değerini sorgulayın veya `GET /v1/tasks/{id}` çağırın.
+3. Görev başarıyla tamamlandığında nihai mutabakat kullanımı kaydeder ve görev yanıtı `billing_transaction_id` içerir.
+4. Oluşturma başarısız olursa veya terminal durum failed ise bekleyen tutar iade edilir ya da serbest bırakılır ve istek faturalandırılamaz olarak işaretlenir.
+
+Terminal durum görünür olduktan sonra dashboard mutabakatı veya iadeyi yansıtmıyorsa support@aisonar.dev adresiyle iletişime geçin.
+
+```python
+# Örnek: Video oluşturma faturalandırması
+response = client.post("/v1/videos/generations", json={
+    "model": "veo3.1",
+    "prompt": "A sunset over the ocean"
+})
+# Tahmini maliyet şimdi rezerve edilebilir; nihai fatura başarıdan sonra görünür.
+
+poll_url = response.json()["poll_url"]
+task_id = response.json()["task_id"]
+# Durum için poll_url'i sorgulayın; billing_transaction_id mutabakat sonrası görünür.
+```
+
+### Faturalama işlem ID’leri
+
+Ücretlendirilen, streaming olmayan ve OpenAI uyumlu JSON yanıtları, mutabakat yanıt tamamlanmadan önce bittiyse `billing_transaction_id` içerir. Aynı değer tarayıcı ve sunucu entegrasyonları için `X-Billing-Transaction-ID` yanıt header’ı olarak da sunulur. Gemini `/v1beta` gibi native uyumluluk route’ları, provider-native yanıt şeklini korumak için değeri yalnızca header üzerinden sunabilir. Asenkron medya görevleri için dönen `poll_url` değerini veya `GET /v1/tasks/{id}` yolunu sorgulayın; mutabakat tamamlandığında görev yanıtı `billing_transaction_id` içerir. Streaming yanıtları stream gönderildikten sonra mutabakata bağlanabilir; header yoksa mutabakat için dashboard kullanım kayıtlarını kullanın.
+
+## Token Sayımı
+
+Token'lar, metin işlemenin temel birimleridir:
+
+- ~4 karakter = 1 token (İngilizce)
+- ~1-2 karakter = 1 token (Çince)
+- 1 görüntü = boyuta ve detaya göre değişir
+
+### Token Tahmini
+
+```python
+# Kaba tahmin
+def estimate_tokens(text):
+    return len(text) / 4  # İngilizce için yaklaşık
+
+# Gerçek sayı (OpenAI modelleri için)
+import tiktoken
+encoder = tiktoken.encoding_for_model("gpt-4o")
+tokens = encoder.encode("Metniniz buraya")
+print(f"Token sayısı: {len(tokens)}")
+```
+
+## Kullanım Takibi
+
+### Panel
+
+Kullanımınızı [Panel](https://console.aisonar.dev) üzerinden izleyin:
+
+- Gerçek zamanlı bakiye
+- Modele göre kullanım geçmişi
+- Maliyet dökümü
+- API anahtarı kullanımı
+
+### API Yanıtı
+
+Her yanıt kullanım bilgilerini içerir:
+
+```json
+{
+  "usage": {
+    "prompt_tokens": 50,
+    "completion_tokens": 100,
+    "total_tokens": 150
+  }
+}
+```
+
+## Maliyet Optimizasyonu
+
+<AccordionGroup>
+  <Accordion title="Uygun modelleri kullanın">
+    Basit görevler için daha küçük modeller (GPT-4o-mini, Gemini Flash) kullanın.
+  </Accordion>
+
+  <Accordion title="Önbelleğe almayı uygulayın">
+    Tekrarlanan aynı istekler için yanıtları önbelleğe alın.
+  </Accordion>
+
+  <Accordion title="Prompt'ları optimize edin">
+    Netliği korurken prompt'ları kısa tutun.
+  </Accordion>
+
+  <Accordion title="max_tokens değerini ayarlayın">
+    Tam yanıtlar gerekmediğinde yanıt uzunluğunu sınırlayın.
+  </Accordion>
+
+  <Accordion title="Uzun yanıtlar için streaming kullanın">
+    Streaming ek maliyet getirmez ancak algılanan performansı artırır.
+  </Accordion>
+</AccordionGroup>
+
+## Düşük Bakiye Uyarıları
+
+Bakiyeniz düştüğünde uyarıları yapılandırın:
+
+1. **Panel → Ayarlar → Bildirimler** bölümüne gidin
+2. Eşik tutarınızı belirleyin
+3. E-posta bildirimleri alın
+
+## Kredi Ekleme
+
+### Ödeme Yöntemleri
+
+- Stripe (Visa, Mastercard)
+
+### Adımlar
+
+1. [Panel](https://console.aisonar.dev) hesabınıza giriş yapın
+2. **Kredi Ekle** seçeneğine tıklayın
+3. Tutarı ve ödeme yöntemini seçin
+4. Ödemeyi tamamlayın
+
+Krediler, ödeme onayından sonra anında eklenir.
+
+## API Anahtarı Limitleri
+
+Bireysel API anahtarları üzerinde harcama limitleri belirleyebilirsiniz:
+
+1. **Panel → API Anahtarları** bölümüne gidin
+2. Düzenlemek için bir anahtara tıklayın
+3. **Kullanım Limiti** belirleyin
+
+Limite ulaşıldığında, o anahtarla yapılan istekler `402 Payment Required` hatası döndürecektir.
+
+## Faturalar
+
+Kurumsal hesaplar için faturalar mevcuttur:
+
+1. **Panel → Faturalandırma** bölümüne gidin
+2. İşlem geçmişini görüntüleyin
+3. Faturaları PDF olarak indirin
+
+## Sorularınız mı var?
+
+Faturalandırma sorularınız için support@aisonar.dev ile iletişime geçin.

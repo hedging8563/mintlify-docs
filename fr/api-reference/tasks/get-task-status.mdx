@@ -1,0 +1,89 @@
+---
+title: "Obtenir le statut d'une tâche"
+openapi: "GET /v1/tasks/{id}"
+description: "Récupérez le statut et le résultat de n'importe quelle tâche async en utilisant le `poll_url` renvoyé par les endpoints de création"
+---
+
+## Vue d’ensemble
+
+Utilisez cet endpoint pour un polling async unifié entre différents types de tâches tels que la génération de vidéo, d’image, de musique et de 3D.
+
+Si une réponse de création inclut `poll_url`, appelez ce chemin exact. Pour les workflows async plus récents, `poll_url` peut pointer vers `/v1/tasks/{taskId}`.
+
+## Paramètres de chemin
+
+<ParamField path="taskId" type="string" required>
+  L’ID de tâche renvoyé par la requête de création.
+</ParamField>
+
+## Réponse
+
+<ResponseField name="id" type="string">
+  Identifiant de la tâche.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Statut de la tâche, par exemple `pending`, `processing`, `completed` ou `failed`. Les tâches annulées sont représentées comme `failed` avec `cancelled: true`.
+</ResponseField>
+
+<ResponseField name="cancelled" type="boolean">
+  `true` lorsqu’une tâche asynchrone en file d’attente a été annulée avant l’exécution.
+</ResponseField>
+
+<ResponseField name="cancellation_status" type="string">
+  Marqueur d’annulation. Présent avec la valeur `cancelled` lorsque l’annulation réussit.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Pour les tâches d’image terminées, les résultats générés sont renvoyés ici. Les tâches d’image renvoient des URL dans `data[].url`.
+</ResponseField>
+
+<ResponseField name="video_url" type="string">
+  URL de l’asset de résultat lorsque la tâche est terminée et produit une vidéo.
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  Message d’erreur lorsque la tâche échoue.
+</ResponseField>
+
+## Comportement d’erreur
+
+Si la tâche n’existe plus, a expiré ou ne peut pas être résolue via le contrat public async-task, AI Sonar renvoie :
+
+```json
+{
+  "error": {
+    "message": "Task not found or no longer available.",
+    "type": "invalid_request_error",
+    "code": "async_task_not_found"
+  }
+}
+```
+
+## Exemples
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+```python Python
+import requests
+
+poll_url = "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+response = requests.get(
+    f"https://api.aisonar.dev{poll_url}",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+)
+print(response.json())
+```
+
+```javascript JavaScript
+const pollUrl = '/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+const response = await fetch(`https://api.aisonar.dev${pollUrl}`, {
+  headers: { Authorization: 'Bearer sk-your-api-key' },
+});
+console.log(await response.json());
+```

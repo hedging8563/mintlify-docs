@@ -1,0 +1,37 @@
+---
+title: "Recraft"
+description: "Vector and image generation"
+---
+
+## Overview
+
+AI Sonar provides access to Recraft models. Total: **3 models** available.
+
+## Image Generation
+
+| Model ID | Pricing |
+|----------|--------|
+| `recraft-v3` | See dashboard |
+| `recraft-v3-svg` | See dashboard |
+| `recraft-vectorize` | See dashboard |
+
+
+## Usage
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="recraft-v3",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+```
+
+<Note>
+Prices shown are platform prices (~70% of official rates).
+</Note>

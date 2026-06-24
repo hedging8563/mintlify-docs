@@ -1,0 +1,201 @@
+---
+title: "OpenCode"
+description: "AI Sonar API kullanacak şekilde OpenCode'u yapılandırın"
+---
+
+## Genel Bakış
+
+
+
+<Note>
+**Tür**: Kodlama aracı
+
+**Birincil yol**: OpenAI ile uyumlu
+
+**Destek seviyesi**: Desteklenen yol
+</Note>
+
+OpenCode, terminalinizde çalışan açık kaynaklı bir AI kodlama asistanıdır. Birden fazla LLM sağlayıcısını destekler ve yüzlerce modele erişim için AI Sonar API'sini kullanacak şekilde yapılandırılabilir.
+
+## Kurulum
+
+<Tabs>
+  <Tab title="Kurulum Script'i">
+    ```bash
+    curl -fsSL https://opencode.ai/install | bash
+    ```
+  </Tab>
+  <Tab title="Homebrew">
+    ```bash
+    brew install opencode-ai/tap/opencode
+    ```
+
+    Veya topluluk tap'ini kullanın (daha sık güncellemeler):
+    ```bash
+    brew install anomalyco/tap/opencode
+    ```
+  </Tab>
+  <Tab title="Go">
+    ```bash
+    go install github.com/opencode-ai/opencode@latest
+    ```
+  </Tab>
+</Tabs>
+
+Kurulumu doğrulayın:
+
+```bash
+opencode --version
+```
+
+## Yapılandırma
+
+### Adım 1: Environment Variable'ları Ayarlayın
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+```
+
+Kalıcı yapılandırma için, `~/.bashrc` veya `~/.zshrc` dosyanıza ekleyin:
+
+```bash
+echo 'export OPENAI_API_KEY="sk-your-api-key"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+### Adım 2: OpenCode'u Yapılandırın
+
+OpenCode'un mevcut dokümantasyonu, sağlayıcıların `opencode.json` veya `opencode.jsonc` üzerinden yapılandırılmasını önerir. AI Sonar için, yerleşik `openai` sağlayıcısını aşırı yüklemek yerine özel bir sağlayıcı kullanın:
+
+```jsonc
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "aisonar": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "AI Sonar",
+      "options": {
+        "baseURL": "https://api.aisonar.dev/v1",
+        "apiKey": "{env:OPENAI_API_KEY}"
+      },
+      "models": {
+        "gpt-5.4": {
+          "name": "GPT-5.4"
+        },
+        "gpt-5-mini": {
+          "name": "GPT-5 Mini"
+        }
+      }
+    }
+  },
+  "model": "aisonar/gpt-5.4"
+}
+```
+
+<Note>
+Sohbet tamamlama tarzı uyumluluk için `@ai-sdk/openai-compatible` kullanın. Özellikle `/v1/responses` üzerine kurulu bir sağlayıcı yoluna ihtiyacınız varsa, OpenCode'un sağlayıcı dokümantasyonu paketi `@ai-sdk/openai` olarak değiştirmenizi önerir.
+</Note>
+
+## Temel Kullanım
+
+**Etkileşimli modu başlatın:**
+
+```bash
+opencode
+```
+
+**Bir prompt ile çalıştırın:**
+
+```bash
+opencode "Explain this codebase"
+```
+
+**Model belirtin:**
+
+```bash
+opencode --model aisonar/gpt-5.4 "Fix the bugs in main.py"
+```
+
+## Kullanılabilir Modeller
+
+| Model | En Uygun Olduğu Alan |
+|-------|----------|
+| `gpt-5.4` | Karmaşık görevler, kod mimarisi |
+| `gpt-5-mini` | Hızlı düzeltmeler, basit sorgular |
+| `claude-sonnet-4-6` | Kod inceleme, dokümantasyon |
+| `claude-opus-4-6` | Karmaşık muhakeme |
+| `gemini-2.5-flash` | Hızlı yanıtlar |
+| `deepseek-r1` | Algoritma tasarımı |
+
+## Yaygın Komutlar
+
+**Kodu analiz edin:**
+
+```bash
+opencode "What does this function do?" < src/utils.ts
+```
+
+**Kod üretin:**
+
+```bash
+opencode "Create a REST API with Express"
+```
+
+**Değişiklikleri inceleyin:**
+
+```bash
+git diff | opencode "Review these changes"
+```
+
+**Hataları düzeltin:**
+
+```bash
+opencode "Fix the TypeScript errors in this project"
+```
+
+## Etkileşimli Komutlar
+
+| Komut | Açıklama |
+|---------|-------------|
+| `/help` | Kullanılabilir komutları göster |
+| `/model <name>` | Farklı bir modele geç |
+| `/clear` | Konuşma geçmişini temizle |
+| `/exit` | OpenCode'dan çık |
+
+## Sorun Giderme
+
+<AccordionGroup>
+  <Accordion title="Bağlantı Hatası">
+    - `options.baseURL` değerinin `https://api.aisonar.dev/v1` olarak ayarlandığını doğrulayın
+    - Ağ bağlantısını kontrol edin
+    - Test etmek için `curl https://api.aisonar.dev/v1/models` komutunu deneyin
+  </Accordion>
+
+  <Accordion title="Kimlik Doğrulama Başarısız Oldu">
+    - `OPENAI_API_KEY` environment variable'ının ayarlandığını doğrulayın
+    - `options.apiKey` değerinin `{env:OPENAI_API_KEY}` veya başka bir geçerli secret kaynağına başvurduğunu doğrulayın
+    - Anahtarın `sk-` ile başladığını kontrol edin
+    - Anahtarın AI Sonar dashboard'unda aktif olduğundan emin olun
+  </Accordion>
+
+  <Accordion title="Model Bulunamadı">
+    - Yapılandırmadaki model adının tam olarak eşleştiğini kontrol edin
+    - Modelin kullanılabilirliğini [aisonar.dev/en/models](https://aisonar.dev/models) adresinde doğrulayın
+  </Accordion>
+</AccordionGroup>
+
+## En İyi Uygulamalar
+
+<AccordionGroup>
+  <Accordion title="Proje bağlamını kullanın">
+    Kod tabanınızı daha iyi anlaması için OpenCode'u proje kök dizininizden çalıştırın.
+  </Accordion>
+
+  <Accordion title="Uygun modelleri seçin">
+    Basit görevler için daha hızlı modelleri (`gpt-5-mini`), karmaşık görevler için ise daha güçlü modelleri (`gpt-5.4`, `claude-sonnet-4-6`) kullanın.
+  </Accordion>
+
+  <Accordion title="Üretilen kodu inceleyin">
+    Projenize değişiklik uygulamadan önce AI tarafından üretilen kodu her zaman inceleyin.
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,55 @@
+---
+title: "LiteLLM"
+description: "Usa LiteLLM con AI Sonar como proveedor ascendente o como capa interna de pasarela"
+---
+
+## Resumen general
+
+LiteLLM y AI Sonar suelen combinarse de dos maneras.
+
+- usar AI Sonar como **proveedor ascendente compatible con OpenAI** detrás de LiteLLM
+- poner LiteLLM delante de AI Sonar para manejar claves virtuales, enrutamiento adicional u observabilidad centralizada
+
+Para AI Sonar, la ruta por defecto más limpia es usar el modo **OpenAI personalizado / compatible con OpenAI** de LiteLLM con `api_base = https://api.aisonar.dev/v1`.
+
+<Note>
+Si necesitas de forma explícita formatos de solicitud nativos de Claude o Gemini, prioriza las integraciones nativas de AI Sonar en lugar de forzar esos flujos a través de la abstracción compatible con OpenAI de LiteLLM.
+</Note>
+
+<Note>
+**Tipo**: Framework o plataforma
+
+**Ruta principal**: ascendente compatible con OpenAI
+
+**Nivel de soporte**: Ruta compatible
+</Note>
+
+## Instalación
+
+```bash
+pip install 'litellm[proxy]'
+```
+
+## Configuración del proxy
+
+```yaml
+model_list:
+  - model_name: aisonar-gpt-5.4
+    litellm_params:
+      model: custom_openai/gpt-5.4
+      api_base: https://api.aisonar.dev/v1
+      api_key: os.environ/OPENAI_API_KEY
+```
+
+Inicio:
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+litellm --config litellm-config.yaml --port 4000
+```
+
+## Buenas prácticas
+
+- Trata AI Sonar primero como ascendente `custom_openai`
+- Coloca LiteLLM delante solo si realmente necesitas una capa adicional de pasarela
+- No des por hecho todos los detalles nativos del proveedor en una ruta compatible con OpenAI

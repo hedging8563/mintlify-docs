@@ -1,0 +1,164 @@
+---
+title: "编辑图像"
+openapi: "POST /v1/images/edits"
+description: "根据提示词和源图像编辑图像"
+---
+
+## 概述
+
+根据原始图像和提示词创建编辑或扩展的图像。
+
+此路由同时支持：
+
+- 下方文档中的经典 `multipart/form-data` DALL-E 风格上传流程
+- 为支持的图像到图像模型提供 `image_url`、`image_urls` 或官方 `images` 引用的 JSON 请求
+
+<Note>
+`gpt-image-2` 已支持此端点。它支持 multipart `image` 上传、JSON `image_url` / `image_urls`，以及官方 `images[]` 引用（`image_url` 或 `file_id`），最多 16 张源图。`file_id` 需先通过 `/v1/files` 创建。设置 `async: true` 会先返回任务；官方 FLUX/BFL 编辑模型也使用同一套任务轮询流程。
+
+`gpt-image-2` 编辑不接受 `resolution` 或 `background`；输出尺寸请使用 `size`。多图或高延迟编辑建议设置 `async: true` 并轮询返回任务。
+
+Nano Banana 参考图请求（`nano-banana`、`nano-banana-2` 和 `nano-banana-pro`）公开在 `/v1/images/generations`，应使用 `operation: "image-to-image"` 和 `image_urls`，不要发送到本 `/v1/images/edits` 端点。
+
+xAI Grok Imagine 图像编辑模型（`grok-imagine-image`、`grok-imagine-image-quality` 以及 legacy `grok-imagine-image-pro`）最多接受 3 张源图。超过 3 张的请求会在转发 upstream 前返回 `400 too_many_images`。
+
+兼容说明：如果 `gpt-image-2` 请求带上 `input_fidelity`，AI Sonar 会在转发前移除该字段，因为 GPT Image 2 已自动以高保真处理图片输入。
+</Note>
+
+## 请求体
+
+**同步请求超时：** 某些路由到的图片提供商会以内联方式返回最终图片，并等待生成完成。高分辨率或高质量请求可能接近一分钟甚至更久，因此请将 HTTP 客户端超时设置为至少 `120s`。如果创建响应包含 `status: "pending"`、`task_id` 或 `poll_url`，请改为跟随返回的 `poll_url` 轮询。
+
+远程图片 URL：当路由到的上游要求 multipart 输入时，AI Sonar 会拉取 JSON `image_url`、`image_urls` 或 `images[].image_url`，并把图片字节作为 multipart `image` 文件转发。URL 必须是公网 `http`/`https`，不能包含用户名密码或 fragment，不能解析到 localhost、内网或保留 IP；每次重定向后的目标也会重新校验。拉取到的内容必须是真实 PNG、JPEG 或 WebP 图片。限制为单图 `50MB`、单次请求 URL 拉取图片总计 `200MB`、拉取超时 `10s`、最多 `3` 次重定向。
+
+<ParamField body="image" type="file">
+  multipart 源图片。需要多张 GPT Image 源图时，可以重复发送 `image` 字段。文件必须是 PNG、JPEG 或 WebP，最多 16 张源图，每张不超过 `50MB`。xAI Grok Imagine 编辑模型使用相同输入字段，但源图最多 3 张。传统 DALL-E 2 蒙版编辑仍要求 PNG 输入带透明区域，或额外提供 `mask`。
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  描述所需编辑的文本。
+</ParamField>
+
+<ParamField body="mask" type="file">
+  一个附加图像，其完全透明的区域指示应编辑图像的位置。必须是有效的 PNG 文件，小于 50MB，且与 `image` 具有相同的尺寸。
+</ParamField>
+
+<ParamField body="model" type="string" default="dall-e-2">
+  用于图像编辑的模型。`gpt-image-2` 已支持；传统 DALL-E 风格编辑仍可继续使用 `dall-e-2`。
+</ParamField>
+
+<ParamField body="n" type="integer" default="1">
+  要生成的图像数量。必须在 1 到 10 之间。
+</ParamField>
+
+<ParamField body="size" type="string">
+  生成图像的尺寸。对于 `gpt-image-2`，使用 `auto` 或 `WIDTHxHEIGHT`；宽高必须是 16 的倍数，最长边不超过 `3840px`，长边/短边比例不超过 `3:1`，总像素在 `655,360` 到 `8,294,400` 之间。传统 DALL-E 编辑支持 `256x256`、`512x512` 或 `1024x1024`。
+</ParamField>
+
+<ParamField body="response_format" type="string" default="url">
+  返回生成图像的格式。必须是 `url` 或 `b64_json`，默认 `url`。
+
+  对于 Azure Official 或 Azure-compatible 的 `gpt-image-2` 路由，AI Sonar 不会把 `response_format` 传给上游。网关始终从上游拿 `b64_json` 图片数据；请求 `url` 时会把每张图上传到 CDN 并返回 `data[].url`。如果 CDN 存储不可用或上传失败，请求会失败，而不是降级返回 Base64；请求 `b64_json` 时直接返回原始 Base64。
+</ParamField>
+
+<ParamField body="async" type="boolean" default="false">
+  对 `gpt-image-2` 或官方 FLUX/BFL 编辑模型设置为 `true` 时，会在最终图片完成前先返回任务。完成后的异步编辑无论请求的 `response_format` 是什么，都只返回 URL；如果需要 `b64_json`，请使用同步请求。
+</ParamField>
+
+<ParamField body="user" type="string">
+  代表终端用户的唯一标识符，用于滥用监控。
+</ParamField>
+
+## 响应
+
+<ResponseField name="created" type="integer">
+  图像创建时间的 Unix 时间戳。
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  生成的图像数组。
+
+  每个对象包含：
+  - `url` (string): 编辑后图像的 URL（如果 response_format 是 `url`）
+  - `b64_json` (string): Base64 编码的图像（如果 response_format 是 `b64_json`）
+</ResponseField>
+
+### 异步任务响应
+
+对 `gpt-image-2` 或官方 FLUX/BFL 编辑模型设置 `async: true` 后，请求会先创建任务，而不是等待编辑后的图片完成。响应包含 `status: "pending"`、`task_id` 和 `poll_url`。请轮询 `/v1/tasks/{task_id}`，直到任务进入 `completed` 或 `failed`。
+
+异步编辑任务最终只返回图片 URL。如果你需要原始 `b64_json` 图片数据，请使用同步请求。
+
+
+任务创建时可能会先预留预计费用。任务完成后按实际用量结算；失败或超时的任务会释放预留费用或退回费用。
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/images/edits" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F "image=@sunlit_lounge.png" \
+  -F "mask=@mask.png" \
+  -F "prompt=阳光明媚的室内休息区，带有游泳池" \
+  -F "n=1" \
+  -F "size=1024x1024"
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.images.edit(
+    model="dall-e-2",
+    image=open("sunlit_lounge.png", "rb"),
+    mask=open("mask.png", "rb"),
+    prompt="阳光明媚的室内休息区，带有游泳池",
+    n=1,
+    size="1024x1024"
+)
+
+print(response.data[0].url)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+import fs from 'fs';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.images.edit({
+  model: 'dall-e-2',
+  image: fs.createReadStream('sunlit_lounge.png'),
+  mask: fs.createReadStream('mask.png'),
+  prompt: '阳光明媚的室内休息区，带有游泳池',
+  n: 1,
+  size: '1024x1024'
+});
+
+console.log(response.data[0].url);
+```
+</RequestExample>
+
+<ResponseExample>
+```json 响应
+{
+  "created": 1706000000,
+  "data": [
+    {
+      "url": "https://..."
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## 注意事项
+
+<Note>
+  远程图片拉取失败会在请求发送给上游前作为输入错误返回。URL 不可访问、超时、403/404、私有或内网主机、URL 中包含用户名密码或 fragment、非图片内容、不支持的格式、超过大小限制，都会返回 `400` 或 `413`，并指向 `image_url` / `image_urls[n]` 输入。私有或需要请求头鉴权的素材，请直接用 multipart `image` 上传，或创建 `/v1/files` 引用。
+</Note>

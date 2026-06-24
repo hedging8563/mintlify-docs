@@ -1,0 +1,186 @@
+---
+title: "Penyiapan Penyedia AI Sonar"
+description: "Konfigurasikan AI Sonar sebagai penyedia kustom di OpenClaw menggunakan rute yang kompatibel dengan OpenAI, Responses, Anthropic, dan Gemini"
+---
+
+<Note>
+Panduan ini ditujukan untuk pengguna **self-hosted OpenClaw** yang ingin menghubungkan AI Sonar sebagai penyedia AI mereka.
+</Note>
+
+## Ikhtisar
+
+Untuk versi OpenClaw saat ini, pendekatan yang direkomendasikan adalah mengonfigurasi AI Sonar melalui `models.providers`.
+
+Jika Anda hanya ingin mulai dengan cepat, mengonfigurasi `aisonar` saja sudah cukup. Tambahkan penyedia lain hanya ketika Anda secara eksplisit membutuhkan perilaku **Responses API**, **Claude native**, **Gemini native**, atau **MiniMax native**.
+
+| Penyedia | OpenClaw `api` | Cocok untuk | baseUrl |
+|----------|----------------|-------------|---------|
+| `aisonar` | `openai-completions` | GPT, DeepSeek, Qwen, dan sebagian besar panggilan yang kompatibel dengan OpenAI | `https://api.aisonar.dev/v1` |
+| `aisonar-responses` | `openai-responses` | Alur kerja OpenAI Responses yang mengharapkan semantik `/v1/responses` | `https://api.aisonar.dev/v1` |
+| `aisonar-claude` | `anthropic-messages` | API Pesan Claude Native | `https://api.aisonar.dev` |
+| `aisonar-gemini` | `google-generative-ai` | Format API Gemini native | `https://api.aisonar.dev` |
+| `aisonar-minimax` | `anthropic-messages` | Routing MiniMax native | `https://api.aisonar.dev` |
+
+<Warning>
+Gunakan sufiks `/v1` hanya untuk `openai-completions` dan `openai-responses`.
+
+Penyedia native seperti `anthropic-messages` dan `google-generative-ai` harus menggunakan `https://api.aisonar.dev` tanpa `/v1`, jika tidak OpenClaw mungkin menyusun path upstream yang salah.
+</Warning>
+
+## Prasyarat
+
+- Instance OpenClaw self-hosted
+- Kunci API AI Sonar — [Dapatkan satu di sini](https://console.aisonar.dev)
+
+## Konfigurasi
+
+Edit konfigurasi OpenClaw Anda:
+
+- **Hosting sendiri**: `~/.openclaw/openclaw.json`
+
+Tambahkan penyedia AI Sonar di bawah `models.providers`:
+
+```json5
+{
+  agents: {
+    defaults: {
+      model: {
+        primary: "aisonar-claude/claude-sonnet-4-6"
+      }
+    }
+  },
+  models: {
+    mode: "merge",
+    providers: {
+      aisonar: {
+        api: "openai-completions",
+        baseUrl: "https://api.aisonar.dev/v1",
+        apiKey: "sk-your-api-key",
+        models: [
+          { id: "gpt-4o", name: "GPT-4o" },
+          { id: "deepseek-r1", name: "DeepSeek R1" },
+          { id: "qwen3-32b", name: "Qwen 3 32B" }
+        ]
+      },
+      "aisonar-responses": {
+        api: "openai-responses",
+        baseUrl: "https://api.aisonar.dev/v1",
+        apiKey: "sk-your-api-key",
+        models: [
+          { id: "gpt-4o", name: "GPT-4o (Responses)" },
+          { id: "gpt-5.2", name: "GPT-5.2 (Responses)" }
+        ]
+      },
+      "aisonar-claude": {
+        api: "anthropic-messages",
+        baseUrl: "https://api.aisonar.dev",
+        apiKey: "sk-your-api-key",
+        models: [
+          { id: "claude-sonnet-4-6", name: "Claude Sonnet 4.6" },
+          { id: "claude-opus-4-6", name: "Claude Opus 4.6" }
+        ]
+      },
+      "aisonar-gemini": {
+        api: "google-generative-ai",
+        baseUrl: "https://api.aisonar.dev",
+        apiKey: "sk-your-api-key",
+        models: [
+          { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash" },
+          { id: "gemini-3-flash-preview", name: "Gemini 3 Flash Preview" }
+        ]
+      },
+      "aisonar-minimax": {
+        api: "anthropic-messages",
+        baseUrl: "https://api.aisonar.dev",
+        apiKey: "sk-your-api-key",
+        models: [
+          { id: "minimax-m1", name: "MiniMax M1" }
+        ]
+      }
+    }
+  }
+}
+```
+
+<Info>
+Kelima penyedia menggunakan **API Key yang sama**. Anda hanya membutuhkan satu akun AI Sonar.
+</Info>
+
+<Info>
+Array `models` di atas hanya menampilkan contoh umum. Tambahkan lebih banyak ID model ke masing-masing penyedia sesuai kebutuhan.
+</Info>
+
+## Menggunakan Model
+
+OpenClaw masih merujuk model dengan format `provider/model`:
+
+```json5
+{
+  agents: {
+    defaults: {
+      model: {
+        primary: "aisonar-gemini/gemini-2.5-flash"
+      }
+    }
+  }
+}
+```
+
+### Contoh Model
+
+| Penyedia | Referensi model | Deskripsi |
+|----------|-----------------|-----------|
+| `aisonar` | `aisonar/gpt-4o` | Rute yang kompatibel dengan OpenAI |
+| `aisonar` | `aisonar/deepseek-r1` | Model penalaran DeepSeek |
+| `aisonar-responses` | `aisonar-responses/gpt-4o` | Rute Responses API |
+| `aisonar-claude` | `aisonar-claude/claude-sonnet-4-6` | Rute native Claude Messages |
+| `aisonar-gemini` | `aisonar-gemini/gemini-2.5-flash` | Rute native Gemini |
+| `aisonar-minimax` | `aisonar-minimax/minimax-m1` | Rute native MiniMax |
+
+Telusuri semua model yang tersedia di [aisonar.dev/models](https://aisonar.dev/models).
+
+## Kapan Menggunakan Penyedia Mana
+
+- `aisonar`: pilihan default untuk sebagian besar kasus penggunaan agen dan obrolan umum.
+- `aisonar-responses`: gunakan ketika alur kerja OpenClaw Anda secara eksplisit bergantung pada semantik OpenAI Responses.
+- `aisonar-claude`: gunakan ketika Anda menginginkan perilaku Messages native Claude.
+- `aisonar-gemini`: gunakan ketika Anda menginginkan pemformatan permintaan/respon native Gemini atau integrasi bergaya Gemini yang sudah ada.
+- `aisonar-minimax`: gunakan ketika Anda menginginkan MiniMax melalui rute native-nya.
+
+Jika Anda tidak memerlukan perilaku Gemini-native, Anda masih dapat memanggil model Gemini melalui `aisonar/gemini-*` pada rute yang kompatibel dengan OpenAI.
+
+## Kesalahan Umum
+
+<AccordionGroup>
+  <Accordion title="Masih menggunakan array penyedia tingkat atas yang lama">
+    Dokumentasi OpenClaw saat ini menggunakan `models.providers`. Jika Anda mempertahankan format array `providers` tingkat atas yang lebih lama, OpenClaw mungkin mengabaikan konfigurasi atau gagal menyelesaikan prefix penyedia sebagaimana diharapkan.
+  </Accordion>
+  <Accordion title="Lupa menambahkan /v1 pada aisonar-responses">
+    `openai-responses` memetakan ke path `/v1/responses` di AI Sonar, jadi `aisonar-responses` harus menggunakan `https://api.aisonar.dev/v1`.
+  </Accordion>
+  <Accordion title="Menambahkan /v1 ke aisonar-claude, aisonar-gemini, atau aisonar-minimax">
+    `anthropic-messages` dan `google-generative-ai` harus menggunakan `https://api.aisonar.dev` tanpa `/v1`. Menambahkan `/v1` dapat menghasilkan path permintaan yang tidak benar.
+  </Accordion>
+  <Accordion title="Apakah OpenClaw masih mendukung Gemini native?">
+    Ya. Dokumentasi OpenClaw saat ini masih menyertakan penyedia bawaan `google` dan juga mendukung penyedia kustom yang menggunakan `api: "google-generative-ai"`. Jadi `aisonar-gemini` tetap menjadi rute Gemini native yang valid bagi pengguna OpenClaw.
+  </Accordion>
+</AccordionGroup>
+
+## Verifikasi Pengaturan
+
+Setelah menyimpan konfigurasi, restart instance OpenClaw Anda dan uji dengan pesan sederhana. Jika Anda melihat respons, penyedia dikonfigurasi dengan benar.
+
+```bash
+# Hosting sendiri: mulai ulang layanan
+systemctl --user restart openclaw    # Linux
+launchctl stop cc.aisonar.openclaw && launchctl start cc.aisonar.openclaw  # macOS
+```
+
+## Langkah Selanjutnya
+
+Setelah OpenClaw tersambung, panduan berikut membantu Anda menggunakan AI Sonar dengan lebih efektif:
+
+- [Format API](/guides/api-formats) — pahami perbedaan antara rute OpenAI, Responses, Anthropic, dan Gemini
+- [IDE / SDK Compatibility](/guides/ide-sdk-compatibility) — lihat kapan `/v1/responses` adalah pilihan yang lebih cocok
+- [Penanganan error](/guides/error-handling) — pelajari mode kegagalan umum dan pola pemulihan
+- [Ringkasan model](https://aisonar.dev/models) — telusuri ID model sebelum menghubungkannya ke agen

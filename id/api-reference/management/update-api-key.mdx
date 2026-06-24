@@ -1,0 +1,45 @@
+---
+title: "Perbarui API Key"
+openapi: "PATCH /v1/management/api-keys/{keyId}"
+description: "Memperbarui API key user yang ada untuk organisasi saat ini."
+---
+
+## Ikhtisar
+
+Gunakan endpoint ini untuk memperbarui nama, batas penggunaan, model yang diizinkan, masa berlaku, atau status API key user yang ada.
+
+## Body Request
+
+Setidaknya satu field harus disediakan.
+
+| Bidang | Tipe | Default / Batas | Catatan |
+|-------|------|-----------------|---------|
+| `status` | enum | - | `active`, `inactive`, `suspended`, `revoked` |
+| `name` | string | panjang `1-50` | Nama tampilan yang diperbarui |
+| `limitAmount` | number \| null | min `0`, max input `1000000` | `null` = tidak terbatas, `0` = kuota nol. Nilai positif dinormalisasi menjadi batas simpan yang tidak melebihi setara `100000` USD |
+| `limitCurrency` | enum | default `USD` | Hanya USD. Mengirim `CNY` menghasilkan `400 currency_retired`. |
+| `models` | string[] | - | Daftar izin model logis yang diperbarui |
+| `expiresAt` | string \| null | datetime RFC3339 | `null` menghapus masa kedaluwarsa |
+
+## Catatan
+
+- Hard delete memang tidak didukung di Management API v1.
+- `revoked` bersifat terminal untuk penggunaan operasional biasa; buat key baru daripada mengharapkan alur un-revoke di masa depan.
+
+## Contoh
+
+<RequestExample>
+```bash cURL
+curl -X PATCH "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456" \
+  -H "Authorization: Bearer mt-your-management-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "inactive",
+    "limitAmount": 0
+  }'
+```
+</RequestExample>
+
+## Request / Respons
+
+Gunakan panel OpenAPI interaktif di atas untuk skema dan field respons yang tepat.

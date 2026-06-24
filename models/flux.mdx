@@ -1,0 +1,52 @@
+---
+title: "Black Forest Labs (Flux)"
+description: "Flux Pro, Schnell, Kontext image models"
+---
+
+## Overview
+
+AI Sonar provides access to Black Forest Labs (Flux) models. Total: **18 models** available.
+
+## Image Generation
+
+| Model ID | Pricing |
+|----------|--------|
+| `flux-1-dev` | See dashboard |
+| `flux-1.1-pro` | See dashboard |
+| `flux-1.1-pro-ultra` | See dashboard |
+| `flux-2-flex` | See dashboard |
+| `flux-2-klein-4b` | See dashboard |
+| `flux-2-klein-9b` | See dashboard |
+| `flux-2-max` | See dashboard |
+| `flux-2-pro` | See dashboard |
+| `flux-fill-pro` | See dashboard |
+| `flux-kontext-dev` | See dashboard |
+| `flux-kontext-max` | See dashboard |
+| `flux-kontext-max-multi` | See dashboard |
+| `flux-kontext-pro` | See dashboard |
+| `flux-kontext-pro-multi` | See dashboard |
+| `flux-pro` | See dashboard |
+| `flux-pro-1.0-fill` | See dashboard |
+| `flux-pro-1.1` | See dashboard |
+| `flux-pro-1.1-ultra` | See dashboard |
+
+
+## Usage
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="flux-pro-1.1-ultra",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+```
+
+<Note>
+Prices shown are platform prices (~70% of official rates).
+</Note>

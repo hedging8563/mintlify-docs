@@ -1,0 +1,26 @@
+---
+title: "الحصول على فوترة مفتاح API"
+openapi: "GET /v1/management/api-keys/{keyId}/billing"
+description: "تعيد تفصيلات فوترة مجمعة لمفتاح API خاص بالمستخدم."
+---
+
+## نظرة عامة
+
+تعيد نقطة النهاية هذه تجميعات فوترة قائمة على الاستهلاك لمفتاح API المحدد، بما في ذلك التكلفة الإجمالية وإجمالي الطلبات والاستخدام حسب وحدة الفوترة، إضافة إلى التفصيلات حسب اسم النموذج المطلوب (`model`) والمزوّد و`scene` و`accessChannel` وفئة الـ cache واتجاه التكلفة اليومي.
+
+## ملاحظات
+
+- يتم استبعاد عمليات الشحن والفواتير والسجلات المالية الأخرى على مستوى المؤسسة.
+
+## مثال
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/billing?startDate=2026-01-01&endDate=2026-01-31" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## الطلب / الاستجابة
+
+استخدم لوحة OpenAPI التفاعلية أعلاه للحصول على المخطط الدقيق.

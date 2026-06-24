@@ -1,0 +1,142 @@
+---
+title: "API Quản Lý"
+description: "Quản lý số dư tổ chức, API key, usage và billing theo từng key bằng management token."
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Tổng Quan
+
+Management API cho phép bạn lấy tổng số dư tổ chức, quản lý API key của tổ chức và lấy usage cũng như billing cho một key cụ thể mà không cần dùng inference API key thông thường.
+
+Sử dụng management token từ trang **Settings** trong Dashboard:
+
+```bash
+Authorization: Bearer mt-your-management-token
+```
+
+<Warning>
+Management token khác với inference API key. Dùng `mt-...` cho `/v1/management/*`, và dùng `sk-...` cho các endpoint suy luận như `/v1/responses`.
+</Warning>
+
+## Endpoint Khả Dụng
+
+| Endpoint | Method | Mô tả |
+|----------|--------|-------|
+| `/v1/management/balance` | GET | Lấy các tổng số dư hiện tại của tổ chức |
+| `/v1/management/api-keys` | GET | Liệt kê API key do người dùng quản lý trong tổ chức hiện tại |
+| `/v1/management/api-keys` | POST | Tạo một API key người dùng mới |
+| `/v1/management/api-keys/{keyId}` | PATCH | Cập nhật tên, giới hạn sử dụng, model được phép, thời hạn hết hạn hoặc trạng thái |
+| `/v1/management/api-keys/{keyId}/usage` | GET | Lấy chi tiết usage có phân trang cho một key cụ thể |
+| `/v1/management/api-keys/{keyId}/billing` | GET | Lấy breakdown billing tổng hợp cho một key cụ thể |
+
+## Hợp Đồng Bộ Lọc Usage
+
+`GET /v1/management/api-keys/{keyId}/usage` hỗ trợ các query parameter sau:
+
+| Tham số | Kiểu | Mặc định / Giới hạn | Ghi chú |
+|---------|------|---------------------|--------|
+| `page` | integer | mặc định `1`, tối thiểu `1` | Số trang tính từ 1 |
+| `limit` | integer | mặc định `50`, tối thiểu `1`, tối đa `100` | Kích thước trang |
+| `logicalModel` | string | tối đa `100` ký tự | Tên model logic được yêu cầu |
+| `modelVendor` | string | tối đa `100` ký tự | Nhà cung cấp model công khai |
+| `scene` | enum | - | `chat`, `image`, `audio`, `video`, `embedding`, `rerank`, `translation`, `music`, `3d` |
+| `accessChannel` | enum | - | `platform` hoặc `byok` |
+| `startDate` | string | - | Cận dưới bao gồm; chấp nhận RFC3339 có múi giờ hoặc `YYYY-MM-DD` |
+| `endDate` | string | - | Cận trên bao gồm; chấp nhận RFC3339 có múi giờ hoặc `YYYY-MM-DD` |
+
+Nếu truyền cả `startDate` và `endDate`, thì `startDate` phải nhỏ hơn hoặc bằng `endDate`.
+
+## Hợp Đồng Body API Key
+
+### POST /v1/management/api-keys
+
+| Trường | Kiểu | Mặc định / Giới hạn | Ghi chú |
+|--------|------|---------------------|--------|
+| `name` | string | bắt buộc, mặc định `Default Key`, độ dài `1-50` | Tên hiển thị, server sẽ trim khoảng trắng |
+| `limitAmount` | number \| null | tối thiểu `0`, tối đa `100000` | `null` hoặc bỏ qua = không giới hạn, `0` = quota bằng 0, giá trị dương = trần chi tiêu USD |
+| `limitCurrency` | enum | default `USD` | Chỉ hỗ trợ USD. Gửi `CNY` sẽ trả về `400 currency_retired`. |
+| `models` | string[] | mặc định `[]` | Danh sách cho phép model logic tùy chọn |
+| `expiresAt` | string \| null | datetime RFC3339 | `null` nghĩa là không hết hạn |
+
+### PATCH /v1/management/api-keys/{keyId}
+
+| Trường | Kiểu | Mặc định / Giới hạn | Ghi chú |
+|--------|------|---------------------|--------|
+| `status` | enum | - | `active`, `inactive`, `suspended`, `revoked` |
+| `name` | string | độ dài `1-50` | Tên hiển thị đã cập nhật |
+| `limitAmount` | number \| null | tối thiểu `0`, input tối đa `1000000` | `null` = không giới hạn, `0` = quota bằng 0. Giá trị dương được chuẩn hoá thành trần lưu trữ không vượt quá tương đương `100000` USD |
+| `limitCurrency` | enum | default `USD` | Chỉ hỗ trợ USD. Gửi `CNY` sẽ trả về `400 currency_retired`. |
+| `models` | string[] | - | Danh sách cho phép model logic đã cập nhật |
+| `expiresAt` | string \| null | datetime RFC3339 | `null` sẽ xoá thời hạn hết hạn |
+
+PATCH phải có ít nhất một trường.
+
+## Hợp Đồng Tiền Tệ
+
+
+## Ngữ Nghĩa Báo Cáo
+
+- `logicalModel` là model logic công khai mà người gọi yêu cầu.
+- `modelVendor` là nhà cung cấp model công khai, không phải tuyến vật lý ẩn.
+- `scene` là ngữ cảnh yêu cầu công khai được suy ra từ endpoint hoặc loại tác vụ.
+- `accessChannel=platform` nghĩa là request được tính phí qua kênh platform của AI Sonar.
+- `accessChannel=byok` nghĩa là request dùng khóa upstream provider của chính bạn.
+
+Phản hồi chỉ hiển thị các trường billing và reporting công khai. Chi tiết routing nội bộ và metadata provider vật lý vẫn bị ẩn.
+- Các mục `/usage` có thể bao gồm `billing_transaction_id` sau khi request cơ bản đã đạt trạng thái billing đã thanh toán. Dùng `request_id` + `billing_transaction_id` để đối soát ở mức request.
+
+## Lưu Ý Về Phân Trang Billing
+
+`/usage` có phân trang. `/billing` hiện là endpoint breakdown tổng hợp và không trả về metadata phân trang kiểu `page` / `limit`. Nếu cần bản ghi cấp dòng, hãy dùng `/usage`.
+
+## Ví Dụ Nhanh
+
+Bắt đầu bằng cách kiểm tra số dư tổ chức với management token hiện tại:
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/management/balance" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+Sau đó liệt kê các API key hiện có cho cùng management token:
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/management/api-keys" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response (200)
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "key_abc123def456",
+      "name": "Backend Worker",
+      "key_prefix": "sk-abc123...",
+      "status": "active",
+      "limit_amount": 500.0,
+      "used_amount": 148.25,
+      "models": ["gpt-4o-mini", "claude-3-7-sonnet"],
+      "expires_at": "2026-04-30T00:00:00.000Z",
+      "last_used_at": "2026-03-27T08:12:45.000Z",
+      "created_at": "2026-03-01T10:00:00.000Z"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## Bước Tiếp Theo
+
+- [Lấy số dư tổ chức](/vi/api-reference/management/get-balance)
+- [Liệt kê API key](/vi/api-reference/management/list-api-keys)
+- [Tạo API key](/vi/api-reference/management/create-api-key)
+- [Cập nhật API key](/vi/api-reference/management/update-api-key)
+- [Lấy usage API key](/vi/api-reference/management/get-api-key-usage)
+- [Lấy chi phí API key](/vi/api-reference/management/get-api-key-billing)

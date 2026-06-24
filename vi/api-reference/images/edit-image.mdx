@@ -1,0 +1,237 @@
+---
+title: "Chỉnh Sửa Hình Ảnh"
+openapi: "POST /v1/images/edits"
+description: "Chỉnh sửa một hình ảnh dựa trên prompt và ảnh nguồn"
+---
+
+## Tổng Quan
+
+Tạo một hình ảnh đã chỉnh sửa hoặc mở rộng dựa trên ảnh gốc và prompt.
+
+Route này hỗ trợ cả:
+
+- luồng upload kiểu DALL-E truyền thống bằng `multipart/form-data` được mô tả bên dưới
+- request JSON cung cấp `image_url`, `image_urls`, hoặc tham chiếu chính thức `images` cho các nhóm image-to-image được hỗ trợ
+
+<Note>
+`gpt-image-2` được hỗ trợ tại đây. Endpoint chấp nhận upload multipart `image`, JSON `image_url` / `image_urls`, và tham chiếu chính thức `images[]` (`image_url` hoặc `file_id`) với tối đa 16 ảnh nguồn. Hãy tạo `file_id` qua `/v1/files` trước. Đặt `async: true` để nhận task trước; các model edit FLUX/BFL chính thức cũng dùng cùng luồng polling task.
+
+Edit bằng `gpt-image-2` không chấp nhận `resolution` hoặc `background`; hãy dùng `size` cho kích thước đầu ra. Với edit nhiều ảnh hoặc độ trễ cao, nên đặt `async: true` rồi polling task được trả về.
+
+Request Nano Banana dùng ảnh tham chiếu (`nano-banana`, `nano-banana-2`, và `nano-banana-pro`) được cung cấp qua `/v1/images/generations` với `operation: "image-to-image"` và `image_urls`, không phải endpoint `/v1/images/edits` này.
+
+Các model chỉnh sửa ảnh xAI Grok Imagine (`grok-imagine-image`, `grok-imagine-image-quality`, và legacy `grok-imagine-image-pro`) chấp nhận tối đa 3 ảnh nguồn. Request có hơn 3 ảnh nguồn sẽ thất bại trước khi chuyển tiếp upstream với `400 too_many_images`.
+
+Ghi chu tuong thich: neu yeu cau `gpt-image-2` gui `input_fidelity`, AI Sonar se xoa truong nay truoc khi chuyen tiep vi GPT Image 2 tu dong xu ly dau vao hinh anh voi do trung thuc cao.
+</Note>
+
+## Thân Yêu Cầu
+
+**Timeout cho yêu cầu đồng bộ:** một số nhà cung cấp hình ảnh được định tuyến sẽ trả ảnh cuối cùng inline và chờ quá trình tạo hoàn tất. Yêu cầu độ phân giải cao hoặc chất lượng cao có thể mất gần một phút hoặc lâu hơn, vì vậy hãy đặt timeout của HTTP client ít nhất là `120s`. Nếu phản hồi tạo có `status: "pending"`, `task_id`, hoặc `poll_url`, hãy theo `poll_url` được trả về để polling.
+
+URL ảnh từ xa: khi provider được định tuyến yêu cầu input multipart, AI Sonar sẽ tải JSON `image_url`, `image_urls`, hoặc `images[].image_url` rồi chuyển byte dưới dạng các phần multipart `image`. URL phải là `http`/`https` công khai, không chứa credentials nhúng hoặc fragment, và không được resolve tới localhost, dải IP private hoặc reserved; mỗi redirect đều được kiểm tra lại. Payload tải về phải là ảnh PNG, JPEG hoặc WebP thật. Giới hạn: `50MB` mỗi ảnh, tổng `200MB` cho ảnh tải từ URL trong một request, timeout tải `10s`, và tối đa `3` redirect.
+
+<ParamField body="image" type="file">
+  Ảnh nguồn multipart. Lặp lại trường `image` để gửi nhiều nguồn GPT Image. File phải là PNG, JPEG hoặc WebP, tối đa 16 ảnh nguồn và `50MB` mỗi ảnh. Model edit xAI Grok Imagine dùng cùng các trường input nhưng giới hạn ảnh nguồn ở mức 3. Các edit mask DALL-E 2 legacy vẫn yêu cầu PNG có vùng trong suốt, hoặc một `mask` riêng.
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  Mô tả bằng văn bản cho chỉnh sửa mong muốn.
+</ParamField>
+
+<ParamField body="mask" type="file">
+  Một ảnh bổ sung có các vùng trong suốt hoàn toàn để chỉ ra nơi ảnh sẽ được chỉnh sửa. Phải là tệp PNG hợp lệ, nhỏ hơn 50MB, và có cùng kích thước với `image`.
+</ParamField>
+
+<ParamField body="model" type="string" default="dall-e-2">
+  Model dùng cho edit ảnh. `gpt-image-2` được hỗ trợ; các edit kiểu DALL-E legacy vẫn có thể dùng `dall-e-2`.
+</ParamField>
+
+<ParamField body="n" type="integer" default="1">
+  Số lượng ảnh cần tạo. Phải nằm trong khoảng từ 1 đến 10.
+</ParamField>
+
+<ParamField body="size" type="string">
+  Kích thước ảnh được tạo. Với `gpt-image-2`, dùng `auto` hoặc `WIDTHxHEIGHT`; kích thước phải là bội số của 16, cạnh dài nhất tối đa `3840px`, tỷ lệ cạnh dài/ngắn tối đa `3:1`, và tổng pixel nằm trong khoảng `655,360` đến `8,294,400`. Edit DALL-E legacy hỗ trợ `256x256`, `512x512`, hoặc `1024x1024`.
+</ParamField>
+
+<ParamField body="response_format" type="string" default="url">
+  Định dạng trả về của ảnh được tạo. Phải là `url` hoặc `b64_json`; mặc định là `url`.
+
+  Với các tuyến `gpt-image-2` Azure Official hoặc tương thích Azure, AI Sonar không chuyển `response_format` lên upstream. Gateway luôn nhận dữ liệu ảnh upstream dưới dạng `b64_json`; với request `url`, gateway tải từng ảnh lên CDN rồi trả về `data[].url`. Nếu CDN storage không khả dụng hoặc upload thất bại, request sẽ fail thay vì fallback về Base64. Với `b64_json`, Base64 gốc được trả về.
+</ParamField>
+
+<ParamField body="async" type="boolean" default="false">
+  Đặt `true` với `gpt-image-2` hoặc các model edit FLUX/BFL chính thức để trả về task trước khi ảnh cuối sẵn sàng. Edit async hoàn tất trả về URL bất kể `response_format` được yêu cầu; dùng request đồng bộ nếu cần `b64_json`.
+</ParamField>
+
+<ParamField body="user" type="string">
+  Một định danh duy nhất đại diện cho end-user của bạn để theo dõi lạm dụng.
+</ParamField>
+
+## Phản Hồi
+
+<ResponseField name="created" type="integer">
+  Unix timestamp lúc ảnh được tạo.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Mảng các ảnh được tạo.
+
+  Mỗi object chứa:
+  - `url` (string): URL của ảnh đã chỉnh sửa (nếu response_format là `url`)
+  - `b64_json` (string): Ảnh mã hoá Base64 (nếu response_format là `b64_json`)
+</ResponseField>
+
+### Phản hồi task async
+
+Đặt `async: true` với `gpt-image-2` hoặc các model edit FLUX/BFL chính thức để tạo task thay vì chờ ảnh đã chỉnh sửa trong request. Phản hồi gồm `status: "pending"`, `task_id` và `poll_url`. Hãy poll `/v1/tasks/{task_id}` cho đến khi task chuyển sang `completed` hoặc `failed`.
+
+Task edit async chỉ trả về URL của ảnh cuối. Nếu cần dữ liệu ảnh thô `b64_json`, hãy dùng request đồng bộ.
+
+
+Khi tạo tác vụ, hệ thống có thể tạm giữ chi phí ước tính. Tác vụ hoàn tất được tính theo mức sử dụng thực tế; tác vụ thất bại hoặc hết hạn sẽ được giải phóng khoản tạm giữ hoặc hoàn phí.
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/images/edits" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F "image=@sunlit_lounge.png" \
+  -F "mask=@mask.png" \
+  -F "prompt=A sunlit indoor lounge area with a pool" \
+  -F "n=1" \
+  -F "size=1024x1024"
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.images.edit(
+    model="dall-e-2",
+    image=open("sunlit_lounge.png", "rb"),
+    mask=open("mask.png", "rb"),
+    prompt="A sunlit indoor lounge area with a pool",
+    n=1,
+    size="1024x1024"
+)
+
+print(response.data[0].url)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+import fs from 'fs';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.images.edit({
+  model: 'dall-e-2',
+  image: fs.createReadStream('sunlit_lounge.png'),
+  mask: fs.createReadStream('mask.png'),
+  prompt: 'A sunlit indoor lounge area with a pool',
+  n: 1,
+  size: '1024x1024'
+});
+
+console.log(response.data[0].url);
+```
+
+```go Go
+package main
+
+import (
+    "bytes"
+    "fmt"
+    "io"
+    "mime/multipart"
+    "net/http"
+    "os"
+)
+
+func main() {
+    body := &bytes.Buffer{}
+    writer := multipart.NewWriter(body)
+
+    image, _ := os.Open("sunlit_lounge.png")
+    defer image.Close()
+    part, _ := writer.CreateFormFile("image", "sunlit_lounge.png")
+    io.Copy(part, image)
+
+    mask, _ := os.Open("mask.png")
+    defer mask.Close()
+    maskPart, _ := writer.CreateFormFile("mask", "mask.png")
+    io.Copy(maskPart, mask)
+
+    writer.WriteField("prompt", "A sunlit indoor lounge area with a pool")
+    writer.WriteField("n", "1")
+    writer.WriteField("size", "1024x1024")
+    writer.Close()
+
+    req, _ := http.NewRequest("POST", "https://api.aisonar.dev/v1/images/edits", body)
+    req.Header.Set("Authorization", "Bearer sk-your-api-key")
+    req.Header.Set("Content-Type", writer.FormDataContentType())
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+
+    result, _ := io.ReadAll(resp.Body)
+    fmt.Println(string(result))
+}
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/images/edits');
+
+$image = new CURLFile('sunlit_lounge.png', 'image/png', 'sunlit_lounge.png');
+$mask = new CURLFile('mask.png', 'image/png', 'mask.png');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => [
+        'image' => $image,
+        'mask' => $mask,
+        'prompt' => 'A sunlit indoor lounge area with a pool',
+        'n' => 1,
+        'size' => '1024x1024'
+    ]
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+echo $data['data'][0]['url'];
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "created": 1706000000,
+  "data": [
+    {
+      "url": "https://..."
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## Ghi Chú
+
+<Note>
+  Lỗi tải ảnh từ xa được trả về như lỗi input trước khi gửi request tới upstream. URL không truy cập được, timeout, phản hồi 403/404, host private/internal, credentials hoặc fragment trong URL, nội dung không phải ảnh, định dạng không hỗ trợ, và vượt giới hạn kích thước sẽ trả `400` hoặc `413` và chỉ ra input `image_url` / `image_urls[n]`. Với tài sản private hoặc được bảo vệ bằng header, hãy upload trực tiếp file multipart `image` hoặc tạo tham chiếu `/v1/files`.
+</Note>

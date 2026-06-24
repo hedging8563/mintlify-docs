@@ -1,0 +1,66 @@
+---
+title: "Coding Agents"
+description: "Cut coding agent costs by up to 90% with smart routing, caching, and model selection"
+---
+
+## Why Coding Agents Are Expensive
+
+Coding agents like Claude Code, Cursor, and Codex CLI are powerful — but they consume tokens at a rate that surprises most teams.
+
+**Long context per request.** Every call includes a system prompt, project files, and conversation history — often 10,000–100,000+ tokens before the model even starts thinking.
+
+**High-frequency calls.** A single coding session triggers dozens of API calls: code generation, search, review, autocomplete, and tool use. A 1-hour session can easily hit 200+ requests.
+
+**Conversation accumulation.** Each turn resends the full message history. By turn 20, you're paying for the same context 20 times over.
+
+<Info>
+A typical 1-hour Claude Code session can consume 2–5M tokens. At direct API rates, that's $6–30+ per hour depending on the model.
+</Info>
+
+## How AI Sonar Helps
+
+<CardGroup cols={2}>
+  <Card title="Multi-Provider Routing" icon="route" href="/guides/coding-agent-cost#smart-model-selection">
+    Automatically route to the cheapest available provider for each model. Same model, lower price.
+  </Card>
+  <Card title="Prompt Cache Passthrough" icon="bolt" href="/guides/prompt-cache">
+    Upstream prefix caching (Anthropic, OpenAI, DeepSeek) works automatically — long system prompts get cached at the provider level.
+  </Card>
+  <Card title="Model Fallback" icon="arrows-rotate" href="/guides/coding-agent-models#how-aisonar-routing-works">
+    If a provider is down or slow, requests automatically fall back to the next available provider. Zero downtime.
+  </Card>
+</CardGroup>
+
+## Supported Coding Tools
+
+<CardGroup cols={3}>
+  <Card title="Cursor" icon="text-slash" href="/integrations/cursor">
+    AI-powered IDE with tab completion and chat
+  </Card>
+  <Card title="Claude Code" icon="terminal" href="/integrations/claude-code">
+    Anthropic's official CLI coding agent
+  </Card>
+  <Card title="Codex CLI" icon="code" href="/integrations/codex-cli">
+    OpenAI's terminal-based coding agent
+  </Card>
+  <Card title="Gemini CLI" icon="gem" href="/integrations/gemini-cli">
+    Google's command-line coding assistant
+  </Card>
+  <Card title="OpenCode" icon="laptop-code" href="/integrations/opencode">
+    Open-source terminal coding agent
+  </Card>
+  <Card title="AI Sonar API Skill" icon="lemon" href="/integrations/coding-agent-skill">
+    Use AI Sonar's shared API integration skill
+  </Card>
+</CardGroup>
+
+## Go Deeper
+
+<CardGroup cols={2}>
+  <Card title="Cost Optimization Guide" icon="piggy-bank" href="/guides/coding-agent-cost">
+    Concrete strategies to cut your coding agent bill: model selection, caching, token management, and real cost comparisons.
+  </Card>
+  <Card title="Model Selection Guide" icon="microchip" href="/guides/coding-agent-models">
+    Which model for which coding task? Comparison table, task-specific recommendations, and per-tool configuration.
+  </Card>
+</CardGroup>

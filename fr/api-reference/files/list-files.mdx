@@ -1,0 +1,38 @@
+---
+title: "Lister les fichiers"
+openapi: "GET /v1/files"
+description: "Liste les fichiers téléversés pour les workflows de lot et les modes de compatibilité pris en charge par les fichiers."
+---
+
+## Aperçu
+
+Ce point de terminaison sert principalement l’API Batch compatible avec OpenAI de AI Sonar, y compris les entrées de lot téléversées et les fichiers de sortie ou d’erreur générés.
+
+Lorsque la requête active le mode de compatibilité Anthropic Files, la même route peut aussi lister les fichiers de style Anthropic disponibles pour l’espace de travail lié.
+
+## Remarques
+
+- Les fichiers d'entrée de lot doivent utiliser `purpose=batch`.
+- Utilisez `purpose=batch_output` pour vous concentrer sur les fichiers de sortie générés.
+- `completion_window` est actuellement `24h`.
+- L'ordre de sortie n'est pas garanti ; il faut toujours faire correspondre par `custom_id`.
+- Le streaming n'est pas pris en charge à l'intérieur des éléments de lot.
+
+## Exemple
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/files?purpose=batch&limit=20" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+## Requête / Réponse
+
+Utilisez le panneau OpenAPI interactif ci-dessus pour le schéma exact.
+
+## Conseils opérationnels
+
+- Utilisez `custom_id` pour la réconciliation idempotente en aval.
+- Attendez-vous à ce que `output_file_id` et `error_file_id` ne soient disponibles qu'après que le travailleur finalise le lot.
+- La tarification des lots peut différer de la tarification synchrone car les règles de remise `isBatchRequest=true` s'appliquent.

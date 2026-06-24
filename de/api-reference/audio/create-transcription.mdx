@@ -1,0 +1,176 @@
+---
+title: "Transkription erstellen"
+openapi: "POST /v1/audio/transcriptions"
+description: "Transkribiert Audio in die Eingabesprache"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Anfragekörper
+
+**Timeout für synchrone Anfragen:** Dieser Nicht-Chat-Endpunkt wartet, bis das geroutete Modell fertig ist. Große Eingaben, lange Audiodateien oder große Batches können übliche 30s-Client-Defaults überschreiten; setzen Sie das Timeout Ihres HTTP-Clients daher auf mindestens `120s`.
+
+<ParamField body="file" type="file" required>
+  Audiodatei zur Transkription. Unterstützte Formate: flac, mp3, mp4, mpeg, mpga, m4a, ogg, wav, webm.
+</ParamField>
+
+<ParamField body="model" type="string" default="whisper-1">
+  Zu verwendendes Modell. Derzeit wird nur `whisper-1` unterstützt.
+</ParamField>
+
+<ParamField body="language" type="string">
+  Sprache des Audios im ISO-639-1-Format (z. B. `en`, `zh`, `ja`).
+</ParamField>
+
+<ParamField body="prompt" type="string">
+  Optionaler Text, um den Stil des Modells zu steuern oder ein vorheriges Segment fortzusetzen.
+</ParamField>
+
+<ParamField body="response_format" type="string" default="json">
+  Ausgabeformat: `json`, `text`, `srt`, `verbose_json`, `vtt`.
+</ParamField>
+
+<ParamField body="temperature" type="number" default="0">
+  Sampling-Temperatur (0 bis 1).
+</ParamField>
+
+<ParamField body="timestamp_granularities" type="array">
+  Granularität der Zeitstempel: `word` und/oder `segment`. Erfordert `verbose_json`.
+</ParamField>
+
+## Antwort
+
+<ResponseField name="text" type="string">
+  Der transkribierte Text.
+</ResponseField>
+
+Für `verbose_json`:
+
+<ResponseField name="task" type="string">
+  Immer `transcribe`.
+</ResponseField>
+
+<ResponseField name="language" type="string">
+  Erkannte Sprache.
+</ResponseField>
+
+<ResponseField name="duration" type="number">
+  Audiodauer in Sekunden.
+</ResponseField>
+
+<ResponseField name="segments" type="array">
+  Transkriptionssegmente mit Zeitstempeln.
+</ResponseField>
+
+<ResponseField name="words" type="array">
+  Zeitstempel auf Wortebene (falls angefordert).
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/audio/transcriptions" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F file="@audio.mp3" \
+  -F model="whisper-1" \
+  -F language="en"
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+with open("audio.mp3", "rb") as audio_file:
+    response = client.audio.transcriptions.create(
+        model="whisper-1",
+        file=audio_file,
+        language="en"
+    )
+
+print(response.text)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+import fs from 'fs';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.audio.transcriptions.create({
+  model: 'whisper-1',
+  file: fs.createReadStream('audio.mp3'),
+  language: 'en'
+});
+
+console.log(response.text);
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/audio/transcriptions');
+
+$file = new CURLFile('audio.mp3', 'audio/mpeg', 'audio.mp3');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => [
+        'file' => $file,
+        'model' => 'whisper-1',
+        'language' => 'en'
+    ]
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+echo $data['text'];
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response (json)
+{
+  "text": "Hello, this is a test of the transcription API."
+}
+```
+
+```json Response (verbose_json)
+{
+  "task": "transcribe",
+  "language": "english",
+  "duration": 5.5,
+  "text": "Hello, this is a test of the transcription API.",
+  "segments": [
+    {
+      "id": 0,
+      "start": 0.0,
+      "end": 2.5,
+      "text": "Hello, this is a test",
+      "tokens": [...]
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## Übersetzung
+
+Um Audio ins Englische zu übersetzen, verwenden Sie den translations-Endpunkt:
+
+```python
+response = client.audio.translations.create(
+    model="whisper-1",
+    file=audio_file
+)
+```

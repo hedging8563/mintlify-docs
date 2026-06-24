@@ -1,0 +1,252 @@
+---
+title: "OpenAI SDK"
+description: "AI Sonar'ı resmi OpenAI SDK'ları ve OpenAI-uyumlu istemcilerle kullanın"
+---
+
+## Genel Bakış
+
+AI Sonar, istemciyi `https://api.aisonar.dev/v1` adresine yönlendirerek resmi OpenAI SDK'ları ile çalışır.
+
+Çoğu yeni proje için varsayılan OpenAI-uyumlu yol olarak **Chat Completions** tercih edin. **Responses API** yalnızca açıkça Responses'a özgü davranışa ihtiyaç duyduğunuzda kullanın.
+
+Responses'a özgü alanların her model ve yönlendirilen yol arasında tamamen aynı şekilde davranacağı garanti edilmez.
+
+<Note>
+Python, JavaScript ve Go'nun resmi OpenAI SDK'ları vardır. PHP, OpenAI-uyumlu topluluk istemcileri ile iyi çalışır, ancak resmi bir OpenAI SDK'sı değildir.
+</Note>
+
+<Note>
+**Tür**: Yerel SDK
+
+**Birincil Yol**: OpenAI-uyumlu / Chat Completions
+
+**Destek Güveni**: Desteklenen temel yol
+</Note>
+
+## Kurulum
+
+<CodeGroup>
+
+```bash Python
+pip install openai
+```
+
+```bash JavaScript
+npm install openai
+```
+
+```bash Go
+go get github.com/openai/openai-go/v3
+```
+
+</CodeGroup>
+
+<Note>
+`POST /v1/responses` yalnızca açıkça Responses'a özgü davranışa ihtiyaç duyduğunuzda kullanın. Bazı yalnızca Responses alanları hala seçilen modele ve yönlendirilen yola bağlı olabilir.
+</Note>
+
+## İstemciyi Yapılandırma
+
+<CodeGroup>
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1",
+)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1',
+});
+```
+
+```go Go
+package main
+
+import (
+    openai "github.com/openai/openai-go/v3"
+    "github.com/openai/openai-go/v3/option"
+)
+
+func main() {
+    client := openai.NewClient(
+        option.WithAPIKey("sk-your-api-key"),
+        option.WithBaseURL("https://api.aisonar.dev/v1"),
+    )
+
+    _ = client
+}
+```
+
+</CodeGroup>
+
+## Önerilen: Chat Completions
+
+<CodeGroup>
+
+```python Python
+response = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "Explain what AI Sonar does in one sentence."}]
+)
+
+print(response.choices[0].message.content)
+```
+
+```javascript JavaScript
+const response = await client.chat.completions.create({
+  model: 'gpt-5.4',
+  messages: [{ role: 'user', content: 'Explain what AI Sonar does in one sentence.' }],
+});
+
+console.log(response.choices[0].message.content);
+```
+
+```bash cURL
+curl https://api.aisonar.dev/v1/chat/completions \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.4",
+    "messages": [
+      {"role": "user", "content": "Explain what AI Sonar does in one sentence."}
+    ]
+  }'
+```
+
+</CodeGroup>
+
+## Gelişmiş: Responses API
+
+Bu yolu yalnızca aracınız veya iş akışınız açıkça OpenAI Responses anlambilimine bağımlıysa kullanın.
+
+### Responses ile Akış (Streaming)
+
+<CodeGroup>
+
+```python Python
+stream = client.responses.create(
+    model="gpt-5.4",
+    input="Write a short poem about coding.",
+    stream=True,
+)
+
+for event in stream:
+    if event.type == "response.output_text.delta":
+        print(event.delta, end="")
+```
+
+```javascript JavaScript
+const stream = await client.responses.create({
+  model: 'gpt-5.4',
+  input: 'Write a short poem about coding.',
+  stream: true,
+});
+
+for await (const event of stream) {
+  if (event.type === 'response.output_text.delta') {
+    process.stdout.write(event.delta);
+  }
+}
+```
+
+</CodeGroup>
+
+## Araçlar / Fonksiyon Çağırma
+
+```python
+response = client.responses.create(
+    model="gpt-5.4",
+    input="What's the weather in Tokyo?",
+    tools=[{
+        "type": "function",
+        "name": "get_weather",
+        "description": "Get weather for a location",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "location": {"type": "string"}
+            },
+            "required": ["location"]
+        }
+    }]
+)
+
+for item in response.output:
+    if item.type == "function_call":
+        print(item.name)
+        print(item.arguments)
+```
+
+## Responses ile Görüntü İşleme
+
+```python
+response = client.responses.create(
+    model="gpt-4o",
+    input=[{
+        "role": "user",
+        "content": [
+            {"type": "input_text", "text": "What's in this image?"},
+            {"type": "input_image", "image_url": "https://example.com/image.jpg"}
+        ]
+    }]
+)
+
+print(response.output_text)
+```
+
+## Embeddings
+
+```python
+response = client.embeddings.create(
+    model="text-embedding-3-small",
+    input="Hello world"
+)
+
+print(response.data[0].embedding[:5])
+```
+
+## Chat Completions
+
+Chat Completions, AI Sonar için varsayılan OpenAI-uyumlu yoldur:
+
+```python
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "Hello!"}
+    ]
+)
+
+print(response.choices[0].message.content)
+```
+
+## Sorun Giderme
+
+<AccordionGroup>
+  <Accordion title="Bağlantı Hatası">
+    - Base URL'nin tam olarak `https://api.aisonar.dev/v1` olduğunu doğrulayın
+    - Proxy müdahalesi veya özel HTTP istemcisi geçersiz kılmaları olup olmadığını kontrol edin
+    - Sağlayıcı davranışını hata ayıklamadan önce SDK sürümünüzün güncel olduğundan emin olun
+  </Accordion>
+
+  <Accordion title="Kimlik Doğrulama Başarısız">
+    - API anahtarınızın `sk-` ile başladığını kontrol edin
+    - Anahtarın AI Sonar kontrol panelinde aktif olduğunu doğrulayın
+    - SDK'nın `Authorization: Bearer ...` başlığını gönderdiğini onaylayın
+  </Accordion>
+
+  <Accordion title="Yanlış API Yolu">
+    - `responses.create(...)` istekleri `/v1/responses` yoluna gönderir
+    - `chat.completions.create(...)` istekleri `/v1/chat/completions` yoluna gönderir
+    - Açıkça Responses'a özgü davranışa ihtiyaç duymuyorsanız varsayılan olarak Chat Completions kullanın
+  </Accordion>
+</AccordionGroup>

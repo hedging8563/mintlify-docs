@@ -1,0 +1,47 @@
+---
+title: "API 키 생성"
+openapi: "POST /v1/management/api-keys"
+description: "현재 조직에 새 사용자 API 키를 생성합니다."
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## 개요
+
+이 엔드포인트는 현재 관리 토큰에 연결된 조직 안에 새로운 `type=user` API 키를 생성합니다.
+
+## 요청 본문
+
+| 필드 | 타입 | 기본값 / 제한 | 설명 |
+|-------|------|---------------|------|
+| `name` | string | 필수, 기본값 `Default Key`, 길이 `1-50` | 표시 이름이며 서버에서 앞뒤 공백을 제거합니다 |
+| `limitAmount` | number \| null | 최소 `0`, 입력 최대 `1000000` | `null` 또는 생략 = 무제한, `0` = 0 한도. 양수는 저장된 상한으로 정규화되며 USD 환산 기준 `100000` 을 넘지 않습니다 |
+| `limitCurrency` | enum | default `USD` | USD만 지원됩니다. `CNY`를 보내면 `400 currency_retired`가 반환됩니다. |
+| `models` | string[] | 기본값 `[]` | 선택적 논리 모델 허용 목록 |
+| `expiresAt` | string \| null | RFC3339 datetime | `null` 은 만료 없음 의미 |
+
+## 참고 사항
+
+- 전체 API 키 값은 응답에서 한 번만 표시됩니다.
+- `models: []` 는 조직 정책 외에 추가 모델 제한이 없음을 의미합니다.
+- `limitAmount: 0` 은 유효하지만 사용할 수 있는 한도가 없는 키를 만들며, 이후 업데이트가 필요합니다.
+
+## 예시
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/management/api-keys" \
+  -H "Authorization: Bearer mt-your-management-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Backend Worker",
+    "limitAmount": 500,
+    "models": ["veo3.1", "kling-3.0-video"],
+    "expiresAt": "2026-12-31T23:59:59Z"
+  }'
+```
+</RequestExample>
+
+## 요청 / 응답
+
+정확한 스키마와 응답 필드는 상단의 대화형 OpenAPI 패널을 참고하세요.

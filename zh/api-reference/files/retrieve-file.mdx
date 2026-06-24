@@ -1,0 +1,38 @@
+---
+title: "检索文件"
+openapi: "GET /v1/files/{file_id}"
+description: "检索单个上传文件的元数据。"
+---
+
+## 概述
+
+此端点主要服务于 AI Sonar 的 OpenAI 兼容 Batch API 文件对象。
+
+当请求选择 Anthropic Files 兼容模式时，同一路由也可以返回绑定工作区的 Anthropic 风格文件元数据。
+
+## 注意事项
+
+- 批处理输入文件必须使用 `purpose=batch`。
+- 使用 `purpose=batch_output` 以聚焦生成的输出文件。
+- `completion_window` 当前为 `24h`。
+- 输出顺序不保证；始终通过 `custom_id` 匹配。
+- 批处理项内不支持流式传输。
+
+## 示例
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/files/file_abc123" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+## 请求 / 响应
+
+使用上面的交互式OpenAPI面板获取确切的模式。
+
+## 操作提示
+
+- 使用 `custom_id` 进行幂等的下游对账。
+- 仅在工作者完成批处理后，期待 `output_file_id` 和 `error_file_id`。
+- 批处理定价可能与同步定价不同，因为适用 `isBatchRequest=true` 的折扣规则。

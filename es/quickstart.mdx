@@ -1,0 +1,150 @@
+---
+title: "Inicio rápido"
+description: "Comienza con la API de AI Sonar en 2 minutos"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Paso 1: Empieza con créditos de prueba
+
+<Steps>
+  <Step title="Crear una cuenta">
+    Regístrate en [aisonar.dev](https://aisonar.dev) con tu correo, Gmail o cuenta de GitHub.
+  </Step>
+  <Step title="Usar los créditos de prueba incluidos">
+    Tu cuenta incluye créditos de prueba para las primeras solicitudes pequeñas. No necesitas agregar créditos antes del Quickstart.
+  </Step>
+  <Step title="Crear o copiar una clave de API">
+    Ve a **Dashboard → API Keys** y crea una nueva clave, o copia una existente. Guárdala de forma segura porque la clave completa solo se muestra una vez.
+  </Step>
+</Steps>
+
+<Warning>
+Mantén segura tu clave de API. Nunca la expongas en código del lado del cliente ni en repositorios públicos.
+</Warning>
+
+## Paso 2: Instalar un cliente
+
+<CodeGroup>
+
+```bash Python
+pip install openai
+```
+
+```bash JavaScript
+npm install openai
+```
+
+```bash Go
+go get github.com/openai/openai-go/v3
+```
+
+```bash PHP
+composer require openai-php/client
+```
+
+</CodeGroup>
+
+## Paso 3: Haz tu primera solicitud
+
+Para la mayoría de las nuevas integraciones, empieza con **Chat Completions** en `POST /v1/chat/completions`.
+
+<CodeGroup>
+
+```bash cURL
+curl https://api.aisonar.dev/v1/chat/completions \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.4",
+    "messages": [
+      {"role": "user", "content": "What is the capital of France?"}
+    ]
+  }'
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "What is the capital of France?"}]
+)
+
+print(response.choices[0].message.content)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.chat.completions.create({
+  model: 'gpt-5.4',
+  messages: [{ role: 'user', content: 'What is the capital of France?' }],
+});
+
+console.log(response.choices[0].message.content);
+```
+
+</CodeGroup>
+
+<Note>
+Usa `POST /v1/responses` solo cuando necesites explícitamente un comportamiento específico de Responses. Algunos campos exclusivos de Responses dependen del modelo seleccionado y de la ruta enrutada.
+</Note>
+
+## Agregar créditos para producción
+
+Los créditos de prueba incluidos son para los primeros tests pequeños. Agrega créditos en **Dashboard → Billing** solo cuando estés listo para uso en producción o pruebas de mayor volumen.
+
+## Probar diferentes modelos
+
+AI Sonar admite cientos de modelos. Cambia solo el campo `model`:
+
+```python
+response = client.chat.completions.create(model="gpt-5.4", messages=[{"role": "user", "content": "Hello"}])
+response = client.chat.completions.create(model="gpt-5-mini", messages=[{"role": "user", "content": "Hello"}])
+response = client.chat.completions.create(model="claude-sonnet-4-6", messages=[{"role": "user", "content": "Hello"}])
+response = client.chat.completions.create(model="gemini-2.5-flash", messages=[{"role": "user", "content": "Hello"}])
+response = client.chat.completions.create(model="deepseek-r1", messages=[{"role": "user", "content": "Hello"}])
+```
+
+## Habilitar streaming
+
+```python
+stream = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "Tell me a short story."}],
+    stream=True
+)
+
+for chunk in stream:
+    delta = chunk.choices[0].delta.content
+    if delta:
+        print(delta, end="")
+```
+
+## What’s Next?
+
+<CardGroup cols={2}>
+  <Card title="Autenticación" icon="key" href="/authentication">
+    Aprende sobre la gestión de claves de API y la seguridad.
+  </Card>
+  <Card title="OpenAI SDK" icon="code" href="/integrations/openai-sdk">
+    Usa rutas /v1 compatibles con OpenAI con SDKs OpenAI existentes.
+  </Card>
+  <Card title="Referencia de la API" icon="book" href="/api-reference/introduction">
+    Explora la referencia completa de puntos finales.
+  </Card>
+  <Card title="Modelos" icon="robot" href="https://aisonar.dev/models">
+    Consulta la disponibilidad actual de modelos y los precios.
+  </Card>
+</CardGroup>

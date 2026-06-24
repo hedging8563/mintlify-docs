@@ -1,0 +1,154 @@
+---
+title: "Giới hạn tốc độ"
+description: "Tìm hiểu và xử lý giới hạn tốc độ"
+---
+
+## Tổng quan
+
+AI Sonar triển khai giới hạn tốc độ để đảm bảo việc sử dụng công bằng và sự ổn định của nền tảng. Giới hạn sẽ khác nhau tùy theo cấp tài khoản.
+
+## Các cấp giới hạn tốc độ
+
+| Cấp | Yêu cầu/phút | Mô tả |
+|------|-------------|-------------|
+| **User** | 1,000 | Cấp mặc định cho tất cả tài khoản |
+| **Partner** | 3,000 | Dành cho đối tác tích hợp |
+| **VIP** | 10,000 | Người dùng có khối lượng sử dụng cao |
+
+<Note>
+  Giới hạn tốc độ có thể thay đổi. Liên hệ support@aisonar.dev để yêu cầu giới hạn tùy chỉnh.
+</Note>
+
+## Phản hồi giới hạn tốc độ
+
+Khi bạn vượt quá giới hạn tốc độ, API sẽ trả về mã trạng thái `429` cùng với header `Retry-After` cho biết cần chờ bao lâu trước khi thử lại.
+
+## Vượt quá giới hạn tốc độ
+
+Khi bạn vượt quá giới hạn, bạn sẽ nhận được phản hồi `429`:
+
+```json
+{
+  "error": {
+    "message": "Rate limit exceeded. Please retry later.",
+    "type": "rate_limit_exceeded",
+    "code": "rate_limit_exceeded"
+  }
+}
+```
+
+Phản hồi bao gồm header `Retry-After`:
+```
+Retry-After: 60  # Seconds to wait before retrying
+```
+
+## Xử lý giới hạn tốc độ
+
+### Backoff theo hàm mũ
+
+Triển khai exponential backoff cho các lần thử lại tự động:
+
+```python
+import time
+from openai import OpenAI, RateLimitError
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+def make_request_with_backoff(messages, max_retries=5):
+    for attempt in range(max_retries):
+        try:
+            return client.chat.completions.create(
+                model="gpt-4o",
+                messages=messages
+            )
+        except RateLimitError as e:
+            if attempt == max_retries - 1:
+                raise
+
+            wait_time = 2 ** attempt  # 1, 2, 4, 8, 16 seconds
+            print(f"Rate limited. Waiting {wait_time}s...")
+            time.sleep(wait_time)
+```
+
+### Xếp hàng yêu cầu
+
+Đối với các ứng dụng có khối lượng lớn, hãy triển khai hàng đợi yêu cầu:
+
+```python
+import asyncio
+from collections import deque
+
+class RateLimitedClient:
+    def __init__(self, requests_per_minute=60):
+        self.rpm = requests_per_minute
+        self.interval = 60 / requests_per_minute
+        self.last_request = 0
+
+    async def request(self, messages):
+        # Wait if needed to respect rate limit
+        now = asyncio.get_event_loop().time()
+        wait_time = max(0, self.last_request + self.interval - now)
+        if wait_time > 0:
+            await asyncio.sleep(wait_time)
+
+        self.last_request = asyncio.get_event_loop().time()
+        return await self.client.chat.completions.create(
+            model="gpt-4o",
+            messages=messages
+        )
+```
+
+### Xử lý theo lô
+
+Đối với các thao tác hàng loạt, hãy xử lý theo lô với khoảng trễ:
+
+```python
+def process_batch(items, batch_size=50, delay=1):
+    results = []
+    for i in range(0, len(items), batch_size):
+        batch = items[i:i + batch_size]
+        for item in batch:
+            result = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[{"role": "user", "content": item}]
+            )
+            results.append(result)
+        time.sleep(delay)  # Pause between batches
+    return results
+```
+
+## Các phương pháp tốt nhất
+
+<AccordionGroup>
+  <Accordion title="Theo dõi mức sử dụng của bạn">
+    Theo dõi các header giới hạn tốc độ để chủ động duy trì dưới ngưỡng giới hạn.
+  </Accordion>
+
+  <Accordion title="Triển khai caching">
+    Cache phản hồi cho các yêu cầu giống hệt nhau để giảm số lần gọi API.
+  </Accordion>
+
+  <Accordion title="Sử dụng model phù hợp">
+    Các model nhanh hơn (như gpt-5-mini) cho phép thông lượng cao hơn.
+  </Accordion>
+
+  <Accordion title="Liên hệ với chúng tôi để có giới hạn cao hơn">
+    Nếu bạn cần giới hạn cao hơn, hãy liên hệ support@aisonar.dev.
+  </Accordion>
+</AccordionGroup>
+
+## Nâng cấp cấp của bạn
+
+Để yêu cầu nâng cấp cấp:
+
+1. Đăng nhập vào [Dashboard](https://console.aisonar.dev) của bạn
+2. Đi tới **Settings → Account**
+3. Liên hệ bộ phận hỗ trợ kèm theo trường hợp sử dụng của bạn
+
+Hoặc gửi email tới support@aisonar.dev với:
+- Email tài khoản của bạn
+- Khối lượng yêu cầu dự kiến
+- Mô tả trường hợp sử dụng

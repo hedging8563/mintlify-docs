@@ -1,0 +1,154 @@
+---
+title: "حدود المعدل"
+description: "فهم حدود المعدل وكيفية التعامل معها"
+---
+
+## نظرة عامة
+
+تُطبّق AI Sonar حدود المعدل لضمان الاستخدام العادل واستقرار المنصة. تختلف الحدود حسب فئة الحساب.
+
+## فئات حدود المعدل
+
+| الفئة | الطلبات/دقيقة | الوصف |
+|------|-------------|-------------|
+| **User** | 1,000 | الفئة الافتراضية لجميع الحسابات |
+| **Partner** | 3,000 | لشركاء التكامل |
+| **VIP** | 10,000 | للمستخدمين ذوي الحجم المرتفع |
+
+<Note>
+  حدود المعدل عرضة للتغيير. تواصل مع support@aisonar.dev للحصول على حدود مخصصة.
+</Note>
+
+## استجابة حدود المعدل
+
+عند تجاوز حد المعدل، يعيد الـ API رمز الحالة `429` مع ترويسة `Retry-After` التي تشير إلى المدة التي يجب انتظارها قبل إعادة المحاولة.
+
+## تم تجاوز حد المعدل
+
+عند تجاوز الحد، ستتلقى استجابة `429`:
+
+```json
+{
+  "error": {
+    "message": "Rate limit exceeded. Please retry later.",
+    "type": "rate_limit_exceeded",
+    "code": "rate_limit_exceeded"
+  }
+}
+```
+
+تتضمن الاستجابة ترويسة `Retry-After`:
+```
+Retry-After: 60  # Seconds to wait before retrying
+```
+
+## التعامل مع حدود المعدل
+
+### التراجع الأُسّي
+
+نفّذ التراجع الأُسّي لإعادة المحاولة التلقائية:
+
+```python
+import time
+from openai import OpenAI, RateLimitError
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+def make_request_with_backoff(messages, max_retries=5):
+    for attempt in range(max_retries):
+        try:
+            return client.chat.completions.create(
+                model="gpt-4o",
+                messages=messages
+            )
+        except RateLimitError as e:
+            if attempt == max_retries - 1:
+                raise
+
+            wait_time = 2 ** attempt  # 1, 2, 4, 8, 16 seconds
+            print(f"Rate limited. Waiting {wait_time}s...")
+            time.sleep(wait_time)
+```
+
+### وضع الطلبات في قائمة انتظار
+
+بالنسبة للتطبيقات ذات الحجم المرتفع، نفّذ قائمة انتظار للطلبات:
+
+```python
+import asyncio
+from collections import deque
+
+class RateLimitedClient:
+    def __init__(self, requests_per_minute=60):
+        self.rpm = requests_per_minute
+        self.interval = 60 / requests_per_minute
+        self.last_request = 0
+
+    async def request(self, messages):
+        # Wait if needed to respect rate limit
+        now = asyncio.get_event_loop().time()
+        wait_time = max(0, self.last_request + self.interval - now)
+        if wait_time > 0:
+            await asyncio.sleep(wait_time)
+
+        self.last_request = asyncio.get_event_loop().time()
+        return await self.client.chat.completions.create(
+            model="gpt-4o",
+            messages=messages
+        )
+```
+
+### المعالجة على دفعات
+
+بالنسبة للعمليات المجمعة، قم بالمعالجة على دفعات مع فواصل زمنية:
+
+```python
+def process_batch(items, batch_size=50, delay=1):
+    results = []
+    for i in range(0, len(items), batch_size):
+        batch = items[i:i + batch_size]
+        for item in batch:
+            result = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[{"role": "user", "content": item}]
+            )
+            results.append(result)
+        time.sleep(delay)  # Pause between batches
+    return results
+```
+
+## أفضل الممارسات
+
+<AccordionGroup>
+  <Accordion title="راقب استخدامك">
+    تتبّع ترويسات حدود المعدل للبقاء ضمن الحدود بشكل استباقي.
+  </Accordion>
+
+  <Accordion title="نفّذ التخزين المؤقت">
+    خزّن الاستجابات مؤقتًا للطلبات المتطابقة لتقليل استدعاءات API.
+  </Accordion>
+
+  <Accordion title="استخدم النماذج المناسبة">
+    النماذج الأسرع (مثل gpt-5-mini) تتيح معدل تمرير أعلى.
+  </Accordion>
+
+  <Accordion title="تواصل معنا للحصول على حدود أعلى">
+    إذا كنت بحاجة إلى حدود أعلى، تواصل مع support@aisonar.dev.
+  </Accordion>
+</AccordionGroup>
+
+## ترقية فئتك
+
+لطلب ترقية الفئة:
+
+1. سجّل الدخول إلى [Dashboard](https://console.aisonar.dev)
+2. انتقل إلى **Settings → Account**
+3. تواصل مع الدعم موضحًا حالة الاستخدام الخاصة بك
+
+أو أرسل بريدًا إلكترونيًا إلى support@aisonar.dev يتضمن:
+- البريد الإلكتروني لحسابك
+- الحجم المتوقع للطلبات
+- وصف حالة الاستخدام

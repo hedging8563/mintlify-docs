@@ -1,0 +1,150 @@
+---
+title: "✨ Upstream Prompt Cache"
+description: "Understand provider-level prompt caching and how it reduces costs"
+---
+
+## Overview
+
+## How Provider Prompt Cache Works
+
+Provider prompt caching stores the processed representation of your prompt prefix on the provider's servers. When you send a request with the same prefix, the provider can skip reprocessing those tokens.
+
+### Key Characteristics
+
+- **Prefix-based**: Only the beginning of your prompt can be cached
+- **Exact match**: Requires identical tokens (not semantic similarity)
+- **Time-limited**: Cache entries expire (typically 5-60 minutes)
+- **Automatic**: No special configuration needed
+
+```
+Request 1: [System prompt + Context A + Question 1]
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+           This prefix gets cached
+
+Request 2: [System prompt + Context A + Question 2]
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+           Cache hit! Only Question 2 is processed
+```
+
+## Supported Providers
+
+| Provider | Cache Read Discount | Cache Write Cost | Min Tokens |
+|----------|---------------------|------------------|------------|
+| **Anthropic** | 90% off | 25% premium | 1024 |
+| **OpenAI** | 50% off | Same as input | 1024 |
+| **DeepSeek** | 90% off | Same as input | 64 |
+| **Google** | 75% off | 25% premium | 32768 |
+
+<Info>
+Discounts are applied automatically. AI Sonar passes through the provider's cache pricing to you.
+</Info>
+
+## Identifying Cache Usage
+
+### In Usage Logs
+
+Your usage logs show detailed cache token breakdown:
+
+| Field | Description |
+|-------|-------------|
+| `cacheReadTokens` | Tokens served from provider cache (discounted) |
+| `cacheWriteTokens` | Tokens written to cache (for future requests) |
+| `nonCachedPromptTokens` | Tokens processed without cache |
+
+### In Transactions
+
+Transactions show a **Provider Cache** label when upstream caching was used:
+
+- **Provider Cache** (teal): Upstream prompt cache hit - discounted rates
+
+## Cost Calculation Example
+
+For a request with 10,000 input tokens to Claude (Anthropic):
+
+**Without cache:**
+```
+10,000 tokens × $3.00/1M = $0.030
+```
+
+**With provider cache (8,000 cached + 2,000 new):**
+```
+Cache read:  8,000 tokens × $0.30/1M = $0.0024  (90% off)
+Cache write: 2,000 tokens × $3.75/1M = $0.0075  (25% premium)
+Total: $0.0099 (67% savings)
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use consistent system prompts">
+    Place your system prompt and static context at the beginning of your messages. This maximizes cache hit potential.
+  </Accordion>
+
+  <Accordion title="Batch similar requests">
+    Send requests with the same prefix close together in time to benefit from cache before it expires.
+  </Accordion>
+
+  <Accordion title="Meet minimum token requirements">
+    Ensure your cacheable prefix meets the provider's minimum (e.g., 1024 tokens for Anthropic/OpenAI).
+  </Accordion>
+
+  <Accordion title="Monitor cache metrics">
+    Check your dashboard usage statistics for cache hit rates and savings.
+  </Accordion>
+</AccordionGroup>
+
+## Checking Cache Status
+
+### Response Headers
+
+```
+X-Upstream-Cache-Read: 8000   # Provider cache read tokens
+X-Upstream-Cache-Write: 2000  # Provider cache write tokens
+```
+
+### Usage API
+
+Usage logs API is not public yet. Check cache breakdown via response headers and the dashboard:
+
+```text
+GET /v1/usage/logs is currently not a public endpoint.
+Use X-Upstream-Cache-* response headers, plus the dashboard usage page.
+```
+
+Response includes:
+```json
+{
+  "promptTokens": 10000,
+  "cacheReadTokens": 8000,
+  "cacheWriteTokens": 2000,
+  "nonCachedPromptTokens": 0,
+  "completionTokens": 500,
+  "cost": 0.0099
+}
+```
+
+## FAQ
+
+<AccordionGroup>
+  <Accordion title="Can I disable provider caching?">
+    Provider caching is automatic and cannot be disabled. However, it only benefits you (lower costs), so there's no reason to disable it.
+  </Accordion>
+
+  <Accordion title="Why didn't my request hit provider cache?">
+    Common reasons:
+    - Prefix changed (even one token difference)
+    - Cache expired (typically 5-60 minutes)
+    - Prefix too short (below minimum tokens)
+    - Different API key used
+  </Accordion>
+
+  <Accordion title="Does BYOK support provider caching?">
+    Yes! When using your own API keys (BYOK), provider caching works the same way. The cache is tied to your upstream API key.
+  </Accordion>
+
+  <Accordion title="How do I maximize cache savings?">
+    1. Structure prompts with static content first
+    2. Keep system prompts consistent across requests
+    3. Send related requests in quick succession
+  </Accordion>
+</AccordionGroup>

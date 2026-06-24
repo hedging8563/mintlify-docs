@@ -1,0 +1,44 @@
+---
+title: "Obtener uso de API Key"
+openapi: "GET /v1/management/api-keys/{keyId}/usage"
+description: "Devuelve el detalle de uso paginado para una API Key de usuario."
+---
+
+## Resumen
+
+Este endpoint devuelve el detalle de uso por API Key sin exponer metadata de routing físico.
+
+## Parámetros de consulta
+
+| Parámetro | Tipo | Valores por defecto / límites | Descripción |
+|-----------|------|-------------------------------|-------------|
+| `page` | integer | valor por defecto `1`, mínimo `1` | Número de página empezando en 1 |
+| `limit` | integer | valor por defecto `50`, mínimo `1`, máximo `100` | Tamaño de página |
+| `logicalModel` | string | longitud máxima `100` | Nombre del modelo lógico solicitado |
+| `modelVendor` | string | longitud máxima `100` | Proveedor público del modelo |
+| `scene` | enum | - | `chat`, `image`, `audio`, `video`, `embedding`, `rerank`, `translation`, `music`, `3d` |
+| `accessChannel` | enum | - | `platform` o `byok` |
+| `startDate` | string | - | Límite inferior inclusivo; acepta RFC3339 con zona horaria o `YYYY-MM-DD` |
+| `endDate` | string | - | Límite superior inclusivo; acepta RFC3339 con zona horaria o `YYYY-MM-DD` |
+
+Si `startDate` y `endDate` se envían a la vez, `startDate` debe ser anterior o igual a `endDate`.
+
+## Notas
+
+- La respuesta está paginada.
+- La respuesta solo incluye campos públicos de facturación y reporting.
+- Cada registro de uso también puede incluir `billing_transaction_id` una vez que la solicitud subyacente haya quedado liquidada. Úsalo junto con `request_id` para la conciliación a nivel de solicitud.
+- La metadata de routing interno y de canales físicos permanece oculta de forma intencional.
+
+## Ejemplo
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/usage?page=1&limit=20&scene=video&accessChannel=platform&startDate=2026-03-01&endDate=2026-03-31" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## Solicitud / Respuesta
+
+Consulta el panel interactivo de OpenAPI de arriba para ver el esquema exacto y los campos de la respuesta.

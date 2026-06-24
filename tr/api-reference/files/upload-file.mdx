@@ -1,0 +1,53 @@
+---
+title: "Dosya Yükle"
+openapi: "POST /v1/files"
+description: "Sonraki toplu oluşturma için bir JSONL toplu giriş dosyası yükler."
+---
+
+## Genel Bakış
+
+Bu uç nokta, AI Sonar'nın OpenAI uyumlu Toplu API'sinin bir parçasıdır. Toplu işler, yüklenen JSONL dosyalarını kullanır, asenkron olarak çalışır ve daha sonra çıktı/hata dosyaları döndürebilir.
+
+## Notlar
+
+- Toplu giriş dosyaları `purpose=batch` kullanmalıdır.
+- `completion_window` şu anda `24h`'dir.
+- Çıktı sıralaması garanti edilmez; her zaman `custom_id` ile eşleştirin.
+- Toplu öğeler içinde akış desteği yoktur.
+
+## Örnek
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/files" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F "purpose=batch" \
+  -F "file=@batch-input.jsonl;type=application/jsonl"
+```
+</RequestExample>
+
+## İstek / Yanıt
+
+Tam şema için yukarıdaki etkileşimli OpenAPI panelini kullanın.
+
+## Operasyonel İpuçları
+
+- İdempotent aşağı akış uzlaşması için `custom_id` kullanın.
+- Çalışan toplu işlemi tamamladıktan sonra yalnızca `output_file_id` ve `error_file_id` bekleyin.
+- Toplu fiyatlandırma, `isBatchRequest=true` indirim kuralları uygulandığı için senkron fiyatlandırmadan farklı olabilir.
+## Görüntü dosyası girişleri
+
+Aynı `/v1/files` rotası `/v1/images/edits` için görüntü referans dosyaları da yükleyebilir.
+
+- `purpose=user_data` veya `purpose=vision` kullanın.
+- Görüntü düzenleme modelini seçmek için isteğe bağlı olarak `model` ekleyin; varsayılan `gpt-image-2` değeridir.
+- Dönen `file_id`, seçilen upstream görüntü düzenleme kanalına bağlanır ve `images[].file_id` içinde yeniden kullanılabilir.
+
+## Anthropic Files API Modu
+
+Bu aynı `/v1/files` rotası, Anthropic Files API yolunu da destekler.
+
+- Anthropic moduna geçmek için `anthropic-beta: files-api-2025-04-14` başlığını ekleyin.
+- Anthropic modunda orijinal dosyayı doğrudan yükleyin ve `purpose=batch` göndermeyin.
+- Dönen `file_id`, aynı resmi Anthropic kanalına/çalışma alanına bağlanır ve sonraki `/v1/messages` isteklerinde yeniden kullanılmalıdır.
+- Bu dosyaya Anthropic mesaj içeriğinde referans verecekseniz Anthropic yerel başlıklarını (`x-api-key`, `anthropic-version` ve gerektiğinde beta header) kullanmaya devam edin.

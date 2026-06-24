@@ -1,0 +1,153 @@
+---
+title: "取得模型"
+openapi: "GET /v1/models/{model}"
+description: "擷取模型實例"
+---
+
+## 路徑參數
+
+<ParamField path="model" type="string" required>
+  要擷取的模型 ID（例如：`gpt-5.4`、`claude-sonnet-4-6`）。
+</ParamField>
+
+## 回應
+
+<ResponseField name="id" type="string">
+  模型識別碼。
+</ResponseField>
+
+<ResponseField name="object" type="string">
+  一律為 `model`。
+</ResponseField>
+
+<ResponseField name="created" type="integer">
+  建立時間戳。
+</ResponseField>
+
+<ResponseField name="owned_by" type="string">
+  模型提供者。
+</ResponseField>
+
+<ResponseField name="aisonar" type="object">
+  AI Sonar 專屬的公開中繼資料。詳情路由可包含 `category`、`pricing_unit`、`capability_flags`、`supported_operations`、`pricing_provenance`、`public_contract_summary`、完整的 `public_contract`，以及非聊天推薦快照的場景級 `agent_preferences`。
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/models/gpt-5.4" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+model = client.models.retrieve("gpt-5.4")
+print(f"Model: {model.id}, Provider: {model.owned_by}")
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const model = await client.models.retrieve('gpt-5.4');
+console.log(`Model: ${model.id}, Provider: ${model.owned_by}`);
+```
+
+```go Go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "net/http"
+)
+
+func main() {
+    req, _ := http.NewRequest("GET", "https://api.aisonar.dev/v1/models/gpt-5.4", nil)
+    req.Header.Set("Authorization", "Bearer sk-your-api-key")
+
+    resp, _ := http.DefaultClient.Do(req)
+    defer resp.Body.Close()
+
+    var model map[string]interface{}
+    json.NewDecoder(resp.Body).Decode(&model)
+    fmt.Printf("Model: %s, Provider: %s\n", model["id"], model["owned_by"])
+}
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/models/gpt-5.4');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer sk-your-api-key'
+    ]
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$model = json_decode($response, true);
+echo "Model: {$model['id']}, Provider: {$model['owned_by']}\n";
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "id": "gpt-5.4",
+  "object": "model",
+  "created": 1706000000,
+  "owned_by": "openai"
+}
+```
+</ResponseExample>
+
+## 非聊天推薦中繼資料
+
+對於非聊天模型，詳情路由還會回傳 `aisonar.agent_preferences.<scene>`。
+
+可用來查看：
+
+- `preferred_rank`
+- `success_rate_24h`
+- `sample_count_24h`
+- `status`
+- `updated_at`
+
+公開回應會刻意將 `basis.channel_id` 和 `basis.physical_model` 保持為 `null`，讓 agent 可以消費推薦訊號，但不會看到內部路由識別符。
+
+## 公開詳情中繼資料
+
+與 `GET /v1/models` 相比，詳情路由還可以額外回傳：
+
+- `aisonar.capability_flags`
+- `aisonar.supported_operations`
+- `aisonar.pricing_provenance`
+- `aisonar.public_contract_summary`
+- `aisonar.public_contract`
+
+## 錯誤處理
+
+如果模型不存在，您將收到 404 錯誤：
+
+```json
+{
+  "error": {
+    "message": "Model 'invalid-model' not found",
+    "type": "invalid_request_error",
+    "code": "model_not_found"
+  }
+}
+```

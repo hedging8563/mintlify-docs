@@ -1,0 +1,54 @@
+---
+title: "Realtime WebSocket"
+openapi: "GET /v1/realtime"
+description: "Hubungkan sesi suara dan multimodal realtime melalui WebSocket"
+---
+
+## Ikhtisar
+
+Endpoint ini digunakan untuk pengenalan suara, sintesis suara, terjemahan suara, atau model multimodal realtime. Permintaan `GET` biasa mengembalikan metadata; upgrade WebSocket diproksikan ke sesi upstream realtime yang dirutekan.
+
+<Note>Agent sebaiknya menemukan model yang mendukung realtime melalui `/v1/models` sebelum membuka socket.</Note>
+
+## Koneksi
+
+<ParamField query="model" type="string" required>
+  ID model realtime. Gunakan model yang kontrak publiknya mencantumkan dukungan realtime.
+</ParamField>
+
+<ParamField header="Authorization" type="string" required>
+  API key Bearer. Client WebSocket harus mengirim `Authorization: Bearer sk-your-api-key` saat upgrade request.
+</ParamField>
+
+<RequestExample>
+```javascript JavaScript
+import WebSocket from 'ws';
+
+const socket = new WebSocket('wss://api.aisonar.dev/v1/realtime?model=qwen-tts-realtime', {
+  headers: { Authorization: 'Bearer sk-your-api-key' }
+});
+
+socket.on('open', () => {
+  socket.send(JSON.stringify({ type: 'session.start' }));
+});
+
+socket.on('message', (data) => {
+  console.log('realtime event', data.toString());
+});
+```
+
+```bash cURL
+curl "https://api.aisonar.dev/v1/realtime" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+## Pesan
+
+AI Sonar meneruskan pesan WebSocket antara client dan penyedia realtime yang dirutekan. Pertahankan bentuk event resmi model yang dipilih dan kirim `model` di query string.
+
+## Penagihan dan penutupan
+
+Sesi realtime memakai saldo API key yang sama. AI Sonar melakukan pre-deduct kecil saat socket dibuka, lalu melakukan settlement atau refund saat sesi ditutup.
+
+Tutup socket client saat sesi selesai. Jika upstream menutup lebih dulu, AI Sonar meneruskan close code bila memungkinkan.

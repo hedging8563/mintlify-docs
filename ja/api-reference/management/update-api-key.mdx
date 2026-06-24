@@ -1,0 +1,47 @@
+---
+title: "API Key を更新"
+openapi: "PATCH /v1/management/api-keys/{keyId}"
+description: "現在の組織にある既存ユーザー API Key を更新します。"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## 概要
+
+この endpoint では、既存 API Key の名前、利用上限、許可モデル、有効期限、状態を更新できます。
+
+## リクエストボディ
+
+PATCH リクエストでは少なくとも 1 つのフィールドを指定する必要があります。
+
+| フィールド | 型 | 既定値 / 制約 | 説明 |
+|-----------|------|---------------|------|
+| `status` | enum | - | `active`、`inactive`、`suspended`、`revoked` |
+| `name` | string | 長さ `1-50` | 更新後の表示名 |
+| `limitAmount` | number \| null | 最小 `0`、入力上限 `1000000` | `null` = 無制限、`0` = 利用可能額 0、正の値は保存時に正規化され、`100000` USD 相当を超えません |
+| `limitCurrency` | enum | 既定 `USD` | USD のみです。`CNY` を送信すると `400 currency_retired` が返されます。 |
+| `models` | string[] | - | 更新後の論理モデル許可リスト |
+| `expiresAt` | string \| null | RFC3339 datetime | `null` は有効期限を解除します |
+
+## 補足
+
+- Management API v1 ではハード削除は意図的にサポートしていません。
+- `revoked` は通常終端状態として扱われます。再度キーが必要な場合は、新しいキーを作成するのが一般的です。
+
+## 例
+
+<RequestExample>
+```bash cURL
+curl -X PATCH "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456" \
+  -H "Authorization: Bearer mt-your-management-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "inactive",
+    "limitAmount": 0
+  }'
+```
+</RequestExample>
+
+## リクエスト / レスポンス
+
+正確な schema とレスポンス項目は、上部のインタラクティブな OpenAPI パネルを参照してください。

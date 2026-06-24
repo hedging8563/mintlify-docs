@@ -1,0 +1,158 @@
+---
+title: "Applications de chat IA"
+description: "Configurez des applications de chat IA populaires pour utiliser l'API compatible OpenAI de AI Sonar"
+---
+
+## Vue d'ensemble
+
+La plupart des applications de chat IA générales se connectent à AI Sonar via le chemin de chat standard compatible OpenAI.
+
+En pratique, cela signifie :
+- utiliser `https://api.aisonar.dev/v1` comme URL de base, sauf si l'application demande explicitement une URL de point de terminaison complète
+- utiliser votre clé API AI Sonar comme clé API au format OpenAI
+- choisir des modèles que l'application peut utiliser dans un flux de travail de chat standard
+
+<Note>
+Les applications de chat générales sont généralement **orientées chat-completions**, et non des clients WebSocket Codex Responses. Pour Codex CLI/App, Cursor ou d'autres outils de programmation nécessitant un comportement spécifique à Responses, utilisez plutôt les guides d'intégration dédiés.
+</Note>
+
+## Applications prises en charge
+
+| Application | Plateforme | Notes |
+|-------------|----------|-------|
+| Open WebUI | Web, auto-hébergé | Client auto-hébergé populaire avec connexions compatibles OpenAI |
+| LibreChat | Web, auto-hébergé | Interface de chat multi-fournisseur compatible avec des points de terminaison OpenAI personnalisés |
+| LobeChat | Web, Desktop, auto-hébergé | Bonne prise en charge des fournisseurs personnalisés |
+| Cherry Studio | Windows, macOS, Linux | Bon flux de fournisseur compatible OpenAI |
+| Chatbox | Windows, macOS, Linux | Configuration simple compatible OpenAI |
+| TypingMind | Web, Desktop | Utilise un style de point de terminaison personnalisé |
+| NextChat | Web, auto-hébergé | Client léger de style ChatGPT avec remplacement de l'URL de base |
+| ChatWise | Windows, macOS | Modèle standard de fournisseur personnalisé |
+
+## Valeurs de connexion par défaut
+
+| Champ | Valeur |
+|-------|-------|
+| URL de base | `https://api.aisonar.dev/v1` |
+| Clé API | `sk-your-api-key` |
+| Type d'API | Compatible OpenAI |
+
+Si une application demande une **URL de point de terminaison complète** au lieu d'une URL de base, utilisez :
+- Chat Completions : `https://api.aisonar.dev/v1/chat/completions`
+
+## Exemples de configuration d'application
+
+<Tabs>
+  <Tab title="LobeChat">
+    **LobeChat auto-hébergé**
+
+    ```bash
+    OPENAI_API_KEY=sk-your-api-key
+    OPENAI_PROXY_URL=https://api.aisonar.dev/v1
+    ```
+
+    **LobeChat Cloud**
+    1. Ouvrez **Settings** → **AI Service Provider**
+    2. Sélectionnez **OpenAI**
+    3. Saisissez votre clé API AI Sonar
+    4. Définissez le point de terminaison personnalisé sur `https://api.aisonar.dev/v1`
+  </Tab>
+
+  <Tab title="Cherry Studio">
+    1. Ouvrez **Settings** → **Model Provider**
+    2. Ajoutez un fournisseur **compatible OpenAI**
+    3. Saisissez :
+       - **Name**: AI Sonar
+       - **API Base URL**: `https://api.aisonar.dev/v1`
+       - **API Key**: `sk-your-api-key`
+    4. Ajoutez les modèles que vous souhaitez utiliser
+  </Tab>
+
+  <Tab title="Chatbox">
+    1. Ouvrez **Settings** → **AI Model**
+    2. Choisissez **OpenAI API Compatible**
+    3. Saisissez :
+       - **API Host**: `https://api.aisonar.dev/v1`
+       - **API Key**: `sk-your-api-key`
+       - **Modèle** : `gpt-5-mini` ou `gpt-4o`
+  </Tab>
+
+  <Tab title="TypingMind">
+    1. Ouvrez **Settings**
+    2. Choisissez **Custom Endpoint**
+    3. Saisissez :
+       - **Endpoint URL**: `https://api.aisonar.dev/v1/chat/completions`
+       - **API Key**: `sk-your-api-key`
+    4. Configurez les modèles que vous souhaitez exposer
+  </Tab>
+
+  <Tab title="Open WebUI">
+    1. Ouvrez **Admin Settings** → **Connections**
+    2. Ajoutez une connexion **compatible OpenAI**
+    3. Saisissez :
+       - **Base URL**: `https://api.aisonar.dev/v1`
+       - **API Key**: `sk-your-api-key`
+    4. Enregistrez puis sélectionnez les modèles à exposer
+  </Tab>
+
+  <Tab title="LibreChat">
+    Ajoutez un point de terminaison compatible OpenAI dans la configuration du fournisseur LibreChat et pointez-le vers :
+
+    ```yaml
+    customEndpoints:
+      - name: AI Sonar
+        apiKey: '${OPENAI_API_KEY}'
+        baseURL: 'https://api.aisonar.dev/v1'
+        models:
+          default: ['gpt-5-mini', 'gpt-5.4', 'claude-sonnet-4-6']
+          fetch: false
+    ```
+  </Tab>
+</Tabs>
+
+## Modèles par défaut plus sûrs
+
+| Catégorie | Modèles suggérés |
+|----------|------------------|
+| Par défaut général | `gpt-5.4`, `gpt-5-mini`, `gpt-4o` |
+| Anthropic | `claude-sonnet-4-6`, `claude-opus-4-6` |
+| Google | `gemini-2.5-flash`, `gemini-2.5-pro` |
+| DeepSeek | `deepseek-r1`, `deepseek-v3-2` |
+
+## Conseils
+
+<AccordionGroup>
+  <Accordion title="Préférez l'URL de base lorsque l'application la prend en charge">
+    La plupart des applications sont plus faciles à configurer et moins fragiles lorsque vous fournissez `https://api.aisonar.dev/v1` comme URL de base au lieu d'une URL de point de terminaison complète.
+  </Accordion>
+
+  <Accordion title="Utilisez d'abord des modèles plus petits">
+    Commencez avec `gpt-5-mini` ou `gpt-4o` pour le chat quotidien, puis passez les tâches de raisonnement plus lourdes à `gpt-5.4` ou `claude-opus-4-6`.
+  </Accordion>
+
+  <Accordion title="Séparez les outils de programmation">
+    Les applications de chat générales et les agents de programmation ont souvent besoin d'un comportement de point de terminaison différent. Gardez les outils de type Codex/Cursor sur leurs pages d'intégration dédiées.
+  </Accordion>
+</AccordionGroup>
+
+## Dépannage
+
+<AccordionGroup>
+  <Accordion title="Erreur de connexion">
+    - Vérifiez que l'URL de base est exactement `https://api.aisonar.dev/v1`
+    - Supprimez les barres obliques finales si l'application ajoute automatiquement des chemins
+    - Si l'application demande une URL de point de terminaison complète, utilisez `https://api.aisonar.dev/v1/chat/completions`
+  </Accordion>
+
+  <Accordion title="401 Non autorisé">
+    - Vérifiez à nouveau votre clé API
+    - Confirmez que la clé est active dans le dashboard AI Sonar
+    - Assurez-vous qu'il n'y a pas d'espaces ou de retours à la ligne supplémentaires
+  </Accordion>
+
+  <Accordion title="Modèle non disponible">
+    - Vérifiez exactement le nom du modèle
+    - Essayez une valeur par défaut largement prise en charge comme `gpt-5-mini`, `gpt-4o` ou `claude-sonnet-4-6`
+    - Vérifiez la disponibilité actuelle dans la documentation ou le dashboard AI Sonar
+  </Accordion>
+</AccordionGroup>

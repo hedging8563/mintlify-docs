@@ -1,0 +1,44 @@
+---
+title: "API-Key-Nutzung abrufen"
+openapi: "GET /v1/management/api-keys/{keyId}/usage"
+description: "Gibt paginierte Nutzungsdetails für einen Benutzer-API-Key zurück."
+---
+
+## Überblick
+
+Dieser Endpunkt gibt Nutzungsdetails auf API-Key-Ebene zurück, ohne physische Routing-Metadaten offenzulegen.
+
+## Query-Parameter
+
+| Parameter | Typ | Standard / Grenzen | Beschreibung |
+|-----------|-----|--------------------|--------------|
+| `page` | integer | Standard `1`, min. `1` | Seitennummer ab 1 |
+| `limit` | integer | Standard `50`, min. `1`, max. `100` | Anzahl Einträge pro Seite |
+| `logicalModel` | string | max. Länge `100` | Angeforderter Name des logischen Modells |
+| `modelVendor` | string | max. Länge `100` | Öffentlicher Modellanbieter |
+| `scene` | enum | - | `chat`, `image`, `audio`, `video`, `embedding`, `rerank`, `translation`, `music`, `3d` |
+| `accessChannel` | enum | - | `platform` oder `byok` |
+| `startDate` | string | - | Inklusive Untergrenze; akzeptiert RFC3339 mit Zeitzone oder `YYYY-MM-DD` |
+| `endDate` | string | - | Inklusive Obergrenze; akzeptiert RFC3339 mit Zeitzone oder `YYYY-MM-DD` |
+
+Wenn `startDate` und `endDate` zusammen angegeben werden, muss `startDate` kleiner oder gleich `endDate` sein.
+
+## Hinweise
+
+- Die Antwort ist paginiert.
+- Die Antwort enthält nur öffentliche Reporting- und Billing-Felder.
+- Sobald die zugrunde liegende Anfrage abgerechnet wurde, kann jede Usage-Zeile zusätzlich `billing_transaction_id` enthalten. Verwenden Sie den Wert zusammen mit `request_id` für den Abgleich auf Anfrageebene.
+- Interne Routing- und physische Kanalmetadaten werden ausgeblendet.
+
+## Beispiel
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/usage?page=1&limit=20&scene=video&accessChannel=platform&startDate=2026-03-01&endDate=2026-03-31" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## Anfrage / Antwort
+
+Verwenden Sie das interaktive OpenAPI-Panel oben für das genaue Schema und die Response-Felder.

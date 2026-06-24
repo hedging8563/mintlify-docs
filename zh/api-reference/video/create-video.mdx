@@ -1,0 +1,448 @@
+---
+title: "创建视频"
+openapi: "POST /v1/videos/generations"
+description: "创建一个视频生成任务"
+---
+
+## 概述
+
+视频生成是异步的。你提交请求后，会收到一个任务 ID 和 `poll_url`，然后通过轮询获取结果。
+
+### 轮询行为
+
+创建响应会返回规范异步标识 `id`，并通常同时回传 `task_id`。请优先轮询 `poll_url`；如果需要固定状态入口，请使用 `GET /v1/tasks/{id}`。
+
+如果创建响应返回 `poll_url`，请直接使用该 URL。若它指向 `/v1/tasks/{id}`，请将其视为规范的固定状态查询入口。
+
+为了获得最可靠的轮询行为，请严格使用创建请求返回的 `poll_url`。
+
+### 模型与媒体行为
+
+音频输出是否开启取决于具体模型。在 AI Sonar 中，Veo 3 家族在省略 `output_audio` 时默认按开启音频处理；当模型支持音频控制时，可通过 `output_audio` 显式切换。为了兼容历史请求，也接受 camelCase 别名 `outputAudio`。
+
+生产集成中，建议优先使用公网可访问的 `https` URL 作为图片、视频和音频输入。兼容模型仍支持内联 `data:` URL，但大体积 base64 在重试、观测和排障时通常更不友好。
+
+## 请求体
+
+<ParamField body="model" type="string" default="veo3.1">
+  视频模型 ID。API 默认值为 `veo3.1`。有关当前公开视频模型矩阵和支持能力，请参阅 [视频生成指南](/zh/guides/video-generation)。
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  要生成视频的文本描述。大多数公开视频模型都要求该字段。
+</ParamField>
+
+<ParamField body="operation" type="string">
+  要执行的视频操作。公开契约支持 `text-to-video`、`image-to-video`、`reference-to-video`、`start-end-to-video`、`video-to-video`、`video-extension`、`audio-to-video` 和 `motion-control`。AI Sonar 可以根据输入自动推断操作，但生产环境仍建议显式传入 `operation`。
+</ParamField>
+
+<ParamField body="image_url" type="string">
+  用于图生视频的起始图片 URL。为了获得最广泛的跨模型兼容性，建议优先使用 `image_url`。
+</ParamField>
+
+<ParamField body="image" type="string">
+  以内联 data URL 形式提供的图片（例如 `data:image/jpeg;base64,...`）。兼容模型支持该方式，但 `image_url` 的兼容性更广。
+</ParamField>
+
+<ParamField body="reference_images" type="array">
+用于参考图生视频的参考图输入。可传数量取决于模型。对于 `seedance-2.0` 和 `seedance-2.0-fast`，AI Sonar 当前支持最多 9 张参考图，外加最多 3 段参考视频和 3 段参考音频。建议优先使用公网 `https` URL；兼容模型也支持内联 `data:` URL。 对于 `grok-imagine-video`，reference-to-video 最多接受 7 个图片参考，且 `duration` 最高为 10 秒。`grok-imagine-video-1.5-preview` 仅支持图生视频，不接受参考图片。
+</ParamField>
+
+<ParamField body="reference_image_type" type="string">
+  可选的参考图角色字段，用于区分 `asset` 和 `style` 两类参考图的模型。
+</ParamField>
+
+<ParamField body="kling_elements" type="array">
+  `kling-3.0-video` 的元素引用定义，仅支持带图片条件的请求。可定义 1-3 个元素；每个元素包含 `name`、可选 `description`，以及 2-4 个图片 URL 的 `element_input_urls`。在 `prompt` 中用 `@name` 引用元素。不要将 `kling_elements` 与 `output_audio=true` 组合使用；使用元素引用时请省略 `output_audio` 或设置为 `false`。
+</ParamField>
+
+<ParamField body="video_url" type="string">
+  源视频的公网 URL。当前公开 `video-to-video` 流程以及 `motion-control` 模型都需要该字段。
+</ParamField>
+
+<ParamField body="video_urls" type="array">
+  用于支持多模态参考条件控制的额外参考视频输入。可传数量取决于模型。对于 `seedance-2.0` 和 `seedance-2.0-fast`，AI Sonar 当前支持最多 3 段参考视频。
+</ParamField>
+
+<ParamField body="audio_url" type="string">
+  用于 `audio-to-video` 模型的公网音频 URL。
+</ParamField>
+
+<ParamField body="audio_urls" type="array">
+  用于支持多模态参考条件控制的额外参考音频输入。可传数量取决于模型。对于 `seedance-2.0` 和 `seedance-2.0-fast`，AI Sonar 当前支持最多 3 段参考音频。
+</ParamField>
+
+<ParamField body="task_id" type="string">
+  某些续写、扩展或衍生流程使用的 Provider 侧任务 ID。
+</ParamField>
+
+<ParamField body="extend_at" type="integer">
+  某些 `video-extension` 流程使用的模型侧扩展起点参数。
+</ParamField>
+
+<ParamField body="extend_times" type="string">
+  某些 `video-extension` 流程使用的模型侧扩展次数或倍率参数。
+</ParamField>
+
+<ParamField body="duration" type="integer">
+  生成输出视频的时长（秒），取决于模型。该字段只控制输出时长，不表示参考视频输入时长限制。
+</ParamField>
+
+<ParamField body="aspect_ratio" type="string">
+  宽高比，例如 `16:9`、`9:16`、`1:1`。
+</ParamField>
+
+<ParamField body="resolution" type="string">
+  输出分辨率，例如 `720p`、`1080p`、`4k`，具体取决于模型。
+</ParamField>
+
+<ParamField body="output_audio" type="boolean">
+  模型相关的音频输出开关。在 AI Sonar 中，Veo 3 家族在省略该字段时默认按 `true` 处理；`kling-3.0-video` 仅在非元素引用请求中接受该 selector，并会映射到兼容上游的 sound 控制，Kling 请求省略时默认无声。不要将 `output_audio=true` 与 `kling_elements` 组合使用。其他公开视频模型按各自治理后的默认行为执行。为了兼容历史请求，也接受 camelCase 别名 `outputAudio`。
+</ParamField>
+
+<ParamField body="fps" type="integer">
+  每秒帧数（1-120），仅在模型公开支持 FPS 控制时生效。
+</ParamField>
+
+<ParamField body="negative_prompt" type="string">
+  希望在视频生成中避免的内容。
+</ParamField>
+
+<ParamField body="seed" type="integer">
+  用于可复现生成的随机种子。
+</ParamField>
+
+<ParamField body="cfg_scale" type="number">
+  提示词遵循强度（0-20），仅在公开模型支持该控制项时生效。
+</ParamField>
+
+<ParamField body="motion_strength" type="number">
+  运动强度（0-1），仅在公开模型支持该字段时生效。
+</ParamField>
+
+<ParamField body="start_image" type="string">
+  `start-end-to-video` 中使用的起始帧图片 URL 或兼容图片输入。
+</ParamField>
+
+<ParamField body="end_image" type="string">
+  `start-end-to-video` 中使用的结束帧图片 URL 或兼容图片输入。
+</ParamField>
+
+<ParamField body="size" type="string">
+  某些 OpenAI 兼容视频模型使用的尺寸档位参数。
+</ParamField>
+
+<ParamField body="watermark" type="boolean">
+  某些模型暴露的水印开关。
+</ParamField>
+
+<ParamField body="effect_type" type="string">
+  某些特效或编辑流程使用的模型侧效果选择器。
+</ParamField>
+
+<ParamField body="user" type="string">
+  终端用户的唯一标识符。
+</ParamField>
+
+## 兼容说明
+
+- 公开契约中的规范字段为 snake_case：`reference_images`、`reference_image_type`、`output_audio`。
+- 为兼容已有调用，AI Sonar 也接受 camelCase 别名 `referenceImages`、`referenceImageType` 和 `outputAudio`。
+- 如果省略 `operation`，AI Sonar 会根据输入自动推断操作；但生产环境仍建议显式传入。
+
+## 输入最佳实践
+
+- 对于 `image_url`、`reference_images`、`video_url` 和 `audio_url`，建议优先使用公网可访问的 `https` URL。
+- 可以避免在同一请求中混用内联 base64 和远程 URL；统一一种表示方式更容易排障和重试。
+- 如果使用签名 URL，请确保有效期足够覆盖重试窗口和异步任务创建过程。
+
+## 响应
+
+<ResponseField name="id" type="string">
+  规范异步任务 ID。
+</ResponseField>
+
+<ResponseField name="task_id" type="string">
+  用于轮询的唯一任务标识符。
+</ResponseField>
+
+<ResponseField name="poll_url" type="string">
+  此任务建议使用的轮询 URL。检查状态时请使用该精确路径。
+</ResponseField>
+
+<ResponseField name="billing_transaction_id" type="string">
+  当结算已经完成时返回 AI Sonar 账单交易 ID。它对应 dashboard / 对账使用的交易标识，与异步 `id` / `task_id` 不同。
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  初始状态：`pending`。
+</ResponseField>
+
+<ResponseField name="created" type="integer">
+  创建任务时的 Unix 时间戳。
+</ResponseField>
+
+<ResponseField name="model" type="string">
+  所使用的模型。
+</ResponseField>
+
+<ResponseField name="video_url" type="string">
+  结果已就绪时可直接使用的视频 URL。
+</ResponseField>
+
+<ResponseField name="video" type="object">
+  可用时返回单个视频对象，包含 `url`、`duration`、`width` 和 `height`。
+</ResponseField>
+
+<ResponseField name="videos" type="array">
+  当上游返回多个输出时，可能出现视频数组。
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  任务失败时返回的错误信息或结构化错误对象。
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/videos/generations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "veo3.1",
+    "prompt": "A cat walking through a garden, cinematic lighting",
+    "operation": "text-to-video",
+    "duration": 4,
+    "aspect_ratio": "16:9"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "pending",
+  "model": "veo3.1",
+  "created": 1706000000
+}
+```
+</ResponseExample>
+
+## 图生视频
+
+```python
+response = requests.post(
+    "https://api.aisonar.dev/v1/videos/generations",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+    json={
+        "model": "hailuo-2.3-standard",
+        "prompt": "The scene begins from the provided image and adds gentle natural motion.",
+        "operation": "image-to-video",
+        "image_url": "https://example.com/image.jpg",
+        "duration": 6,
+        "aspect_ratio": "16:9"
+    }
+)
+```
+
+## Kling 3.0 元素引用
+
+当需要元素引用时，在 `kling-3.0-video` 请求中传入 `kling_elements`。请求需要包含图片条件输入（`image_url`、`image_urls`、`start_image` 或 `end_image`），并在提示词中用 `@name` 引用对应元素。
+
+```python
+response = requests.post("https://api.aisonar.dev/v1/videos/generations",
+    headers=headers,
+    json={
+        "model": "kling-3.0-video",
+        "prompt": "Place @hero_bag on a studio turntable with soft product lighting.",
+        "operation": "image-to-video",
+        "image_url": "https://example.com/studio-start.png",
+        "duration": 5,
+        "resolution": "720p",
+        "kling_elements": [
+            {
+                "name": "hero_bag",
+                "description": "black leather handbag",
+                "element_input_urls": [
+                    "https://example.com/bag-front.png",
+                    "https://example.com/bag-side.png"
+                ]
+            }
+        ]
+    }
+)
+```
+
+## 参考图生视频
+
+当模型支持专门的参考条件控制时，请使用 `operation=reference-to-video`。在 AI Sonar 的公开契约中，图片参考素材使用 `reference_images`，多模态参考视频和参考音频分别使用 `video_urls` 与 `audio_urls`。对于 `seedance-2.0` 和 `seedance-2.0-fast`，AI Sonar 当前支持最多 9 张参考图，外加最多 3 段参考视频和 3 段参考音频。`duration` 只控制生成输出时长，不单独限制参考视频输入时长。 对于 `grok-imagine-video`，reference-to-video 最多接受 7 个图片参考（`reference_images` 或 `image_urls`），且 `duration` 最高为 10 秒。不要把参考图片与 `image_url` / `image` 首帧输入混用。`grok-imagine-video-1.5-preview` 仅支持图生视频。
+
+```python
+response = requests.post(
+    "https://api.aisonar.dev/v1/videos/generations",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+    json={
+        "model": "veo3.1",
+        "prompt": "Keep the same subject identity and palette while adding subtle motion.",
+        "operation": "reference-to-video",
+        "reference_images": [
+            "https://example.com/ref-a.jpg",
+            "https://example.com/ref-b.jpg"
+        ],
+        "reference_image_type": "asset",
+        "duration": 8,
+        "resolution": "720p",
+        "aspect_ratio": "9:16"
+    }
+)
+```
+
+## 首尾帧控制
+
+使用 `start_image` 和 `end_image` 控制首帧和尾帧：
+
+```python
+response = requests.post(
+    "https://api.aisonar.dev/v1/videos/generations",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+    json={
+        "model": "viduq2-pro",
+        "prompt": "Smooth transition from day to night",
+        "operation": "start-end-to-video",
+        "start_image": "https://example.com/day.jpg",
+        "end_image": "https://example.com/night.jpg",
+        "duration": 5,
+        "resolution": "720p",
+        "aspect_ratio": "16:9"
+    }
+)
+```
+
+## 视频转视频
+
+对于 `grok-imagine-video` 的 video-to-video，请在 `video_url` 中传入公网 HTTPS `.mp4` URL。AI Sonar 会把它转换为 xAI REST 的 `video.url` 请求体。你可以把 `resolution` 设为 `480p` 或 `720p`；该编辑流程不接受 `duration` 和 `aspect_ratio`。
+
+当模型接受现有视频作为主输入时，请使用 `operation=video-to-video`。
+
+```python
+response = requests.post(
+    "https://api.aisonar.dev/v1/videos/generations",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+    json={
+        "model": "topaz-video-upscale",
+        "operation": "video-to-video",
+        "video_url": "https://example.com/source.mp4",
+        "prompt": "Upscale the clip while preserving the original motion.",
+        "resolution": "1080p"
+    }
+)
+```
+
+## 动作控制
+
+当模型同时需要主体图片和动作参考视频时，请使用 `operation=motion-control`。AI Sonar 会把公开的 `image_url` + `video_url` 请求形态映射到上游动作控制契约。
+
+```python
+response = requests.post(
+    "https://api.aisonar.dev/v1/videos/generations",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+    json={
+        "model": "kling-3.0-motion-control",
+        "operation": "motion-control",
+        "prompt": "Keep the subject stable while following the motion reference.",
+        "image_url": "https://example.com/subject.png",
+        "video_url": "https://example.com/motion.mp4",
+        "resolution": "720p"
+    }
+)
+```
+
+## Audio-to-Video 与 Video Extension 当前可用性
+
+AI Sonar 的公开契约接受 `audio-to-video` 与 `video-extension` 这两个操作值，用于模型特定流程；但在当前这版文档对应的“通用启用”公开视频模型清单中，并没有一个广泛启用的公开模型对外明确提供这两项能力。接入前请先通过 [Models API](/zh/api-reference/models/list-models) 或 [模型页面](https://aisonar.dev/models) 确认实时可用性。
+
+## 当前启用的公开视频模型
+
+以下列表与当前文档构建时的启用视频模型总表对齐。若要获取最新状态，请优先查询 [Models API](/zh/api-reference/models/list-models)。
+
+### OpenAI
+
+| 模型 | 公开操作 |
+|-------|----------|
+
+### Kuaishou
+
+| 模型 | 公开操作 |
+|-------|----------|
+| `kling-3.0-motion-control` | 动作控制 |
+| `kling-3.0-video` | 文生视频、图生视频、首尾帧视频、元素引用 |
+| `kling-v2.5-turbo-pro` | 文生视频、图生视频、首尾帧视频 |
+| `kling-v2.5-turbo-std` | 文生视频、图生视频 |
+| `kling-v2.6-pro` | 文生视频、图生视频、首尾帧视频 |
+| `kling-v2.6-std` | 文生视频、图生视频 |
+| `kling-v3.0-pro` | 文生视频、图生视频、首尾帧视频 |
+| `kling-v3.0-std` | 文生视频、图生视频、首尾帧视频 |
+| `kling-video-o1-pro` | 文生视频、图生视频、参考图生视频、首尾帧视频、视频转视频 |
+| `kling-video-o1-std` | 文生视频、图生视频、参考图生视频、首尾帧视频、视频转视频 |
+
+### Google
+
+| 模型 | 公开操作 |
+|-------|----------|
+| `veo3` | 文生视频、图生视频 |
+| `veo3-fast` | 文生视频、图生视频 |
+| `veo3-pro` | 文生视频、图生视频 |
+| `veo3.1` | 文生视频、图生视频、参考图生视频、首尾帧视频 |
+| `veo3.1-fast` | 文生视频、图生视频、参考图生视频、首尾帧视频 |
+| `veo3.1-pro` | 文生视频、图生视频、首尾帧视频 |
+
+### ByteDance
+
+| 模型 | 公开操作 |
+|-------|----------|
+| `seedance-1.5-pro` | 文生视频、图生视频 |
+
+### MiniMax
+
+| 模型 | 公开操作 |
+|-------|----------|
+| `hailuo-2.3-fast` | 图生视频 |
+| `hailuo-2.3-pro` | 文生视频、图生视频 |
+| `hailuo-2.3-standard` | 文生视频、图生视频 |
+
+### Alibaba
+
+| 模型 | 公开操作 |
+|-------|----------|
+| `wan-2.2-plus` | 文生视频、图生视频 |
+| `wan-2.5` | 文生视频、图生视频 |
+| `wan-2.6` | 文生视频、图生视频、参考图生视频 |
+
+### Shengshu
+
+| 模型 | 公开操作 |
+|-------|----------|
+| `viduq2` | 文生视频、参考图生视频 |
+| `viduq2-pro` | 图生视频、参考图生视频、首尾帧视频 |
+| `viduq2-pro-fast` | 图生视频、首尾帧视频 |
+| `viduq2-turbo` | 图生视频、首尾帧视频 |
+| `viduq3-pro` | 文生视频、图生视频、首尾帧视频 |
+| `viduq3-turbo` | 文生视频、图生视频、首尾帧视频 |
+
+### xAI
+
+| 模型 | 公开操作 |
+|-------|----------|
+| `grok-imagine-video` | 文生视频、图生视频、参考图生视频、视频转视频 |
+| `grok-imagine-video-1.5-preview` | 图生视频 |
+| `grok-imagine-image-to-video` | 图生视频 |
+| `grok-imagine-text-to-video` | 文生视频 |
+| `grok-imagine-upscale` | 视频转视频 |
+
+### 其他
+
+| 模型 | 公开操作 |
+|-------|----------|
+| `topaz-video-upscale` | 视频转视频 |

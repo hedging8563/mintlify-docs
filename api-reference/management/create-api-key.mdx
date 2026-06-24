@@ -1,0 +1,47 @@
+---
+title: "Create API Key"
+openapi: "POST /v1/management/api-keys"
+description: "Creates a new user API key for the current organization."
+---
+
+## Overview
+
+Creates a new `type=user` API key in the organization associated with the current management token.
+
+## Request Body
+
+| Field | Type | Default / Limits | Notes |
+|-------|------|------------------|-------|
+| `name` | string | required, default `Default Key`, length `1-50` | Display name, trimmed server-side |
+| `limitAmount` | number \| null | min `0`, input max `1000000` | `null` or omitted = unlimited, `0` = zero quota. Positive values are normalized to a stored cap that cannot exceed `100000` USD equivalent. |
+| `limitCurrency` | enum | default `USD` | USD only. Sending `CNY` returns `400 currency_retired`. |
+| `models` | string[] | default `[]` | Optional logical model allowlist |
+| `expiresAt` | string \| null | RFC3339 datetime | `null` means no expiry |
+
+## Notes
+
+- Monetary fields are USD-only. `CNY` inputs are retired and return `400 currency_retired`.
+
+- The full API key value is shown only once in the response.
+- `models: []` means the key has no additional model restriction beyond organization policy.
+- `limitAmount: 0` creates a key that is valid but cannot spend quota until updated.
+
+## Example
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/management/api-keys" \
+  -H "Authorization: Bearer mt-your-management-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Backend Worker",
+    "limitAmount": 500,
+    "models": ["veo3.1", "kling-3.0-video"],
+    "expiresAt": "2026-12-31T23:59:59Z"
+  }'
+```
+</RequestExample>
+
+## Request / Response
+
+Use the interactive OpenAPI panel above for the exact schema and response fields.

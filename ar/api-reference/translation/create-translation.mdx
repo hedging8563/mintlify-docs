@@ -1,0 +1,120 @@
+---
+title: "إنشاء ترجمة"
+openapi: "POST /v1/translations"
+description: "يترجم النص إلى لغة هدف"
+---
+
+## نظرة عامة
+
+استخدم `/v1/translations` لـ **الترجمة النصية إلى نصية**.
+
+<Note>
+هذا الـ endpoint يختلف عن [ترجمة الصوت](/api-reference/audio/create-translation)، الذي يقبل ملفًا صوتيًا ويُخرج دائمًا نصًا بالإنجليزية.
+</Note>
+
+لـ workflows الخاصة بالوكلاء، اكتشف أولًا نماذج الترجمة الموصى بها حاليًا:
+
+```bash
+curl "https://api.aisonar.dev/v1/models?recommended_for=translation" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+ثم أرسل النموذج المختار صراحةً إلى `/v1/translations`.
+
+<Note>
+ينطبق `recommended_for=translation` فقط على **ترجمة النص** (`POST /v1/translations`). ولا ينطبق على [ترجمة الصوت](/api-reference/audio/create-translation).
+</Note>
+
+## جسم الطلب
+
+<ParamField body="model" type="string" required>
+  معرّف نموذج الترجمة الذي يعيده `/v1/models?recommended_for=translation`.
+</ParamField>
+
+<ParamField body="text" type="string" required>
+  النص المصدر المراد ترجمته.
+</ParamField>
+
+<ParamField body="target_language" type="string" required>
+  رمز لغة الهدف أو اسمها، بحسب ما يدعمه النموذج.
+</ParamField>
+
+<ParamField body="source_language" type="string">
+  تلميح اختياري للغة المصدر.
+</ParamField>
+
+<ParamField body="mime_type" type="string" default="text/plain">
+  صيغة النص المصدر. القيم المدعومة: `text/plain` و `text/html`.
+</ParamField>
+
+<ParamField body="user" type="string">
+  معرّف اختياري للمستخدم النهائي لأغراض مراقبة الإساءة وتتبع الطلب.
+</ParamField>
+
+## الاستجابة
+
+<ResponseField name="text" type="string">
+  النص المترجم.
+</ResponseField>
+
+<ResponseField name="model" type="string">
+  النموذج الذي أنشأ الترجمة.
+</ResponseField>
+
+<ResponseField name="source_language" type="string | null">
+  لغة المصدر التي اكتشفها النموذج أو قبلها.
+</ResponseField>
+
+<ResponseField name="target_language" type="string">
+  لغة الهدف المستخدمة في الطلب.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/translations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gemini-translation-pro",
+    "text": "你好，欢迎使用 AI Sonar。",
+    "target_language": "en"
+  }'
+```
+
+```python Python
+from openai import OpenAI
+import requests
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = requests.post(
+    "https://api.aisonar.dev/v1/translations",
+    headers={
+        "Authorization": "Bearer sk-your-api-key",
+        "Content-Type": "application/json",
+    },
+    json={
+        "model": "gemini-translation-pro",
+        "text": "你好，欢迎使用 AI Sonar。",
+        "target_language": "en",
+    },
+    timeout=30,
+)
+
+print(response.json()["text"])
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "text": "Hello, welcome to AI Sonar.",
+  "model": "gemini-translation-pro",
+  "source_language": "zh",
+  "target_language": "en"
+}
+```
+</ResponseExample>

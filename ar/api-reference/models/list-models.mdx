@@ -1,0 +1,230 @@
+---
+title: "عرض النماذج"
+openapi: "GET /v1/models"
+description: "يعرض جميع النماذج المتاحة"
+---
+
+## نظرة عامة
+
+`GET /v1/models` مهيأ للاكتشاف. أما البيانات الوصفية الخاصة بالتفاصيل فقط، مثل `capability_flags` و `pricing_provenance` و `public_contract` الكامل، فتوجد في `GET /v1/models/{model}`.
+
+## معلمات الاستعلام
+
+<ParamField query="category" type="string">
+  فلتر اختياري للفئة العامة. يدعم `chat` و `image` و `video` و `audio` و `tts` و `stt` و `music` و `3d` و `embedding` و `rerank` و `translation`.
+</ParamField>
+
+<ParamField query="recommended_for" type="string">
+  سيناريو اختياري للتوصية خارج chat. يدعم `image` و `video` و `music` و `3d` و `tts` و `stt` و `embedding` و `rerank` و `translation`.
+</ParamField>
+
+<ParamField query="provider" type="string">
+  فلتر اختياري حسب المزود، مثل `openai` أو `anthropic` أو `google` أو `deepseek`.
+</ParamField>
+
+<ParamField query="tag" type="string">
+  فلتر اختياري حسب وسم النموذج، مثل `chat` أو `image` أو `video` أو `embedding` أو `translation`.
+</ParamField>
+
+<Note>
+عندما تكون `recommended_for` موجودة، يرتب `/v1/models` النماذج غير chat وفق أحدث لقطة مخزنة مؤقتًا لمعدل النجاح خلال 24 ساعة. تظل النماذج ذات `status = "insufficient_samples"` مرئية، لكنها تظهر بعد النماذج ذات النقاط.
+</Note>
+
+## الاستجابة
+
+<ResponseField name="object" type="string">
+  دائمًا `list`.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  مصفوفة من كائنات النماذج.
+
+  يحتوي كل نموذج على:
+  - `id` (string): معرّف النموذج
+  - `object` (string): `model`
+  - `created` (integer): طابع زمني للإنشاء
+  - `owned_by` (string): مزود النموذج
+  - `aisonar.category` (string): الفئة العامة للنموذج
+  - `aisonar.pricing_unit` (string or `null`): وحدة التسعير العامة عند توفرها
+  - `aisonar.capability_flags` (object or `null`): ملخص عام للقدرات
+  - `aisonar.supported_operations` (array or `null`): العمليات العامة غير chat التي يدعمها النموذج
+  - `aisonar.pricing_provenance` (object or `null`): بيانات وصفية عامة لمصدر التسعير
+  - `aisonar.public_contract_summary` (object or `null`): ملخص اكتشاف خفيف غير chat يحتوي فقط على `public_operations` و `request_endpoint`
+  - `aisonar.agent_preferences` (object): يُعاد فقط عندما تكون `recommended_for` موجودة
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/models" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+```bash cURL
+curl "https://api.aisonar.dev/v1/models?recommended_for=image" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+models = client.models.list()
+
+for model in models.data:
+    print(f"{model.id} ({model.owned_by})")
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const models = await client.models.list();
+
+for (const model of models.data) {
+  console.log(`${model.id} (${model.owned_by})`);
+}
+```
+
+```go Go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "net/http"
+)
+
+func main() {
+    req, _ := http.NewRequest("GET", "https://api.aisonar.dev/v1/models", nil)
+    req.Header.Set("Authorization", "Bearer sk-your-api-key")
+
+    resp, _ := http.DefaultClient.Do(req)
+    defer resp.Body.Close()
+
+    var payload struct {
+        Data []struct {
+            ID      string `json:"id"`
+            OwnedBy string `json:"owned_by"`
+        } `json:"data"`
+    }
+
+    json.NewDecoder(resp.Body).Decode(&payload)
+
+    for _, model := range payload.Data {
+        fmt.Printf("%s (%s)\n", model.ID, model.OwnedBy)
+    }
+}
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/models');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer sk-your-api-key'
+    ]
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+foreach ($data['data'] as $model) {
+    echo "{$model['id']} ({$model['owned_by']})\n";
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "gpt-5.4",
+      "object": "model",
+      "created": 1706000000,
+      "owned_by": "openai"
+    },
+    {
+      "id": "claude-sonnet-4-6",
+      "object": "model",
+      "created": 1706000000,
+      "owned_by": "anthropic"
+    },
+    {
+      "id": "gemini-2.5-flash",
+      "object": "model",
+      "created": 1706000000,
+      "owned_by": "google"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## التصفية حسب المزود
+
+```python
+# الحصول على كل نماذج OpenAI
+openai_models = [m for m in models.data if m.owned_by == "openai"]
+
+# الحصول على كل نماذج Anthropic
+anthropic_models = [m for m in models.data if m.owned_by == "anthropic"]
+```
+
+## فئات النماذج
+
+| المزود | أمثلة على النماذج |
+|--------|-------------------|
+| `openai` | gpt-5.4, gpt-5.4-mini, gpt-5-mini, gpt-4o, dall-e-3 |
+| `anthropic` | claude-opus-4-6, claude-sonnet-4-6, claude-haiku-4-5 |
+| `google` | gemini-3-pro-preview, gemini-3-flash-preview, gemini-2.5-pro |
+| `deepseek` | deepseek-r1, deepseek-v3-2 |
+| `xai` | grok-4.1 |
+| `moonshot` | kimi-k2.5 |
+| `minimax` | minimax-m2.1 |
+| `meta` | llama-3.3-70b, llama-3.1-405b |
+
+## مثال توصية الوكيل
+
+```json Response
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "gemini-2.5-flash-image",
+      "object": "model",
+      "created": 1706000000,
+      "owned_by": "google",
+      "aisonar": {
+        "category": "image",
+        "pricing_unit": "per_request",
+        "agent_preferences": {
+          "image": {
+            "preferred_rank": 1,
+            "success_rate_24h": 0.98,
+            "sample_count_24h": 423,
+            "status": "ready",
+            "updated_at": "2026-03-28T12:00:00.000Z",
+            "basis": {
+              "channel_id": null,
+              "physical_model": null
+            }
+          }
+        }
+      }
+    }
+  ]
+}
+```

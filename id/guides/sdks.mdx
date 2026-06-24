@@ -1,0 +1,114 @@
+---
+title: "SDK & Library"
+description: "SDK dan library yang direkomendasikan untuk integrasi AI Sonar"
+---
+
+## Ikhtisar
+
+AI Sonar paling mudah diintegrasikan dengan mencocokkan SDK dengan perilaku yang Anda butuhkan:
+- SDK **Anthropic** resmi untuk perilaku asli Claude `/v1/messages`
+- alat resmi **Gemini / Google AI** untuk bentuk permintaan asli Gemini
+- SDK OpenAI resmi untuk rute `/v1` yang kompatibel dengan OpenAI dan penggunaan bergaya Responses
+
+Gunakan halaman integrasi untuk batasan dukungan. Dalam set dokumen ini, "recommended" atau "supported" berarti ada jalur penyiapan yang terdokumentasi; itu tidak otomatis berarti setiap helper framework atau fitur khusus penyedia diuji regresi dari ujung ke ujung di repositori ini.
+
+## SDK yang Direkomendasikan
+
+<CardGroup cols={2}>
+  <Card title="OpenAI Python" icon="python" href="https://github.com/openai/openai-python">
+    `pip install openai`
+  </Card>
+  <Card title="OpenAI Node" icon="node-js" href="https://github.com/openai/openai-node">
+    `npm install openai`
+  </Card>
+  <Card title="OpenAI Go" icon="golang" href="https://github.com/openai/openai-go">
+    `go get github.com/openai/openai-go/v3`
+  </Card>
+  <Card title="Anthropic SDK" icon="robot" href="https://github.com/anthropics/anthropic-sdk-python">
+    Dukungan native untuk Claude Messages API
+  </Card>
+</CardGroup>
+
+## Contoh OpenAI SDK
+
+Gunakan ini saat Anda memigrasikan klien yang sudah kompatibel dengan OpenAI atau menginginkan jalur kompatibilitas `/v1`. Untuk fitur native Claude atau native Gemini, gunakan SDK native yang sesuai.
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.responses.create(
+    model="gpt-5.4",
+    input="Explain AI Sonar in one sentence."
+)
+
+print(response.output_text)
+```
+
+## Contoh OpenAI Go
+
+```go
+package main
+
+import (
+    openai "github.com/openai/openai-go/v3"
+    "github.com/openai/openai-go/v3/option"
+)
+
+func main() {
+    client := openai.NewClient(
+        option.WithAPIKey("sk-your-api-key"),
+        option.WithBaseURL("https://api.aisonar.dev/v1"),
+    )
+
+    _ = client
+}
+```
+
+## Contoh Anthropic SDK
+
+```python
+from anthropic import Anthropic
+
+client = Anthropic(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev"
+)
+
+message = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+```
+
+## SDK Mana yang Harus Anda Gunakan?
+
+| Tujuan | Jalur yang Direkomendasikan |
+|------|------------------|
+| Perilaku native penyedia | SDK atau rute native penyedia |
+| Klien yang sudah kompatibel dengan OpenAI | SDK OpenAI di AI Sonar `/v1` |
+| Chat portabel / embeddings | Rute `/v1` yang kompatibel dengan OpenAI |
+| Fitur bawaan Claude | Anthropic SDK |
+| Bentuk permintaan native Gemini | API / SDK native Gemini |
+| LangChain / LlamaIndex / Vercel AI SDK | Gunakan halaman integrasi khusus |
+
+## Praktik Terbaik
+
+<AccordionGroup>
+  <Accordion title="Pilih route native ketika perilaku penting">
+    Gunakan rute native Anthropic atau Gemini untuk field spesifik penyedia, tools, detail streaming, dan perilaku lain yang tidak boleh diterjemahkan melalui format lain.
+  </Accordion>
+
+  <Accordion title="Gunakan `/v1` kompatibel OpenAI untuk migrasi">
+    SDK yang kompatibel dengan OpenAI adalah jalur terbaik untuk klien bergaya OpenAI yang sudah ada, chat portabel, dan embeddings. Perlakukan mereka sebagai rute kompatibilitas, bukan sebagai satu-satunya permukaan API AI Sonar.
+  </Accordion>
+
+  <Accordion title="Buat Base URL tetap eksplisit">
+    Lewatkan URL dasar AI Sonar secara langsung dalam konfigurasi klien Anda, alih-alih mengandalkan alias variabel lingkungan lama.
+  </Accordion>
+</AccordionGroup>

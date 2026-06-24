@@ -1,0 +1,167 @@
+---
+title: "Vercel AI SDK"
+description: "使用 OpenAI 兼容 或 Responses-native 提供方将 AI Sonar 集成到 Vercel AI SDK 中"
+---
+
+## 概述
+
+
+
+<Note>
+**类型**: 框架或平台
+
+**主要路径**: 默认 OpenAI 兼容 路径
+
+**支持级别**: 推荐集成模式
+</Note>
+
+对于 AI Sonar，Vercel AI SDK 中最稳定的默认选择是 **OpenAI 兼容 提供方**。
+
+如果你明确需要 **Responses-native** 行为，可以切换到 OpenAI 提供方，同时保持相同的 AI Sonar base URL。
+
+请将本页视为推荐集成模式，而不是“仓库里对 Vercel AI SDK 每个 helper 都做了端到端回归”的声明。
+
+## 推荐默认方案：OpenAI 兼容 提供方
+
+```bash
+npm install ai @ai-sdk/openai-compatible
+```
+
+```typescript
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
+
+export const aisonar = createOpenAICompatible({
+  name: 'aisonar',
+  apiKey: process.env.TOKENLAB_API_KEY,
+  baseURL: 'https://api.aisonar.dev/v1',
+});
+```
+
+## 生成文本
+
+```typescript
+import { generateText } from 'ai';
+import { aisonar } from './aisonar';
+
+const { text } = await generateText({
+  model: aisonar.chatModel('gpt-5.4'),
+  prompt: 'Explain AI Sonar in one sentence.',
+});
+
+console.log(text);
+```
+
+## 流式文本
+
+```typescript
+import { streamText } from 'ai';
+import { aisonar } from './aisonar';
+
+const result = await streamText({
+  model: aisonar.chatModel('gpt-5.4'),
+  prompt: 'Write a short poem about coding.',
+});
+
+for await (const textPart of result.textStream) {
+  process.stdout.write(textPart);
+}
+```
+
+## 工具调用
+
+```typescript
+import { generateText, tool } from 'ai';
+import { z } from 'zod';
+import { aisonar } from './aisonar';
+
+const result = await generateText({
+  model: aisonar.chatModel('gpt-5.4'),
+  prompt: 'What is the weather in San Francisco?',
+  tools: {
+    weather: tool({
+      description: 'Get weather in a location',
+      parameters: z.object({
+        location: z.string(),
+      }),
+      execute: async ({ location }) => ({
+        location,
+        temperature: 72,
+        condition: 'sunny',
+      }),
+    }),
+  },
+});
+
+console.log(result.text);
+```
+
+## 结构化输出
+
+```typescript
+import { generateObject } from 'ai';
+import { z } from 'zod';
+import { aisonar } from './aisonar';
+
+const { object } = await generateObject({
+  model: aisonar.chatModel('gpt-5.4'),
+  schema: z.object({
+    name: z.string(),
+    role: z.string(),
+  }),
+  prompt: 'Generate a fake developer profile.',
+});
+
+console.log(object);
+```
+
+## 如果你明确需要 Responses-Native 行为
+
+```bash
+npm install ai @ai-sdk/openai
+```
+
+```typescript
+import { createOpenAI } from '@ai-sdk/openai';
+
+export const aisonarResponses = createOpenAI({
+  apiKey: process.env.TOKENLAB_API_KEY,
+  baseURL: 'https://api.aisonar.dev/v1',
+});
+```
+
+```typescript
+import { generateText } from 'ai';
+import { aisonarResponses } from './aisonar-responses';
+
+const { text } = await generateText({
+  model: aisonarResponses('gpt-5.4'),
+  prompt: 'Explain AI Sonar in one sentence.',
+});
+```
+
+<Note>
+对于代理风格的集成，请将 `@ai-sdk/openai-compatible` 作为安全默认选择。仅当你明确希望使用基于 `/v1/responses` 构建的提供方路径时，才切换到 `@ai-sdk/openai`。
+</Note>
+
+## 环境变量
+
+```bash
+# .env.local
+TOKENLAB_API_KEY=sk-your-api-key
+```
+
+## 最佳实践
+
+<AccordionGroup>
+  <Accordion title="优先使用 openai-compatible">
+    对于第三方网关和代理后端，`@ai-sdk/openai-compatible` 通常是最不容易产生意外的起点。
+  </Accordion>
+
+  <Accordion title="仅在需要时切换到 Responses">
+    如果你需要与 `/v1/responses` 绑定的提供方行为，应有意识地切换提供方 package，而不是在同一个 client 中混用两种模式。
+  </Accordion>
+
+  <Accordion title="在服务器端保管密钥">
+    绝不要在客户端代码中暴露你的 AI Sonar API key。请将提供方配置放在服务器文件或 API 路由中。
+  </Accordion>
+</AccordionGroup>

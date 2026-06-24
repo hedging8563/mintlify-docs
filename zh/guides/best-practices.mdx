@@ -1,0 +1,295 @@
+---
+title: "最佳实践"
+description: "优化你的 AI Sonar API 使用，以提升成本、性能和可靠性"
+---
+
+## 模型选择
+
+选择合适的模型会显著影响成本和质量。
+
+### 基于任务的推荐
+
+| 任务 | 推荐模型 | 原因 |
+|------|-------------------|-----------|
+| **简单问答** | `gpt-5-mini`, `gemini-2.5-flash` | 快速、便宜、足够好用 |
+| **复杂推理** | `gpt-5.4`, `claude-opus-4-6`, `deepseek-r1` | 更好的逻辑和规划能力 |
+| **编程** | `claude-sonnet-4-6`, `gpt-4o`, `deepseek-v3.2` | 针对代码进行了优化 |
+| **创意写作** | `claude-sonnet-4-6`, `gpt-4o` | 更好的文风质量 |
+| **视觉/图像** | `gpt-4o`, `claude-sonnet-4-6`, `gemini-2.5-flash` | 原生视觉支持 |
+| **长上下文** | `gemini-2.5-pro`, `claude-sonnet-4-6` | 1M+ token 窗口 |
+| **成本敏感** | `gpt-5-mini`, `gemini-2.5-flash`, `deepseek-v3.2` | 性价比最佳 |
+
+### 成本层级
+
+```
+$$$$ Premium: gpt-5.4, claude-opus-4-6
+$$$  Standard: claude-sonnet-4-6, gpt-4o
+$$   Budget:   gpt-5-mini, gemini-2.5-flash
+$    Economy:  deepseek-v3.2, deepseek-r1
+```
+
+## 成本优化
+
+### 1. 优先使用更小的模型
+
+```python
+def smart_query(question: str, complexity: str = "auto"):
+    """Use cheaper models for simple tasks."""
+
+    if complexity == "simple":
+        model = "gpt-5-mini"
+    elif complexity == "complex":
+        model = "gpt-4o"
+    else:
+        # Start cheap, escalate if needed
+        model = "gpt-5-mini"
+
+    response = client.chat.completions.create(
+        model=model,
+        messages=[{"role": "user", "content": question}]
+    )
+    return response
+```
+
+### 2. 设置 max_tokens
+
+始终设置合理的 `max_tokens` 限制：
+
+```python
+# ❌ Bad: No limit, could generate thousands of tokens
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Summarize this article"}]
+)
+
+# ✅ Good: Limit response length
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Summarize this article"}],
+    max_tokens=500  # Reasonable limit for a summary
+)
+```
+
+### 3. 优化 Prompt
+
+```python
+# ❌ Verbose prompt (more input tokens)
+prompt = """
+I would like you to please help me by analyzing the following text
+and providing a comprehensive summary of the main points. Please be
+thorough but also concise in your response. The text is as follows:
+{text}
+"""
+
+# ✅ Concise prompt (fewer tokens)
+prompt = "Summarize the key points:\n{text}"
+```
+
+### 4. 批量处理相似请求
+
+```python
+# ❌ Many small requests
+for question in questions:
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{"role": "user", "content": question}]
+    )
+
+# ✅ Fewer larger requests
+combined_prompt = "\n".join([f"{i+1}. {q}" for i, q in enumerate(questions)])
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": f"Answer each question:\n{combined_prompt}"}]
+)
+```
+
+## 性能优化
+
+### 5. 为 UX 使用流式输出
+
+流式输出可以改善感知性能：
+
+```python
+stream = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Write a long essay"}],
+    stream=True
+)
+
+for chunk in stream:
+    if chunk.choices[0].delta.content:
+        print(chunk.choices[0].delta.content, end="", flush=True)
+```
+
+### 6. 为交互式使用选择快速模型
+
+| 使用场景 | 推荐 | 延迟 |
+|----------|-------------|---------|
+| Chat UI | `gpt-5-mini`, `gemini-2.5-flash` | ~200ms 首 token |
+| Tab completion | `claude-haiku-4-5` | ~150ms 首 token |
+| 后台处理 | `gpt-4o`, `claude-sonnet-4-6` | ~500ms 首 token |
+
+### 7. 设置超时
+
+```python
+client = OpenAI(
+    api_key="sk-your-key",
+    base_url="https://api.aisonar.dev/v1",
+    timeout=60.0  # 60 second timeout
+)
+```
+
+## 可靠性
+
+### 8. 实现重试机制
+
+```python
+import time
+from openai import RateLimitError, APIError
+
+def chat_with_retry(messages, max_retries=3):
+    for attempt in range(max_retries):
+        try:
+            return client.chat.completions.create(
+                model="gpt-4o",
+                messages=messages
+            )
+        except RateLimitError:
+            wait = 2 ** attempt
+            print(f"Rate limited, waiting {wait}s...")
+            time.sleep(wait)
+        except APIError as e:
+            if attempt == max_retries - 1:
+                raise
+            time.sleep(1)
+    raise Exception("Max retries exceeded")
+```
+
+### 9. 优雅地处理错误
+
+```python
+from openai import APIError, AuthenticationError, RateLimitError
+
+try:
+    response = client.chat.completions.create(...)
+except AuthenticationError:
+    # Check API key
+    notify_admin("Invalid API key")
+except RateLimitError:
+    # Queue for later or use backup
+    add_to_queue(request)
+except APIError as e:
+    if e.status_code == 402:
+        notify_admin("Balance low")
+    elif e.status_code >= 500:
+        # Server error, retry later
+        schedule_retry(request)
+```
+
+### 10. 使用回退模型
+
+```python
+FALLBACK_CHAIN = ["gpt-4o", "claude-sonnet-4-6", "gemini-2.5-flash"]
+
+def chat_with_fallback(messages):
+    for model in FALLBACK_CHAIN:
+        try:
+            return client.chat.completions.create(
+                model=model,
+                messages=messages
+            )
+        except APIError:
+            continue
+    raise Exception("All models failed")
+```
+
+## 安全性
+
+### 11. 保护 API Key
+
+```python
+# ❌ Never hardcode keys
+client = OpenAI(api_key="sk-abc123...")
+
+# ✅ Use environment variables
+import os
+client = OpenAI(api_key=os.environ["TOKENLAB_API_KEY"])
+```
+
+### 12. 验证用户输入
+
+```python
+def validate_message(content: str) -> bool:
+    """Validate user input before sending to API."""
+    if len(content) > 100000:
+        raise ValueError("Message too long")
+    # Add other validation as needed
+    return True
+```
+
+### 13. 设置 API Key 限额
+
+为以下场景创建带有消费限额的独立 API Key：
+- 开发/测试
+- 生产环境
+- 不同应用程序
+
+## 监控
+
+### 14. 跟踪使用情况
+
+定期检查你的仪表盘，关注：
+- 按模型统计的 token 使用量
+- 成本明细
+- 缓存命中率
+- 错误率
+
+### 15. 记录重要指标
+
+```python
+import logging
+
+response = client.chat.completions.create(...)
+
+logging.info({
+    "model": response.model,
+    "prompt_tokens": response.usage.prompt_tokens,
+    "completion_tokens": response.usage.completion_tokens,
+    "total_tokens": response.usage.total_tokens,
+})
+```
+
+### 16. 设置告警
+
+在你的仪表盘中配置低余额告警，以避免服务中断。
+
+## 检查清单
+
+<AccordionGroup>
+  <Accordion title="成本优化">
+    - [ ] 为每项任务使用合适的模型
+    - [ ] 设置 max_tokens 限制
+    - [ ] Prompt 简洁
+    - [ ] 在适用场景启用缓存
+    - [ ] 批量处理相似请求
+  </Accordion>
+
+  <Accordion title="性能">
+    - [ ] 为交互式 UX 使用流式输出
+    - [ ] 为实时使用选择快速模型
+    - [ ] 已配置超时
+  </Accordion>
+
+  <Accordion title="可靠性">
+    - [ ] 已实现重试逻辑
+    - [ ] 已具备错误处理机制
+    - [ ] 已配置回退模型
+  </Accordion>
+
+  <Accordion title="安全性">
+    - [ ] API Key 存储在环境变量中
+    - [ ] 输入验证
+    - [ ] 为 dev/prod 使用独立 Key
+    - [ ] 已设置消费限额
+  </Accordion>
+</AccordionGroup>

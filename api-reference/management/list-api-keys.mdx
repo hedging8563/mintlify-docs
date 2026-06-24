@@ -1,0 +1,28 @@
+---
+title: "List API Keys"
+openapi: "GET /v1/management/api-keys"
+description: "Lists user-managed API keys for the current organization management token."
+---
+
+## Overview
+
+Returns user API keys in the organization associated with the current management token.
+
+## Notes
+
+- Monetary fields are USD-only. `CNY` inputs are retired and return `400 currency_retired`.
+
+- System-managed keys such as Playground and Claw keys are excluded.
+
+## Example
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/management/api-keys" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## Request / Response
+
+Use the interactive OpenAPI panel above for the exact schema.

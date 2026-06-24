@@ -1,0 +1,35 @@
+---
+title: "バッチの一覧"
+openapi: "GET /v1/batches"
+description: "現在のAPIキー組織のバッチジョブを一覧表示します。"
+---
+
+## 概要
+
+このエンドポイントは、AI SonarのOpenAI互換バッチAPIの一部です。バッチジョブはアップロードされたJSONLファイルを使用し、非同期で実行され、後で出力/エラーファイルを返すことができます。
+
+## 注意事項
+
+- バッチ入力ファイルは`purpose=batch`を使用する必要があります。
+- `completion_window`は現在`24h`です。
+- 出力の順序は保証されていません。常に`custom_id`で一致させてください。
+- バッチアイテム内でのストリーミングはサポートされていません。
+
+## 例
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/batches?limit=20" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+## リクエスト / レスポンス
+
+正確なスキーマについては、上記のインタラクティブなOpenAPIパネルを使用してください。
+
+## 操作のヒント
+
+- 冪等性のある下流の調整には`custom_id`を使用してください。
+- ワーカーがバッチを最終化した後にのみ`output_file_id`と`error_file_id`を期待してください。
+- バッチの価格は、`isBatchRequest=true`の割引ルールが適用されるため、同期価格とは異なる場合があります。

@@ -1,0 +1,127 @@
+---
+title: "Authentification"
+description: "Sécurisez vos requêtes API AI Sonar avec des clés API"
+---
+
+## Clés API
+
+Toutes les requêtes API AI Sonar nécessitent une clé API.
+
+Pour les endpoints compatibles OpenAI, envoyez-la comme suit :
+
+```bash
+Authorization: Bearer sk-your-api-key
+```
+
+Pour les requêtes Anthropic-compatibles `/v1/messages`, vous pouvez également utiliser :
+
+```bash
+x-api-key: sk-your-api-key
+```
+
+## Obtenir votre clé API
+
+1. Connectez-vous à votre [AI Sonar Dashboard](https://console.aisonar.dev)
+2. Ouvrez **API Keys**
+3. Créez une nouvelle clé
+4. Donnez-lui un nom descriptif
+5. Copiez-la immédiatement, car elle n’est affichée qu’une seule fois
+
+<Warning>
+- N’exposez jamais les clés API dans le code côté client
+- Ne committez jamais de clés API dans le contrôle de version
+- Utilisez des variables d’environnement ou un gestionnaire de secrets
+- Effectuez une rotation des clés périodiquement
+- Supprimez les clés inutilisées
+</Warning>
+
+## Utilisation des clés API
+
+<CodeGroup>
+
+```bash cURL
+curl https://api.aisonar.dev/v1/responses \
+  -H "Authorization: Bearer $TOKENLAB_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.4",
+    "input": "Hello!"
+  }'
+```
+
+```python Python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ.get("TOKENLAB_API_KEY"),
+    base_url="https://api.aisonar.dev/v1"
+)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: process.env.TOKENLAB_API_KEY,
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+```
+
+</CodeGroup>
+
+## Fonctionnalités des clés API
+
+### Limites d’utilisation
+
+Vous pouvez définir une limite d’utilisation sur chaque clé API :
+
+| Paramètre | Description |
+|---------|-------------|
+| **Aucune limite** | La clé utilise le solde de votre compte sans restriction |
+| **Limite fixe** | La clé cesse de fonctionner après avoir atteint le montant spécifié |
+
+### Préfixe de clé
+
+Toutes les clés API AI Sonar commencent par `sk-`.
+
+## Compatibilité Anthropic
+
+Pour l’endpoint `/v1/messages`, l’en-tête de style Anthropic fonctionne comme prévu :
+
+```bash
+curl https://api.aisonar.dev/v1/messages \
+  -H "x-api-key: sk-your-api-key" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-sonnet-4-6",
+    "max_tokens": 1024,
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'
+```
+
+<Note>
+Utilisez `Authorization: Bearer ...` pour les endpoints compatibles OpenAI tels que `/v1/responses`, `/v1/chat/completions`, `/v1/models` et la plupart des autres routes AI Sonar.
+</Note>
+
+## Réponses d’erreur
+
+| Code de statut | Type | Code | Description |
+|-------------|------|------|-------------|
+| 401 | `invalid_api_key` | `invalid_api_key` | Clé API manquante ou invalide |
+| 401 | `expired_api_key` | `expired_api_key` | La clé API a été révoquée |
+| 402 | `insufficient_balance` | `insufficient_balance` | Le solde du compte est insuffisant |
+| 402 | `quota_exceeded` | `quota_exceeded` | La limite d’utilisation de la clé API a été atteinte |
+
+Exemple :
+
+```json
+{
+  "error": {
+    "message": "Invalid API key provided",
+    "type": "invalid_api_key",
+    "code": "invalid_api_key"
+  }
+}
+```

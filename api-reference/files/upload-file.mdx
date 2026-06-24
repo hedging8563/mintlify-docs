@@ -1,0 +1,54 @@
+---
+title: "Upload File"
+openapi: "POST /v1/files"
+description: "Uploads a JSONL batch input file for later batch creation."
+---
+
+## Overview
+
+This endpoint is part of AI Sonar's OpenAI-compatible Batch API. Batch jobs use uploaded JSONL files, run asynchronously, and can return output/error files later.
+
+## Notes
+
+- Batch input files must use `purpose=batch`.
+- `completion_window` is currently `24h`.
+- Output ordering is not guaranteed; always match by `custom_id`.
+- Streaming is not supported inside batch items.
+
+## Example
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/files" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F "purpose=batch" \
+  -F "file=@batch-input.jsonl;type=application/jsonl"
+```
+</RequestExample>
+
+## Request / Response
+
+Use the interactive OpenAPI panel above for the exact schema.
+
+## Operational Tips
+
+- Use `custom_id` for idempotent downstream reconciliation.
+- Expect `output_file_id` and `error_file_id` only after the worker finalizes the batch.
+- Batch pricing may differ from synchronous pricing because `isBatchRequest=true` discount rules apply.
+
+## Image File Inputs
+
+This same `/v1/files` route can upload image reference files for `/v1/images/edits`.
+
+- Use `purpose=user_data` or `purpose=vision`.
+- Optionally include `model` to select the image-edit model; it defaults to `gpt-image-2`.
+- The returned `file_id` is bound to the selected upstream image-edit channel and can be reused in `images[].file_id`.
+
+## Anthropic Files API Mode
+
+This same `/v1/files` route also supports the Anthropic Files API path.
+
+- Add `anthropic-beta: files-api-2025-04-14` to switch the route into Anthropic mode.
+- In Anthropic mode, upload the original file directly and do not send `purpose=batch`.
+- The returned `file_id` is bound to the same official Anthropic channel/workspace and should be reused from `/v1/messages` requests.
+- If you plan to reference the uploaded file from Anthropic message content, keep using Anthropic-native headers (`x-api-key`, `anthropic-version`, and the beta header when required).

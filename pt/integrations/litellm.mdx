@@ -1,0 +1,55 @@
+---
+title: "LiteLLM"
+description: "Use o LiteLLM com AI Sonar como fornecedor amontante ou como camada interna de passagem"
+---
+
+## Visão geral
+
+LiteLLM e AI Sonar normalmente se combinam de duas formas.
+
+- usar AI Sonar como **fornecedor amontante compatível com OpenAI** atrás do LiteLLM
+- colocar o LiteLLM na frente do AI Sonar para lidar com chaves virtuais, roteamento extra ou observabilidade centralizada
+
+Para o AI Sonar, o caminho padrão mais limpo é usar o modo **OpenAI personalizado / compatível com OpenAI** do LiteLLM com `api_base = https://api.aisonar.dev/v1`.
+
+<Note>
+Se você precisa explicitamente de formatos de requisição nativos do Claude ou do Gemini, prefira as integrações nativas do AI Sonar em vez de forçar esses fluxos pela abstração compatível com OpenAI do LiteLLM.
+</Note>
+
+<Note>
+**Tipo**: Framework ou plataforma
+
+**Caminho principal**: amontante compatível com OpenAI
+
+**Nível de suporte**: Caminho compatível
+</Note>
+
+## Instalação
+
+```bash
+pip install 'litellm[proxy]'
+```
+
+## Configuração do proxy
+
+```yaml
+model_list:
+  - model_name: aisonar-gpt-5.4
+    litellm_params:
+      model: custom_openai/gpt-5.4
+      api_base: https://api.aisonar.dev/v1
+      api_key: os.environ/OPENAI_API_KEY
+```
+
+Inicialização:
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+litellm --config litellm-config.yaml --port 4000
+```
+
+## Boas práticas
+
+- Trate o AI Sonar primeiro como amontante `custom_openai`
+- Coloque o LiteLLM na frente apenas quando realmente precisar de uma camada extra de passagem
+- Não presuma automaticamente todos os detalhes nativos do fornecedor em uma rota compatível com OpenAI

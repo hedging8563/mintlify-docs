@@ -1,0 +1,261 @@
+---
+title: "✨ Skill Integrasi API AI Sonar"
+description: "Instal skill integrasi API AI Sonar bersama untuk agen coding apa pun, dengan pemulihan error Agent-First."
+---
+
+<Note>
+Skill ini mengajarkan agen coding Anda cara mengintegrasikan **ratusan API AI** dari AI Sonar hanya dengan menjelaskan apa yang Anda butuhkan. Skill ini dikemas sebagai satu skill bersama Agent-First dan bekerja dengan agen coding apa pun yang mendukung file skill atau rules.
+
+API ini bersifat **[Agent-First](/guides/agent-first-api)** — bahkan jika agen menebak nama model dengan salah, respons error akan memberi tahu secara tepat cara memperbaikinya.
+</Note>
+
+<Note>
+Halaman ini mendokumentasikan lapisan pengemasan skill yang dapat digunakan ulang, bukan lapisan kompatibilitas protokol. Jika Anda membutuhkan panduan titik akhir, SDK, atau klien, gunakan halaman integrasi khusus untuk alat tersebut.
+</Note>
+
+<Note>
+**Jenis**: Skill bersama
+
+**Jalur utama**: Pemakaian API terpandu lewat skill bersama yang dapat dipakai ulang
+
+**Tingkat dukungan**: Upaya terbaik
+</Note>
+
+
+## Cara Kerjanya
+
+1. **Anda menjelaskan apa yang Anda butuhkan** — "Saya ingin menggunakan GPT-4 di project Python saya"
+2. **Agen memanggil API** — agen mungkin menebak nama model atau titik akhir
+3. **Jika terjadi masalah** — API mengembalikan petunjuk terstruktur (`did_you_mean`, `suggestions`, `retry_after`)
+4. **Agent mengoreksi dirinya sendiri** — membaca petunjuk dan mencoba lagi dengan parameter yang benar
+5. **Anda mendapatkan kode yang berfungsi** — biasanya pada percobaan pertama atau kedua
+
+## Instal
+
+<Note>
+Gunakan perintah instal non-interaktif kanonis:
+
+```bash
+npx skills add https://github.com/hedging8563/aisonar-skills --skill aisonar-api-integration -y
+```
+
+Ini menginstal skill bersama `aisonar-api-integration` dari repositori skill AI Sonar.
+
+Jika tool Anda tidak mendukung installer, salin folder `skills/aisonar-api-integration/` dari repositori ke direktori skill bersama atau rules milik tool Anda.
+</Note>
+
+### Verifikasi Instalasi
+
+Tanyakan kepada agen coding Anda:
+```
+Skill apa saja yang tersedia?
+```
+
+Jika Anda melihat `aisonar-api-integration`, instalasi berhasil.
+
+## Dapatkan API Key Anda
+
+<Steps>
+  <Step title="Kunjungi AI Sonar">
+    Buka [aisonar.dev](https://aisonar.dev)
+  </Step>
+  <Step title="Masuk">
+    Buat akun atau login
+  </Step>
+  <Step title="Dapatkan API Key">
+    Buka [Dashboard → API Keys](https://console.aisonar.dev/api) dan buat key baru
+  </Step>
+  <Step title="Salin Key">
+    Key Anda dimulai dengan `sk-...` — simpan dengan aman
+  </Step>
+</Steps>
+
+<Tip>
+Anda tidak perlu menempelkan API key ke prompt atau file sumber. Skill sebaiknya menanyakan variabel environment yang akan dipakai, lalu menghasilkan kode yang membaca key dari variabel itu.
+</Tip>
+
+## Contoh
+
+### Chat Completion
+
+**Anda mengatakan:**
+```
+Saya ingin menggunakan GPT-4 di project Python saya
+```
+
+**Agen menghasilkan:**
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["TOKENLAB_API_KEY"],
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+
+print(response.choices[0].message.content)
+```
+
+Jalankan dengan:
+
+```bash
+export TOKENLAB_API_KEY="sk-your-api-key"
+python app.py
+```
+
+Jika agen menebak nama model yang salah (mis. `gpt5`), API mengembalikan:
+```json
+{
+  "error": {
+    "code": "model_not_found",
+    "did_you_mean": "gpt-5.4",
+    "suggestions": [{"id": "gpt-5.4"}, {"id": "gpt-5-mini"}],
+    "hint": "Did you mean 'gpt-5.4'? Use GET https://api.aisonar.dev/v1/models to list all available models."
+  }
+}
+```
+
+Agen membaca `did_you_mean`, memperbaiki nama model, lalu mencoba lagi — semuanya secara otomatis.
+
+### Pembuatan Gambar
+
+**Anda mengatakan:**
+```
+Generate images with Flux in Node.js
+```
+
+Agen memanggil API gambar, menangani error, dan menghasilkan kode lengkap dengan logika download dan penyimpanan.
+
+### Pengenalan Ucapan
+
+**Anda mengatakan:**
+```
+Integrate speech-to-text in my app
+```
+
+Agen menghasilkan kode dengan titik akhir `/v1/audio/transcriptions` yang benar dan penanganan file audio.
+
+## Pemulihan Error Agent-First
+
+Setiap respons error menyertakan petunjuk terstruktur yang dapat di-parse oleh agen coding apa pun. Lihat [referensi lengkap API Agent-First](/guides/agent-first-api) untuk detailnya.
+
+| Error | Apa yang Dikembalikan API | Apa yang Dilakukan Agen |
+|-------|---------------------|---------------------|
+| Nama model salah | `did_you_mean` + `suggestions` | Mengoreksi otomatis dan mencoba lagi |
+| Saldo tidak mencukupi | `balance_usd` + `suggestions` yang lebih murah | Beralih ke model yang terjangkau |
+| Model tidak tersedia | `alternatives` + `retry_after` | Beralih ke model yang tersedia |
+| Terkena rate limit | `retry_after` (detik yang tepat) | Menunggu lalu mencoba lagi |
+| Context terlalu panjang | `suggestions` dengan model yang lebih besar | Beralih ke model dengan context lebih besar |
+| Kontrak request non-chat tidak cocok | `supported_operations`, `supported_parameters`, `request_endpoint`, `recommended_request` | Membangun ulang request dari kontrak model publik |
+
+### Optimasi Titik Akhir Native
+
+Saat Anda memanggil `/v1/chat/completions` dengan model Claude atau Gemini, API mengembalikan header optimasi:
+
+
+
+Perlakukan header ini sebagai petunjuk routing, bukan perpindahan otomatis yang wajib. Panggilan native Claude menggunakan `/v1/messages`; panggilan native Gemini harus mengikuti endpoint yang diberikan oleh the native endpoint hint header, biasanya `/v1beta/gemini`.
+
+### Penemuan Model
+
+Tidak perlu mencari dokumentasi:
+
+```bash
+# Ringkasan API yang dapat dibaca mesin
+curl https://api.aisonar.dev/llms.txt
+
+# List models by category
+curl "https://api.aisonar.dev/v1/models?category=chat" -H "Authorization: Bearer sk-KEY"
+curl "https://api.aisonar.dev/v1/models?category=image" -H "Authorization: Bearer sk-KEY"
+
+# Shortlist rekomendasi untuk skenario non-chat
+curl "https://api.aisonar.dev/v1/models?recommended_for=image" -H "Authorization: Bearer sk-KEY"
+curl "https://api.aisonar.dev/v1/models?recommended_for=translation" -H "Authorization: Bearer sk-KEY"
+
+# Baca kontrak publik satu model sebelum mencoba ulang request non-chat
+curl "https://api.aisonar.dev/v1/models/gpt-image-2" -H "Authorization: Bearer sk-KEY"
+
+# Filter berdasarkan kemampuan
+curl "https://api.aisonar.dev/v1/models?tag=coding" -H "Authorization: Bearer sk-KEY"
+```
+
+## Kapabilitas yang Didukung
+
+| Tipe | Contoh |
+|------|----------|
+| Percakapan | GPT-5.4, Claude, Gemini, DeepSeek |
+| Pembuatan Gambar | GPT Image, Flux, Stable Diffusion, model gambar Gemini |
+| Pembuatan Musik | Suno |
+| Model 3D | Tripo3D |
+| Audio | Teks-ke-Ucapan, Ucapan-ke-Teks |
+| Penyematan | text-embedding-3 |
+| Penyusunan Ulang | bce-reranker, qwen3-rerank |
+
+## Praktik Terbaik
+
+<CardGroup cols={2}>
+  <Card title="Keamanan API Key" icon="shield">
+    Gunakan environment variable. Jangan pernah commit key ke git atau mengeksposnya dalam kode frontend.
+  </Card>
+  <Card title="Manajemen Biaya" icon="wallet">
+    Tetapkan batas penggunaan di [dashboard](https://console.aisonar.dev) Anda. Periksa `error.balance_usd` untuk memantau biaya secara terprogram.
+  </Card>
+  <Card title="Bersikap Langsung" icon="bullseye">
+    Katakan "Saya ingin membuat gambar di Python" alih-alih "Apakah AI Sonar memiliki API gambar?"
+  </Card>
+  <Card title="Jelaskan Skenario Anda" icon="message">
+    "Saya sedang membangun chatbot dengan GPT-4" memberi agent konteks lebih banyak daripada "Gunakan GPT-4".
+  </Card>
+</CardGroup>
+
+## FAQ
+
+<AccordionGroup>
+  <Accordion title="Skill tidak terpicu secara otomatis?">
+    Coba sebutkan "AI Sonar" atau "AI Sonar API" dalam permintaan Anda:
+    ```
+    Saya ingin menggunakan AI Sonar untuk mengintegrasikan GPT-4 ke project saya
+    ```
+  </Accordion>
+
+  <Accordion title="Bagaimana API membantu agen menemukan model yang tepat?">
+    [API Agent-First](/guides/agent-first-api) AI Sonar mengembalikan petunjuk error terstruktur. Jika agen menebak nama model yang salah, error akan menyertakan `did_you_mean` dengan nama yang benar dan `suggestions` dengan alternatif. Agen membaca ini dan mengoreksi otomatis pada percobaan berikutnya.
+  </Accordion>
+
+  <Accordion title="Agen coding mana yang didukung?">
+    Agen coding apa pun yang mendukung direktori skill bersama atau rules. Saat installer didukung, `npx skills add` menempatkan skill bersama `aisonar-api-integration` di lokasi yang terdeteksi secara otomatis.
+  </Accordion>
+
+  <Accordion title="Bagaimana cara memperbarui skill?">
+    Jalankan ulang installer:
+    ```bash
+    npx skills add https://github.com/hedging8563/aisonar-skills --skill aisonar-api-integration -y
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Sumber Daya
+
+<CardGroup cols={2}>
+  <Card title="API Agent-First" icon="robot" href="/id/guides/agent-first-api">
+    Referensi lengkap untuk petunjuk error terstruktur
+  </Card>
+  <Card title="Dokumentasi API" icon="book" href="https://docs.aisonar.dev">
+    Referensi API lengkap
+  </Card>
+  <Card title="Model" icon="sparkles" href="https://aisonar.dev/models">
+    Jelajahi ratusan model yang tersedia
+  </Card>
+  <Card title="llms.txt" icon="file-lines" href="https://api.aisonar.dev/llms.txt">
+    Ikhtisar API yang dapat dibaca mesin untuk AI agent
+  </Card>
+</CardGroup>
+
+<Info>
+**Punya pertanyaan?** Periksa [GitHub Issues](https://github.com/hedging8563/aisonar-skills/issues) kami atau hubungi [support@aisonar.dev](mailto:support@aisonar.dev)
+</Info>

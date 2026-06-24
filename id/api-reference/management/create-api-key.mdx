@@ -1,0 +1,45 @@
+---
+title: "Buat API Key"
+openapi: "POST /v1/management/api-keys"
+description: "Membuat API key user baru untuk organisasi saat ini."
+---
+
+## Ikhtisar
+
+Membuat API key `type=user` baru di organisasi yang terkait dengan management token saat ini.
+
+## Body Request
+
+| Bidang | Tipe | Default / Batas | Catatan |
+|-------|------|-----------------|---------|
+| `name` | string | wajib, default `Default Key`, panjang `1-50` | Nama tampilan, dipangkas di sisi server |
+| `limitAmount` | number \| null | min `0`, max input `1000000` | `null` atau dihilangkan = tidak terbatas, `0` = kuota nol. Nilai positif dinormalisasi menjadi batas simpan yang tidak melebihi setara `100000` USD |
+| `limitCurrency` | enum | default `USD` | Hanya USD. Mengirim `CNY` menghasilkan `400 currency_retired`. |
+| `models` | string[] | default `[]` | Daftar izin model logis opsional |
+| `expiresAt` | string \| null | datetime RFC3339 | `null` berarti tidak kedaluwarsa |
+
+## Catatan
+
+- Nilai penuh API key hanya ditampilkan sekali dalam respons.
+- `models: []` berarti key tidak memiliki batasan model tambahan di luar kebijakan organisasi.
+- `limitAmount: 0` membuat key yang valid tetapi belum bisa memakai kuota sampai diperbarui.
+
+## Contoh
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/management/api-keys" \
+  -H "Authorization: Bearer mt-your-management-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Backend Worker",
+    "limitAmount": 500,
+    "models": ["veo3.1", "kling-3.0-video"],
+    "expiresAt": "2026-12-31T23:59:59Z"
+  }'
+```
+</RequestExample>
+
+## Request / Respons
+
+Gunakan panel OpenAPI interaktif di atas untuk skema dan field respons yang tepat.

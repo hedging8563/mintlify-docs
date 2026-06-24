@@ -1,0 +1,47 @@
+---
+title: "LiteLLM"
+description: "Utiliser LiteLLM avec AI Sonar comme fournisseur amont ou comme couche de passerelle interne"
+---
+
+## Vue d'ensemble
+
+LiteLLM et AI Sonar se combinent généralement de deux façons.
+
+- utiliser AI Sonar comme **fournisseur amont compatible OpenAI** derrière LiteLLM
+- placer LiteLLM devant AI Sonar pour gérer des clés virtuelles, un routage supplémentaire ou une observabilité centralisée
+
+Pour AI Sonar, le chemin par défaut le plus propre consiste à utiliser le mode **OpenAI personnalisé / compatible OpenAI** de LiteLLM avec `api_base = https://api.aisonar.dev/v1`.
+
+<Note>
+Si vous avez explicitement besoin de formes de requête natives Claude ou Gemini, privilégiez les intégrations natives de AI Sonar au lieu de forcer ces flux à passer par l'abstraction compatible OpenAI de LiteLLM.
+</Note>
+
+## Installation
+
+```bash
+pip install 'litellm[proxy]'
+```
+
+## Configuration du proxy
+
+```yaml
+model_list:
+  - model_name: aisonar-gpt-5.4
+    litellm_params:
+      model: custom_openai/gpt-5.4
+      api_base: https://api.aisonar.dev/v1
+      api_key: os.environ/OPENAI_API_KEY
+```
+
+Démarrage :
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+litellm --config litellm-config.yaml --port 4000
+```
+
+## Bonnes pratiques
+
+- Traitez d'abord AI Sonar comme un amont `custom_openai`
+- Placez LiteLLM devant uniquement si vous avez réellement besoin d'une couche de passerelle supplémentaire
+- N'attendez pas automatiquement tous les détails propres au fournisseur sur un chemin compatible OpenAI

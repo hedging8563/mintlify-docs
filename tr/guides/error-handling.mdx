@@ -1,0 +1,282 @@
+---
+title: "Hata Yönetimi"
+description: "API hatalarını nazikçe yönetin"
+---
+
+## Hata Yanıt Formatı
+
+Tüm hatalar, isteğe bağlı [Agent-First ipuçları](/guides/agent-first-api) ile tutarlı bir JSON formatı döner:
+
+```json
+{
+  "error": {
+    "message": "Human-readable error description",
+    "type": "error_type",
+    "code": "error_code",
+    "param": "parameter_name",
+    "did_you_mean": "suggested_model",
+    "suggestions": [{"id": "model-id"}],
+    "hint": "Next step guidance",
+    "retryable": true,
+    "retry_after": 30
+  }
+}
+```
+
+Temel alanlar (`message`, `type`, `code`, `param`) her zaman mevcuttur. İpucu alanları (`did_you_mean`, `suggestions`, `hint`, `retryable`, `retry_after`, `balance_usd`, `estimated_cost_usd`) AI ajanının kendi kendine düzeltmesi için isteğe bağlı uzantılardır. Detaylar için [Agent-First API guide](/guides/agent-first-api) sayfasına bakın.
+
+OpenAI-uyumlu uç noktalar AI Sonar'nın stable gateway hata tiplerini kullanır. Anthropic-uyumlu ve Gemini-uyumlu uç noktalar kendi yerel hata ailelerini ve yanıt biçimlerini kullanır.
+
+## HTTP Durum Kodları
+
+| Kod | Açıklama |
+|-----:|----------|
+| 400 | Bad Request - Geçersiz parametreler |
+| 401 | Unauthorized - Geçersiz veya eksik API anahtarı |
+| 402 | Payment Required - Yetersiz bakiye |
+| 403 | Forbidden - Erişim reddedildi veya model izinli değil |
+| 404 | Not Found - Model veya kaynak bulunamadı |
+| 413 | Yük çok büyük - Girdi veya dosya boyutu aşıldı |
+| 429 | Too Many Requests - Hız limiti aşıldı |
+| 500 | İç Sunucu Hatası |
+| 502 | Bad Gateway - Üst sağlayıcı hatası |
+| 503 | Service Unavailable - Hizmet geçici olarak kullanılamıyor |
+| 504 | Gateway Timeout - İstek zaman aşımına uğradı |
+
+## Hata Türleri
+
+### Kimlik Doğrulama Hataları (401)
+
+| Tür | Kod | Açıklama |
+|------|------|-------------|
+| `invalid_api_key` | `invalid_api_key` | API anahtarı eksik veya geçersiz |
+| `expired_api_key` | `expired_api_key` | API anahtarı iptal edilmiş |
+
+```python
+from openai import OpenAI, AuthenticationError
+
+try:
+    response = client.chat.completions.create(...)
+except AuthenticationError as e:
+    print(f"Authentication failed: {e.message}")
+```
+
+### Ödeme Hataları (402)
+
+| Tür | Kod | Açıklama |
+|------|------|-------------|
+| `insufficient_balance` | `insufficient_balance` | Hesap bakiyesi çok düşük |
+| `quota_exceeded` | `quota_exceeded` | API anahtarı kullanım limiti doldu |
+
+```python
+from openai import OpenAI, APIStatusError
+
+try:
+    response = client.chat.completions.create(...)
+except APIStatusError as e:
+    if e.status_code == 402:
+        print("Please top up your account balance")
+```
+
+### Erişim Hataları (403)
+
+| Tür | Kod | Açıklama |
+|------|------|-------------|
+| `access_denied` | `access_denied` | Kaynağa erişim reddedildi |
+| `access_denied` | `model_not_allowed` | Bu API anahtarı için model izinli değil |
+
+```json
+{
+  "error": {
+    "message": "You don't have permission to access this model",
+    "type": "access_denied",
+    "code": "model_not_allowed"
+  }
+}
+```
+
+### Doğrulama Hataları (400)
+
+| Tür | Açıklama |
+|------|-------------|
+| `invalid_request_error` | İstek parametreleri geçersiz |
+| `context_length_exceeded` | Girdi model için çok uzun |
+| `model_not_found` | İstenen model mevcut genel sözleşmede bulunmuyor |
+
+```json
+{
+  "error": {
+    "message": "Model not found: please check the model name",
+    "type": "invalid_request_error",
+    "param": "model",
+    "code": "model_not_found",
+    "did_you_mean": "gpt-5.4",
+    "suggestions": [{"id": "gpt-5.4"}, {"id": "gpt-5-mini"}],
+    "hint": "Did you mean 'gpt-5.4'? Use GET https://api.aisonar.dev/v1/models to list all available models."
+  }
+}
+```
+
+Kamu rotaları (public routes) yanıt gövdesinde yazım hatası, gizli, ertelenmiş veya genel olmayan model durumlarını ayırt etmez. Bir model şu anda genel sözleşme aracılığıyla kullanılamıyorsa, AI Sonar `model_not_found` döner.
+
+### Hız Limiti Hataları (429)
+
+Hız limitlerini aştığınızda:
+
+```json
+{
+  "error": {
+    "message": "Rate limit: 60 rpm exceeded",
+    "type": "rate_limit_exceeded",
+    "code": "rate_limit_exceeded",
+    "retryable": true,
+    "retry_after": 8,
+    "hint": "Rate limited. Retry after 8s. Current limit: 60/min for user role."
+  }
+}
+```
+
+**Dahil edilen başlıklar:**
+
+```
+Retry-After: 8
+```
+
+`Retry-After` başlığı ve `retry_after` alanı, yeniden denemeden önce beklenmesi gereken tam saniye sayısını gösterir.
+
+### Yük çok büyük (413)
+
+Girdi veya dosya boyutu limitleri aştığında:
+
+```json
+{
+  "error": {
+    "message": "Input size exceeds maximum allowed",
+    "type": "invalid_request_error",
+    "code": "payload_too_large"
+  }
+}
+```
+
+Yaygın nedenler:
+- Görsel dosya çok büyük (maksimum 20MB)
+- Ses dosyası çok büyük (maksimum 25MB)
+- Girdi metni model bağlam uzunluğunu aşıyor
+
+### Üst Sağlayıcı Hataları (502, 503)
+
+| Tür | Açıklama |
+|------|-------------|
+| `upstream_error` | Sağlayıcı bir hata döndürdü |
+| `all_channels_failed` | Mevcut sağlayıcı yok |
+| `timeout_error` | İstek zaman aşımına uğradı |
+
+Tüm kanallar başarısız olduğunda, yanıt alternatif modelleri içerir:
+
+```json
+{
+  "error": {
+    "message": "Model claude-opus-4-6 temporarily unavailable",
+    "code": "all_channels_failed",
+    "retryable": true,
+    "retry_after": 30,
+    "alternatives": [
+      {"id": "claude-sonnet-4-6", "status": "available", "tags": []},
+      {"id": "gpt-5-mini", "status": "available", "tags": []}
+    ],
+    "hint": "Retry in 30s or switch to an available model."
+  }
+}
+```
+
+## Python'da Hataları Ele Alma
+
+```python
+from openai import OpenAI, APIError, RateLimitError, APIConnectionError
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+def chat_with_retry(messages, max_retries=3):
+    for attempt in range(max_retries):
+        try:
+            return client.chat.completions.create(
+                model="gpt-4o",
+                messages=messages
+            )
+        except RateLimitError as e:
+            if attempt < max_retries - 1:
+                import time
+                time.sleep(2 ** attempt)  # Exponential backoff
+                continue
+            raise
+        except APIConnectionError as e:
+            print(f"Connection error: {e}")
+            raise
+        except APIError as e:
+            print(f"API error: {e.status_code} - {e.message}")
+            raise
+```
+
+## JavaScript'te Hataları Ele Alma
+
+```javascript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+async function chatWithRetry(messages, maxRetries = 3) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await client.chat.completions.create({
+        model: 'gpt-4o',
+        messages
+      });
+    } catch (error) {
+      if (error instanceof OpenAI.RateLimitError) {
+        if (attempt < maxRetries - 1) {
+          await new Promise(r => setTimeout(r, 2 ** attempt * 1000));
+          continue;
+        }
+      }
+      throw error;
+    }
+  }
+}
+```
+
+## En İyi Uygulamalar
+
+<AccordionGroup>
+  <Accordion title="Üssel geri çekilme (exponential backoff) uygulayın">
+    Hız limitine takıldığınızda, yeniden denemeler arasında giderek daha uzun bekleyin:
+    ```python
+    wait_time = 2 ** attempt  # 1s, 2s, 4s, 8s...
+    ```
+  </Accordion>
+
+  <Accordion title="Zaman aşımı (timeouts) ayarlayın">
+    Asılı kalan isteklerden kaçınmak için her zaman makul zaman aşımı değerleri ayarlayın:
+    ```python
+    client = OpenAI(timeout=60.0)  # 60 second timeout
+    ```
+  </Accordion>
+
+  <Accordion title="Hata ayıklama için hataları kayıt altına alın">
+    Destek için istek kimliğini içeren tam hata yanıtını kaydedin:
+    ```python
+    except APIError as e:
+        logger.error(f"API Error: {e.status_code} - {e.message}")
+    ```
+  </Accordion>
+
+  <Accordion title="Modele özgü hataları yönetin">
+    Bazı modellerin belirli gereksinimleri vardır (ör. maks token, görüntü formatları).
+    İstek yapmadan önce girdileri doğrulayın.
+  </Accordion>
+</AccordionGroup>

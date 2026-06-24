@@ -1,0 +1,167 @@
+---
+title: "建立 Embedding"
+openapi: "POST /v1/embeddings"
+description: "建立表示輸入文字的 embedding 向量"
+---
+
+## 請求主體
+
+**同步請求逾時：** 這個非聊天端點會等待路由到的模型完成處理。大型輸入、長音訊或大量批次可能超過常見的 30s 用戶端預設逾時，因此請將 HTTP 用戶端逾時設定為至少 `120s`。
+
+<ParamField body="model" type="string" required>
+  要使用的 embedding 模型 ID（例如：`text-embedding-3-small`）。
+</ParamField>
+
+<ParamField body="input" type="string | array" required>
+  要進行 embedding 的輸入文字。可以是字串或字串陣列。
+</ParamField>
+
+<ParamField body="encoding_format" type="string" default="float">
+  embeddings 的格式：`float` 或 `base64`。
+</ParamField>
+
+<ParamField body="dimensions" type="integer">
+  輸出的維度數量（依模型而定）。
+</ParamField>
+
+<ParamField body="user" type="string">
+  代表終端使用者的唯一識別碼，用於濫用監控。
+</ParamField>
+
+## 可用模型
+
+| 模型 | 維度 | 說明 |
+|-------|------------|-------------|
+| `text-embedding-3-large` | 3072 | 最佳品質 |
+| `text-embedding-3-small` | 1536 | 平衡 |
+| `text-embedding-ada-002` | 1536 | 舊版 |
+
+## 回應
+
+<ResponseField name="object" type="string">
+  一律為 `list`。
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  embedding 物件的陣列。
+
+  每個物件包含：
+  - `object` (string)：`embedding`
+  - `index` (integer)：輸入陣列中的索引
+  - `embedding` (array)：embedding 向量
+</ResponseField>
+
+<ResponseField name="model" type="string">
+  使用的模型。
+</ResponseField>
+
+<ResponseField name="usage" type="object">
+  Token 使用量，包含 `prompt_tokens` 和 `total_tokens`。
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/embeddings" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "text-embedding-3-small",
+    "input": "The quick brown fox jumps over the lazy dog"
+  }'
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.embeddings.create(
+    model="text-embedding-3-small",
+    input="The quick brown fox jumps over the lazy dog"
+)
+
+embedding = response.data[0].embedding
+print(f"Embedding dimension: {len(embedding)}")
+print(f"First 5 values: {embedding[:5]}")
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.embeddings.create({
+  model: 'text-embedding-3-small',
+  input: 'The quick brown fox jumps over the lazy dog'
+});
+
+console.log(response.data[0].embedding.slice(0, 5));
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/embeddings');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Content-Type: application/json',
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => json_encode([
+        'model' => 'text-embedding-3-small',
+        'input' => 'The quick brown fox jumps over the lazy dog'
+    ])
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+print_r(array_slice($data['data'][0]['embedding'], 0, 5));
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "object": "list",
+  "data": [
+    {
+      "object": "embedding",
+      "index": 0,
+      "embedding": [0.0023, -0.0194, 0.0081, ...]
+    }
+  ],
+  "model": "text-embedding-3-small",
+  "usage": {
+    "prompt_tokens": 9,
+    "total_tokens": 9
+  }
+}
+```
+</ResponseExample>
+
+## 批次 Embeddings
+
+```python
+# Embed multiple texts at once
+response = client.embeddings.create(
+    model="text-embedding-3-small",
+    input=[
+        "First document text",
+        "Second document text",
+        "Third document text"
+    ]
+)
+
+for i, data in enumerate(response.data):
+    print(f"Document {i}: {len(data.embedding)} dimensions")
+```

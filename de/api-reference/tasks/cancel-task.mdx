@@ -1,0 +1,74 @@
+---
+title: "Task abbrechen"
+openapi: "DELETE /v1/tasks/{id}"
+description: "Brechen Sie einen wartenden asynchronen Task ab, wenn Provider und Modell dies unterstützen"
+---
+
+## Überblick
+
+Verwenden Sie `DELETE /v1/tasks/{id}`, um einen asynchronen Task abzubrechen, der noch nicht gestartet wurde. Verwenden Sie dieselbe Task-ID aus der Create-Antwort oder aus der zurückgegebenen `poll_url`.
+
+## Unterstützte Tasks
+
+Der Abbruch wird derzeit für wartende Volcengine-Seedance-Video-Tasks mit `seedance-1.5-pro`, `seedance-2.0` oder `seedance-2.0-fast` unterstützt. Tasks, die bereits `processing`/running sind, können nicht abgebrochen werden. Abgeschlossene, fehlgeschlagene, abgelaufene oder nicht unterstützte Tasks bleiben für Status- und Abrechnungsabgleich abfragbar, anstatt Upstream-Datensätze zu löschen.
+
+## Pfadparameter
+
+<ParamField path="id" type="string" required>
+  Die asynchrone Task-ID aus der Create-Anfrage oder aus der `poll_url`.
+</ParamField>
+
+## Antwort
+
+<ResponseField name="id" type="string">
+  Kanonischer asynchroner Task-Bezeichner.
+</ResponseField>
+
+<ResponseField name="task_id" type="string">
+  Alias des asynchronen Task-Bezeichners.
+</ResponseField>
+
+<ResponseField name="poll_url" type="string">
+  Bevorzugte Polling-URL für den Task. Sie bleibt nach dem Abbruch gültig.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Task-Status. Ein erfolgreich abgebrochener Task wird aus Kompatibilitätsgründen als `failed` mit `cancelled: true` zurückgegeben.
+</ResponseField>
+
+<ResponseField name="cancelled" type="boolean">
+  `true`, wenn der Task vor der Ausführung abgebrochen wurde.
+</ResponseField>
+
+<ResponseField name="cancellation_status" type="string">
+  Abbruchmarker. Der Wert ist `cancelled`, wenn der Abbruch erfolgreich war.
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  Abbruchgrund oder Fehlermeldung des Tasks.
+</ResponseField>
+
+## Fehlerverhalten
+
+`400 unsupported_task_cancel` bedeutet, dass Task-Typ, Provider oder Modell keinen Abbruch unterstützt. `409 task_not_cancellable` bedeutet, dass der Task bereits verarbeitet wird, terminal ist oder nicht mehr abbrechbar ist. `403` bedeutet, dass der API key keinen Zugriff auf den Task hat.
+
+## Beispiel
+
+<RequestExample>
+```bash cURL
+curl -X DELETE "https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+```json Response
+{
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "failed",
+  "cancelled": true,
+  "cancellation_status": "cancelled",
+  "error": "Task cancelled before execution"
+}
+```

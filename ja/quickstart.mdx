@@ -1,0 +1,150 @@
+---
+title: "クイックスタート"
+description: "2分でAI Sonar APIを始める"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## ステップ 1: トライアルクレジットから始める
+
+<Steps>
+  <Step title="アカウントを作成">
+    サインアップは [aisonar.dev](https://aisonar.dev) で、メール、Gmail、または GitHub アカウントを使用して行ってください。
+  </Step>
+  <Step title="付与されたトライアルクレジットを使う">
+    新しいアカウントには、最初の小さなテストリクエストに使えるトライアルクレジットが含まれます。Quickstart の前にチャージする必要はありません。
+  </Step>
+  <Step title="APIキーを作成またはコピー">
+    **ダッシュボード → API Keys** に移動して新しいキーを作成するか、既存のキーをコピーしてください。フルキーは一度しか表示されないため、安全に保管してください。
+  </Step>
+</Steps>
+
+<Warning>
+APIキーを安全に保管してください。クライアント側のコードや公開リポジトリに絶対に露出しないでください。
+</Warning>
+
+## ステップ 2: クライアントをインストールする
+
+<CodeGroup>
+
+```bash Python
+pip install openai
+```
+
+```bash JavaScript
+npm install openai
+```
+
+```bash Go
+go get github.com/openai/openai-go/v3
+```
+
+```bash PHP
+composer require openai-php/client
+```
+
+</CodeGroup>
+
+## ステップ 3: 最初のリクエストを行う
+
+ほとんどの新しい統合では、`POST /v1/chat/completions` の **Chat Completions** から始めてください。
+
+<CodeGroup>
+
+```bash cURL
+curl https://api.aisonar.dev/v1/chat/completions \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.4",
+    "messages": [
+      {"role": "user", "content": "What is the capital of France?"}
+    ]
+  }'
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "What is the capital of France?"}]
+)
+
+print(response.choices[0].message.content)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.chat.completions.create({
+  model: 'gpt-5.4',
+  messages: [{ role: 'user', content: 'What is the capital of France?' }],
+});
+
+console.log(response.choices[0].message.content);
+```
+
+</CodeGroup>
+
+<Note>
+Responses 固有の挙動が明示的に必要な場合に限り `POST /v1/responses` を使用してください。Responses 専用のフィールドの一部は、選択したモデルやルーティングされたパスに依存します。
+</Note>
+
+## 本番利用のためにチャージする
+
+付与されたトライアルクレジットは、最初の小さなテスト向けです。本番利用や高頻度のテストに進む準備ができたら、**ダッシュボード → Billing** でクレジットを追加してください。
+
+## さまざまなモデルを試す
+
+AI Sonar は300件以上のモデルをサポートしています。`model` フィールドだけを変更してください:
+
+```python
+response = client.chat.completions.create(model="gpt-5.4", messages=[{"role": "user", "content": "Hello"}])
+response = client.chat.completions.create(model="gpt-5-mini", messages=[{"role": "user", "content": "Hello"}])
+response = client.chat.completions.create(model="claude-sonnet-4-6", messages=[{"role": "user", "content": "Hello"}])
+response = client.chat.completions.create(model="gemini-2.5-flash", messages=[{"role": "user", "content": "Hello"}])
+response = client.chat.completions.create(model="deepseek-r1", messages=[{"role": "user", "content": "Hello"}])
+```
+
+## ストリーミングを有効にする
+
+```python
+stream = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "Tell me a short story."}],
+    stream=True
+)
+
+for chunk in stream:
+    delta = chunk.choices[0].delta.content
+    if delta:
+        print(delta, end="")
+```
+
+## 次に行うこと
+
+<CardGroup cols={2}>
+  <Card title="認証" icon="key" href="/authentication">
+    APIキーの管理とセキュリティについて学んでください。
+  </Card>
+  <Card title="OpenAI SDK" icon="code" href="/integrations/openai-sdk">
+    既存の OpenAI SDK で OpenAI 互換の `/v1` ルートを使用します。
+  </Card>
+  <Card title="API リファレンス" icon="book" href="/api-reference/introduction">
+    エンドポイントの完全なリファレンスを参照してください。
+  </Card>
+  <Card title="モデル" icon="robot" href="https://aisonar.dev/models">
+    現在のモデルの利用可能性と価格を確認してください。
+  </Card>
+</CardGroup>

@@ -1,0 +1,136 @@
+---
+title: "Optimización de costos de Coding Agents"
+description: "Estrategias prácticas para reducir los costos de API de agentes de codificación en un 60-90%"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## El problema de costos
+
+Una sesión típica de coding agent consume tokens rápidamente:
+
+| Actividad | Tokens por llamada | Llamadas por hora | Tokens por hora |
+|-----------|-------------------|-------------------|-----------------|
+| Generación de código | 5.000–50.000 | 10–30 | 150K–1,5M |
+| Búsqueda en código | 2.000–20.000 | 20–50 | 100K–1M |
+| Revisión de código | 10.000–80.000 | 5–10 | 100K–800K |
+| Autocompletado | 500–3.000 | 50–200 | 50K–600K |
+| **Total** | | | **400K–4M+** |
+
+Con tarifas de modelos premium, son $3–30/hora por desarrollador. Para un equipo de 10, $500–5.000/mes.
+
+## Selección inteligente de modelos
+
+| Tarea | Recomendado | Nivel de costo | Razón |
+|-------|-----------|----------------|-------|
+| Diseño de arquitectura | `claude-opus-4-6`, `gpt-5.4` | $$$$ Premium | Razonamiento complejo necesario |
+| Generación de código | `claude-sonnet-4-6`, `gemini-3-pro-preview` | $$$ Estándar | Mejor relación calidad/costo |
+| Revisión de código | `claude-sonnet-4-6`, `deepseek-r1` | $$–$$$ | Pattern matching |
+| Corrección de bugs | `claude-sonnet-4-6`, `gpt-5-mini` | $$–$$$ | Tareas enfocadas |
+| Completado por tab | `gpt-5-mini`, `gemini-3-flash-preview` | $$ Económico | La velocidad importa más |
+| Boilerplate | `deepseek-v3.2`, `gpt-5-mini` | $ Básico | Patrones simples y repetitivos |
+
+<Tip>
+Ver [guía de selección de modelos](/es/guides/coding-agent-models) para comparaciones detalladas.
+</Tip>
+
+## Estrategias de caché
+
+### Prompt Cache (nivel de proveedor)
+
+El [Prompt Cache upstream](/es/guides/prompt-cache) funciona automáticamente:
+
+| Proveedor | Descuento de caché | Tokens mín. |
+|-----------|-------------------|-------------|
+| Anthropic | 90% en lectura | 1.024 |
+| OpenAI | 50% en lectura | 1.024 |
+| DeepSeek | 90% en lectura | 64 |
+
+Tasa de hit de Prompt Cache típica: **70–90%**.
+
+### Ejemplo de ahorro combinado
+
+Para una solicitud de 50.000 tokens de entrada:
+
+```
+API directa (sin caché):
+  50.000 tokens × $3,00/1M = $0,150
+
+Con Prompt Cache (40.000 en caché + 10.000 nuevos):
+  Caché:  40.000 × $0,30/1M = $0,012
+  Nuevo:  10.000 × $3,00/1M = $0,030
+  Total: $0,042 (72% de ahorro)
+
+```
+
+## Comparación de costos reales
+
+Costos estimados para una sesión de 1 hora (~3M tokens):
+
+| Configuración | Costo/hora | Mensual (160h) |
+|---------------|-----------|----------------|
+| API directa (modelo premium) | ~$15–25 | ~$2.400–4.000 |
+| AI Sonar (enrutamiento inteligente) | ~$10–18 | ~$1.600–2.900 |
+| AI Sonar + Prompt Cache | ~$4–8 | ~$640–1.280 |
+
+<Warning>
+Estas son estimaciones ilustrativas. Los costos reales dependen del modelo, patrones de uso y tasas de cache hit. Consulta los [precios en tiempo real](/es/api-reference/pricing/get-pricing).
+</Warning>
+
+## Consejos de gestión de tokens
+
+### Establecer max_tokens
+
+```json
+{
+  "model": "claude-sonnet-4-6",
+  "max_tokens": 4096,
+  "messages": [...]
+}
+```
+
+### Usar Auto-Compact
+
+- **Claude Code**: Auto-compact integrado en los límites de contexto
+- **Cursor**: Gestión automática de contexto
+- **Codex CLI**: Flag `--max-context`
+
+### Evitar la inflación de contexto
+
+- No pegar archivos completos cuando una función es suficiente
+- Usar patrones `.gitignore` para excluir archivos irrelevantes
+- Limpiar el historial al cambiar de tarea
+
+## Configuración rápida
+
+<AccordionGroup>
+  <Accordion title="Claude Code">
+    ```bash
+    export ANTHROPIC_API_KEY="sk-your-api-key"
+    export ANTHROPIC_BASE_URL="https://api.aisonar.dev"
+    ```
+    [Guía completa →](/es/integrations/claude-code)
+  </Accordion>
+
+  <Accordion title="Cursor">
+    Configuración → Modelos → Clave de API de OpenAI: `sk-your-key`, URL base: `https://api.aisonar.dev/v1`
+
+    [Guía completa →](/es/integrations/cursor)
+  </Accordion>
+
+  <Accordion title="Codex CLI">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export OPENAI_BASE_URL="https://api.aisonar.dev/v1"
+    ```
+    [Guía completa →](/es/integrations/codex-cli)
+  </Accordion>
+
+  <Accordion title="Gemini CLI">
+    ```bash
+    export GEMINI_API_KEY="sk-your-api-key"
+    export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"
+    ```
+    [Guía completa →](/es/integrations/gemini-cli)
+  </Accordion>
+</AccordionGroup>

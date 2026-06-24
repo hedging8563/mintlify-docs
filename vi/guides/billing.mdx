@@ -1,0 +1,196 @@
+---
+title: "Thanh toán & Giá cả"
+description: "Tìm hiểu mô hình giá pay-as-you-go của AI Sonar"
+---
+
+## Tổng quan
+
+AI Sonar sử dụng **mô hình giá pay-as-you-go**. Bạn chỉ trả tiền cho những gì bạn sử dụng, không có phí đăng ký hàng tháng hoặc cam kết tối thiểu.
+
+## Cơ chế thanh toán
+
+1. **Nạp tiền (credits)** vào tài khoản của bạn
+2. **Sử dụng API** - chi phí sẽ được trừ trên mỗi yêu cầu
+3. **Theo dõi mức sử dụng** trong bảng điều khiển (dashboard) của bạn
+4. **Nạp thêm tiền** khi số dư của bạn thấp
+
+## Các mô hình giá
+
+### Giá theo Token
+
+Hầu hết các mô hình tạo văn bản được tính giá trên mỗi triệu token:
+
+| Mô hình | Đầu vào (trên 1M tokens) | Đầu ra (trên 1M tokens) |
+|-------|----------------------|------------------------|
+| GPT-4o | $1.75 | $7.00 |
+| GPT-4o-mini | $0.105 | $0.42 |
+| Claude Opus 4.5 | $3.50 | $17.50 |
+| Claude Sonnet 4.5 | $2.10 | $10.50 |
+| Claude Haiku 4.5 | $0.70 | $3.50 |
+| Gemini 2.5 Pro | $0.875 | $7.00 |
+| Gemini 2.5 Flash | $0.1225 | $0.525 |
+| DeepSeek R1 | $0.385 | $1.533 |
+| DeepSeek V3.2 | $0.196 | $0.294 |
+
+<Note>
+  Giá hiển thị là giá ưu đãi của nền tảng. Giá thực tế có thể thay đổi. Kiểm tra [pricing page](https://aisonar.dev/vi/pricing) để biết tỷ giá hiện tại.
+</Note>
+
+### Giá theo yêu cầu
+
+Các mô hình hình ảnh, video và âm thanh được tính giá trên mỗi yêu cầu:
+
+| Mô hình | Giá mỗi yêu cầu |
+|-------|-------------------|
+| DALL-E 3 (1024x1024) | $0.04 |
+| Midjourney | $0.05 |
+| Whisper (mỗi phút) | $0.006 |
+| TTS-1 | $0.015 |
+
+### Thanh toán tác vụ không đồng bộ (Video/Nhạc/3D và một số mô hình hình ảnh)
+
+<Note>
+  Với quy trình tạo dựa trên tác vụ, việc tạo tác vụ có thể giữ chỗ hoặc trừ trước chi phí ước tính. Việc quyết toán cuối cùng chỉ diễn ra sau khi tác vụ không đồng bộ đạt trạng thái cuối thành công trong quá trình polling hoặc finalization.
+</Note>
+
+Đối với quy trình tạo dựa trên tác vụ (video, nhạc, 3D và một số mô hình hình ảnh):
+
+1. Gửi tác vụ. AI Sonar có thể giữ chỗ hoặc trừ trước chi phí ước tính để kiểm tra số dư và giới hạn chi tiêu của API Key.
+2. Poll `poll_url` được trả về, hoặc gọi `GET /v1/tasks/{id}`, cho đến khi tác vụ đạt trạng thái cuối.
+3. Khi tác vụ hoàn tất thành công, việc quyết toán cuối cùng ghi nhận usage và phản hồi tác vụ bao gồm `billing_transaction_id`.
+4. Nếu tạo tác vụ thất bại hoặc trạng thái cuối là failed, khoản đang chờ sẽ được hoàn lại hoặc giải phóng và request được đánh dấu là không tính phí.
+
+Nếu dashboard không phản ánh quyết toán hoặc hoàn tiền sau khi trạng thái cuối đã hiển thị, hãy liên hệ support@aisonar.dev để được hỗ trợ.
+
+```python
+# Ví dụ: billing cho tạo video
+response = client.post("/v1/videos/generations", json={
+    "model": "veo3.1",
+    "prompt": "A sunset over the ocean"
+})
+# Chi phí ước tính có thể được giữ chỗ ngay; billing cuối cùng xuất hiện sau khi thành công.
+
+poll_url = response.json()["poll_url"]
+task_id = response.json()["task_id"]
+# Poll poll_url để xem trạng thái; billing_transaction_id xuất hiện sau settlement.
+```
+
+### ID giao dịch billing
+
+Các phản hồi JSON có tính phí, không streaming và tương thích OpenAI sẽ bao gồm `billing_transaction_id` khi việc settlement hoàn tất trước lúc phản hồi được hoàn thiện. Cùng giá trị này cũng được expose qua header `X-Billing-Transaction-ID` cho tích hợp trình duyệt và server. Các route tương thích native như Gemini `/v1beta` có thể chỉ expose giá trị qua header để giữ nguyên hình dạng phản hồi native của provider. Với task media bất đồng bộ, hãy poll `poll_url` trả về hoặc `GET /v1/tasks/{id}`; phản hồi task sẽ có `billing_transaction_id` sau khi settlement hoàn tất. Phản hồi streaming có thể settlement sau khi stream đã được gửi, vì vậy nếu không có header này, hãy dùng usage logs trong dashboard để đối soát.
+
+## Đếm Token
+
+Token là các đơn vị cơ bản của xử lý văn bản:
+
+- ~4 ký tự = 1 token (Tiếng Anh)
+- ~1-2 ký tự = 1 token (Tiếng Trung)
+- 1 hình ảnh = thay đổi tùy theo kích thước và chi tiết
+
+### Ước tính Token
+
+```python
+# Rough estimation
+def estimate_tokens(text):
+    return len(text) / 4  # Approximate for English
+
+# Actual count (for OpenAI models)
+import tiktoken
+encoder = tiktoken.encoding_for_model("gpt-4o")
+tokens = encoder.encode("Your text here")
+print(f"Token count: {len(tokens)}")
+```
+
+## Theo dõi mức sử dụng
+
+### Bảng điều khiển
+
+Theo dõi mức sử dụng của bạn trong [Dashboard](https://console.aisonar.dev):
+
+- Số dư thời gian thực
+- Lịch sử sử dụng theo mô hình
+- Phân tích chi phí
+- Mức sử dụng API key
+
+### Phản hồi API
+
+Mỗi phản hồi bao gồm thông tin sử dụng:
+
+```json
+{
+  "usage": {
+    "prompt_tokens": 50,
+    "completion_tokens": 100,
+    "total_tokens": 150
+  }
+}
+```
+
+## Tối ưu hóa chi phí
+
+<AccordionGroup>
+  <Accordion title="Sử dụng mô hình phù hợp">
+    Sử dụng các mô hình nhỏ hơn (GPT-4o-mini, Gemini Flash) cho các tác vụ đơn giản.
+  </Accordion>
+
+  <Accordion title="Triển khai bộ nhớ đệm">
+    Lưu bộ nhớ đệm (cache) các phản hồi cho các yêu cầu giống hệt nhau được lặp lại.
+  </Accordion>
+
+  <Accordion title="Tối ưu hóa prompt">
+    Giữ cho prompt ngắn gọn trong khi vẫn duy trì sự rõ ràng.
+  </Accordion>
+
+  <Accordion title="Thiết lập max_tokens">
+    Giới hạn độ dài phản hồi khi không cần phản hồi đầy đủ.
+  </Accordion>
+
+  <Accordion title="Sử dụng streaming cho các phản hồi dài">
+    Streaming không tốn thêm phí nhưng cải thiện hiệu suất cảm nhận được.
+  </Accordion>
+</AccordionGroup>
+
+## Cảnh báo số dư thấp
+
+Cấu hình cảnh báo khi số dư của bạn giảm xuống:
+
+1. Đi tới **Dashboard → Settings → Notifications**
+2. Thiết lập số tiền ngưỡng của bạn
+3. Nhận thông báo qua email
+
+## Nạp tiền
+
+### Phương thức thanh toán
+
+- Stripe (Visa, Mastercard)
+
+### Các bước thực hiện
+
+1. Đăng nhập vào [Dashboard](https://console.aisonar.dev)
+2. Nhấp vào **Add Credits**
+3. Chọn số tiền và phương thức thanh toán
+4. Hoàn tất thanh toán
+
+Tiền sẽ được cộng vào tài khoản ngay lập tức sau khi xác nhận thanh toán.
+
+## Giới hạn API Key
+
+Bạn có thể thiết lập giới hạn chi tiêu cho từng API Key riêng lẻ:
+
+1. Đi tới **Dashboard → API Keys**
+2. Nhấp vào một key để chỉnh sửa
+3. Thiết lập **Usage Limit**
+
+Khi đạt đến giới hạn, các yêu cầu với key đó sẽ trả về lỗi `402 Payment Required`.
+
+## Hóa đơn
+
+Đối với tài khoản doanh nghiệp, hóa đơn luôn có sẵn:
+
+1. Đi tới **Dashboard → Billing**
+2. Xem lịch sử giao dịch
+3. Tải hóa đơn dưới dạng PDF
+
+## Câu hỏi?
+
+Liên hệ support@aisonar.dev cho các thắc mắc về thanh toán.

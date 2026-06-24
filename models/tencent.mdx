@@ -1,0 +1,44 @@
+---
+title: "Tencent (Hunyuan)"
+description: "Hunyuan models"
+---
+
+## Overview
+
+AI Sonar provides access to Tencent (Hunyuan) models. Total: **5 models** available.
+
+## Chat Models
+
+| Model ID | Pricing |
+|----------|--------|
+| `hunyuan-role` | $0.34285714/1M in |
+| `hy-mt2-pro` | $0.21428571/1M in |
+| `hy3-preview` | $0.17647059/1M in |
+
+## Image Generation
+
+| Model ID | Pricing |
+|----------|--------|
+| `hy-image-lite` | See dashboard |
+| `hy-image-v3.0` | See dashboard |
+
+
+## Usage
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="hunyuan-role",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+```
+
+<Note>
+Prices shown are platform prices (~70% of official rates).
+</Note>

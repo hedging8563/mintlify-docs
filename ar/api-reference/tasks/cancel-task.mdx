@@ -1,0 +1,74 @@
+---
+title: "إلغاء المهمة"
+openapi: "DELETE /v1/tasks/{id}"
+description: "إلغاء مهمة غير متزامنة في قائمة الانتظار عندما يدعم الموفر والنموذج ذلك"
+---
+
+## نظرة عامة
+
+استخدم `DELETE /v1/tasks/{id}` لإلغاء مهمة غير متزامنة لم تبدأ التنفيذ بعد. استخدم نفس معرف المهمة من استجابة create أو المعرف الموجود في `poll_url`.
+
+## المهام المدعومة
+
+الإلغاء مدعوم حاليًا لمهام فيديو Volcengine Seedance الموجودة في قائمة الانتظار باستخدام `seedance-1.5-pro` أو `seedance-2.0` أو `seedance-2.0-fast`. لا يمكن إلغاء المهام التي أصبحت بالفعل في حالة `processing`/running. تبقى المهام المكتملة أو الفاشلة أو المنتهية أو غير المدعومة قابلة للاستعلام لأغراض الحالة وتسوية الفوترة، بدلاً من حذف سجلات upstream.
+
+## معلمات المسار
+
+<ParamField path="id" type="string" required>
+  معرف المهمة غير المتزامنة الذي أرجعته طلب create أو الموجود في `poll_url`.
+</ParamField>
+
+## الاستجابة
+
+<ResponseField name="id" type="string">
+  المعرف القياسي للمهمة غير المتزامنة.
+</ResponseField>
+
+<ResponseField name="task_id" type="string">
+  اسم مستعار لمعرف المهمة غير المتزامنة.
+</ResponseField>
+
+<ResponseField name="poll_url" type="string">
+  رابط polling المفضل للمهمة. يبقى صالحًا بعد الإلغاء.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  حالة المهمة. يتم إرجاع المهمة الملغاة بنجاح كـ `failed` مع `cancelled: true` للحفاظ على التوافق مع قيم الحالة الحالية.
+</ResponseField>
+
+<ResponseField name="cancelled" type="boolean">
+  `true` عندما يتم إلغاء المهمة قبل التنفيذ.
+</ResponseField>
+
+<ResponseField name="cancellation_status" type="string">
+  مؤشر الإلغاء. تكون القيمة `cancelled` عند نجاح الإلغاء.
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  سبب الإلغاء أو رسالة فشل المهمة.
+</ResponseField>
+
+## سلوك الأخطاء
+
+`400 unsupported_task_cancel` يعني أن نوع المهمة أو الموفر أو النموذج لا يدعم الإلغاء. `409 task_not_cancellable` يعني أن المهمة قيد المعالجة بالفعل أو في حالة نهائية أو لم تعد قابلة للإلغاء. `403` يعني أن مفتاح API لا يمكنه الوصول إلى المهمة.
+
+## مثال
+
+<RequestExample>
+```bash cURL
+curl -X DELETE "https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+```json Response
+{
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "failed",
+  "cancelled": true,
+  "cancellation_status": "cancelled",
+  "error": "Task cancelled before execution"
+}
+```

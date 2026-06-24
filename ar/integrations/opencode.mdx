@@ -1,0 +1,201 @@
+---
+title: "OpenCode"
+description: "قم بتهيئة OpenCode لاستخدام AI Sonar API"
+---
+
+## نظرة عامة
+
+
+
+<Note>
+**النوع**: أداة برمجة
+
+**المسار الرئيسي**: متوافق مع OpenAI
+
+**مستوى الدعم**: مسار مدعوم
+</Note>
+
+OpenCode هو مساعد برمجة AI مفتوح المصدر يعمل داخل الطرفية الخاصة بك. وهو يدعم عدة مزوّدي LLM ويمكن تهيئته لاستخدام API الخاصة بـ AI Sonar للوصول إلى مئات النماذج.
+
+## التثبيت
+
+<Tabs>
+  <Tab title="سكريبت التثبيت">
+    ```bash
+    curl -fsSL https://opencode.ai/install | bash
+    ```
+  </Tab>
+  <Tab title="Homebrew">
+    ```bash
+    brew install opencode-ai/tap/opencode
+    ```
+
+    أو استخدم community tap (تحديثات أكثر تكرارًا):
+    ```bash
+    brew install anomalyco/tap/opencode
+    ```
+  </Tab>
+  <Tab title="Go">
+    ```bash
+    go install github.com/opencode-ai/opencode@latest
+    ```
+  </Tab>
+</Tabs>
+
+تحقق من التثبيت:
+
+```bash
+opencode --version
+```
+
+## التهيئة
+
+### الخطوة 1: تعيين متغيرات البيئة
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+```
+
+للتهيئة الدائمة، أضف إلى `~/.bashrc` أو `~/.zshrc`:
+
+```bash
+echo 'export OPENAI_API_KEY="sk-your-api-key"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+### الخطوة 2: تهيئة OpenCode
+
+توصي وثائق OpenCode الحالية بتهيئة المزوّدين من خلال `opencode.json` أو `opencode.jsonc`. بالنسبة إلى AI Sonar، استخدم مزوّدًا مخصصًا بدلًا من تحميل المزوّد المدمج `openai` فوق طاقته:
+
+```jsonc
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "aisonar": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "AI Sonar",
+      "options": {
+        "baseURL": "https://api.aisonar.dev/v1",
+        "apiKey": "{env:OPENAI_API_KEY}"
+      },
+      "models": {
+        "gpt-5.4": {
+          "name": "GPT-5.4"
+        },
+        "gpt-5-mini": {
+          "name": "GPT-5 Mini"
+        }
+      }
+    }
+  },
+  "model": "aisonar/gpt-5.4"
+}
+```
+
+<Note>
+استخدم `@ai-sdk/openai-compatible` للتوافق بأسلوب chat-completions. إذا كنت تحتاج تحديدًا إلى مسار مزوّد مبني على `/v1/responses`، فإن وثائق OpenCode توصي بتبديل الحزمة إلى `@ai-sdk/openai`.
+</Note>
+
+## الاستخدام الأساسي
+
+**ابدأ الوضع التفاعلي:**
+
+```bash
+opencode
+```
+
+**شغّل مع prompt:**
+
+```bash
+opencode "Explain this codebase"
+```
+
+**حدد النموذج:**
+
+```bash
+opencode --model aisonar/gpt-5.4 "Fix the bugs in main.py"
+```
+
+## النماذج المتاحة
+
+| النموذج | الأفضل لـ |
+|-------|----------|
+| `gpt-5.4` | المهام المعقدة، بنية الكود |
+| `gpt-5-mini` | الإصلاحات السريعة، الاستعلامات البسيطة |
+| `claude-sonnet-4-6` | مراجعة الكود، التوثيق |
+| `claude-opus-4-6` | الاستدلال المعقد |
+| `gemini-2.5-flash` | الاستجابات السريعة |
+| `deepseek-r1` | تصميم الخوارزميات |
+
+## الأوامر الشائعة
+
+**تحليل الكود:**
+
+```bash
+opencode "What does this function do?" < src/utils.ts
+```
+
+**توليد الكود:**
+
+```bash
+opencode "Create a REST API with Express"
+```
+
+**مراجعة التغييرات:**
+
+```bash
+git diff | opencode "Review these changes"
+```
+
+**إصلاح الأخطاء:**
+
+```bash
+opencode "Fix the TypeScript errors in this project"
+```
+
+## الأوامر التفاعلية
+
+| الأمر | الوصف |
+|---------|-------------|
+| `/help` | عرض الأوامر المتاحة |
+| `/model <name>` | التبديل إلى نموذج مختلف |
+| `/clear` | مسح سجل المحادثة |
+| `/exit` | الخروج من OpenCode |
+
+## استكشاف الأخطاء وإصلاحها
+
+<AccordionGroup>
+  <Accordion title="خطأ في الاتصال">
+    - تحقق من أن `options.baseURL` مضبوط على `https://api.aisonar.dev/v1`
+    - تحقق من اتصال الشبكة
+    - جرّب `curl https://api.aisonar.dev/v1/models` للاختبار
+  </Accordion>
+
+  <Accordion title="فشلت المصادقة">
+    - تحقق من تعيين متغير البيئة `OPENAI_API_KEY`
+    - تحقق من أن `options.apiKey` يشير إلى `{env:OPENAI_API_KEY}` أو إلى مصدر secret صالح آخر
+    - تحقق من أن المفتاح يبدأ بـ `sk-`
+    - تأكد من أن المفتاح نشط في لوحة تحكم AI Sonar
+  </Accordion>
+
+  <Accordion title="النموذج غير موجود">
+    - تحقق من أن اسم النموذج في ملف التهيئة مطابق تمامًا
+    - تحقق من توفر النموذج على [aisonar.dev/en/models](https://aisonar.dev/models)
+  </Accordion>
+</AccordionGroup>
+
+## أفضل الممارسات
+
+<AccordionGroup>
+  <Accordion title="استخدم سياق المشروع">
+    شغّل OpenCode من جذر مشروعك للحصول على فهم أفضل لقاعدة الكود الخاصة بك.
+  </Accordion>
+
+  <Accordion title="اختر النماذج المناسبة">
+    استخدم النماذج الأسرع (`gpt-5-mini`) للمهام البسيطة والنماذج الأقوى (`gpt-5.4`, `claude-sonnet-4-6`) للمهام المعقدة.
+  </Accordion>
+
+  <Accordion title="راجع الكود المُولَّد">
+    راجع دائمًا الكود الذي يولّده AI قبل تطبيق التغييرات على مشروعك.
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,102 @@
+---
+title: "Cursor"
+description: "Utiliser AI Sonar avec l’éditeur de code IA Cursor"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Vue d’ensemble
+
+
+
+<Note>
+**Type**: Outil de code
+
+**Chemin principal**: compatible OpenAI
+
+**Niveau de support**: Pris en charge avec limites
+</Note>
+
+[Cursor](https://cursor.sh) prend en charge les fournisseurs bring-your-own-key (BYOK), mais les clés API personnalisées ne fonctionnent qu’avec les modèles de chat standards. Utilisez AI Sonar ici comme point de terminaison compatible OpenAI pour les flux de travail d’éditeur de type chat, et non comme remplacement complet de toutes les fonctionnalités de modèle de Cursor.
+
+## Configuration
+
+1. Ouvrez les paramètres de Cursor (`Cmd/Ctrl + ,`)
+2. Accédez à **Models** dans la barre latérale gauche
+3. Faites défiler jusqu’à la section **OpenAI API Key**
+4. Saisissez votre clé API AI Sonar
+5. Activez **Override OpenAI Base URL**
+6. Définissez la Base URL sur :
+
+```
+https://api.aisonar.dev/v1
+```
+
+<Warning>
+Les clés API personnalisées de Cursor s’appliquent uniquement aux modèles de chat standards. Tab Completion et les autres fonctionnalités spécialisées gérées par Cursor continueront d’utiliser les fournisseurs intégrés de Cursor.
+</Warning>
+
+<Warning>
+Le flux de clé API personnalisée de Cursor ne s’applique qu’aux modèles de chat standards. Les fonctionnalités qui nécessitent des modèles spécialisés gérés par Cursor, comme Tab Completion et certains flux spécifiques au raisonnement, continueront d’utiliser les fournisseurs intégrés de Cursor. Cursor indique également que les requêtes transitent toujours par son serveur intermédiaire pour l’assemblage final du prompt.
+</Warning>
+
+## Sélection du modèle
+
+Après la configuration, privilégiez les modèles de chat standards exposés via AI Sonar :
+
+### Modèles recommandés pour le code
+
+| Modèle | Idéal pour |
+|-------|----------|
+| `gpt-5.4` | Codage général, débogage, chat |
+| `gpt-5-mini` | Modifications rapides et prompts légers |
+
+## Ce qui fonctionne le mieux
+
+### Chat et flux de travail d’éditeur
+
+Utilisez AI Sonar via Cursor pour :
+
+- Explications de code
+- Correction de bugs
+- Suggestions de refactorisation
+- Génération de documentation
+
+### Ce qui reste sur les modèles gérés par Cursor
+
+Ces fonctionnalités ne basculent pas de manière fiable vers votre point de terminaison AI Sonar :
+
+- Complétion par tabulation
+- Modèles de chat spécialisés non standards
+- Fonctionnalités spécifiques au fournisseur que Cursor n’active que sur les modèles intégrés
+
+## Dépannage
+
+<AccordionGroup>
+  <Accordion title="Les modèles n’apparaissent pas">
+    Cursor met en cache l’état des modèles et des fournisseurs. Redémarrez Cursor après avoir configuré la clé API et l’URL de base.
+  </Accordion>
+
+  <Accordion title="Modèle non pris en charge en mode BYOK">
+    Les clés API personnalisées ne fonctionnent qu’avec les modèles de chat standards. Si un modèle utilise une infrastructure Cursor spécialisée, passez à un modèle de chat standard tel que `gpt-5.4`.
+  </Accordion>
+
+  <Accordion title="Erreurs d’authentification">
+    Vérifiez que votre clé API est correcte et qu’elle dispose d’un solde suffisant.
+  </Accordion>
+
+  <Accordion title="Un autre fournisseur a cessé de fonctionner après l’activation de AI Sonar">
+    La configuration BYOK de Cursor peut affecter les flux d’autres fournisseurs. Si un autre chemin de modèle ne fonctionne plus après l’activation du remplacement de l’URL de base OpenAI, désactivez ce remplacement et redémarrez Cursor.
+  </Accordion>
+</AccordionGroup>
+
+## Conseils
+
+<CardGroup cols={2}>
+  <Card title="Utilisez des modèles appropriés" icon="gauge-high">
+    Utilisez `gpt-5-mini` pour les tâches rapides de type chat et `gpt-5.4` pour les travaux de code plus lourds.
+  </Card>
+  <Card title="Vérifiez votre solde" icon="wallet">
+    Surveillez l’utilisation dans votre tableau de bord AI Sonar.
+  </Card>
+</CardGroup>

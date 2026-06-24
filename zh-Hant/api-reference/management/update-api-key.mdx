@@ -1,0 +1,47 @@
+---
+title: "更新 API Key"
+openapi: "PATCH /v1/management/api-keys/{keyId}"
+description: "更新目前組織中的既有使用者 API Key。"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## 概覽
+
+這個 endpoint 可更新既有 API Key 的名稱、額度、模型白名單、過期時間或狀態。
+
+## 請求主體
+
+PATCH 請求至少需要提供一個欄位。
+
+| 欄位 | 型別 | 預設值 / 限制 | 說明 |
+|------|------|---------------|------|
+| `status` | enum | - | `active`、`inactive`、`suspended`、`revoked` |
+| `name` | string | 長度 `1-50` | 更新後的顯示名稱 |
+| `limitAmount` | number \| null | 最小 `0`，輸入上限 `1000000` | `null` = 不限額，`0` = 零額度，正數會被規範化為一個儲存上限，且不能超過 `100000` USD 等值 |
+| `limitCurrency` | 列舉 | 預設 `USD` | 僅限 USD。傳送 `CNY` 會回傳 `400 currency_retired`。 |
+| `models` | string[] | - | 更新後的邏輯模型白名單 |
+| `expiresAt` | string \| null | RFC3339 datetime | `null` 表示移除過期時間 |
+
+## 說明
+
+- Management API v1 故意不支援硬刪除。
+- `revoked` 通常視為終態；若需要重新使用，通常建議直接建立一把新的 Key。
+
+## 範例
+
+<RequestExample>
+```bash cURL
+curl -X PATCH "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456" \
+  -H "Authorization: Bearer mt-your-management-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "inactive",
+    "limitAmount": 0
+  }'
+```
+</RequestExample>
+
+## 請求 / 回應
+
+精確 schema 與回應欄位，請使用上方的互動式 OpenAPI 面板。

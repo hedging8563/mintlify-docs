@@ -1,0 +1,127 @@
+---
+title: "인증"
+description: "API 키로 AI Sonar API 요청을 안전하게 보호하세요"
+---
+
+## API 키
+
+모든 AI Sonar API 요청에는 API 키가 필요합니다.
+
+OpenAI 호환 엔드포인트의 경우, 다음과 같이 전송합니다:
+
+```bash
+Authorization: Bearer sk-your-api-key
+```
+
+Anthropic 호환 `/v1/messages` 요청의 경우, 다음 헤더도 사용할 수 있습니다:
+
+```bash
+x-api-key: sk-your-api-key
+```
+
+## API 키 발급하기
+
+1. [AI Sonar Dashboard](https://console.aisonar.dev)에 로그인합니다
+2. **API Keys**를 엽니다
+3. 새 키를 생성합니다
+4. 설명이 포함된 이름을 지정합니다
+5. 키는 한 번만 표시되므로 즉시 복사합니다
+
+<Warning>
+- 클라이언트 측 코드에 API 키를 절대 노출하지 마세요
+- API 키를 버전 관리에 절대 커밋하지 마세요
+- 환경 변수 또는 secret manager를 사용하세요
+- 주기적으로 키를 교체하세요
+- 사용하지 않는 키는 삭제하세요
+</Warning>
+
+## API 키 사용하기
+
+<CodeGroup>
+
+```bash cURL
+curl https://api.aisonar.dev/v1/responses \
+  -H "Authorization: Bearer $TOKENLAB_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.4",
+    "input": "Hello!"
+  }'
+```
+
+```python Python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ.get("TOKENLAB_API_KEY"),
+    base_url="https://api.aisonar.dev/v1"
+)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: process.env.TOKENLAB_API_KEY,
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+```
+
+</CodeGroup>
+
+## API 키 기능
+
+### 사용량 한도
+
+각 API 키에 대해 사용량 한도를 설정할 수 있습니다:
+
+| 설정 | 설명 |
+|---------|-------------|
+| **제한 없음** | 제한 없이 계정 잔액을 사용합니다 |
+| **고정 한도** | 지정된 금액에 도달하면 키가 작동을 멈춥니다 |
+
+### 키 접두사
+
+모든 AI Sonar API 키는 `sk-`로 시작합니다.
+
+## Anthropic 호환성
+
+`/v1/messages` 엔드포인트에서는 Anthropic 스타일 헤더가 예상대로 동작합니다:
+
+```bash
+curl https://api.aisonar.dev/v1/messages \
+  -H "x-api-key: sk-your-api-key" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-sonnet-4-6",
+    "max_tokens": 1024,
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'
+```
+
+<Note>
+`/v1/responses`, `/v1/chat/completions`, `/v1/models` 및 대부분의 다른 AI Sonar 경로와 같은 OpenAI 호환 엔드포인트에는 `Authorization: Bearer ...`를 사용하세요.
+</Note>
+
+## 오류 응답
+
+| 상태 코드 | 유형 | 코드 | 설명 |
+|-------------|------|------|-------------|
+| 401 | `invalid_api_key` | `invalid_api_key` | API 키가 없거나 유효하지 않습니다 |
+| 401 | `expired_api_key` | `expired_api_key` | API 키가 폐기되었습니다 |
+| 402 | `insufficient_balance` | `insufficient_balance` | 계정 잔액이 부족합니다 |
+| 402 | `quota_exceeded` | `quota_exceeded` | API 키 사용량 한도에 도달했습니다 |
+
+예시:
+
+```json
+{
+  "error": {
+    "message": "Invalid API key provided",
+    "type": "invalid_api_key",
+    "code": "invalid_api_key"
+  }
+}
+```

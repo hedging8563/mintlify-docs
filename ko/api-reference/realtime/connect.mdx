@@ -1,0 +1,54 @@
+---
+title: "Realtime WebSocket"
+openapi: "GET /v1/realtime"
+description: "WebSocket으로 실시간 음성 및 멀티모달 세션에 연결합니다"
+---
+
+## 개요
+
+이 엔드포인트는 실시간 음성 인식, 음성 합성, 음성 번역 또는 실시간 멀티모달 모델 세션에 사용합니다. 일반 `GET` 요청은 엔드포인트 메타데이터를 반환하고, WebSocket 업그레이드 요청은 라우팅된 상위 실시간 세션으로 프록시됩니다.
+
+<Note>에이전트는 `/v1/models`에서 realtime 지원 모델을 확인한 뒤 socket을 열어야 합니다.</Note>
+
+## 연결
+
+<ParamField query="model" type="string" required>
+  실시간 모델 ID입니다. 공개 계약에서 realtime을 지원하는 모델을 선택하세요.
+</ParamField>
+
+<ParamField header="Authorization" type="string" required>
+  Bearer API 키입니다. WebSocket 클라이언트는 업그레이드 요청에 `Authorization: Bearer sk-your-api-key`를 보내야 합니다.
+</ParamField>
+
+<RequestExample>
+```javascript JavaScript
+import WebSocket from 'ws';
+
+const socket = new WebSocket('wss://api.aisonar.dev/v1/realtime?model=qwen-tts-realtime', {
+  headers: { Authorization: 'Bearer sk-your-api-key' }
+});
+
+socket.on('open', () => {
+  socket.send(JSON.stringify({ type: 'session.start' }));
+});
+
+socket.on('message', (data) => {
+  console.log('realtime event', data.toString());
+});
+```
+
+```bash cURL
+curl "https://api.aisonar.dev/v1/realtime" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+## 메시지
+
+AI Sonar은 클라이언트와 라우팅된 실시간 제공자 사이의 WebSocket 메시지를 전달합니다. 선택한 모델의 공식 이벤트 형식을 유지하고 `model`은 쿼리 문자열로 전달하세요.
+
+## 과금 및 종료
+
+실시간 세션은 같은 API 키 잔액을 사용합니다. AI Sonar은 socket이 열릴 때 소액을 사전 차감하고 세션 종료 시 정산하거나 환불합니다.
+
+세션이 끝나면 클라이언트 socket을 닫으세요. 상위 제공자가 먼저 닫으면 AI Sonar은 가능한 경우 close code를 전달합니다.

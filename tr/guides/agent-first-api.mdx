@@ -1,0 +1,327 @@
+---
+title: "✨ Ajan-Öncelikli API"
+description: "AI ajanlarının ilk yeniden denemede kendini düzeltmesi için yapılandırılmış hata ipuçları"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Genel Bakış
+
+AI Sonar'nın Agent-First API'si, hata yanıtlarını AI ajanlarının hemen ayrıştırıp harekete geçebileceği yapılandırılmış ipuçlarıyla zenginleştirir — web aramaları yok, doküman bakışları yok, tahmin yürütme yok.
+
+Her hata yanıtı, standart `error` nesnesi içinde isteğe bağlı alanlar olan `did_you_mean`, `suggestions`, `hint`, `retryable` ve `retry_after` gibi alanları içerir. Bu alanlar geri uyumludur — bunları kullanmayan istemciler hiçbir fark görmez.
+
+## Hata İpucu Alanları
+
+Tüm ipucu alanları `error` nesnesi içinde isteğe bağlı uzantılardır:
+
+| Alan | Tür | Açıklama |
+|-------|------|-------------|
+| `did_you_mean` | `string` | En yakın eşleşen model adı |
+| `suggestions` | `array` | Meta veriye sahip önerilen modeller |
+| `alternatives` | `array` | Mevcut alternatif modeller |
+| `hint` | `string` | İnsan/ajan tarafından okunabilir sonraki adım yönlendirmesi |
+| `retryable` | `boolean` | Aynı isteğin yeniden denenmesinin başarılı olma olasılığı |
+| `retry_after` | `number` | Yeniden denemeden önce beklenmesi gereken saniye |
+| `balance_usd` | `number` | Hesap bakiyesi (USD cinsinden) |
+| `estimated_cost_usd` | `number` | Başarısız olan isteğin tahmini maliyeti (USD) |
+
+## Hata Kodu Örnekleri
+
+### model_not_found (400)
+
+Bir model adı aktif hiçbir modelle eşleşmediğinde:
+
+```json
+{
+  "error": {
+    "message": "Model not found: please check the model name",
+    "type": "invalid_request_error",
+    "param": "model",
+    "code": "model_not_found",
+    "did_you_mean": "gpt-5.4",
+    "suggestions": [
+      {"id": "gpt-5.4"},
+      {"id": "gpt-5-mini"},
+      {"id": "claude-sonnet-4-6"}
+    ],
+    "hint": "Did you mean 'gpt-5.4'? Use GET https://api.aisonar.dev/v1/models to list all available models."
+  }
+}
+```
+
+`did_you_mean` çözümlemesi şu yöntemleri kullanır:
+1. Statik takma ad eşlemesi (prodüksiyon hata verilerinden)
+2. Normalleştirilmiş string eşlemesi (tireleri kaldırır, büyük/küçük harf duyarsız)
+3. Düzenleme uzaklığı eşlemesi (eşik ≤ 3)
+
+Genel erişim (public) rotaları, gizli, ertelenmiş veya herkese açık olmayan modeller için ayrı hata kodları açığa çıkarmaz. Kullanılamayan genel modelleri bir yanlış yazım gibi değerlendirin: `did_you_mean`, `suggestions` ve `hint` alanlarını inceleyin ve sonra desteklenen bir genel model ile yeniden deneyin.
+
+### insufficient_balance (402)
+
+Hesap bakiyesi tahmini maliyet için yetersiz olduğunda:
+
+```json
+{
+  "error": {
+    "message": "Insufficient balance: need ~$0.3500 for claude-sonnet-4-6, but balance is $0.1200.",
+    "type": "insufficient_balance",
+    "code": "insufficient_balance",
+    "balance_usd": 0.12,
+    "estimated_cost_usd": 0.35,
+    "suggestions": [
+      {"id": "gpt-5-mini"},
+      {"id": "deepseek-v3-2"}
+    ],
+    "hint": "Insufficient balance: need ~$0.3500 for claude-sonnet-4-6, but balance is $0.1200. Try a cheaper model, or top up at https://console.aisonar.dev/billing."
+  }
+}
+```
+
+`suggestions`, ajanların geçiş yapabileceği tahmini maliyetten daha ucuz modelleri içerir.
+
+### all_channels_failed (503)
+
+Bir model için tüm üst akış kanalları kullanılamaz olduğunda:
+
+```json
+{
+  "error": {
+    "message": "Model claude-opus-4-6 temporarily unavailable",
+    "code": "all_channels_failed",
+    "retryable": true,
+    "retry_after": 30,
+    "alternatives": [
+      {"id": "claude-sonnet-4-6", "status": "available", "tags": []},
+      {"id": "gpt-5-mini", "status": "available", "tags": []}
+    ],
+    "hint": "All channels for 'claude-opus-4-6' are temporarily unavailable. Retry in 30s or try an alternative model."
+  }
+}
+```
+
+<Note>
+`retryable`, neden `no_channels` ise `false` olur (bu model için yapılandırılmış kanal yok). Yalnızca devre kesici atlamaları veya kota tükenmesi gibi geçici hatalar için `true` olur.
+</Note>
+
+### rate_limit_exceeded (429)
+
+```json
+{
+  "error": {
+    "message": "Rate limit: 60 rpm exceeded",
+    "type": "rate_limit_exceeded",
+    "code": "rate_limit_exceeded",
+    "retryable": true,
+    "retry_after": 8,
+    "hint": "Rate limited. Retry after 8s. Current limit: 60/min for user role."
+  }
+}
+```
+
+`retry_after` değeri, gerçek hız limiti pencere sıfırlama zamanından hesaplanır.
+
+<Note>
+OpenAI-uyumlu uç noktalar, `rate_limit_exceeded`, `upstream_error` ve `all_channels_failed` gibi AI Sonar'nın kararlı genel hata türlerini kullanır. Anthropic-uyumlu ve Gemini-uyumlu uç noktalar kendi yerel yanıt biçimlerini kullanır.
+</Note>
+
+### context_length_exceeded (400)
+
+Girdi modelin bağlam penceresini aştığında (üst akış hatası, ipuçları ile zenginleştirilmiş):
+
+```json
+{
+  "error": {
+    "message": "This model's maximum context length is 128000 tokens...",
+    "type": "invalid_request_error",
+    "code": "context_length_exceeded",
+    "retryable": false,
+    "suggestions": [
+      {"id": "gemini-2.5-pro"},
+      {"id": "claude-sonnet-4-6"}
+    ],
+    "hint": "Reduce your input or switch to a model with a larger context window."
+  }
+}
+```
+
+## Yerel Uç Nokta Başlıkları
+
+Bir modelin yerel bir uç noktası (Anthropic veya Gemini) olduğunda `/v1/chat/completions` çağrısı yaptığınızda, **başarılı yanıt** optimizasyon başlıklarını içerir:
+
+
+
+| Model Sağlayıcı | Önerilen Uç Nokta | Faydası |
+|---------------|-------------------|---------|
+| Anthropic (Claude) | `/v1/messages` | Format dönüşümü yok, genişletilmiş düşünme, prompt önbellekleme |
+| Google (Gemini) | `/v1beta/gemini` | Format dönüşümü yok, grounding, güvenlik ayarları |
+| OpenAI | — | Chat completions zaten yerel formattır |
+
+Bu başlıklar hem akışlı (streaming) hem de akışsız yanıtlar için görünür.
+
+## /v1/models İyileştirmeleri
+
+`/v1/models` artık ajanların görüntü, video, müzik, 3B, TTS, STT, embedding, rerank veya çeviri uç noktalarını çağırmadan önce kullanabileceği sohbet dışı öneri meta verilerini taşır.
+
+```json
+{
+  "id": "gemini-2.5-flash-image",
+  "aisonar": {
+    "category": "image",
+    "pricing_unit": "per_request",
+    "agent_preferences": {
+      "image": {
+        "preferred_rank": 1,
+        "success_rate_24h": 0.98,
+        "sample_count_24h": 423,
+        "status": "ready",
+        "updated_at": "2026-03-28T12:00:00.000Z",
+        "basis": {
+          "score_source": "clickhouse_24h",
+          "channel_id": null,
+          "physical_model": null
+        }
+      }
+    }
+  }
+}
+```
+
+| Alan | Değerler | Açıklama |
+|-------|--------|-------------|
+| `category` | `chat`, `image`, `video`, `audio`, `tts`, `stt`, `3d`, `embedding`, `rerank` | Model türü |
+| `pricing_unit` | `per_token`, `per_image`, `per_second`, `per_request` | Modelin faturalama yöntemi |
+| `cache_pricing` | object or `null` | Yalnızca modelin kendi upstream prompt cache fiyatları varsa döner. |
+| `agent_preferences.<scene>` | object | Yalnızca `GET /v1/models?recommended_for=<scene>` ile dönen sohbet dışı öneri anlık görüntüsü |
+
+`recommended_for` mevcutsa `agent_preferences`, önbelleğe alınmış 24 saatlik başarı oranı anlık görüntüsünden türetilir:
+
+- Pencere: 24 saat
+- Anlık görüntü önbelleği: stale-while-revalidate
+- `status = "ready"` modelin sıralamaya katılmak için yeterli güncel örneğe sahip olduğunu gösterir
+- `status = "insufficient_samples"` model görünür kalır ancak puanlanmış modellerin önüne alınmaz
+
+### Kategori Filtreleme
+
+```bash
+GET https://api.aisonar.dev/v1/models?category=chat          # Chat modelleri yalnızca
+GET https://api.aisonar.dev/v1/models?category=image         # Görüntü üretim modelleri
+GET https://api.aisonar.dev/v1/models?tag=coding&category=chat  # Kodlama-optimze chat modelleri
+```
+
+### Öneri Keşfi
+
+Sohbet dışı iş akışları için ajanlar önce geçerli önerilen kısa listeyi almalıdır:
+
+```bash
+GET https://api.aisonar.dev/v1/models?recommended_for=image
+GET https://api.aisonar.dev/v1/models?recommended_for=translation
+GET https://api.aisonar.dev/v1/models?category=tts&recommended_for=tts
+```
+
+Geçerli `recommended_for` değerleri şunlardır:
+
+- `image`
+- `video`
+- `music`
+- `3d`
+- `tts`
+- `stt`
+- `embedding`
+- `rerank`
+- `translation`
+
+Hem `category` hem de `recommended_for` mevcutsa, bunların tam olarak eşleşmesi gerekir.
+
+Önerilen ajan akışı:
+
+1. `GET /v1/models?recommended_for=<scene>`
+2. İlk `agent_preferences.<scene>.status == "ready"` olan modeli seçin
+3. Uç noktayı açıkça `model=<selected>` ile çağırın
+4. Yalnızca geçici hatalarda, bir sonraki `ready` model ile yeniden deneyin
+
+## llms.txt
+
+Makine tarafından okunabilir bir API genel bakışı şu adreste mevcuttur:
+
+```
+GET https://api.aisonar.dev/llms.txt
+```
+
+İçerir:
+- Çalışan bir örnekle ilk çağrı şablonu
+- Yaygın model adları (kullanım verilerinden dinamik olarak oluşturulur)
+- Tüm 12 API uç noktası
+- Model keşfi için filtre parametreleri
+- Hata işleme rehberi
+
+`llms.txt` dosyasını ilk API çağrılarından önce okuyan AI ajanları tipik olarak ilk denemede başarılı olabilir.
+
+## Ajan Kodunda Kullanım
+
+### Python (OpenAI SDK)
+
+```python
+from openai import OpenAI, BadRequestError
+
+client = OpenAI(
+    api_key="sk-your-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+def smart_chat(messages, model="gpt-4o"):
+    try:
+        return client.chat.completions.create(
+            model=model, messages=messages
+        )
+    except BadRequestError as e:
+        error = e.body.get("error", {}) if isinstance(e.body, dict) else {}
+        # Use did_you_mean for auto-correction
+        if error.get("code") == "model_not_found" and error.get("did_you_mean"):
+            return client.chat.completions.create(
+                model=error["did_you_mean"], messages=messages
+            )
+        raise
+```
+
+### JavaScript (OpenAI SDK)
+
+```javascript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+async function smartChat(messages, model = 'gpt-4o') {
+  try {
+    return await client.chat.completions.create({ model, messages });
+  } catch (error) {
+    const err = error?.error;
+    if (err?.code === 'model_not_found' && err?.did_you_mean) {
+      return client.chat.completions.create({
+        model: err.did_you_mean, messages
+      });
+    }
+    throw error;
+  }
+}
+```
+
+## Tasarım İlkeleri
+
+<CardGroup cols={2}>
+  <Card title="Hızlı başarısızlık, bilgilendirici hata" icon="bolt">
+    Hatalar, bir ajanın kendi kendini düzeltmesi için ihtiyaç duyduğu tüm verilerle hemen döner.
+  </Card>
+  <Card title="Otomatik yönlendirme yok" icon="route">
+    API asla sessizce farklı bir model ikamesi yapmaz. Kararı ajan verir.
+  </Card>
+  <Card title="Veri odaklı öneriler" icon="database">
+    Tüm öneriler sert kodlanmış listelerden değil, prodüksiyon verilerinden gelir.
+  </Card>
+  <Card title="Geriye uyumlu" icon="plug">
+    Tüm ipucu alanları isteğe bağlıdır. Mevcut istemciler hiçbir fark görmez.
+  </Card>
+</CardGroup>

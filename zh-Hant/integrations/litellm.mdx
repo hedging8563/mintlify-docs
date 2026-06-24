@@ -1,0 +1,127 @@
+---
+title: "LiteLLM"
+description: "將 AI Sonar 與 LiteLLM 結合使用，可作為上游 provider，也可作為內部 gateway 層"
+---
+
+## 概覽
+
+LiteLLM 與 AI Sonar 常見有兩種結合方式：
+
+- 把 AI Sonar 當作 LiteLLM 背後的 **OpenAI 相容 上游**
+- 在 AI Sonar 前面再放一層 LiteLLM，統一做虛擬 key、路由策略或額外觀測
+
+對 AI Sonar 而言，最乾淨的預設路徑是使用 LiteLLM 的 **custom OpenAI / OpenAI 相容** 設定，並把 `api_base` 指向 `https://api.aisonar.dev/v1`。
+
+<Note>
+如果你明確需要 Claude-native 或 Gemini-native 請求形狀，優先使用 AI Sonar 自己的原生整合頁，而不是強行經由 LiteLLM 的 OpenAI 相容 抽象。
+</Note>
+
+<Note>
+**類型**: 框架或平台
+
+**主要路徑**: OpenAI 相容 上游
+
+**支援級別**: 支援路徑
+</Note>
+
+## 安裝
+
+```bash
+pip install 'litellm[proxy]'
+```
+
+## Proxy 設定
+
+建立一個 `litellm-config.yaml`：
+
+```yaml
+model_list:
+  - model_name: aisonar-gpt-5.4
+    litellm_params:
+      model: custom_openai/gpt-5.4
+      api_base: https://api.aisonar.dev/v1
+      api_key: os.environ/OPENAI_API_KEY
+
+  - model_name: aisonar-claude-sonnet
+    litellm_params:
+      model: custom_openai/claude-sonnet-4-6
+      api_base: https://api.aisonar.dev/v1
+      api_key: os.environ/OPENAI_API_KEY
+```
+
+啟動代理：
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+litellm --config litellm-config.yaml --port 4000
+```
+
+## 透過 OpenAI SDK 呼叫 LiteLLM
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="anything",
+    base_url="http://127.0.0.1:4000"
+)
+
+response = client.chat.completions.create(
+    model="aisonar-gpt-5.4",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+
+print(response.choices[0].message.content)
+```
+
+## 直接以 Python 函式庫方式使用
+
+如果你把 LiteLLM 當作 Python 函式庫而不是 proxy 使用，同樣保持 AI Sonar 的 base URL：
+
+```python
+import litellm
+
+response = litellm.completion(
+    model="custom_openai/gpt-5.4",
+    api_base="https://api.aisonar.dev/v1",
+    api_key="sk-your-api-key",
+    messages=[{"role": "user", "content": "Summarize this repo."}]
+)
+```
+
+## 最佳實務
+
+<AccordionGroup>
+  <Accordion title="對 AI Sonar 優先使用 custom_openai">
+    除非你有非常明確的理由去建立更複雜的 provider 映射，否則請把 AI Sonar 視為 OpenAI 相容 上游。
+  </Accordion>
+
+  <Accordion title="只在確實需要額外 gateway 層時再用 LiteLLM">
+    如果你的平台自己還需要 virtual keys、額外路由策略或集中日誌，LiteLLM 放在 AI Sonar 前面是有價值的。
+  </Accordion>
+
+  <Accordion title="原生能力不要過度承諾">
+    OpenAI 相容 翻譯層很適合廣覆蓋相容，但它不是用來承諾每一個 provider-native 細節都等價可用的地方。
+  </Accordion>
+</AccordionGroup>
+
+## 疑難排解
+
+<AccordionGroup>
+  <Accordion title="連線錯誤">
+    - 確認 `api_base` 完全等於 `https://api.aisonar.dev/v1`
+    - 確認 LiteLLM 所在環境可以透過公網存取 AI Sonar
+    - 如果你在本地跑 proxy，請確認 OpenAI client 指向的是 LiteLLM 連接埠，而不是直接指向 AI Sonar
+  </Accordion>
+
+  <Accordion title="驗證錯誤">
+    - 檢查 LiteLLM 讀取到的 `OPENAI_API_KEY` 是否正確
+    - 確認 AI Sonar key 以 `sk-` 開頭
+    - 確認該 key 已在 AI Sonar dashboard 中啟用
+  </Accordion>
+
+  <Accordion title="找不到模型">
+    - 檢查 `custom_openai/<model>` 中 AI Sonar 模型名是否正確
+    - 把 LiteLLM 裡的 `model_name` 別名與真實 AI Sonar 模型 id 分開管理
+  </Accordion>
+</AccordionGroup>

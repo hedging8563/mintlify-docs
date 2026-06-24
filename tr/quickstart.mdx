@@ -1,0 +1,150 @@
+---
+title: "Hızlı Başlangıç"
+description: "AI Sonar API ile 2 dakikada başlayın"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Adım 1: Deneme kredileriyle başlayın
+
+<Steps>
+  <Step title="Hesap oluşturun">
+    E-posta, Gmail veya GitHub hesabınızla [aisonar.dev](https://aisonar.dev) üzerinden kaydolun.
+  </Step>
+  <Step title="Dahil edilen deneme kredilerini kullanın">
+    Hesabınız ilk küçük test istekleri için deneme kredileri içerir. Quickstart'tan önce kredi yüklemeniz gerekmez.
+  </Step>
+  <Step title="API anahtarı oluşturun veya kopyalayın">
+    **Dashboard → API Keys** bölümüne gidip yeni bir anahtar oluşturun veya mevcut bir anahtarı kopyalayın. Tam anahtar yalnızca bir kez gösterildiği için güvenli şekilde saklayın.
+  </Step>
+</Steps>
+
+<Warning>
+API anahtarınızı güvenli tutun. Asla istemci tarafı kodunda veya herkese açık depolarda paylaşmayın.
+</Warning>
+
+## Adım 2: Bir İstemci Yükleyin
+
+<CodeGroup>
+
+```bash Python
+pip install openai
+```
+
+```bash JavaScript
+npm install openai
+```
+
+```bash Go
+go get github.com/openai/openai-go/v3
+```
+
+```bash PHP
+composer require openai-php/client
+```
+
+</CodeGroup>
+
+## Adım 3: İlk İsteğinizi Yapın
+
+Çoğu yeni entegrasyona başlarken, `POST /v1/chat/completions` üzerinde **Chat Completions** ile başlayın.
+
+<CodeGroup>
+
+```bash cURL
+curl https://api.aisonar.dev/v1/chat/completions \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.4",
+    "messages": [
+      {"role": "user", "content": "What is the capital of France?"}
+    ]
+  }'
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "What is the capital of France?"}]
+)
+
+print(response.choices[0].message.content)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.chat.completions.create({
+  model: 'gpt-5.4',
+  messages: [{ role: 'user', content: 'What is the capital of France?' }],
+});
+
+console.log(response.choices[0].message.content);
+```
+
+</CodeGroup>
+
+<Note>
+Sadece açıkça Responses'a özgü davranış gerekliyse `POST /v1/responses` kullanın. Bazı yalnızca Responses için olan alanlar seçilen modele ve yönlendirilen yola bağlıdır.
+</Note>
+
+## Prodüksiyon için kredi yükleyin
+
+Dahil edilen deneme kredileri ilk küçük testler içindir. Yalnızca prodüksiyon kullanımı veya daha yüksek hacimli testler için hazır olduğunuzda **Dashboard → Billing** bölümünden kredi ekleyin.
+
+## Farklı Modelleri Deneyin
+
+AI Sonar yüzlerce modeli destekler. Yalnızca `model` alanını değiştirin:
+
+```python
+response = client.chat.completions.create(model="gpt-5.4", messages=[{"role": "user", "content": "Hello"}])
+response = client.chat.completions.create(model="gpt-5-mini", messages=[{"role": "user", "content": "Hello"}])
+response = client.chat.completions.create(model="claude-sonnet-4-6", messages=[{"role": "user", "content": "Hello"}])
+response = client.chat.completions.create(model="gemini-2.5-flash", messages=[{"role": "user", "content": "Hello"}])
+response = client.chat.completions.create(model="deepseek-r1", messages=[{"role": "user", "content": "Hello"}])
+```
+
+## Akışı Etkinleştirin
+
+```python
+stream = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "Tell me a short story."}],
+    stream=True
+)
+
+for chunk in stream:
+    delta = chunk.choices[0].delta.content
+    if delta:
+        print(delta, end="")
+```
+
+## Sonraki Adımlar
+
+<CardGroup cols={2}>
+  <Card title="Kimlik Doğrulama" icon="key" href="/authentication">
+    API anahtar yönetimi ve güvenliği hakkında bilgi edinin.
+  </Card>
+  <Card title="OpenAI SDK" icon="code" href="/integrations/openai-sdk">
+    Mevcut OpenAI SDK'leriyle OpenAI uyumlu `/v1` yollarını kullanın.
+  </Card>
+  <Card title="API Referansı" icon="book" href="/api-reference/introduction">
+    Tüm uç nokta referansını keşfedin.
+  </Card>
+  <Card title="Modeller" icon="robot" href="https://aisonar.dev/models">
+    Mevcut model kullanılabilirliği ve fiyatlandırmayı inceleyin.
+  </Card>
+</CardGroup>

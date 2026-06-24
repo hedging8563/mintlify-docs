@@ -1,0 +1,161 @@
+---
+title: "✨ Cache de Prompt Upstream"
+description: "Entenda o cache de prompt no nível do provedor e como ele reduz custos"
+---
+
+## Visão Geral
+
+<Note>
+**Dois Tipos de Cache**
+
+| Tipo | Onde | Como Funciona | Custo |
+|------|-------|--------------|------|
+| **Cache da Plataforma** | AI Sonar | Correspondência por similaridade semântica | 10% do preço normal |
+| **Cache do Provedor** | Upstream (Anthropic/OpenAI/etc) | Correspondência exata de prefixo | Taxas de token com desconto |
+
+Estes são **mutualmente exclusivos**: se houver um hit no cache da plataforma, nenhuma chamada upstream é feita, portanto, o cache do provedor não se aplica.
+</Note>
+
+## Como Funciona o Cache de Prompt do Provedor
+
+O cache de prompt do provedor armazena a representação processada do prefixo do seu prompt nos servidores do provedor. Quando você envia uma solicitação com o mesmo prefixo, o provedor pode pular o reprocessamento desses tokens.
+
+### Principais Características
+
+- **Baseado em prefixo**: Apenas o início do seu prompt pode ser armazenado em cache
+- **Correspondência exata**: Requer tokens idênticos (não similaridade semântica)
+- **Tempo limitado**: As entradas de cache expiram (geralmente entre 5 a 60 minutos)
+- **Automático**: Nenhuma configuração especial é necessária
+
+```
+Request 1: [System prompt + Context A + Question 1]
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+           This prefix gets cached
+
+Request 2: [System prompt + Context A + Question 2]
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+           Cache hit! Only Question 2 is processed
+```
+
+## Provedores Suportados
+
+| Provedor | Desconto de Leitura de Cache | Custo de Escrita de Cache | Tokens Mínimos |
+|----------|---------------------|------------------|------------|
+| **Anthropic** | 90% de desconto | 25% de prêmio | 1024 |
+| **OpenAI** | 50% de desconto | Igual à entrada | 1024 |
+| **DeepSeek** | 90% de desconto | Igual à entrada | 64 |
+| **Google** | 75% de desconto | 25% de acréscimo | 32768 |
+
+<Info>
+Os descontos são aplicados automaticamente. A AI Sonar repassa o preço de cache do provedor para você.
+</Info>
+
+## Identificando o Uso do Cache
+
+### Nos Logs de Uso
+
+Seus logs de uso mostram o detalhamento detalhado dos tokens de cache:
+
+| Campo | Descrição |
+|-------|-------------|
+| `cacheReadTokens` | Tokens servidos pelo cache do provedor (com desconto) |
+| `cacheWriteTokens` | Tokens gravados no cache (para solicitações futuras) |
+| `nonCachedPromptTokens` | Tokens processados sem cache |
+
+### Nas Transações
+
+As transações exibem um rótulo de **Provider Cache** quando o cache upstream foi utilizado:
+
+- **Provider Cache** (azul-petróleo): Hit de cache de prompt upstream - taxas com desconto
+
+## Exemplo de Cálculo de Custo
+
+Para uma solicitação com 10.000 tokens de entrada para o Claude (Anthropic):
+
+**Sem cache:**
+```
+10,000 tokens × $3.00/1M = $0.030
+```
+
+**Com cache do provedor (8.000 em cache + 2.000 novos):**
+```
+Cache read:  8,000 tokens × $0.30/1M = $0.0024  (90% off)
+Cache write: 2,000 tokens × $3.75/1M = $0.0075
+Total: $0.0099 (67% de economia)
+```
+
+## Melhores Práticas
+
+<AccordionGroup>
+  <Accordion title="Use prompts de sistema consistentes">
+    Coloque seu prompt de sistema e contexto estático no início de suas mensagens. Isso maximiza o potencial de hit do cache.
+  </Accordion>
+
+  <Accordion title="Agrupe solicitações semelhantes">
+    Envie solicitações com o mesmo prefixo em intervalos próximos para se beneficiar do cache antes que ele expire.
+  </Accordion>
+
+  <Accordion title="Atenda aos requisitos mínimos de tokens">
+    Certifique-se de que seu prefixo passível de cache atenda ao mínimo do provedor (ex: 1024 tokens para Anthropic/OpenAI).
+  </Accordion>
+
+  <Accordion title="Monitore as métricas de cache">
+    Verifique as estatísticas de uso no seu dashboard para ver as taxas de hit de cache e economia.
+  </Accordion>
+</AccordionGroup>
+
+## Verificando o Status do Cache
+
+### Headers de Resposta
+
+```
+X-Upstream-Cache-Read: 8000   # Tokens de leitura de cache do provedor
+X-Upstream-Cache-Write: 2000  # Tokens de escrita de cache do provedor
+```
+
+### API de Uso
+
+Consulte seus logs de uso para ver o detalhamento do cache:
+
+```text
+GET /v1/usage/logs is currently not a public endpoint.
+Use X-Upstream-Cache-* response headers, plus the dashboard usage page.
+```
+
+A resposta inclui:
+```json
+{
+  "promptTokens": 10000,
+  "cacheReadTokens": 8000,
+  "cacheWriteTokens": 2000,
+  "nonCachedPromptTokens": 0,
+  "completionTokens": 500,
+  "cost": 0.0099
+}
+```
+
+## FAQ
+
+<AccordionGroup>
+  <Accordion title="Posso desativar o cache do provedor?">
+    O cache do provedor é automático e não pode ser desativado. No entanto, ele só traz benefícios (custos menores), portanto não há motivo para desativá-lo.
+  </Accordion>
+
+  <Accordion title="Por que minha solicitação não deu hit no cache do provedor?">
+    Motivos comuns:
+    - O prefixo mudou (mesmo que por um único token)
+    - O cache expirou (geralmente entre 5 a 60 minutos)
+    - Prefixo muito curto (abaixo do mínimo de tokens)
+    - Chave de API diferente utilizada
+  </Accordion>
+
+  <Accordion title="O BYOK suporta cache do provedor?">
+    Sim! Ao usar suas próprias chaves de API (BYOK), o cache do provedor funciona da mesma maneira. O cache está vinculado à sua chave de API upstream.
+  </Accordion>
+
+  <Accordion title="Como maximizo a economia com cache?">
+    1. Estruture os prompts com conteúdo estático primeiro
+    2. Mantenha os prompts de sistema consistentes entre as solicitações
+    3. Envie solicitações relacionadas em sucessão rápida
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,154 @@
+---
+title: "Limites de débit"
+description: "Comprendre et gérer les limites de débit"
+---
+
+## Vue d’ensemble
+
+AI Sonar met en place des limites de débit afin de garantir une utilisation équitable et la stabilité de la plateforme. Les limites varient selon le niveau de compte.
+
+## Niveaux de limites de débit
+
+| Niveau | Requêtes/min | Description |
+|------|-------------|-------------|
+| **Utilisateur** | 1,000 | Niveau par défaut pour tous les comptes |
+| **Partenaire** | 3,000 | Pour les partenaires d’intégration |
+| **VIP** | 10,000 | Utilisateurs à fort volume |
+
+<Note>
+  Les limites de débit sont susceptibles d’être modifiées. Contactez support@aisonar.dev pour des limites personnalisées.
+</Note>
+
+## Réponse de limite de débit
+
+Lorsque vous dépassez la limite de débit, l’API renvoie un code de statut `429` avec un header `Retry-After` indiquant combien de temps attendre avant de réessayer.
+
+## Limite de débit dépassée
+
+Lorsque vous dépassez la limite, vous recevrez une réponse `429` :
+
+```json
+{
+  "error": {
+    "message": "Rate limit exceeded. Please retry later.",
+    "type": "rate_limit_exceeded",
+    "code": "rate_limit_exceeded"
+  }
+}
+```
+
+La réponse inclut un header `Retry-After` :
+```
+Retry-After: 60  # Seconds to wait before retrying
+```
+
+## Gestion des limites de débit
+
+### Backoff exponentiel
+
+Implémentez un backoff exponentiel pour les nouvelles tentatives automatiques :
+
+```python
+import time
+from openai import OpenAI, RateLimitError
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+def make_request_with_backoff(messages, max_retries=5):
+    for attempt in range(max_retries):
+        try:
+            return client.chat.completions.create(
+                model="gpt-4o",
+                messages=messages
+            )
+        except RateLimitError as e:
+            if attempt == max_retries - 1:
+                raise
+
+            wait_time = 2 ** attempt  # 1, 2, 4, 8, 16 seconds
+            print(f"Rate limited. Waiting {wait_time}s...")
+            time.sleep(wait_time)
+```
+
+### Mise en file d’attente des requêtes
+
+Pour les applications à fort volume, implémentez une file d’attente des requêtes :
+
+```python
+import asyncio
+from collections import deque
+
+class RateLimitedClient:
+    def __init__(self, requests_per_minute=60):
+        self.rpm = requests_per_minute
+        self.interval = 60 / requests_per_minute
+        self.last_request = 0
+
+    async def request(self, messages):
+        # Wait if needed to respect rate limit
+        now = asyncio.get_event_loop().time()
+        wait_time = max(0, self.last_request + self.interval - now)
+        if wait_time > 0:
+            await asyncio.sleep(wait_time)
+
+        self.last_request = asyncio.get_event_loop().time()
+        return await self.client.chat.completions.create(
+            model="gpt-4o",
+            messages=messages
+        )
+```
+
+### Traitement par lots
+
+Pour les opérations en masse, effectuez le traitement par lots avec des délais :
+
+```python
+def process_batch(items, batch_size=50, delay=1):
+    results = []
+    for i in range(0, len(items), batch_size):
+        batch = items[i:i + batch_size]
+        for item in batch:
+            result = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[{"role": "user", "content": item}]
+            )
+            results.append(result)
+        time.sleep(delay)  # Pause between batches
+    return results
+```
+
+## Bonnes pratiques
+
+<AccordionGroup>
+  <Accordion title="Surveillez votre utilisation">
+    Suivez les headers de limite de débit pour rester de manière proactive sous les limites.
+  </Accordion>
+
+  <Accordion title="Implémentez la mise en cache">
+    Mettez les réponses en cache pour les requêtes identiques afin de réduire les appels API.
+  </Accordion>
+
+  <Accordion title="Utilisez des modèles appropriés">
+    Les modèles plus rapides (comme gpt-5-mini) permettent un débit plus élevé.
+  </Accordion>
+
+  <Accordion title="Contactez-nous pour des limites plus élevées">
+    Si vous avez besoin de limites plus élevées, contactez support@aisonar.dev.
+  </Accordion>
+</AccordionGroup>
+
+## Mettre à niveau votre niveau
+
+Pour demander une mise à niveau de niveau :
+
+1. Connectez-vous à votre [Dashboard](https://console.aisonar.dev)
+2. Allez dans **Settings → Account**
+3. Contactez le support avec votre cas d’usage
+
+Ou envoyez un email à support@aisonar.dev avec :
+- L’email de votre compte
+- Le volume de requêtes attendu
+- Une description du cas d’usage

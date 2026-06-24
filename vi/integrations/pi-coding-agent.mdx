@@ -1,0 +1,39 @@
+---
+title: "Pi Coding Agent"
+description: "Dùng Pi với AI Sonar. Pi là một công cụ coding tối giản trên terminal hỗ trợ nhà cung cấp kiểu OpenAI, Anthropic và Google"
+---
+
+## Tổng quan
+
+
+
+<Note>
+**Loại**: Công cụ coding
+
+**Đường chính**: đường tương thích OpenAI
+
+**Mức hỗ trợ**: Đường được hỗ trợ
+</Note>
+
+[Pi](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent) là một công cụ coding tối giản trên terminal. Trong IA tài liệu của AI Sonar, nó thuộc nhóm **Coding Tools**, không phải native SDK.
+
+Pi nằm giữa nhiều kiểu sử dụng:
+
+- quy trình coding tương tác trong terminal
+- các chế độ JSON / RPC để tích hợp tiến trình
+- môi trường chạy kiểu SDK để nhúng vào ứng dụng của riêng bạn
+
+Với AI Sonar, điểm bắt đầu đơn giản nhất thường là đường **tương thích OpenAI**, trừ khi bạn cố ý muốn hành vi Anthropic-native hoặc Google-native.
+
+## Đường khuyến nghị
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+export OPENAI_BASE_URL="https://api.aisonar.dev/v1"
+```
+
+Sau đó, trỏ nhà cung cấp hoặc đường dẫn model tùy chỉnh của Pi về AI Sonar.
+
+<Note>
+Nếu bạn cần hành vi Claude-native hoặc Gemini-native, hãy coi đó là cấu hình Pi theo từng provider, không phải cấu hình tương thích OpenAI chung.
+</Note>

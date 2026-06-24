@@ -1,0 +1,193 @@
+---
+title: "LangChain"
+description: "使用標準 OpenAI 相容的 chat 與 embeddings，將 AI Sonar 整合至 LangChain"
+---
+
+## 概覽
+
+當您使用標準 OpenAI 相容的 chat 與 embeddings 介面時，AI Sonar 能夠良好地搭配 LangChain 的 `ChatOpenAI` 與 `OpenAIEmbeddings` 整合使用。
+
+<Note>
+目前的 LangChain 文件指出，`ChatOpenAI` 目標是官方 OpenAI 相容的 request/response 格式。如果您需要 provider 特定的非標準 response 欄位，請使用 provider 專用的 LangChain 整合，而不是依賴 `ChatOpenAI`。
+</Note>
+
+<Note>
+**類型**: 框架或平台
+
+**主要路徑**: OpenAI 相容 標準 surface
+
+**支援級別**: 支援標準 surface
+</Note>
+
+本頁刻意只覆蓋標準 OpenAI 相容 LangChain surface，而不承諾超出該 surface 的 provider-native LangChain 功能。
+
+## 安裝
+
+```bash
+pip install langchain langchain-openai langchain-community faiss-cpu
+```
+
+## 基本設定
+
+```python
+from langchain_openai import ChatOpenAI
+
+llm = ChatOpenAI(
+    model="gpt-5.4",
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1",
+)
+
+response = llm.invoke("Explain AI Sonar in one sentence.")
+print(response.content)
+```
+
+## 使用不同模型
+
+```python
+from langchain_openai import ChatOpenAI
+
+gpt = ChatOpenAI(
+    model="gpt-5.4",
+    api_key="sk-your-key",
+    base_url="https://api.aisonar.dev/v1",
+)
+
+claude = ChatOpenAI(
+    model="claude-sonnet-4-6",
+    api_key="sk-your-key",
+    base_url="https://api.aisonar.dev/v1",
+)
+
+gemini = ChatOpenAI(
+    model="gemini-2.5-flash",
+    api_key="sk-your-key",
+    base_url="https://api.aisonar.dev/v1",
+)
+
+deepseek = ChatOpenAI(
+    model="deepseek-r1",
+    api_key="sk-your-key",
+    base_url="https://api.aisonar.dev/v1",
+)
+```
+
+## 訊息歷史
+
+```python
+from langchain_core.messages import HumanMessage, SystemMessage
+
+messages = [
+    SystemMessage(content="You are a helpful assistant."),
+    HumanMessage(content="What is the capital of France?")
+]
+
+response = llm.invoke(messages)
+print(response.content)
+```
+
+## 串流
+
+```python
+for chunk in llm.stream("Write a short poem about coding."):
+    if chunk.content:
+        print(chunk.content, end="", flush=True)
+```
+
+## Embeddings
+
+```python
+from langchain_openai import OpenAIEmbeddings
+
+embeddings = OpenAIEmbeddings(
+    model="text-embedding-3-small",
+    api_key="sk-your-key",
+    base_url="https://api.aisonar.dev/v1",
+)
+
+vector = embeddings.embed_query("Hello world")
+print(vector[:5])
+```
+
+## 簡單的 RAG 範例
+
+```python
+from langchain_openai import OpenAIEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnablePassthrough
+
+embeddings = OpenAIEmbeddings(
+    model="text-embedding-3-small",
+    api_key="sk-your-key",
+    base_url="https://api.aisonar.dev/v1",
+)
+
+texts = [
+    "AI Sonar provides one API for many AI models.",
+    "AI Sonar supports OpenAI-compatible integrations."
+]
+
+vectorstore = FAISS.from_texts(texts, embeddings)
+retriever = vectorstore.as_retriever()
+
+prompt = ChatPromptTemplate.from_template(
+    "Answer using the context below.\\n\\nContext:\\n{context}\\n\\nQuestion:\\n{question}"
+)
+
+rag_chain = (
+    {"context": retriever, "question": RunnablePassthrough()}
+    | prompt
+    | llm
+)
+
+response = rag_chain.invoke("What does AI Sonar provide?")
+print(response.content)
+```
+
+## Agents
+
+<Note>
+對於新的 agentic 專案，LangChain 建議考慮使用 LangGraph，以便對長時間執行及使用工具的工作流程提供更明確的控制。
+</Note>
+
+```python
+from langchain.agents import create_openai_tools_agent, AgentExecutor
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.tools import tool
+
+@tool
+def search(query: str) -> str:
+    """Search for information."""
+    return f"Search results for: {query}"
+
+tools = [search]
+
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a helpful assistant with access to tools."),
+    ("human", "{input}"),
+    ("placeholder", "{agent_scratchpad}")
+])
+
+agent = create_openai_tools_agent(llm, tools, prompt)
+executor = AgentExecutor(agent=agent, tools=tools)
+
+result = executor.invoke({"input": "Search for AI Sonar pricing"})
+print(result["output"])
+```
+
+## 最佳實務
+
+<AccordionGroup>
+  <Accordion title="明確傳遞 base_url">
+    最可靠的 AI Sonar 設定方式，是直接將 `base_url="https://api.aisonar.dev/v1"` 傳遞給 `ChatOpenAI` 與 `OpenAIEmbeddings`，而不是依賴較舊的環境變數別名。
+  </Accordion>
+
+  <Accordion title="在這裡使用標準功能">
+    請在 `ChatOpenAI` 上使用標準 chat、tool calling、streaming 與 embeddings 功能。如果您需要供應商原生的額外功能，請切換至該供應商自己的 LangChain 整合。
+  </Accordion>
+
+  <Accordion title="為檢索使用較便宜的模型">
+    針對檢索使用如 `text-embedding-3-small` 這類 embedding 模型，並將更強大的 chat 模型保留用於最終回答步驟。
+  </Accordion>
+</AccordionGroup>

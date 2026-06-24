@@ -1,0 +1,47 @@
+---
+title: "API Key を作成"
+openapi: "POST /v1/management/api-keys"
+description: "現在の組織に新しいユーザー API Key を作成します。"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## 概要
+
+この endpoint は、現在の管理トークンに紐づく組織内に、新しい `type=user` API Key を作成します。
+
+## リクエストボディ
+
+| フィールド | 型 | 既定値 / 制約 | 説明 |
+|-----------|------|---------------|------|
+| `name` | string | 必須、既定値 `Default Key`、長さ `1-50` | 表示名。サーバー側で前後空白が取り除かれます |
+| `limitAmount` | number \| null | 最小 `0`、入力上限 `1000000` | `null` または省略 = 無制限、`0` = 利用可能額 0、正の値は保存時に正規化され、`100000` USD 相当を超えません |
+| `limitCurrency` | enum | 既定 `USD` | USD のみです。`CNY` を送信すると `400 currency_retired` が返されます。 |
+| `models` | string[] | 既定値 `[]` | 任意の論理モデル許可リスト |
+| `expiresAt` | string \| null | RFC3339 datetime | `null` は期限なしを意味します |
+
+## 補足
+
+- 完全な API Key 値はレスポンスで一度だけ返されます。
+- `models: []` は、組織ポリシー以外の追加制限がないことを意味します。
+- `limitAmount: 0` は有効だが利用可能額 0 のキーを作成します。後から更新できます。
+
+## 例
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/management/api-keys" \
+  -H "Authorization: Bearer mt-your-management-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Backend Worker",
+    "limitAmount": 500,
+    "models": ["veo3.1", "kling-3.0-video"],
+    "expiresAt": "2026-12-31T23:59:59Z"
+  }'
+```
+</RequestExample>
+
+## リクエスト / レスポンス
+
+正確な schema とレスポンス項目は、上部のインタラクティブな OpenAPI パネルを参照してください。

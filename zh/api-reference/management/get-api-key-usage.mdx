@@ -1,0 +1,44 @@
+---
+title: "获取 API Key 用量"
+openapi: "GET /v1/management/api-keys/{keyId}/usage"
+description: "返回某个用户 API Key 的分页用量明细。"
+---
+
+## 概览
+
+该接口返回单个 API Key 维度的分页用量明细，不暴露物理路由元数据。
+
+## Query 参数
+
+| 参数 | 类型 | 默认值 / 限制 | 说明 |
+|------|------|---------------|------|
+| `page` | integer | 默认 `1`，最小 `1` | 1-based 页码 |
+| `limit` | integer | 默认 `50`，最小 `1`，最大 `100` | 每页条数 |
+| `logicalModel` | string | 最大长度 `100` | 请求时使用的逻辑模型名 |
+| `modelVendor` | string | 最大长度 `100` | 公开模型厂商 |
+| `scene` | enum | - | `chat`、`image`、`audio`、`video`、`embedding`、`rerank`、`translation`、`music`、`3d` |
+| `accessChannel` | enum | - | `platform` 或 `byok` |
+| `startDate` | string | - | 起始时间，接受带时区的 RFC3339 或 `YYYY-MM-DD` |
+| `endDate` | string | - | 结束时间，接受带时区的 RFC3339 或 `YYYY-MM-DD` |
+
+如果同时提供 `startDate` 和 `endDate`，则 `startDate` 必须早于或等于 `endDate`。
+
+## 说明
+
+- 响应是分页的。
+- 响应只包含公开账单和报表字段。
+- 当底层请求已完成结算时，每条用量明细还会包含 `billing_transaction_id`。建议将它与 `request_id` 一起用于请求级对账。
+- 内部路由和物理渠道元数据会被隐藏。
+
+## 示例
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/usage?page=1&limit=20&scene=video&accessChannel=platform&startDate=2026-03-01&endDate=2026-03-31" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## 请求 / 响应
+
+精确 schema 和响应字段请使用上方的交互式 OpenAPI 面板。

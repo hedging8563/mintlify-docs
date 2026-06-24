@@ -1,0 +1,107 @@
+---
+title: "Modeli Getir"
+openapi: "GET /v1beta/models/{model}"
+description: "Google Gemini API formatını kullanarak model metadata'sını alır"
+---
+
+Belirli bir model için Google Gemini API formatında metadata döndürür.
+
+## Yol Parametreleri
+
+<ParamField path="model" type="string" required>
+  Model adı (örneğin `gemini-2.5-pro`, `gemini-2.5-flash`). Alias'lar da kabul edilir.
+</ParamField>
+
+## Kimlik Doğrulama
+
+Herkese açık model metadata okuma endpoint'i için kimlik doğrulama gerekmez.
+
+## Yanıt
+
+<ResponseField name="name" type="string">
+  `models/{model}` biçiminde model resource adı.
+</ResponseField>
+
+<ResponseField name="displayName" type="string">
+  İnsan tarafından okunabilir model adı.
+</ResponseField>
+
+<ResponseField name="inputTokenLimit" type="integer">
+  Maksimum input token (context window).
+</ResponseField>
+
+<ResponseField name="outputTokenLimit" type="integer">
+  Maksimum output token.
+</ResponseField>
+
+<ResponseField name="supportedGenerationMethods" type="array">
+  Desteklenen üretim yöntemleri listesi (örneğin `generateContent`, `countTokens`, `embedContent`).
+</ResponseField>
+
+<ResponseField name="version" type="string">
+  Mevcutsa public sürüm string'i.
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  Mevcutsa insan tarafından okunabilir model açıklaması.
+</ResponseField>
+
+<ResponseField name="temperature" type="number">
+  Upstream bunu açığa çıkarıyorsa varsayılan temperature.
+</ResponseField>
+
+<ResponseField name="topP" type="number">
+  Mevcutsa varsayılan top-p değeri.
+</ResponseField>
+
+<ResponseField name="topK" type="integer">
+  Mevcutsa varsayılan top-k değeri.
+</ResponseField>
+
+<ResponseField name="maxTemperature" type="number">
+  Mevcutsa desteklenen maksimum temperature.
+</ResponseField>
+
+## Hatalar
+
+- Yanlışlıkla `:generateContent` veya `:streamGenerateContent` içeren GET isteği `405 METHOD_NOT_ALLOWED` döndürür.
+- Eksik model `404 NOT_FOUND` döndürür.
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1beta/models/gemini-2.5-pro"
+```
+
+```python Python
+import google.generativeai as genai
+
+genai.configure(
+    api_key="sk-your-api-key",
+    transport="rest",
+    client_options={"api_endpoint": "api.aisonar.dev"}
+)
+
+model = genai.get_model("models/gemini-2.5-pro")
+print(f"Name: {model.name}")
+print(f"Input limit: {model.input_token_limit}")
+print(f"Output limit: {model.output_token_limit}")
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "name": "models/gemini-2.5-pro",
+  "version": "1.0",
+  "displayName": "gemini-2.5-pro",
+  "description": "gemini-2.5-pro model available via AI Sonar",
+  "inputTokenLimit": 1048576,
+  "outputTokenLimit": 65536,
+  "supportedGenerationMethods": ["generateContent", "countTokens"],
+  "temperature": 1.0,
+  "topP": 0.95,
+  "topK": 40,
+  "maxTemperature": 2.0
+}
+```
+</ResponseExample>

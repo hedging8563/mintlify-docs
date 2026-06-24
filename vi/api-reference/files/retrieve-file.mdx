@@ -1,0 +1,37 @@
+---
+title: "Lấy Tệp"
+openapi: "GET /v1/files/{file_id}"
+description: "Lấy metadata cho một tệp đã tải lên."
+---
+
+## Tổng Quan
+
+Endpoint này chủ yếu phục vụ các đối tượng tệp của Batch API tương thích với OpenAI của AI Sonar.
+
+Khi request bật chế độ tương thích Anthropic Files, cùng route này cũng có thể trả về metadata tệp kiểu Anthropic cho workspace đã gắn.
+
+## Ghi Chú
+
+- Các tệp đầu vào batch phải dùng `purpose=batch`.
+- `completion_window` hiện là `24h`.
+- Thứ tự đầu ra không được đảm bảo; luôn đối chiếu theo `custom_id`.
+- Streaming không được hỗ trợ bên trong các mục batch.
+
+## Ví Dụ
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/files/file_abc123" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+## Yêu Cầu / Phản Hồi
+
+Sử dụng bảng OpenAPI tương tác ở trên để xem schema chính xác.
+
+## Mẹo Vận Hành
+
+- Dùng `custom_id` cho việc đối soát downstream mang tính idempotent.
+- Chỉ kỳ vọng `output_file_id` và `error_file_id` sau khi worker hoàn tất batch.
+- Giá batch có thể khác với giá đồng bộ vì các quy tắc giảm giá `isBatchRequest=true` được áp dụng.

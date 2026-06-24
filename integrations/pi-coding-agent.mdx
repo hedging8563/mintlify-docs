@@ -1,0 +1,81 @@
+---
+title: "Pi Coding Agent"
+description: "Use AI Sonar with Pi, a minimal terminal coding harness that supports OpenAI, Anthropic, and Google-style providers"
+---
+
+## Overview
+
+
+
+<Note>
+**Type**: Coding Tool
+
+**Primary Path**: OpenAI-compatible
+
+**Support Confidence**: Supported path
+</Note>
+
+[Pi](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent) is a minimal terminal coding harness. In the AI Sonar docs IA, it belongs under **Coding Tools**, not under native SDKs.
+
+Pi is interesting because it sits between a classic CLI tool and an embeddable runtime:
+
+- interactive terminal coding workflow
+- JSON / RPC modes for process integration
+- SDK-style embedding into your own applications
+
+For AI Sonar, Pi is usually easiest to configure through an **OpenAI-compatible** provider path, unless you intentionally want Anthropic-native or Google-native behavior.
+
+## Recommended AI Sonar Path
+
+Use AI Sonar as an OpenAI-compatible endpoint:
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+export OPENAI_BASE_URL="https://api.aisonar.dev/v1"
+```
+
+Then configure Pi's provider or custom model settings so its OpenAI-style path points at AI Sonar.
+
+<Note>
+Pi can also work with Anthropic-style and Google-style providers. If you want Claude-native or Gemini-native behavior, treat that as a provider-specific Pi setup rather than a generic OpenAI-compatible setup.
+</Note>
+
+## Why Pi Is Different
+
+Pi is not just "another SDK".
+
+- If you are using Pi as a terminal agent, evaluate it like a **coding tool**
+- If you are embedding Pi into your own app, evaluate it like an **agent runtime / harness**
+
+That is why this page focuses on the practical AI Sonar connection path rather than calling Pi a pure SDK.
+
+## Practical Setup Notes
+
+<AccordionGroup>
+  <Accordion title="OpenAI-compatible default">
+    Start with AI Sonar's `https://api.aisonar.dev/v1` path unless your Pi workflow explicitly depends on a native provider protocol.
+  </Accordion>
+
+  <Accordion title="Native-provider setups are separate">
+    Claude-native or Gemini-native Pi setups should be documented and tested as separate provider-specific paths, not assumed to be identical to the OpenAI-compatible route.
+  </Accordion>
+
+  <Accordion title="Keep tool/runtime expectations realistic">
+    Pi is highly configurable. AI Sonar can document the connection path, but not every extension, skill, or custom harness behavior should be treated as part of the compatibility contract.
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Connection errors">
+    - Verify the configured OpenAI-style base URL is exactly `https://api.aisonar.dev/v1`
+    - Verify the key starts with `sk-`
+    - Verify the selected Pi provider path matches the protocol you intend to use
+  </Accordion>
+
+  <Accordion title="Model mismatch">
+    - Keep the AI Sonar model id separate from any Pi-local aliasing
+    - If you are testing provider-native behavior, confirm the Pi provider is really using that native path
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,29 @@
+---
+title: "Get Organization Balance"
+openapi: "GET /v1/management/balance"
+description: "Returns current organization balance totals for the management token."
+---
+
+## Overview
+
+This endpoint returns the current balance totals for the organization associated with the management token. It uses the same organization balance source of truth as billing and settlement.
+
+## Notes
+
+- Monetary fields are USD-only. `CNY` inputs are retired and return `400 currency_retired`.
+
+- Monetary truth fields are returned in USD: `balance`, `total_recharge`, and `total_used`.
+- `preferred_currency` reflects the organization dashboard display preference; it does not change the USD truth fields.
+
+## Example
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/management/balance" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## Request / Response
+
+Use the interactive OpenAPI panel above for the exact schema.

@@ -1,0 +1,54 @@
+---
+title: "Realtime WebSocket"
+openapi: "GET /v1/realtime"
+description: "Conecta sesiones de voz y multimodales en tiempo real por WebSocket"
+---
+
+## Resumen
+
+Este endpoint sirve para reconocimiento de voz, síntesis de voz, traducción de voz o modelos multimodales en tiempo real. Un `GET` normal devuelve metadatos; el upgrade WebSocket se proxifica a la sesión upstream enrutada.
+
+<Note>Los agentes deben descubrir modelos con soporte realtime en `/v1/models` antes de abrir el socket.</Note>
+
+## Conexión
+
+<ParamField query="model" type="string" required>
+  ID del modelo en tiempo real. Usa un modelo cuyo contrato público indique soporte realtime.
+</ParamField>
+
+<ParamField header="Authorization" type="string" required>
+  Clave API Bearer. Los clientes WebSocket deben enviar `Authorization: Bearer sk-your-api-key` durante el upgrade.
+</ParamField>
+
+<RequestExample>
+```javascript JavaScript
+import WebSocket from 'ws';
+
+const socket = new WebSocket('wss://api.aisonar.dev/v1/realtime?model=qwen-tts-realtime', {
+  headers: { Authorization: 'Bearer sk-your-api-key' }
+});
+
+socket.on('open', () => {
+  socket.send(JSON.stringify({ type: 'session.start' }));
+});
+
+socket.on('message', (data) => {
+  console.log('realtime event', data.toString());
+});
+```
+
+```bash cURL
+curl "https://api.aisonar.dev/v1/realtime" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+## Mensajes
+
+AI Sonar reenvía mensajes WebSocket entre tu cliente y el proveedor realtime enrutado. Conserva la forma oficial de eventos del modelo elegido y pasa `model` en la query string.
+
+## Facturación y cierre
+
+Las sesiones realtime usan el mismo saldo de la clave API. AI Sonar predescuenta una pequeña estimación al abrir y liquida o reembolsa al cerrar.
+
+Cierra el socket del cliente cuando termine la sesión. Si el upstream cierra primero, AI Sonar reenvía el código de cierre cuando sea posible.

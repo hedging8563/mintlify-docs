@@ -1,0 +1,35 @@
+---
+title: "檢索批次"
+openapi: "GET /v1/batches/{batch_id}"
+description: "檢索批次的當前狀態、計數和結果文件。"
+---
+
+## 概述
+
+此端點是 AI Sonar 的 OpenAI 兼容批次 API 的一部分。批次作業使用上傳的 JSONL 文件，異步運行，並可以稍後返回輸出/錯誤文件。
+
+## 注意事項
+
+- 批次輸入文件必須使用 `purpose=batch`。
+- `completion_window` 目前為 `24h`。
+- 輸出順序不保證；始終通過 `custom_id` 匹配。
+- 批次項目內不支持串流。
+
+## 範例
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/batches/batch_abc123" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+## 請求 / 回應
+
+使用上方的互動式 OpenAPI 面板以獲取確切的架構。
+
+## 操作提示
+
+- 使用 `custom_id` 進行冪等的下游對帳。
+- 只有在工作者完成批次後，才會期望 `output_file_id` 和 `error_file_id`。
+- 批次定價可能與同步定價不同，因為適用 `isBatchRequest=true` 的折扣規則。

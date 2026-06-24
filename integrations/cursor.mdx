@@ -1,0 +1,100 @@
+---
+title: "Cursor"
+description: "Use AI Sonar with Cursor AI code editor"
+---
+
+## Overview
+
+
+
+<Note>
+**Type**: Coding Tool
+
+**Primary Path**: OpenAI-compatible
+
+**Support Confidence**: Supported with limits
+</Note>
+
+[Cursor](https://cursor.sh) supports bring-your-own-key (BYOK) providers, but custom API keys only work with standard chat models. Use AI Sonar here as an OpenAI-compatible endpoint for chat-style editor workflows, not as a full replacement for every Cursor model feature.
+
+## Configuration
+
+1. Open Cursor Settings (`Cmd/Ctrl + ,`)
+2. Navigate to **Models** in the left sidebar
+3. Scroll down to the **OpenAI API Key** section
+4. Enter your AI Sonar API key
+5. Enable **Override OpenAI Base URL**
+6. Set the Base URL to:
+
+```
+https://api.aisonar.dev/v1
+```
+
+<Warning>
+Cursor custom API keys only apply to standard chat models. Tab Completion and other Cursor-managed specialized features will continue using Cursor's built-in providers.
+</Warning>
+
+<Warning>
+Cursor’s custom API key flow only applies to standard chat models. Features that require specialized Cursor-managed models, such as Tab Completion and some reasoning-specific flows, will continue using Cursor’s built-in providers. Cursor also notes that requests still pass through its backend for final prompt assembly.
+</Warning>
+
+## Model Selection
+
+After configuration, prefer standard chat models exposed through AI Sonar:
+
+### Recommended Models for Coding
+
+| Model | Best For |
+|-------|----------|
+| `gpt-5.4` | General coding, debugging, chat |
+| `gpt-5-mini` | Fast edits and lightweight prompts |
+
+## What Works Best
+
+### Chat and editor flows
+
+Use AI Sonar through Cursor for:
+
+- Code explanations
+- Bug fixing
+- Refactoring suggestions
+- Documentation generation
+
+### What stays on Cursor-managed models
+
+These features do not reliably switch to your AI Sonar endpoint:
+
+- Tab Completion
+- Specialized non-standard chat models
+- Provider-specific features that Cursor only enables on built-in models
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Models not showing up">
+    Cursor caches model and provider state. Restart Cursor after configuring the API key and base URL.
+  </Accordion>
+
+  <Accordion title="Model unsupported in BYOK mode">
+    Custom API keys only work with standard chat models. If a model uses specialized Cursor infrastructure, switch to a standard chat model such as `gpt-5.4`.
+  </Accordion>
+
+  <Accordion title="Authentication errors">
+    Verify your API key is correct and has sufficient balance.
+  </Accordion>
+
+  <Accordion title="Another provider stopped working after enabling AI Sonar">
+    Cursor’s BYOK configuration can affect other provider flows. If another model path breaks after enabling the OpenAI base URL override, disable the override and restart Cursor.
+  </Accordion>
+</AccordionGroup>
+
+## Tips
+
+<CardGroup cols={2}>
+  <Card title="Use appropriate models" icon="gauge-high">
+    Use `gpt-5-mini` for quick chat-style tasks and `gpt-5.4` for heavier coding work.
+  </Card>
+  <Card title="Check your balance" icon="wallet">
+    Monitor usage in your AI Sonar dashboard.
+  </Card>
+</CardGroup>

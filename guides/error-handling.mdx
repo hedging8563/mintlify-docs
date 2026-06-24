@@ -1,0 +1,282 @@
+---
+title: "Error Handling"
+description: "Handle API errors gracefully"
+---
+
+## Error Response Format
+
+All errors return a consistent JSON format with optional [Agent-First hints](/guides/agent-first-api):
+
+```json
+{
+  "error": {
+    "message": "Human-readable error description",
+    "type": "error_type",
+    "code": "error_code",
+    "param": "parameter_name",
+    "did_you_mean": "suggested_model",
+    "suggestions": [{"id": "model-id"}],
+    "hint": "Next step guidance",
+    "retryable": true,
+    "retry_after": 30
+  }
+}
+```
+
+The base fields (`message`, `type`, `code`, `param`) are always present. The hint fields (`did_you_mean`, `suggestions`, `hint`, `retryable`, `retry_after`, `balance_usd`, `estimated_cost_usd`) are optional extensions for AI agent self-correction. See the [Agent-First API guide](/guides/agent-first-api) for details.
+
+OpenAI-compatible endpoints use AI Sonar's stable gateway error types. Anthropic-compatible and Gemini-compatible endpoints use their own native error families and response shapes.
+
+## HTTP Status Codes
+
+| Code | Description |
+|------|-------------|
+| 400 | Bad Request - Invalid parameters |
+| 401 | Unauthorized - Invalid or missing API key |
+| 402 | Payment Required - Insufficient balance |
+| 403 | Forbidden - Access denied or model not allowed |
+| 404 | Not Found - Model or resource not found |
+| 413 | Payload Too Large - Input or file size exceeded |
+| 429 | Too Many Requests - Rate limit exceeded |
+| 500 | Internal Server Error |
+| 502 | Bad Gateway - Upstream provider error |
+| 503 | Service Unavailable - Service temporarily unavailable |
+| 504 | Gateway Timeout - Request timed out |
+
+## Error Types
+
+### Authentication Errors (401)
+
+| Type | Code | Description |
+|------|------|-------------|
+| `invalid_api_key` | `invalid_api_key` | API key is missing or invalid |
+| `expired_api_key` | `expired_api_key` | API key has been revoked |
+
+```python
+from openai import OpenAI, AuthenticationError
+
+try:
+    response = client.chat.completions.create(...)
+except AuthenticationError as e:
+    print(f"Authentication failed: {e.message}")
+```
+
+### Payment Errors (402)
+
+| Type | Code | Description |
+|------|------|-------------|
+| `insufficient_balance` | `insufficient_balance` | Account balance is too low |
+| `quota_exceeded` | `quota_exceeded` | API key usage limit reached |
+
+```python
+from openai import OpenAI, APIStatusError
+
+try:
+    response = client.chat.completions.create(...)
+except APIStatusError as e:
+    if e.status_code == 402:
+        print("Please top up your account balance")
+```
+
+### Access Errors (403)
+
+| Type | Code | Description |
+|------|------|-------------|
+| `access_denied` | `access_denied` | Access to resource denied |
+| `access_denied` | `model_not_allowed` | Model not allowed for this API key |
+
+```json
+{
+  "error": {
+    "message": "You don't have permission to access this model",
+    "type": "access_denied",
+    "code": "model_not_allowed"
+  }
+}
+```
+
+### Validation Errors (400)
+
+| Type | Description |
+|------|-------------|
+| `invalid_request_error` | Request parameters are invalid |
+| `context_length_exceeded` | Input too long for model |
+| `model_not_found` | Requested model is not available in the current public contract |
+
+```json
+{
+  "error": {
+    "message": "Model not found: please check the model name",
+    "type": "invalid_request_error",
+    "param": "model",
+    "code": "model_not_found",
+    "did_you_mean": "gpt-5.4",
+    "suggestions": [{"id": "gpt-5.4"}, {"id": "gpt-5-mini"}],
+    "hint": "Did you mean 'gpt-5.4'? Use GET https://api.aisonar.dev/v1/models to list all available models."
+  }
+}
+```
+
+Public routes do not distinguish typo, hidden, deferred, or non-public model states in the response body. If a model is not currently available through the public contract, AI Sonar returns `model_not_found`.
+
+### Rate Limit Errors (429)
+
+When you exceed rate limits:
+
+```json
+{
+  "error": {
+    "message": "Rate limit: 60 rpm exceeded",
+    "type": "rate_limit_exceeded",
+    "code": "rate_limit_exceeded",
+    "retryable": true,
+    "retry_after": 8,
+    "hint": "Rate limited. Retry after 8s. Current limit: 60/min for user role."
+  }
+}
+```
+
+**Headers included:**
+
+```
+Retry-After: 8
+```
+
+The `Retry-After` header and `retry_after` field both indicate the exact seconds to wait before retrying.
+
+### Payload Too Large (413)
+
+When input or file size exceeds limits:
+
+```json
+{
+  "error": {
+    "message": "Input size exceeds maximum allowed",
+    "type": "invalid_request_error",
+    "code": "payload_too_large"
+  }
+}
+```
+
+Common causes:
+- Image file too large (max 20MB)
+- Audio file too large (max 25MB)
+- Input text exceeds model context length
+
+### Upstream Errors (502, 503)
+
+| Type | Description |
+|------|-------------|
+| `upstream_error` | Provider returned an error |
+| `all_channels_failed` | No available providers |
+| `timeout_error` | Request timed out |
+
+When all channels fail, the response includes alternative models:
+
+```json
+{
+  "error": {
+    "message": "Model claude-opus-4-6 temporarily unavailable",
+    "code": "all_channels_failed",
+    "retryable": true,
+    "retry_after": 30,
+    "alternatives": [
+      {"id": "claude-sonnet-4-6", "status": "available", "tags": []},
+      {"id": "gpt-5-mini", "status": "available", "tags": []}
+    ],
+    "hint": "Retry in 30s or switch to an available model."
+  }
+}
+```
+
+## Handling Errors in Python
+
+```python
+from openai import OpenAI, APIError, RateLimitError, APIConnectionError
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+def chat_with_retry(messages, max_retries=3):
+    for attempt in range(max_retries):
+        try:
+            return client.chat.completions.create(
+                model="gpt-4o",
+                messages=messages
+            )
+        except RateLimitError as e:
+            if attempt < max_retries - 1:
+                import time
+                time.sleep(2 ** attempt)  # Exponential backoff
+                continue
+            raise
+        except APIConnectionError as e:
+            print(f"Connection error: {e}")
+            raise
+        except APIError as e:
+            print(f"API error: {e.status_code} - {e.message}")
+            raise
+```
+
+## Handling Errors in JavaScript
+
+```javascript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+async function chatWithRetry(messages, maxRetries = 3) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await client.chat.completions.create({
+        model: 'gpt-4o',
+        messages
+      });
+    } catch (error) {
+      if (error instanceof OpenAI.RateLimitError) {
+        if (attempt < maxRetries - 1) {
+          await new Promise(r => setTimeout(r, 2 ** attempt * 1000));
+          continue;
+        }
+      }
+      throw error;
+    }
+  }
+}
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Implement exponential backoff">
+    When rate limited, wait progressively longer between retries:
+    ```python
+    wait_time = 2 ** attempt  # 1s, 2s, 4s, 8s...
+    ```
+  </Accordion>
+
+  <Accordion title="Set timeouts">
+    Always set reasonable timeouts to avoid hanging requests:
+    ```python
+    client = OpenAI(timeout=60.0)  # 60 second timeout
+    ```
+  </Accordion>
+
+  <Accordion title="Log errors for debugging">
+    Log the full error response including request ID for support:
+    ```python
+    except APIError as e:
+        logger.error(f"API Error: {e.status_code} - {e.message}")
+    ```
+  </Accordion>
+
+  <Accordion title="Handle model-specific errors">
+    Some models have specific requirements (e.g., max tokens, image formats).
+    Validate inputs before making requests.
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,178 @@
+---
+title: "Gemini CLI"
+description: "Configurez Google Gemini CLI pour utiliser l'API AI Sonar"
+---
+
+## Présentation
+
+Google Gemini CLI est un outil en ligne de commande pour interagir avec les modèles Gemini. AI Sonar fournit un point de terminaison compatible qui vous permet d'utiliser Gemini CLI avec un accès à plus de 300 modèles.
+
+
+<Warning>
+Cette intégration doit être considérée comme expérimentale : Gemini CLI ne documente pas actuellement de flux de travail stable avec une URL de base personnalisée de type AI Sonar. Si vous avez besoin d’une intégration AI Sonar réellement prise en charge, privilégiez Codex CLI, Claude Code ou OpenCode.
+</Warning>
+
+## Configuration requise
+
+- **Node.js** : Version 20.0+
+- **OS** : Windows 10/11, macOS 10.15+, Ubuntu 20.04+, ou Debian 10+
+
+## Installation
+
+```bash
+npm install -g @google/gemini-cli
+```
+
+Vérifiez l'installation :
+
+```bash
+gemini --version
+```
+
+## Configuration
+
+### Étape 1 : Obtenez votre clé API
+
+1. Connectez-vous au [Tableau de bord AI Sonar](https://console.aisonar.dev)
+2. Accédez aux [Clés API](https://console.aisonar.dev/api)
+3. Créez et copiez votre clé API (format : `sk-...`)
+
+### Étape 2 : Définissez les variables d'environnement
+
+**Temporaire (session actuelle) :**
+
+```bash
+export GEMINI_API_KEY="sk-your-api-key"
+export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"
+```
+
+**Configuration permanente :**
+
+Ajoutez à votre fichier de configuration shell :
+
+<Tabs>
+  <Tab title="Bash">
+    ```bash
+    echo 'export GEMINI_API_KEY="sk-your-api-key"' >> ~/.bashrc
+    echo 'export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"' >> ~/.bashrc
+    source ~/.bashrc
+    ```
+  </Tab>
+  <Tab title="Zsh">
+    ```bash
+    echo 'export GEMINI_API_KEY="sk-your-api-key"' >> ~/.zshrc
+    echo 'export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"' >> ~/.zshrc
+    source ~/.zshrc
+    ```
+  </Tab>
+  <Tab title="Fish">
+    ```bash
+    set -Ux GEMINI_API_KEY "sk-your-api-key"
+    set -Ux GOOGLE_GEMINI_BASE_URL "https://api.aisonar.dev"
+    ```
+  </Tab>
+</Tabs>
+
+<Warning>
+Redémarrez votre terminal après la configuration pour que les modifications prennent effet.
+</Warning>
+
+<Note>
+**Limitation connue** : Dans certains cas, Gemini CLI peut ne pas respecter `GOOGLE_GEMINI_BASE_URL` s'il existe une session Google en cache. Si vous rencontrez des problèmes de connexion, essayez de vider le cache du CLI ou de démarrer une nouvelle session de terminal.
+</Note>
+
+## Utilisation de base
+
+Lancez Gemini CLI depuis le répertoire de votre projet :
+
+```bash
+cd your-project
+gemini
+```
+
+Lors de la première exécution, vous devrez :
+1. Choisir un thème
+2. Confirmer l'avis de sécurité
+3. Faire confiance au répertoire de travail
+
+## Modèles disponibles
+
+| Modèle | Description |
+|-------|-------------|
+| `gemini-2.5-pro` | Le modèle Gemini le plus performant |
+| `gemini-2.5-flash` | Rapide, efficace pour la plupart des tâches |
+| `gemini-2.0-flash` | Génération précédente, stable |
+
+## Commandes courantes
+
+**Poser une question :**
+
+```
+> What is the best way to structure a React app?
+```
+
+**Analyser du code :**
+
+```
+> Explain the code in src/main.ts
+```
+
+**Générer du code :**
+
+```
+> Create a Python function to parse JSON files
+```
+
+**Réviser les modifications :**
+
+```
+> Review the recent git changes and suggest improvements
+```
+
+## Vérifier la configuration
+
+```bash
+# Vérifier les variables d'environnement
+echo $GEMINI_API_KEY
+echo $GOOGLE_GEMINI_BASE_URL
+
+# Tester la connexion
+gemini
+```
+
+## Dépannage
+
+<AccordionGroup>
+  <Accordion title="Erreur de connexion">
+    - Vérifiez que `GOOGLE_GEMINI_BASE_URL` est défini sur `https://api.aisonar.dev`
+    - Note : Pas de suffixe `/v1` pour le point de terminaison Gemini
+    - Vérifiez la connectivité réseau
+  </Accordion>
+
+  <Accordion title="Échec de l'authentification">
+    - Vérifiez que la variable d'environnement `GEMINI_API_KEY` est définie
+    - Vérifiez que la clé commence par `sk-`
+    - Assurez-vous que la clé est active dans le tableau de bord AI Sonar
+  </Accordion>
+
+  <Accordion title="Modèle non disponible">
+    - Vérifiez la disponibilité des modèles Gemini sur [aisonar.dev/en/models](https://aisonar.dev/models)
+    - Essayez une autre variante du modèle Gemini
+  </Accordion>
+</AccordionGroup>
+
+## Bonnes pratiques
+
+<AccordionGroup>
+  <Accordion title="Utiliser dans le répertoire du projet">
+    Exécutez toujours Gemini CLI depuis la racine de votre projet pour une meilleure compréhension du contexte.
+  </Accordion>
+
+  <Accordion title="Faire confiance aux répertoires avec prudence">
+    Ne faites confiance qu'aux répertoires qui vous appartiennent. Gemini CLI peut lire et modifier des fichiers.
+  </Accordion>
+
+  <Accordion title="Réviser le code généré">
+    Révisez toujours le code généré par l'IA avant de le commiter dans votre projet.
+  </Accordion>
+</AccordionGroup>

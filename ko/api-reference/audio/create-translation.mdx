@@ -1,0 +1,164 @@
+---
+title: "번역 생성"
+openapi: "POST /v1/audio/translations"
+description: "오디오를 영어 텍스트로 번역합니다"
+---
+
+## 개요
+
+지원되는 모든 언어의 오디오를 영어 텍스트로 번역합니다. transcription과 달리, 이 endpoint는 입력 언어와 관계없이 항상 영어 텍스트를 출력합니다.
+
+## 요청 본문
+
+**동기 요청 타임아웃:** 이 비채팅 엔드포인트는 라우팅된 모델이 완료될 때까지 기다립니다. 큰 입력, 긴 오디오, 큰 배치는 일반적인 30s 클라이언트 기본값을 초과할 수 있으므로 HTTP 클라이언트 타임아웃을 최소 `120s` 로 설정하세요.
+
+<ParamField body="file" type="file" required>
+  번역할 오디오 파일입니다. 지원 형식: `flac`, `mp3`, `mp4`, `mpeg`, `mpga`, `m4a`, `ogg`, `wav`, `webm`. 최대 파일 크기는 25 MB입니다.
+</ParamField>
+
+<ParamField body="model" type="string" default="whisper-1">
+  사용할 model입니다. 현재는 `whisper-1`만 지원됩니다.
+</ParamField>
+
+<ParamField body="prompt" type="string">
+  model의 스타일을 유도하거나 이전 세그먼트를 이어가기 위한 선택적 텍스트입니다. 영어로 작성해야 합니다.
+</ParamField>
+
+<ParamField body="response_format" type="string" default="json">
+  출력 형식입니다. 옵션: `json`, `text`, `srt`, `verbose_json`, `vtt`.
+</ParamField>
+
+<ParamField body="temperature" type="number">
+  0과 1 사이의 sampling temperature입니다. 0.8과 같은 높은 값은 더 무작위적인 출력을 생성하고, 0.2와 같은 낮은 값은 출력을 더 집중되고 결정적으로 만듭니다.
+</ParamField>
+
+## 응답
+
+<ResponseField name="text" type="string">
+  영어로 번역된 텍스트입니다.
+</ResponseField>
+
+`verbose_json` 형식의 경우, 응답에는 다음도 포함됩니다:
+
+<ResponseField name="language" type="string">
+  입력 오디오에서 감지된 언어입니다.
+</ResponseField>
+
+<ResponseField name="duration" type="number">
+  초 단위의 입력 오디오 길이입니다.
+</ResponseField>
+
+<ResponseField name="segments" type="array">
+  타임스탬프가 포함된 번역 텍스트 세그먼트입니다.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/audio/translations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F "file=@german_audio.mp3" \
+  -F "model=whisper-1"
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+with open("german_audio.mp3", "rb") as audio_file:
+    response = client.audio.translations.create(
+        model="whisper-1",
+        file=audio_file
+    )
+
+print(response.text)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+import fs from 'fs';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.audio.translations.create({
+  model: 'whisper-1',
+  file: fs.createReadStream('german_audio.mp3')
+});
+
+console.log(response.text);
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/audio/translations');
+
+$file = new CURLFile('german_audio.mp3', 'audio/mpeg', 'german_audio.mp3');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => [
+        'file' => $file,
+        'model' => 'whisper-1'
+    ]
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+echo $data['text'];
+```
+</RequestExample>
+
+<ResponseExample>
+```json json
+{
+  "text": "Hello, my name is Wolfgang and I come from Germany. Where are you from?"
+}
+```
+
+```json verbose_json
+{
+  "task": "translate",
+  "language": "german",
+  "duration": 8.470000267028809,
+  "text": "Hello, my name is Wolfgang and I come from Germany. Where are you from?",
+  "segments": [
+    {
+      "id": 0,
+      "seek": 0,
+      "start": 0.0,
+      "end": 4.0,
+      "text": " Hello, my name is Wolfgang and I come from Germany.",
+      "tokens": [50364, 2425, 11, 452, 1315, 307, 25329, 293, 286, 808, 490, 5765, 13, 50564],
+      "temperature": 0.0,
+      "avg_logprob": -0.45,
+      "compression_ratio": 1.0,
+      "no_speech_prob": 0.0
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## 번역 vs 전사
+
+| 기능 | 번역 | 전사 |
+|---------|-------------|---------------|
+| 출력 언어 | 항상 영어 | 입력과 동일 |
+| 사용 사례 | 외국어 오디오를 영어로 변환 | 원본 언어 유지 |
+| Language parameter | 해당 없음 | 선택적 힌트 |
+
+<Note>
+  번역 endpoint는 원본 언어를 자동으로 감지하고 영어로 번역합니다. transcription의 `language` parameter는 무시됩니다.
+</Note>

@@ -1,0 +1,252 @@
+---
+title: "OpenAI SDK"
+description: "Use AI Sonar with official OpenAI SDKs and OpenAI-compatible clients"
+---
+
+## Overview
+
+AI Sonar works with the official OpenAI SDKs by pointing the client to `https://api.aisonar.dev/v1`.
+
+For most new projects, prefer **Chat Completions** as the default OpenAI-compatible path. Use **Responses API** only when you explicitly need Responses-specific behavior.
+
+Responses-specific fields are not guaranteed to behave identically across every model and routed path.
+
+<Note>
+Python, JavaScript, and Go have official OpenAI SDKs. PHP works well with OpenAI-compatible community clients, but it is not an official OpenAI SDK.
+</Note>
+
+<Note>
+**Type**: Native SDK
+
+**Primary Path**: OpenAI-compatible / Chat Completions
+
+**Support Confidence**: Supported core path
+</Note>
+
+## Installation
+
+<CodeGroup>
+
+```bash Python
+pip install openai
+```
+
+```bash JavaScript
+npm install openai
+```
+
+```bash Go
+go get github.com/openai/openai-go/v3
+```
+
+</CodeGroup>
+
+<Note>
+Use `POST /v1/responses` only when you explicitly need Responses-specific behavior. Some Responses-only fields can still depend on the selected model and routed path.
+</Note>
+
+## Configure the Client
+
+<CodeGroup>
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1",
+)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1',
+});
+```
+
+```go Go
+package main
+
+import (
+    openai "github.com/openai/openai-go/v3"
+    "github.com/openai/openai-go/v3/option"
+)
+
+func main() {
+    client := openai.NewClient(
+        option.WithAPIKey("sk-your-api-key"),
+        option.WithBaseURL("https://api.aisonar.dev/v1"),
+    )
+
+    _ = client
+}
+```
+
+</CodeGroup>
+
+## Recommended: Chat Completions
+
+<CodeGroup>
+
+```python Python
+response = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "Explain what AI Sonar does in one sentence."}]
+)
+
+print(response.choices[0].message.content)
+```
+
+```javascript JavaScript
+const response = await client.chat.completions.create({
+  model: 'gpt-5.4',
+  messages: [{ role: 'user', content: 'Explain what AI Sonar does in one sentence.' }],
+});
+
+console.log(response.choices[0].message.content);
+```
+
+```bash cURL
+curl https://api.aisonar.dev/v1/chat/completions \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.4",
+    "messages": [
+      {"role": "user", "content": "Explain what AI Sonar does in one sentence."}
+    ]
+  }'
+```
+
+</CodeGroup>
+
+## Advanced: Responses API
+
+Use this path only when your tool or workflow explicitly depends on OpenAI Responses semantics.
+
+### Streaming with Responses
+
+<CodeGroup>
+
+```python Python
+stream = client.responses.create(
+    model="gpt-5.4",
+    input="Write a short poem about coding.",
+    stream=True,
+)
+
+for event in stream:
+    if event.type == "response.output_text.delta":
+        print(event.delta, end="")
+```
+
+```javascript JavaScript
+const stream = await client.responses.create({
+  model: 'gpt-5.4',
+  input: 'Write a short poem about coding.',
+  stream: true,
+});
+
+for await (const event of stream) {
+  if (event.type === 'response.output_text.delta') {
+    process.stdout.write(event.delta);
+  }
+}
+```
+
+</CodeGroup>
+
+## Tools / Function Calling
+
+```python
+response = client.responses.create(
+    model="gpt-5.4",
+    input="What's the weather in Tokyo?",
+    tools=[{
+        "type": "function",
+        "name": "get_weather",
+        "description": "Get weather for a location",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "location": {"type": "string"}
+            },
+            "required": ["location"]
+        }
+    }]
+)
+
+for item in response.output:
+    if item.type == "function_call":
+        print(item.name)
+        print(item.arguments)
+```
+
+## Vision with Responses
+
+```python
+response = client.responses.create(
+    model="gpt-4o",
+    input=[{
+        "role": "user",
+        "content": [
+            {"type": "input_text", "text": "What's in this image?"},
+            {"type": "input_image", "image_url": "https://example.com/image.jpg"}
+        ]
+    }]
+)
+
+print(response.output_text)
+```
+
+## Embeddings
+
+```python
+response = client.embeddings.create(
+    model="text-embedding-3-small",
+    input="Hello world"
+)
+
+print(response.data[0].embedding[:5])
+```
+
+## Chat Completions
+
+Chat Completions is the default OpenAI-compatible path for AI Sonar:
+
+```python
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "Hello!"}
+    ]
+)
+
+print(response.choices[0].message.content)
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Connection Error">
+    - Verify the base URL is exactly `https://api.aisonar.dev/v1`
+    - Check for proxy interference or custom HTTP client overrides
+    - Make sure your SDK version is current before debugging provider behavior
+  </Accordion>
+
+  <Accordion title="Authentication Failed">
+    - Check that your API key starts with `sk-`
+    - Verify the key is active in AI Sonar dashboard
+    - Confirm the SDK is sending `Authorization: Bearer ...`
+  </Accordion>
+
+  <Accordion title="Wrong API Path">
+    - `responses.create(...)` sends requests to `/v1/responses`
+    - `chat.completions.create(...)` sends requests to `/v1/chat/completions`
+    - Use Chat Completions by default unless you explicitly need Responses-specific behavior
+  </Accordion>
+</AccordionGroup>

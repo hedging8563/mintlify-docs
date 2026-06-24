@@ -1,0 +1,54 @@
+---
+title: "Realtime WebSocket"
+openapi: "GET /v1/realtime"
+description: "Connectez des sessions vocales et multimodales en temps réel via WebSocket"
+---
+
+## Aperçu
+
+Cet endpoint sert aux sessions de reconnaissance vocale, synthèse vocale, traduction vocale ou modèles multimodaux en temps réel. Un `GET` classique renvoie les métadonnées; une requête WebSocket est proxifiée vers la session upstream routée.
+
+<Note>Les agents doivent découvrir les modèles compatibles realtime avec `/v1/models` avant d’ouvrir le socket.</Note>
+
+## Connexion
+
+<ParamField query="model" type="string" required>
+  ID du modèle temps réel. Utilisez un modèle dont le contrat public indique la prise en charge realtime.
+</ParamField>
+
+<ParamField header="Authorization" type="string" required>
+  Clé API Bearer. Les clients WebSocket doivent envoyer `Authorization: Bearer sk-your-api-key` pendant la requête d’upgrade.
+</ParamField>
+
+<RequestExample>
+```javascript JavaScript
+import WebSocket from 'ws';
+
+const socket = new WebSocket('wss://api.aisonar.dev/v1/realtime?model=qwen-tts-realtime', {
+  headers: { Authorization: 'Bearer sk-your-api-key' }
+});
+
+socket.on('open', () => {
+  socket.send(JSON.stringify({ type: 'session.start' }));
+});
+
+socket.on('message', (data) => {
+  console.log('realtime event', data.toString());
+});
+```
+
+```bash cURL
+curl "https://api.aisonar.dev/v1/realtime" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+## Messages
+
+AI Sonar relaie les messages WebSocket entre votre client et le fournisseur temps réel routé. Conservez les formes d’événements officielles du modèle choisi et passez `model` dans la query string.
+
+## Facturation et fermeture
+
+Les sessions realtime utilisent le même solde de clé API. AI Sonar pré-déduit une petite estimation à l’ouverture, puis règle ou rembourse à la fermeture.
+
+Fermez le socket client quand la session est terminée. Si l’upstream ferme d’abord, AI Sonar relaie le code de fermeture lorsque c’est possible.

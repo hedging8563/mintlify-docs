@@ -1,0 +1,359 @@
+---
+title: "IDE & SDK Compatibility"
+description: "Evidence-backed compatibility guidance for AI coding tools, SDKs, and frameworks"
+---
+
+## Overview
+
+AI Sonar exposes multiple API formats so common coding tools, SDKs, and frameworks can integrate with minimal glue code.
+
+This page is intentionally narrower than a marketing matrix:
+
+- **Supported** means we document a concrete setup path and AI Sonar exposes the protocol shape that path expects.
+- **Strong native path** means the repo also has direct adapter or request-format evidence for that protocol family.
+- **Best-effort** means the integration can work, but the upstream client does not treat this custom gateway workflow as a stable contract.
+
+<Note>
+  Unsupported fields are not handled uniformly. On compatibility routes, some fields are ignored or normalized. On `/v1/responses`, unsupported fields can return explicit `400` or `503` errors when that route cannot guarantee the requested behavior.
+</Note>
+
+## Supported API Formats
+
+| Endpoint | Format | Use Case |
+|----------|--------|----------|
+| `/v1/chat/completions` | OpenAI Chat | Universal compatibility |
+| `/v1/responses` | OpenAI Responses | Stateful conversations |
+| `/v1/messages` | Anthropic Messages | Claude native features |
+| `/v1beta/models/:model:generateContent` | Google Gemini | Gemini native features |
+
+## IDE & CLI Compatibility
+
+### Documented Tool Paths
+
+| Tool | Support Level | Format | Notes |
+|------|---------------|--------|-------|
+| **Cursor** | Supported with limits | OpenAI-compatible | Works for BYOK standard chat/editor flows, not as a replacement for Cursor-managed features like Tab Completion |
+| **Claude Code CLI** | Strong native path | Anthropic | Native `/v1/messages` route with adapter coverage for thinking and `tool_choice` |
+| **Codex CLI** | Supported with model/path limits | OpenAI Responses | Treat `/v1/responses` as an advanced path for Codex-specific workflows; some Responses-only fields are not guaranteed across every model and routed path |
+| **Gemini CLI** | Best-effort / experimental | Gemini | Custom AI Sonar base URL flow is not a stable upstream contract |
+| **OpenCode** | Supported | OpenAI-compatible | Use an OpenAI-compatible provider by default; move to a Responses-based provider only when you explicitly need it |
+
+<Note>
+  Other OpenAI-compatible editors and agent tools often work with the same base URL pattern, but this repo does not currently maintain tool-specific regression coverage for Windsurf, Aider, Continue.dev, Cline/Roo Code, GitHub Copilot, and similar clients.
+</Note>
+
+### Configuration Examples
+
+<Tabs>
+  <Tab title="Cursor">
+    ```
+    Base URL: https://api.aisonar.dev/v1
+    API Key: sk-your-api-key
+    ```
+    Cursor uses Anthropic-style tool format internally. AI Sonar supports both:
+    - OpenAI format: `{ type: "function", function: { name, parameters } }`
+    - Anthropic format: `{ name, input_schema }` (no type field)
+  </Tab>
+  <Tab title="Claude Code">
+    ```bash
+    export ANTHROPIC_BASE_URL="https://api.aisonar.dev"
+    export ANTHROPIC_API_KEY="sk-your-api-key"
+    ```
+  </Tab>
+  <Tab title="OpenCode">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export LOCAL_ENDPOINT="https://api.aisonar.dev/v1"
+    ```
+  </Tab>
+  <Tab title="Aider">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export OPENAI_BASE_URL="https://api.aisonar.dev/v1"
+    aider --model gpt-5.4
+    ```
+  </Tab>
+</Tabs>
+
+## SDK Compatibility
+
+### Documented SDK & Framework Paths
+
+| SDK / Framework | Language | Support Level | Notes |
+|-----------------|----------|---------------|-------|
+| **OpenAI SDK** | Python/JS/Go | Supported core path | Compatibility path for `/v1` Chat Completions and Embeddings; use native provider routes for provider-specific behavior, and do not assume Responses-only fields work across every model |
+| **Anthropic SDK** | Python/JS | Strong native path | Native Messages route with direct evidence for tools, thinking, and prompt caching |
+| **Vercel AI SDK** | TypeScript | Recommended integration pattern | Prefer `@ai-sdk/openai-compatible`; use `@ai-sdk/openai` only when you explicitly want Responses-native behavior |
+| **LangChain** | Python/JS | Supported standard surfaces | `ChatOpenAI` and `OpenAIEmbeddings` are the intended scope; vendor-native extras are out of scope |
+| **LlamaIndex** | Python | Supported via `OpenAILike` | Use `OpenAILike`, not the built-in OpenAI classes, for third-party gateways such as AI Sonar |
+| **Dify** | - | Supported with scope limits | OpenAI provider and chat-completions-oriented flows are the intended path; not a fit for Codex-specific Responses or WebSocket behavior |
+
+## Chat Completions Parameters
+
+### Core Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `model` | string | Model identifier (required) |
+| `messages` | array | Conversation messages (required) |
+| `max_tokens` | integer | Maximum output tokens |
+| `temperature` | number | Sampling temperature (0-2) |
+| `top_p` | number | Nucleus sampling (0-1) |
+| `stream` | boolean | Enable streaming |
+
+### Tool Calling
+
+```json
+{
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_weather",
+        "description": "Get weather for a location",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "location": { "type": "string" }
+          }
+        },
+        "strict": true
+      }
+    }
+  ],
+  "tool_choice": "auto",
+  "parallel_tool_calls": true
+}
+```
+
+### Tool Choice Options
+
+| Format | Example | Description |
+|--------|---------|-------------|
+| String | `"auto"`, `"none"`, `"required"` | Simple selection |
+| OpenAI Object | `{ "type": "function", "function": { "name": "fn" } }` | Force specific function |
+| Anthropic Object | `{ "type": "tool", "name": "fn", "disable_parallel_tool_use": true }` | Anthropic native format |
+
+### Advanced Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `stream_options` | object | `{ include_usage: true }` for token counts |
+| `reasoning_effort` | string | `"low"`, `"medium"`, `"high"` for reasoning-enabled GPT-5 models |
+| `service_tier` | string | `"auto"` or `"default"` |
+| `seed` | integer | Deterministic outputs |
+| `logprobs` | boolean | Return log probabilities |
+| `top_logprobs` | integer | Number of top logprobs (0-20) |
+| `logit_bias` | object | Token bias map (-100 to 100) |
+| `frequency_penalty` | number | Repetition penalty (-2 to 2) |
+| `presence_penalty` | number | Topic penalty (-2 to 2) |
+| `stop` | string/array | Stop sequences |
+| `n` | integer | Number of completions (1-128) |
+| `user` | string | User identifier for tracking |
+
+### OpenAI Advanced Features
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `modalities` | array | `["text", "audio"]` for multimodal |
+| `audio` | object | Audio output config (voice, format) |
+| `prediction` | object | Predicted output for faster completion |
+| `metadata` | object | Key-value pairs for tracking |
+| `store` | boolean | Store for later retrieval |
+
+### Provider-Specific Options
+
+```json
+{
+  "anthropic_options": {
+    "thinking": {
+      "type": "enabled",
+      "budget_tokens": 10000
+    },
+    "prompt_caching": true
+  },
+  "google_options": {
+    "safety_settings": [...],
+    "google_search": true,
+    "code_execution": true
+  }
+}
+```
+
+## Anthropic Messages Parameters
+
+### Core Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `model` | string | Model identifier |
+| `messages` | array | Conversation messages |
+| `max_tokens` | integer | Maximum output (up to 128000) |
+| `system` | string/array | System prompt |
+| `stream` | boolean | Enable streaming |
+
+### Tool Calling
+
+```json
+{
+  "tools": [
+    {
+      "name": "get_weather",
+      "description": "Get weather",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "location": { "type": "string" }
+        }
+      }
+    }
+  ],
+  "tool_choice": {
+    "type": "auto",
+    "disable_parallel_tool_use": false
+  }
+}
+```
+
+### Extended Thinking
+
+```json
+{
+  "model": "claude-opus-4-6",
+  "thinking": {
+    "type": "enabled",
+    "budget_tokens": 10000
+  }
+}
+```
+
+## Responses API Parameters
+
+### Core Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `model` | string | Model identifier |
+| `input` | string/array | Input content |
+| `instructions` | string | System instructions |
+| `max_output_tokens` | integer | Maximum output tokens |
+| `previous_response_id` | string | Continue conversation |
+
+### Advanced Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `truncation_strategy` | string | `"auto"` or `"disabled"` |
+| `include` | array | `["reasoning.encrypted_content"]` |
+| `reasoning_effort` | string | For reasoning models |
+| `service_tier` | string | Priority tier |
+
+### Tool Format
+
+Supports both OpenAI and Anthropic tool formats:
+
+```json
+// OpenAI format
+{ "type": "function", "name": "fn", "parameters": {...} }
+
+// Anthropic format (Cursor compatibility)
+{ "name": "fn", "input_schema": {...} }
+```
+
+## Gemini API Parameters
+
+### Core Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `contents` | array | Conversation content |
+| `systemInstruction` | object | System prompt |
+| `generationConfig` | object | Generation settings |
+
+### Tools
+
+```json
+{
+  "tools": [{
+    "functionDeclarations": [{
+      "name": "search",
+      "description": "Search the web",
+      "parameters": {...}
+    }],
+    "codeExecution": {},
+    "googleSearch": {}
+  }],
+  "toolConfig": {
+    "functionCallingConfig": {
+      "mode": "AUTO"
+    }
+  }
+}
+```
+
+### Safety Settings
+
+```json
+{
+  "safetySettings": [
+    {
+      "category": "HARM_CATEGORY_HARASSMENT",
+      "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+    }
+  ]
+}
+```
+
+### Additional Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `cachedContent` | string | Cached content reference |
+| `responseMimeType` | string | `"text/plain"` or `"application/json"` |
+| `responseSchema` | object | JSON schema for structured output |
+
+## Streaming
+
+All endpoints support Server-Sent Events (SSE) streaming:
+
+```bash
+# Chat Completions
+curl https://api.aisonar.dev/v1/chat/completions \
+  -H "Authorization: Bearer sk-xxx" \
+  -d '{"model": "gpt-4o", "messages": [...], "stream": true}'
+
+# With usage tracking
+-d '{"...", "stream_options": {"include_usage": true}}'
+```
+
+## Error Handling
+
+AI Sonar returns OpenAI-compatible error responses:
+
+```json
+{
+  "error": {
+    "message": "Invalid API key",
+    "type": "invalid_api_key",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+See [Error Handling Guide](/guides/error-handling) for details.
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use passthrough for unknown parameters">
+    All schemas use `.passthrough()` - unknown parameters are forwarded to upstream providers.
+  </Accordion>
+
+  <Accordion title="Prefer stream_options for accurate billing">
+    Enable `stream_options.include_usage` for accurate token counts in streaming responses.
+  </Accordion>
+
+  <Accordion title="Use appropriate tool_choice format">
+    Match your SDK's expected format. AI Sonar accepts both OpenAI and Anthropic formats.
+  </Accordion>
+</AccordionGroup>

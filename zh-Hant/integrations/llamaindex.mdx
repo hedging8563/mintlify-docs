@@ -1,0 +1,143 @@
+---
+title: "LlamaIndex"
+description: "使用與 OpenAI 相容的整合將 AI Sonar 整合至 LlamaIndex"
+---
+
+## 概述
+
+
+
+<Note>
+**類型**: 框架或平台
+
+**主要路徑**: OpenAI 相容 via OpenAILike
+
+**支援級別**: 透過 OpenAILike 支援
+</Note>
+
+對於 AI Sonar 而言，更穩健的 LlamaIndex 設定方式是使用 **與 OpenAI 相容的整合**，而不是內建的 OpenAI 類別。
+
+目前的 LlamaIndex 文件明確建議對第三方 OpenAI 相容端點使用 `OpenAILike`，因為內建的 OpenAI 類別會從官方模型名稱推斷 metadata。
+
+換句話說：這裡應把 `OpenAILike` 視為受支援的 AI Sonar 路徑，而不是內建 OpenAI 類。
+
+## 安裝
+
+```bash
+pip install llama-index-core \
+  llama-index-readers-file \
+  llama-index-llms-openai-like \
+  llama-index-embeddings-openai-like
+```
+
+## 基本設定
+
+```python
+from llama_index.core import Settings
+from llama_index.llms.openai_like import OpenAILike
+from llama_index.embeddings.openai_like import OpenAILikeEmbedding
+
+llm = OpenAILike(
+    model="gpt-5.4",
+    api_base="https://api.aisonar.dev/v1",
+    api_key="sk-your-api-key",
+    is_chat_model=True,
+)
+
+embed_model = OpenAILikeEmbedding(
+    model_name="text-embedding-3-small",
+    api_base="https://api.aisonar.dev/v1",
+    api_key="sk-your-api-key",
+)
+
+Settings.llm = llm
+Settings.embed_model = embed_model
+```
+
+## 基本用法
+
+```python
+response = llm.complete("Explain AI Sonar in one sentence.")
+print(response.text)
+```
+
+## 對話
+
+```python
+from llama_index.core.llms import ChatMessage
+
+messages = [
+    ChatMessage(role="system", content="You are a helpful assistant."),
+    ChatMessage(role="user", content="What is the capital of France?")
+]
+
+response = llm.chat(messages)
+print(response.message.content)
+```
+
+## 串流
+
+```python
+for chunk in llm.stream_complete("Write a short poem about AI."):
+    print(chunk.delta, end="", flush=True)
+```
+
+## Embeddings
+
+```python
+vector = embed_model.get_text_embedding("Hello, world!")
+print(vector[:5])
+```
+
+## 使用文件進行 RAG
+
+```python
+from llama_index.core import SimpleDirectoryReader, VectorStoreIndex
+
+documents = SimpleDirectoryReader("./data").load_data()
+index = VectorStoreIndex.from_documents(documents)
+
+query_engine = index.as_query_engine()
+response = query_engine.query("What is in my documents?")
+print(response)
+```
+
+## Chat Engine
+
+```python
+chat_engine = index.as_chat_engine(chat_mode="condense_question")
+
+response = chat_engine.chat("What is AI Sonar?")
+print(response)
+
+response = chat_engine.chat("How many models does it support?")
+print(response)
+```
+
+## 非同步用法
+
+```python
+import asyncio
+
+async def main():
+    response = await llm.acomplete("Hello!")
+    print(response.text)
+
+asyncio.run(main())
+```
+
+## 最佳實務
+
+<AccordionGroup>
+  <Accordion title="對 AI Sonar 使用 OpenAILike">
+    對於 AI Sonar 和其他第三方 OpenAI 相容 gateway，優先使用 `llama_index.llms.openai_like.OpenAILike` 與 `llama_index.embeddings.openai_like.OpenAILikeEmbedding`。
+  </Accordion>
+
+  <Accordion title="明確設定 api_base">
+    直接在程式碼中傳入 `api_base="https://api.aisonar.dev/v1"`，而不要依賴較舊的 OpenAI 環境變數名稱。
+  </Accordion>
+
+  <Accordion title="區分模型角色">
+    將 chat/reasoning 模型用於綜合生成，並將 `text-embedding-3-small` 或 `text-embedding-3-large` 用於檢索。
+  </Accordion>
+</AccordionGroup>

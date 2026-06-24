@@ -1,0 +1,150 @@
+---
+title: "✨ Prompt cache upstream"
+description: "Tìm hiểu về prompt caching ở cấp độ nhà cung cấp và cách nó giúp giảm chi phí"
+---
+
+## Tổng quan
+
+## Cách Provider Prompt Cache hoạt động
+
+Provider prompt caching lưu trữ biểu diễn đã xử lý của tiền tố prompt trên máy chủ của nhà cung cấp. Khi bạn gửi một yêu cầu với cùng một tiền tố, nhà cung cấp có thể bỏ qua việc xử lý lại các token đó.
+
+### Các đặc điểm chính
+
+- **Dựa trên tiền tố**: Chỉ phần đầu của prompt mới có thể được cache
+- **Khớp chính xác**: Yêu cầu các token phải giống hệt nhau (không phải tương đồng ngữ nghĩa)
+- **Giới hạn thời gian**: Các mục cache sẽ hết hạn (thường từ 5-60 phút)
+- **Tự động**: Không cần cấu hình đặc biệt
+
+```
+Yêu cầu 1: [System prompt + Context A + Question 1]
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+           Tiền tố này sẽ được cache
+
+Yêu cầu 2: [System prompt + Context A + Question 2]
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+           Khớp cache! Chỉ Question 2 được xử lý
+```
+
+## Các nhà cung cấp được hỗ trợ
+
+| Nhà cung cấp | Giảm giá đọc Cache | Chi phí ghi Cache | Token tối thiểu |
+|----------|---------------------|------------------|------------|
+| **Anthropic** | Giảm 90% | Phụ phí 25% | 1024 |
+| **OpenAI** | Giảm 50% | Bằng giá đầu vào | 1024 |
+| **DeepSeek** | Giảm 90% | Bằng giá đầu vào | 64 |
+| **Google** | Giảm 75% | Phụ phí 25% | 32768 |
+
+<Info>
+Các mức giảm giá được áp dụng tự động. AI Sonar chuyển tiếp mức giá cache của nhà cung cấp trực tiếp đến bạn.
+</Info>
+
+## Xác định việc sử dụng Cache
+
+### Trong Nhật ký sử dụng (Usage Logs)
+
+Nhật ký sử dụng của bạn hiển thị chi tiết phân bổ token cache:
+
+| Trường | Mô tả |
+|-------|-------------|
+| `cacheReadTokens` | Các token được cung cấp từ provider cache (được giảm giá) |
+| `cacheWriteTokens` | Các token được ghi vào cache (cho các yêu cầu trong tương lai) |
+| `nonCachedPromptTokens` | Các token được xử lý mà không có cache |
+
+### Trong Giao dịch (Transactions)
+
+Các giao dịch hiển thị nhãn **Provider Cache** khi caching upstream được sử dụng:
+
+- **Provider Cache** (xanh mòng két): Khớp upstream prompt cache - mức giá ưu đãi
+
+## Ví dụ tính toán chi phí
+
+Ví dụ cho một yêu cầu với 10,000 token đầu vào đến Claude (Anthropic):
+
+**Không có cache:**
+```
+10,000 tokens × $3.00/1M = $0.030
+```
+
+**Có provider cache (8,000 được cache + 2,000 mới):**
+```
+Đọc cache:  8,000 tokens × $0.30/1M = $0.0024  (Giảm 90%)
+Ghi cache: 2,000 tokens × $3.75/1M = $0.0075
+Tổng cộng: $0.0099 (Tiết kiệm 67%)
+```
+
+## Thực hành tốt nhất
+
+<AccordionGroup>
+  <Accordion title="Sử dụng system prompt nhất quán">
+    Đặt system prompt và ngữ cảnh tĩnh của bạn ở đầu tin nhắn. Điều này giúp tối đa hóa khả năng khớp cache.
+  </Accordion>
+
+  <Accordion title="Gom nhóm các yêu cầu tương tự">
+    Gửi các yêu cầu có cùng tiền tố gần nhau về mặt thời gian để tận dụng cache trước khi nó hết hạn.
+  </Accordion>
+
+  <Accordion title="Đáp ứng yêu cầu token tối thiểu">
+    Đảm bảo tiền tố có thể cache của bạn đáp ứng mức tối thiểu của nhà cung cấp (ví dụ: 1024 token cho Anthropic/OpenAI).
+  </Accordion>
+
+  <Accordion title="Theo dõi các chỉ số cache">
+    Kiểm tra số liệu thống kê sử dụng trên dashboard để biết tỷ lệ khớp cache và mức tiết kiệm.
+  </Accordion>
+</AccordionGroup>
+
+## Kiểm tra trạng thái Cache
+
+### Tiêu đề phản hồi
+
+```
+X-Upstream-Cache-Read: 8000   # Token đọc từ provider cache
+X-Upstream-Cache-Write: 2000  # Token ghi vào provider cache
+```
+
+### Cách sử dụng API
+
+Truy vấn nhật ký sử dụng của bạn để xem phân bổ cache:
+
+```text
+GET /v1/usage/logs is currently not a public endpoint.
+Use X-Upstream-Cache-* response headers, plus the dashboard usage page.
+```
+
+Phản hồi bao gồm:
+```json
+{
+  "promptTokens": 10000,
+  "cacheReadTokens": 8000,
+  "cacheWriteTokens": 2000,
+  "nonCachedPromptTokens": 0,
+  "completionTokens": 500,
+  "cost": 0.0099
+}
+```
+
+## FAQ
+
+<AccordionGroup>
+  <Accordion title="Tôi có thể tắt provider caching không?">
+    Provider caching là tự động và không thể tắt. Tuy nhiên, nó chỉ mang lại lợi ích cho bạn (chi phí thấp hơn), vì vậy không có lý do gì để tắt nó.
+  </Accordion>
+
+  <Accordion title="Tại sao yêu cầu của tôi không khớp provider cache?">
+    Các lý do phổ biến:
+    - Tiền tố đã thay đổi (thậm chí chỉ khác biệt một token)
+    - Cache đã hết hạn (thường từ 5-60 phút)
+    - Tiền tố quá ngắn (dưới mức token tối thiểu)
+    - Sử dụng API key khác
+  </Accordion>
+
+  <Accordion title="BYOK có hỗ trợ provider caching không?">
+    Có! Khi sử dụng API key của riêng bạn (BYOK), provider caching hoạt động theo cùng một cách. Cache được gắn liền với API key upstream của bạn.
+  </Accordion>
+
+  <Accordion title="Làm thế nào để tối đa hóa mức tiết kiệm từ cache?">
+    1. Cấu trúc prompt với nội dung tĩnh ở trước
+    2. Giữ system prompt nhất quán giữa các yêu cầu
+    3. Gửi các yêu cầu liên quan liên tiếp nhau một cách nhanh chóng
+  </Accordion>
+</AccordionGroup>

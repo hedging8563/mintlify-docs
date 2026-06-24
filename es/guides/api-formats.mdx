@@ -1,0 +1,284 @@
+---
+title: "✨ API Multi-Formato"
+description: "Usa los formatos OpenAI, Anthropic o Gemini con una sola clave API"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Descripción general
+
+AI Sonar admite **tres formatos de API nativos** con una sola clave API. Elige el formato que mejor se adapte a tu caso de uso: no se necesitan cambios de configuración.
+
+<CardGroup cols={3}>
+  <Card title="Formato OpenAI" icon="plug">
+    `/v1/chat/completions`
+    Formato estándar, la mayor compatibilidad
+  </Card>
+  <Card title="Formato Anthropic" icon="message">
+    `/v1/messages`
+    Razonamiento extendido, funciones nativas de Claude
+  </Card>
+  <Card title="Formato Gemini" icon="sparkles">
+    `/v1beta/models/:model:generateContent`
+    Integración con el ecosistema de Google
+  </Card>
+</CardGroup>
+
+## ¿Por qué multi-formato?
+
+| Beneficio | Descripción |
+|---------|-------------|
+| **No SDK switching** | Usa cualquier modelo con tu SDK preferido |
+| **Native features** | Accede a capacidades específicas del formato |
+| **Easy migration** | Cambia desde las APIs oficiales con solo modificar la URL base |
+| **Single billing** | Una cuenta, una clave API, todos los formatos |
+
+## Comparación de formatos
+
+| Función | OpenAI | Anthropic | Gemini |
+|---------|--------|-----------|--------|
+| **Endpoint** | `/v1/chat/completions` | `/v1/messages` | `/v1beta/models/:model:generateContent` |
+| **Encabezado de autenticación** | `Authorization: Bearer` | `x-api-key` | `Authorization: Bearer` |
+| **System Prompt** | En el arreglo de `messages` | Campo separado `system` | En `systemInstruction` |
+| **Extended Thinking** | ❌ | ✅ | ❌ |
+| **Transmisión** | ✅ SSE | ✅ SSE | ✅ SSE |
+| **Llamadas de herramientas** | ✅ | ✅ | ✅ |
+| **Vision** | ✅ | ✅ | ✅ |
+
+## Formato OpenAI
+
+Usa esta ruta de compatibilidad para integraciones OpenAI SDK existentes y flujos portables de chat o embeddings. Para comportamiento nativo Claude o Gemini, usa el formato Anthropic o Gemini abajo.
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+# Portable chat works across many models
+response = client.chat.completions.create(
+    model="claude-sonnet-4-6",  # Claude via OpenAI format
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "Hello!"}
+    ]
+)
+```
+
+**Ideal para:**
+- Uso general
+- Integraciones existentes con OpenAI SDK
+- Máxima compatibilidad
+
+## Formato Anthropic
+
+API Messages nativa de Anthropic. Requerido para funciones específicas de Claude, como el razonamiento extendido.
+
+```python
+from anthropic import Anthropic
+
+client = Anthropic(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev"  # No /v1 suffix!
+)
+
+message = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    system="You are a helpful assistant.",  # Separate system field
+    messages=[
+        {"role": "user", "content": "Hello!"}
+    ]
+)
+```
+
+### Razonamiento extendido (Claude Opus 4.6)
+
+Solo disponible en el formato Anthropic:
+
+```python
+message = client.messages.create(
+    model="claude-opus-4-6",
+    max_tokens=16000,
+    thinking={
+        "type": "enabled",
+        "budget_tokens": 10000
+    },
+    messages=[{"role": "user", "content": "Solve this complex problem..."}]
+)
+
+# Access thinking process
+for block in message.content:
+    if block.type == "thinking":
+        print(f"Thinking: {block.thinking}")
+    elif block.type == "text":
+        print(f"Answer: {block.text}")
+```
+
+**Ideal para:**
+- Funciones específicas de Claude
+- Modo de razonamiento extendido
+- Usuarios del SDK nativo de Anthropic
+
+## Formato Gemini
+
+Formato nativo de la API Gemini de Google para integración con el ecosistema de Google.
+
+```bash
+curl "https://api.aisonar.dev/v1beta/models/gemini-2.5-flash:generateContent" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "contents": [{
+      "parts": [{"text": "Hello!"}]
+    }],
+    "systemInstruction": {
+      "parts": [{"text": "You are a helpful assistant."}]
+    }
+  }'
+```
+
+### Transmisión
+
+```bash
+curl "https://api.aisonar.dev/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "contents": [{"parts": [{"text": "Write a story"}]}]
+  }'
+```
+
+**Ideal para:**
+- Integraciones con Google Cloud
+- Código existente del SDK de Gemini
+- Funciones nativas de Gemini
+
+**Gemini Files y Cache:** La ruta nativa de Gemini admite `/upload/v1beta/files`, `/v1beta/files`, `/v1beta/files:register` y `/v1beta/cachedContents`. Files usa canales upstream compatibles con Gemini File API; los recursos de Cache explícitos también pueden enrutarse por canales de Vertex AI. Los recursos creados mediante AI Sonar quedan vinculados al mismo canal/key upstream para llamadas posteriores a `generateContent`.
+
+## Límite de compatibilidad de herramientas
+
+Las herramientas de función pueden convertirse entre formatos cuando la ruta de destino las admite. Las herramientas nativas del proveedor deben permanecer en su ruta nativa:
+
+- Las herramientas alojadas y nativas de OpenAI Responses, como `tool_search`, `web_search`, `file_search`, `code_interpreter`, MCP, shell/apply_patch y herramientas computer-use, requieren `/v1/responses`.
+- Las herramientas server/native de Anthropic, como `web_search_*`, `web_fetch_*`, `code_execution_*`, `tool_search_*`, bash, computer-use y text-editor, requieren `/v1/messages`.
+- Las herramientas integradas de Gemini, como `googleSearch`, `codeExecution`, `urlContext`, `computerUse` y campos `tools` similares, requieren `/v1beta`.
+
+Si AI Sonar no puede enrutar una solicitud con herramientas nativas a una ruta upstream compatible con formato nativo, devuelve un error unsupported-field explícito en lugar de descartar la herramienta en silencio o fingir que es una función de Chat Completions. Las herramientas de función definidas por el usuario siguen siendo la ruta más portable.
+
+## Cómo elegir el formato correcto
+
+```mermaid
+graph TD
+    A[Which format?] --> B{Need Claude extended thinking?}
+    B -->|Yes| C[Use Anthropic Format]
+    B -->|No| D{Existing codebase?}
+    D -->|OpenAI SDK| E[Use OpenAI Format]
+    D -->|Anthropic SDK| C
+    D -->|Gemini SDK| F[Use Gemini Format]
+    D -->|New project| G{Need provider-native behavior?}
+    G -->|Yes| H[Use native Anthropic or Gemini Format]
+    G -->|No| E
+```
+
+## Guías de migración
+
+### Desde la API oficial de OpenAI
+
+```python
+# Before (OpenAI)
+client = OpenAI(api_key="sk-openai-key")
+
+# After (AI Sonar)
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"  # Add this line
+)
+# That's it! Same code works
+```
+
+¡Eso es todo! El mismo código funciona
+
+### Desde la API oficial de Anthropic
+
+```python
+# Before (Anthropic)
+client = Anthropic(api_key="sk-ant-key")
+
+# After (AI Sonar)
+client = Anthropic(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev"  # Add this line (no /v1!)
+)
+```
+
+### Desde Google AI Studio
+
+```python
+# Before (Google)
+import google.generativeai as genai
+genai.configure(api_key="google-api-key")
+
+# After (AI Sonar) - Use REST API
+import requests
+
+response = requests.post(
+    "https://api.aisonar.dev/v1beta/models/gemini-2.5-flash:generateContent",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+    json={"contents": [{"parts": [{"text": "Hello"}]}]}
+)
+```
+
+## Compatibilidad entre modelos
+
+La magia de AI Sonar: usa **cualquier SDK** con **cualquier modelo**. La pasarela gestiona automáticamente la conversión de formatos.
+
+### Cualquier SDK → Cualquier modelo
+
+```python
+# Anthropic SDK with GPT-4o (auto-converts to OpenAI format)
+from anthropic import Anthropic
+
+client = Anthropic(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev"
+)
+
+response = client.messages.create(
+    model="gpt-4o",  # ✅ Works! Auto-converted
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+
+# Same compatibility SDK for portable chat; native-only features still need native routes
+response = client.messages.create(model="gemini-2.5-flash", ...)  # ✅ Works!
+response = client.messages.create(model="deepseek-r1", ...)       # ✅ Works!
+```
+
+### OpenAI SDK → Todos los modelos
+
+```python
+from openai import OpenAI
+
+client = OpenAI(base_url="https://api.aisonar.dev/v1", api_key="sk-...")
+
+# These portable chat calls use the same /v1 compatibility SDK:
+response = client.chat.completions.create(model="gpt-4o", ...)
+response = client.chat.completions.create(model="claude-sonnet-4-6", ...)
+response = client.chat.completions.create(model="gemini-2.5-flash", ...)
+```
+
+### Comparación por plataforma
+
+| Plataforma | Formato OpenAI | Formato Anthropic | Formato Gemini | API de Responses |
+|----------|:---:|:---:|:---:|:---:|
+| **AI Sonar** | ✅ Todos los modelos | ✅ Todos los modelos | ✅ Todos los modelos | ✅ Todos los modelos |
+| OpenRouter | ✅ Todos los modelos | ❌ | ❌ | ❌ |
+| Together AI | ✅ Todos los modelos | ❌ | ❌ | ❌ |
+| Fireworks | ✅ Todos los modelos | ❌ | ❌ | ❌ |
+
+<Note>
+Aunque el uso entre formatos funciona para la mayoría de las funcionalidades, las funciones específicas de cada formato (como el razonamiento extendido de Anthropic) requieren el formato nativo.
+</Note>

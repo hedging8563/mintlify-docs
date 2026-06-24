@@ -1,0 +1,44 @@
+---
+title: "Obter uso da API Key"
+openapi: "GET /v1/management/api-keys/{keyId}/usage"
+description: "Retorna o detalhamento paginado de uso para uma API Key de usuário."
+---
+
+## Visão geral
+
+Este endpoint retorna o detalhamento de uso por API Key sem expor metadata de roteamento físico.
+
+## Parâmetros de query
+
+| Parâmetro | Tipo | Padrões / limites | Descrição |
+|-----------|------|-------------------|-----------|
+| `page` | integer | padrão `1`, mínimo `1` | Número da página começando em 1 |
+| `limit` | integer | padrão `50`, mínimo `1`, máximo `100` | Tamanho da página |
+| `logicalModel` | string | comprimento máximo `100` | Nome do modelo lógico solicitado |
+| `modelVendor` | string | comprimento máximo `100` | Fornecedor público do modelo |
+| `scene` | enum | - | `chat`, `image`, `audio`, `video`, `embedding`, `rerank`, `translation`, `music`, `3d` |
+| `accessChannel` | enum | - | `platform` ou `byok` |
+| `startDate` | string | - | Limite inferior inclusivo; aceita RFC3339 com fuso horário ou `YYYY-MM-DD` |
+| `endDate` | string | - | Limite superior inclusivo; aceita RFC3339 com fuso horário ou `YYYY-MM-DD` |
+
+Se `startDate` e `endDate` forem enviados juntos, `startDate` deve ser anterior ou igual a `endDate`.
+
+## Observações
+
+- A resposta é paginada.
+- A resposta inclui apenas campos públicos de faturamento e reporting.
+- Cada item de usage também pode incluir `billing_transaction_id` depois que a requisição subjacente atingir o estado de liquidação concluída. Use esse valor junto com `request_id` para reconciliação por requisição.
+- A metadata de roteamento interno e dos canais físicos permanece oculta de forma intencional.
+
+## Exemplo
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/usage?page=1&limit=20&scene=video&accessChannel=platform&startDate=2026-03-01&endDate=2026-03-31" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## Requisição / Resposta
+
+Consulte o painel interativo de OpenAPI acima para ver o schema exato e os campos da resposta.

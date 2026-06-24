@@ -1,0 +1,35 @@
+---
+title: "检索批次"
+openapi: "GET /v1/batches/{batch_id}"
+description: "检索批次的当前状态、计数和结果文件。"
+---
+
+## 概述
+
+此端点是AI Sonar的OpenAI兼容批处理API的一部分。批处理作业使用上传的JSONL文件，异步运行，并可以稍后返回输出/错误文件。
+
+## 注意事项
+
+- 批处理输入文件必须使用 `purpose=batch`。
+- `completion_window` 当前为 `24h`。
+- 输出顺序不保证；始终通过 `custom_id` 匹配。
+- 批处理项内不支持流式传输。
+
+## 示例
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/batches/batch_abc123" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+## 请求 / 响应
+
+使用上面的交互式OpenAPI面板获取确切的模式。
+
+## 操作提示
+
+- 使用 `custom_id` 进行幂等的下游对账。
+- 仅在工作者完成批处理后，期待 `output_file_id` 和 `error_file_id`。
+- 批处理定价可能与同步定价不同，因为适用 `isBatchRequest=true` 的折扣规则。

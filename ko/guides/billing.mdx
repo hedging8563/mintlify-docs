@@ -1,0 +1,196 @@
+---
+title: "결제 및 요금"
+description: "AI Sonar의 종량제 요금 체계를 이해합니다"
+---
+
+## 개요
+
+AI Sonar는 **종량제 요금제(pay-as-you-go)**를 사용합니다. 구독이나 최소 약정 없이 사용한 만큼만 비용을 지불하면 됩니다.
+
+## 결제 방식
+
+1. 계정에 **크레딧 추가**
+2. **API 사용** - 요청당 비용이 차감됩니다
+3. 대시보드에서 **사용량 모니터링**
+4. 잔액이 부족할 때 **충전**
+
+## 요금 모델
+
+### 토큰당 요금
+
+대부분의 텍스트 생성 모델은 100만 토큰당 요금이 책정됩니다:
+
+| 모델 | 입력 (100만 토큰당) | 출력 (100만 토큰당) |
+|-------|----------------------|------------------------|
+| GPT-4o | $1.75 | $7.00 |
+| GPT-4o-mini | $0.105 | $0.42 |
+| Claude Opus 4.5 | $3.50 | $17.50 |
+| Claude Sonnet 4.5 | $2.10 | $10.50 |
+| Claude Haiku 4.5 | $0.70 | $3.50 |
+| Gemini 2.5 Pro | $0.875 | $7.00 |
+| Gemini 2.5 Flash | $0.1225 | $0.525 |
+| DeepSeek R1 | $0.385 | $1.533 |
+| DeepSeek V3.2 | $0.196 | $0.294 |
+
+<Note>
+  표시된 가격은 할인된 플랫폼 가격입니다. 실제 가격은 변동될 수 있습니다. 현재 요율은 [pricing page](https://aisonar.dev/ko/pricing)에서 확인하세요.
+</Note>
+
+### 요청당 요금
+
+이미지, 비디오 및 오디오 모델은 요청당 요금이 책정됩니다:
+
+| 모델 | 요청당 가격 |
+|-------|-------------------|
+| DALL-E 3 (1024x1024) | $0.04 |
+| Midjourney | $0.05 |
+| Whisper (분당) | $0.006 |
+| TTS-1 | $0.015 |
+
+### 비동기 작업 결제 (비디오/음악/3D 및 일부 이미지 모델)
+
+<Note>
+  작업 기반 생성에서는 작업 생성 시 예상 비용이 예약되거나 선차감될 수 있습니다. 최종 정산은 폴링 또는 최종화 과정에서 비동기 작업이 성공 터미널 상태에 도달한 뒤에만 완료됩니다.
+</Note>
+
+작업 기반 생성 흐름(비디오, 음악, 3D 및 일부 이미지 모델)의 경우:
+
+1. 작업을 제출합니다. AI Sonar는 잔액과 API Key 사용 한도를 확인하기 위해 예상 금액을 선차감하거나 예약할 수 있습니다.
+2. 반환된 `poll_url`을 폴링하거나 `GET /v1/tasks/{id}`를 호출하여 작업이 터미널 상태가 될 때까지 확인합니다.
+3. 작업이 성공적으로 완료되면 최종 정산이 사용량을 기록하고, 작업 응답에 `billing_transaction_id`가 포함됩니다.
+4. 생성이 실패하거나 터미널 상태가 failed이면 보류 중인 금액이 환불되거나 해제되고 요청은 비과금으로 표시됩니다.
+
+터미널 상태가 확인된 뒤에도 dashboard에 정산 또는 환불이 반영되지 않으면 support@aisonar.dev로 문의하세요.
+
+```python
+# 예시: 비디오 생성 결제
+response = client.post("/v1/videos/generations", json={
+    "model": "veo3.1",
+    "prompt": "A sunset over the ocean"
+})
+# 예상 비용이 지금 예약될 수 있습니다. 최종 청구는 성공 후 표시됩니다.
+
+poll_url = response.json()["poll_url"]
+task_id = response.json()["task_id"]
+# 상태 확인을 위해 poll_url을 폴링하세요. 정산 후 billing_transaction_id가 표시됩니다.
+```
+
+### 청구 거래 ID
+
+과금 대상 OpenAI 호환 비스트리밍 JSON 응답은 응답이 확정되기 전에 정산이 완료된 경우 `billing_transaction_id` 를 포함합니다. 같은 값은 `X-Billing-Transaction-ID` 응답 헤더로도 노출되어 브라우저와 서버 통합에서 읽을 수 있습니다. Gemini `/v1beta` 같은 네이티브 호환 라우트는 provider 고유 응답 형상을 유지하기 위해 헤더로만 값을 노출할 수 있습니다. 비동기 미디어 작업은 생성 응답의 `poll_url` 또는 `GET /v1/tasks/{id}` 를 폴링하세요. 정산이 완료되면 작업 응답에 `billing_transaction_id` 가 포함됩니다. 스트리밍 응답은 스트림 전송 후에 정산될 수 있으므로 헤더가 없으면 dashboard 사용 로그로 대조하세요.
+
+## 토큰 계산
+
+토큰은 텍스트 처리의 기본 단위입니다:
+
+- 약 4자 = 1 토큰 (영어)
+- 약 1-2자 = 1 토큰 (중국어)
+- 이미지 1개 = 크기 및 세부 정보에 따라 다름
+
+### 토큰 추정
+
+```python
+# 대략적인 추정
+def estimate_tokens(text):
+    return len(text) / 4  # 영어 기준 근사치
+
+# 실제 개수 (OpenAI 모델 기준)
+import tiktoken
+encoder = tiktoken.encoding_for_model("gpt-4o")
+tokens = encoder.encode("Your text here")
+print(f"Token count: {len(tokens)}")
+```
+
+## 사용량 추적
+
+### 대시보드
+
+[대시보드](https://console.aisonar.dev)에서 사용량을 모니터링하세요:
+
+- 실시간 잔액
+- 모델별 사용 기록
+- 비용 내역
+- API 키 사용량
+
+### API 응답
+
+각 응답에는 사용량 정보가 포함됩니다:
+
+```json
+{
+  "usage": {
+    "prompt_tokens": 50,
+    "completion_tokens": 100,
+    "total_tokens": 150
+  }
+}
+```
+
+## 비용 최적화
+
+<AccordionGroup>
+  <Accordion title="적절한 모델 사용">
+    단순한 작업에는 더 작은 모델(GPT-4o-mini, Gemini Flash)을 사용하세요.
+  </Accordion>
+
+  <Accordion title="캐싱 구현">
+    반복되는 동일한 요청에 대해 응답을 캐싱하세요.
+  </Accordion>
+
+  <Accordion title="프롬프트 최적화">
+    명확성을 유지하면서 프롬프트를 간결하게 작성하세요.
+  </Accordion>
+
+  <Accordion title="max_tokens 설정">
+    전체 응답이 필요하지 않은 경우 응답 길이를 제한하세요.
+  </Accordion>
+
+  <Accordion title="긴 응답에 스트리밍 사용">
+    스트리밍은 추가 비용이 들지 않으면서 체감 성능을 향상시킵니다.
+  </Accordion>
+</AccordionGroup>
+
+## 잔액 부족 알림
+
+잔액이 떨어질 때 알림을 받도록 설정하세요:
+
+1. **대시보드 → 설정 → 알림**으로 이동
+2. 임계값 금액 설정
+3. 이메일 알림 수신
+
+## 크레딧 추가
+
+### 결제 수단
+
+- Stripe (Visa, Mastercard)
+
+### 단계
+
+1. [대시보드](https://console.aisonar.dev)에 로그인
+2. **크레딧 추가** 클릭
+3. 금액 및 결제 수단 선택
+4. 결제 완료
+
+결제 확인 후 크레딧이 즉시 추가됩니다.
+
+## API 키 제한
+
+개별 API 키에 지출 제한을 설정할 수 있습니다:
+
+1. **대시보드 → API 키**로 이동
+2. 편집할 키 클릭
+3. **사용 제한** 설정
+
+제한에 도달하면 해당 키를 사용한 요청은 `402 Payment Required`를 반환합니다.
+
+## 인보이스
+
+비즈니스 계정의 경우 인보이스를 이용할 수 있습니다:
+
+1. **대시보드 → 결제**로 이동
+2. 거래 내역 보기
+3. 인보이스를 PDF로 다운로드
+
+## 질문이 있으신가요?
+
+결제 관련 문의는 support@aisonar.dev로 연락해 주세요.

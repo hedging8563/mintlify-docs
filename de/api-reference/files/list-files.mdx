@@ -1,0 +1,38 @@
+---
+title: "Dateien auflisten"
+openapi: "GET /v1/files"
+description: "Listet hochgeladene Dateien für Batch-Workflows und unterstützte dateibasierte Kompatibilitätsmodi auf."
+---
+
+## Übersicht
+
+Dieser Endpunkt dient in erster Linie AI Sonars OpenAI-kompatibler Batch-API, einschließlich hochgeladener Batch-Eingaben sowie generierter Ausgabe- oder Fehlerdateien.
+
+Wenn die Anfrage in den Anthropic-Files-Kompatibilitätsmodus wechselt, kann dieselbe Route außerdem Anthropic-ähnliche Dateien zurückgeben, die für den gebundenen Workspace verfügbar sind.
+
+## Hinweise
+
+- Batch-Eingabedateien müssen `purpose=batch` verwenden.
+- Verwenden Sie `purpose=batch_output`, um sich auf erzeugte Ausgabedateien zu konzentrieren.
+- `completion_window` beträgt derzeit `24h`.
+- Die Ausgabe-Reihenfolge ist nicht garantiert; immer nach `custom_id` abgleichen.
+- Streaming wird innerhalb von Batch-Elementen nicht unterstützt.
+
+## Beispiel
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/files?purpose=batch&limit=20" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+## Anfrage / Antwort
+
+Verwenden Sie das interaktive OpenAPI-Panel oben für das genaue Schema.
+
+## Betriebliche Tipps
+
+- Verwenden Sie `custom_id` für idempotente nachgelagerte Abstimmungen.
+- Erwarten Sie `output_file_id` und `error_file_id` erst, nachdem der Worker den Batch abgeschlossen hat.
+- Die Preise für Batches können von den Preisen für synchrone Anfragen abweichen, da die Rabattregeln für `isBatchRequest=true` gelten.

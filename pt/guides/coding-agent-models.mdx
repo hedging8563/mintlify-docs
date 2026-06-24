@@ -1,0 +1,151 @@
+---
+title: "Seleção de Modelos para Agente de Código"
+description: "Escolha o modelo certo para cada tarefa de código — tabela comparativa, recomendações e configuração"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Comparação de Modelos para Código
+
+| Modelo | Velocidade | Qualidade de Código | Custo | Janela de Contexto | Melhor Para |
+|--------|-----------|---------------------|-------|-------------------|-------------|
+| `claude-opus-4-6` | Moderada | Excelente | $$$$ | 200K | Arquitetura, refatoração complexa |
+| `gpt-5.4` | Moderada | Excelente | $$$$ | 200K | Raciocínio complexo, planejamento |
+| `claude-sonnet-4-6` | Rápida | Muito Boa | $$$ | 200K | Código geral, revisões |
+| `gemini-3-pro-preview` | Rápida | Muito Boa | $$$ | 1M | Análise de grandes bases de código |
+| `gpt-5-mini` | Muito Rápida | Boa | $$ | 128K | Edições rápidas, completions |
+| `gemini-3-flash-preview` | Muito Rápida | Boa | $$ | 1M | Iteração rápida, busca |
+| `deepseek-r1` | Moderada | Muito Boa | $ | 64K | Tarefas com raciocínio intenso |
+| `deepseek-v3.2` | Rápida | Boa | $ | 128K | Geração em massa, boilerplate |
+
+## Recomendações por Tarefa
+
+<AccordionGroup>
+  <Accordion title="Geração de Código / Scaffolding">
+    **Recomendado**: `claude-sonnet-4-6`, `gemini-3-pro-preview`
+
+    Esses modelos produzem código limpo e bem estruturado com boas convenções de nomenclatura. Para scaffolding complexo de múltiplos arquivos, considere `claude-opus-4-6`.
+
+    Alternativa econômica: `deepseek-v3.2` lida bem com boilerplate a uma fração do custo.
+  </Accordion>
+
+  <Accordion title="Revisão de Código / Refatoração">
+    **Recomendado**: `claude-sonnet-4-6`, `deepseek-r1`
+
+    A revisão de código se beneficia da capacidade de raciocínio. `deepseek-r1` é particularmente econômico aqui — sua abordagem de chain-of-thought detecta problemas sutis.
+
+    Para revisões focadas em segurança: `claude-opus-4-6` ou `gpt-5.4`.
+  </Accordion>
+
+  <Accordion title="Correção de Bugs / Depuração">
+    **Recomendado**: `claude-sonnet-4-6`, `gpt-5-mini`
+
+    A correção de bugs geralmente é bem delimitada — você sabe o que está quebrado. Modelos de nível padrão lidam bem com isso. Use modelos premium apenas para bugs complexos em múltiplos arquivos.
+  </Accordion>
+
+  <Accordion title="Design de Arquitetura">
+    **Recomendado**: `claude-opus-4-6`, `gpt-5.4`
+
+    Decisões de arquitetura se beneficiam do raciocínio mais forte. Vale o custo premium, pois essas decisões são pouco frequentes mas de alto impacto.
+  </Accordion>
+
+  <Accordion title="Edições Rápidas / Autocompletar">
+    **Recomendado**: `gpt-5-mini`, `gemini-3-flash-preview`
+
+    A velocidade é crítica para uso interativo. Modelos econômicos com tempos de resposta rápidos proporcionam a melhor experiência. Não desperdice tokens premium em autocompletar.
+  </Accordion>
+</AccordionGroup>
+
+## Como Funciona o Roteamento do AI Sonar
+
+O AI Sonar roteia suas requisições para o melhor provedor disponível automaticamente.
+
+### Estratégias de Roteamento
+
+| Estratégia | Comportamento | Melhor Para |
+|------------|--------------|-------------|
+| **PRIORITY** | Roteia para o provedor disponível de maior prioridade | Foco em confiabilidade |
+| **COST** | Roteia para o provedor disponível mais barato | Foco em custo |
+
+Você pode definir sua estratégia preferida no dashboard.
+
+### Fallback Automático
+
+Se um provedor estiver indisponível ou retornar um erro, o AI Sonar tenta automaticamente com o próximo provedor:
+
+```
+Requisição: claude-sonnet-4-6
+  → Provedor A (primário): erro 503
+  → Provedor B (fallback): ✓ Sucesso
+```
+
+Isso acontece de forma transparente — seu agente de código recebe uma resposta normal.
+
+### Roteamento por Formato Nativo
+
+Quando o modelo selecionado e o canal roteado oferecerem suporte, o AI Sonar pode rotear solicitações pelo formato nativo de API da família do modelo para obter melhor compatibilidade:
+
+| Família do modelo | Formato da API | URL base |
+|-------------|------------|----------|
+| Claude | Anthropic Messages | `https://api.aisonar.dev` |
+| GPT | Respostas da OpenAI | `https://api.aisonar.dev/v1` |
+| Gemini | Gemini Native API | `https://api.aisonar.dev` ou `https://api.aisonar.dev/v1beta` dependendo do caminho do cliente |
+| DeepSeek | Chat da OpenAI | `https://api.aisonar.dev/v1` |
+
+Claude Code é um caminho Anthropic-native forte. APIs Gemini-native também existem, mas o próprio Gemini CLI continua sendo um caminho de compatibilidade best-effort e não deve ser tratado como um fluxo estável de longo prazo.
+
+## Configuração por Ferramenta
+
+<AccordionGroup>
+  <Accordion title="Claude Code">
+    ```bash
+    export ANTHROPIC_API_KEY="sk-your-api-key"
+    export ANTHROPIC_BASE_URL="https://api.aisonar.dev"
+    ```
+
+    Selecionar modelo: `claude --model claude-sonnet-4-6`
+
+    [Guia completo →](/integrations/claude-code)
+  </Accordion>
+
+  <Accordion title="Cursor">
+    Em Settings → Models:
+    - API Key: `sk-your-api-key`
+    - Base URL: `https://api.aisonar.dev/v1`
+    - Model: `claude-sonnet-4-6` ou `gpt-5-mini`
+
+    [Guia completo →](/integrations/cursor)
+  </Accordion>
+
+  <Accordion title="Codex CLI">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export OPENAI_BASE_URL="https://api.aisonar.dev/v1"
+    ```
+
+    [Guia completo →](/integrations/codex-cli)
+  </Accordion>
+
+  <Accordion title="Gemini CLI">
+    ```bash
+    export GEMINI_API_KEY="sk-your-api-key"
+    export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"
+    ```
+
+    Trate este caminho como compatibilidade best-effort, e não como um contrato upstream estável.
+
+    [Guia completo →](/integrations/gemini-cli)
+  </Accordion>
+
+  <Accordion title="OpenCode">
+    ```json
+    {
+      "provider": "openai",
+      "apiKey": "sk-your-api-key",
+      "baseURL": "https://api.aisonar.dev/v1"
+    }
+    ```
+
+    [Guia completo →](/integrations/opencode)
+  </Accordion>
+</AccordionGroup>

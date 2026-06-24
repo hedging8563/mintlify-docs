@@ -1,0 +1,53 @@
+---
+title: "파일 업로드"
+openapi: "POST /v1/files"
+description: "나중에 배치 생성을 위해 JSONL 배치 입력 파일을 업로드합니다."
+---
+
+## 개요
+
+이 엔드포인트는 AI Sonar의 OpenAI 호환 배치 API의 일부입니다. 배치 작업은 업로드된 JSONL 파일을 사용하며 비동기적으로 실행되며 나중에 출력/오류 파일을 반환할 수 있습니다.
+
+## 주의사항
+
+- 배치 입력 파일은 `purpose=batch`를 사용해야 합니다.
+- `completion_window`는 현재 `24h`입니다.
+- 출력 순서는 보장되지 않으며, 항상 `custom_id`로 일치시켜야 합니다.
+- 배치 항목 내에서 스트리밍은 지원되지 않습니다.
+
+## 예시
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/files" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F "purpose=batch" \
+  -F "file=@batch-input.jsonl;type=application/jsonl"
+```
+</RequestExample>
+
+## 요청 / 응답
+
+정확한 스키마를 위해 위의 대화형 OpenAPI 패널을 사용하세요.
+
+## 운영 팁
+
+- 멱등성 있는 다운스트림 조정을 위해 `custom_id`를 사용하세요.
+- 작업자가 배치를 완료한 후에만 `output_file_id`와 `error_file_id`를 기대하세요.
+- 배치 가격은 `isBatchRequest=true` 할인 규칙이 적용되기 때문에 동기 가격과 다를 수 있습니다.
+## 이미지 파일 입력
+
+같은 `/v1/files` 경로에서 `/v1/images/edits`용 이미지 참조 파일도 업로드할 수 있습니다.
+
+- `purpose=user_data` 또는 `purpose=vision`을 사용합니다.
+- 선택적으로 `model`을 포함해 이미지 편집 모델을 선택할 수 있으며, 기본값은 `gpt-image-2`입니다.
+- 반환된 `file_id`는 선택된 업스트림 이미지 편집 채널에 바인딩되며 `images[].file_id`에서 재사용할 수 있습니다.
+
+## Anthropic Files API 모드
+
+이 `/v1/files` 라우트는 Anthropic Files API 경로도 지원합니다.
+
+- `anthropic-beta: files-api-2025-04-14` 헤더를 추가하면 Anthropic 모드로 전환됩니다.
+- Anthropic 모드에서는 원본 파일을 직접 업로드하고 `purpose=batch` 는 보내지 마세요.
+- 반환된 `file_id` 는 동일한 공식 Anthropic 채널/워크스페이스에 바인딩되며, 이후 `/v1/messages` 요청에서 재사용해야 합니다.
+- Anthropic 메시지 콘텐츠에서 해당 파일을 참조하려면 Anthropic 네이티브 헤더(`x-api-key`, `anthropic-version`, 필요 시 beta header)를 계속 사용하세요.

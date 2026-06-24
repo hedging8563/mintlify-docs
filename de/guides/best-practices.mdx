@@ -1,0 +1,295 @@
+---
+title: "Best Practices"
+description: "Optimieren Sie Ihre Nutzung der AI Sonar API im Hinblick auf Kosten, Performance und Zuverlässigkeit"
+---
+
+## Modellauswahl
+
+Die Wahl des richtigen Modells kann Kosten und Qualität erheblich beeinflussen.
+
+### Aufgabenbasierte Empfehlungen
+
+| Aufgabe | Empfohlene Modelle | Begründung |
+|------|-------------------|-----------|
+| **Einfache Fragen & Antworten** | `gpt-5-mini`, `gemini-2.5-flash` | Schnell, günstig, ausreichend gut |
+| **Komplexes Schlussfolgern** | `gpt-5.4`, `claude-opus-4-6`, `deepseek-r1` | Bessere Logik und Planung |
+| **Programmierung** | `claude-sonnet-4-6`, `gpt-4o`, `deepseek-v3.2` | Für Code optimiert |
+| **Kreatives Schreiben** | `claude-sonnet-4-6`, `gpt-4o` | Bessere Prosaqualität |
+| **Vision/Bilder** | `gpt-4o`, `claude-sonnet-4-6`, `gemini-2.5-flash` | Native Vision-Unterstützung |
+| **Langer Kontext** | `gemini-2.5-pro`, `claude-sonnet-4-6` | 1M+ token-Fenster |
+| **Kostensensitiv** | `gpt-5-mini`, `gemini-2.5-flash`, `deepseek-v3.2` | Bestes Preis-Leistungs-Verhältnis |
+
+### Kostenstufen
+
+```
+$$$$ Premium: gpt-5.4, claude-opus-4-6
+$$$  Standard: claude-sonnet-4-6, gpt-4o
+$$   Budget:   gpt-5-mini, gemini-2.5-flash
+$    Economy:  deepseek-v3.2, deepseek-r1
+```
+
+## Kostenoptimierung
+
+### 1. Zuerst kleinere Modelle verwenden
+
+```python
+def smart_query(question: str, complexity: str = "auto"):
+    """Use cheaper models for simple tasks."""
+
+    if complexity == "simple":
+        model = "gpt-5-mini"
+    elif complexity == "complex":
+        model = "gpt-4o"
+    else:
+        # Start cheap, escalate if needed
+        model = "gpt-5-mini"
+
+    response = client.chat.completions.create(
+        model=model,
+        messages=[{"role": "user", "content": question}]
+    )
+    return response
+```
+
+### 2. `max_tokens` festlegen
+
+Legen Sie immer ein sinnvolles Limit für `max_tokens` fest:
+
+```python
+# ❌ Bad: No limit, could generate thousands of tokens
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Summarize this article"}]
+)
+
+# ✅ Good: Limit response length
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Summarize this article"}],
+    max_tokens=500  # Reasonable limit for a summary
+)
+```
+
+### 3. Prompts optimieren
+
+```python
+# ❌ Verbose prompt (more input tokens)
+prompt = """
+I would like you to please help me by analyzing the following text
+and providing a comprehensive summary of the main points. Please be
+thorough but also concise in your response. The text is as follows:
+{text}
+"""
+
+# ✅ Concise prompt (fewer tokens)
+prompt = "Summarize the key points:\n{text}"
+```
+
+### 4. Ähnliche Anfragen bündeln
+
+```python
+# ❌ Many small requests
+for question in questions:
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{"role": "user", "content": question}]
+    )
+
+# ✅ Fewer larger requests
+combined_prompt = "\n".join([f"{i+1}. {q}" for i, q in enumerate(questions)])
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": f"Answer each question:\n{combined_prompt}"}]
+)
+```
+
+## Performance-Optimierung
+
+### 5. Streaming für UX verwenden
+
+Streaming verbessert die wahrgenommene Performance:
+
+```python
+stream = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Write a long essay"}],
+    stream=True
+)
+
+for chunk in stream:
+    if chunk.choices[0].delta.content:
+        print(chunk.choices[0].delta.content, end="", flush=True)
+```
+
+### 6. Schnelle Modelle für interaktive Nutzung wählen
+
+| Anwendungsfall | Empfohlen | Latenz |
+|----------|-------------|---------|
+| Chat-UI | `gpt-5-mini`, `gemini-2.5-flash` | ~200ms bis zum ersten token |
+| Tab-Vervollständigung | `claude-haiku-4-5` | ~150ms bis zum ersten token |
+| Hintergrundverarbeitung | `gpt-4o`, `claude-sonnet-4-6` | ~500ms bis zum ersten token |
+
+### 7. Timeouts festlegen
+
+```python
+client = OpenAI(
+    api_key="sk-your-key",
+    base_url="https://api.aisonar.dev/v1",
+    timeout=60.0  # 60 second timeout
+)
+```
+
+## Zuverlässigkeit
+
+### 8. Retries implementieren
+
+```python
+import time
+from openai import RateLimitError, APIError
+
+def chat_with_retry(messages, max_retries=3):
+    for attempt in range(max_retries):
+        try:
+            return client.chat.completions.create(
+                model="gpt-4o",
+                messages=messages
+            )
+        except RateLimitError:
+            wait = 2 ** attempt
+            print(f"Rate limited, waiting {wait}s...")
+            time.sleep(wait)
+        except APIError as e:
+            if attempt == max_retries - 1:
+                raise
+            time.sleep(1)
+    raise Exception("Max retries exceeded")
+```
+
+### 9. Fehler robust behandeln
+
+```python
+from openai import APIError, AuthenticationError, RateLimitError
+
+try:
+    response = client.chat.completions.create(...)
+except AuthenticationError:
+    # Check API key
+    notify_admin("Invalid API key")
+except RateLimitError:
+    # Queue for later or use backup
+    add_to_queue(request)
+except APIError as e:
+    if e.status_code == 402:
+        notify_admin("Balance low")
+    elif e.status_code >= 500:
+        # Server error, retry later
+        schedule_retry(request)
+```
+
+### 10. Fallback-Modelle verwenden
+
+```python
+FALLBACK_CHAIN = ["gpt-4o", "claude-sonnet-4-6", "gemini-2.5-flash"]
+
+def chat_with_fallback(messages):
+    for model in FALLBACK_CHAIN:
+        try:
+            return client.chat.completions.create(
+                model=model,
+                messages=messages
+            )
+        except APIError:
+            continue
+    raise Exception("All models failed")
+```
+
+## Sicherheit
+
+### 11. API-Keys schützen
+
+```python
+# ❌ Never hardcode keys
+client = OpenAI(api_key="sk-abc123...")
+
+# ✅ Use environment variables
+import os
+client = OpenAI(api_key=os.environ["TOKENLAB_API_KEY"])
+```
+
+### 12. Benutzereingaben validieren
+
+```python
+def validate_message(content: str) -> bool:
+    """Validate user input before sending to API."""
+    if len(content) > 100000:
+        raise ValueError("Message too long")
+    # Add other validation as needed
+    return True
+```
+
+### 13. Limits für API-Keys festlegen
+
+Erstellen Sie separate API-Keys mit Ausgabenlimits für:
+- Entwicklung/Tests
+- Produktion
+- Verschiedene Anwendungen
+
+## Monitoring
+
+### 14. Nutzung nachverfolgen
+
+Prüfen Sie regelmäßig Ihr Dashboard auf:
+- token-Nutzung nach Modell
+- Kostenaufschlüsselung
+- Cache-Trefferraten
+- Fehlerraten
+
+### 15. Wichtige Metriken protokollieren
+
+```python
+import logging
+
+response = client.chat.completions.create(...)
+
+logging.info({
+    "model": response.model,
+    "prompt_tokens": response.usage.prompt_tokens,
+    "completion_tokens": response.usage.completion_tokens,
+    "total_tokens": response.usage.total_tokens,
+})
+```
+
+### 16. Alerts einrichten
+
+Konfigurieren Sie Warnungen bei niedrigem Guthaben in Ihrem Dashboard, um Service-Unterbrechungen zu vermeiden.
+
+## Checkliste
+
+<AccordionGroup>
+  <Accordion title="Kostenoptimierung">
+    - [ ] Für jede Aufgabe das passende Modell verwenden
+    - [ ] `max_tokens`-Limits festlegen
+    - [ ] Prompts sind prägnant
+    - [ ] Caching aktiviert, wo sinnvoll
+    - [ ] Ähnliche Anfragen bündeln
+  </Accordion>
+
+  <Accordion title="Performance">
+    - [ ] Streaming für interaktive UX
+    - [ ] Schnelle Modelle für Echtzeitnutzung
+    - [ ] Timeouts konfiguriert
+  </Accordion>
+
+  <Accordion title="Zuverlässigkeit">
+    - [ ] Retry-Logik implementiert
+    - [ ] Fehlerbehandlung vorhanden
+    - [ ] Fallback-Modelle konfiguriert
+  </Accordion>
+
+  <Accordion title="Sicherheit">
+    - [ ] API-Keys in Umgebungsvariablen
+    - [ ] Eingabevalidierung
+    - [ ] Separate Keys für Dev/Prod
+    - [ ] Ausgabenlimits festgelegt
+  </Accordion>
+</AccordionGroup>

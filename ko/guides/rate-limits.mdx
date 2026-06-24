@@ -1,0 +1,154 @@
+---
+title: "Rate Limits"
+description: "Rate limit 이해 및 처리"
+---
+
+## 개요
+
+AI Sonar는 공정한 사용과 플랫폼 안정성을 보장하기 위해 rate limit을 적용합니다. 제한은 계정 tier에 따라 달라집니다.
+
+## Rate Limit Tier
+
+| Tier | Requests/min | 설명 |
+|------|-------------|-------------|
+| **User** | 1,000 | 모든 계정의 기본 tier |
+| **Partner** | 3,000 | integration partner용 |
+| **VIP** | 10,000 | 대용량 사용자용 |
+
+<Note>
+  Rate limit은 변경될 수 있습니다. 사용자 지정 제한이 필요하면 support@aisonar.dev로 문의하세요.
+</Note>
+
+## Rate Limit 응답
+
+Rate limit을 초과하면, API는 재시도 전에 얼마나 기다려야 하는지를 나타내는 `Retry-After` header와 함께 `429` 상태 코드를 반환합니다.
+
+## Rate Limit 초과
+
+제한을 초과하면 `429` 응답을 받게 됩니다:
+
+```json
+{
+  "error": {
+    "message": "Rate limit exceeded. Please retry later.",
+    "type": "rate_limit_exceeded",
+    "code": "rate_limit_exceeded"
+  }
+}
+```
+
+응답에는 `Retry-After` header가 포함됩니다:
+```
+Retry-After: 60  # Seconds to wait before retrying
+```
+
+## Rate Limit 처리
+
+### 지수 백오프
+
+자동 재시도를 위해 exponential backoff를 구현하세요:
+
+```python
+import time
+from openai import OpenAI, RateLimitError
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+def make_request_with_backoff(messages, max_retries=5):
+    for attempt in range(max_retries):
+        try:
+            return client.chat.completions.create(
+                model="gpt-4o",
+                messages=messages
+            )
+        except RateLimitError as e:
+            if attempt == max_retries - 1:
+                raise
+
+            wait_time = 2 ** attempt  # 1, 2, 4, 8, 16 seconds
+            print(f"Rate limited. Waiting {wait_time}s...")
+            time.sleep(wait_time)
+```
+
+### 요청 큐잉
+
+대용량 애플리케이션의 경우 요청 큐를 구현하세요:
+
+```python
+import asyncio
+from collections import deque
+
+class RateLimitedClient:
+    def __init__(self, requests_per_minute=60):
+        self.rpm = requests_per_minute
+        self.interval = 60 / requests_per_minute
+        self.last_request = 0
+
+    async def request(self, messages):
+        # Wait if needed to respect rate limit
+        now = asyncio.get_event_loop().time()
+        wait_time = max(0, self.last_request + self.interval - now)
+        if wait_time > 0:
+            await asyncio.sleep(wait_time)
+
+        self.last_request = asyncio.get_event_loop().time()
+        return await self.client.chat.completions.create(
+            model="gpt-4o",
+            messages=messages
+        )
+```
+
+### 배치 처리
+
+대량 작업의 경우 지연 시간을 두고 배치로 처리하세요:
+
+```python
+def process_batch(items, batch_size=50, delay=1):
+    results = []
+    for i in range(0, len(items), batch_size):
+        batch = items[i:i + batch_size]
+        for item in batch:
+            result = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[{"role": "user", "content": item}]
+            )
+            results.append(result)
+        time.sleep(delay)  # Pause between batches
+    return results
+```
+
+## 모범 사례
+
+<AccordionGroup>
+  <Accordion title="사용량 모니터링">
+    제한을 선제적으로 준수할 수 있도록 rate limit header를 추적하세요.
+  </Accordion>
+
+  <Accordion title="캐싱 구현">
+    API 호출을 줄이기 위해 동일한 요청에 대한 응답을 캐시하세요.
+  </Accordion>
+
+  <Accordion title="적절한 모델 사용">
+    더 빠른 모델(예: gpt-5-mini)은 더 높은 처리량을 허용합니다.
+  </Accordion>
+
+  <Accordion title="더 높은 제한이 필요하면 문의하세요">
+    더 높은 제한이 필요하면 support@aisonar.dev로 문의하세요.
+  </Accordion>
+</AccordionGroup>
+
+## Tier 업그레이드
+
+tier 업그레이드를 요청하려면:
+
+1. [Dashboard](https://console.aisonar.dev)에 로그인합니다
+2. **Settings → 계정**로 이동합니다
+3. 사용 사례와 함께 support에 문의합니다
+
+또는 다음 내용을 포함하여 support@aisonar.dev로 이메일을 보내세요:
+- 계정 이메일
+- 예상 요청량
+- 사용 사례 설명

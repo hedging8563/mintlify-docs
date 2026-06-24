@@ -1,0 +1,143 @@
+---
+title: "LlamaIndex"
+description: "Integrate AI Sonar with LlamaIndex using OpenAI-compatible integrations"
+---
+
+## Overview
+
+
+
+<Note>
+**Type**: Framework or Platform
+
+**Primary Path**: OpenAI-compatible via OpenAILike
+
+**Support Confidence**: Supported via OpenAILike
+</Note>
+
+For AI Sonar, the more robust LlamaIndex setup is to use **OpenAI-compatible integrations** instead of the built-in OpenAI classes.
+
+Current LlamaIndex docs explicitly recommend `OpenAILike` for third-party OpenAI-compatible endpoints, because the built-in OpenAI classes infer metadata from official model names.
+
+In other words: treat `OpenAILike` as the supported AI Sonar path here, not the built-in OpenAI classes.
+
+## Installation
+
+```bash
+pip install llama-index-core \
+  llama-index-readers-file \
+  llama-index-llms-openai-like \
+  llama-index-embeddings-openai-like
+```
+
+## Basic Configuration
+
+```python
+from llama_index.core import Settings
+from llama_index.llms.openai_like import OpenAILike
+from llama_index.embeddings.openai_like import OpenAILikeEmbedding
+
+llm = OpenAILike(
+    model="gpt-5.4",
+    api_base="https://api.aisonar.dev/v1",
+    api_key="sk-your-api-key",
+    is_chat_model=True,
+)
+
+embed_model = OpenAILikeEmbedding(
+    model_name="text-embedding-3-small",
+    api_base="https://api.aisonar.dev/v1",
+    api_key="sk-your-api-key",
+)
+
+Settings.llm = llm
+Settings.embed_model = embed_model
+```
+
+## Basic Usage
+
+```python
+response = llm.complete("Explain AI Sonar in one sentence.")
+print(response.text)
+```
+
+## Chat
+
+```python
+from llama_index.core.llms import ChatMessage
+
+messages = [
+    ChatMessage(role="system", content="You are a helpful assistant."),
+    ChatMessage(role="user", content="What is the capital of France?")
+]
+
+response = llm.chat(messages)
+print(response.message.content)
+```
+
+## Streaming
+
+```python
+for chunk in llm.stream_complete("Write a short poem about AI."):
+    print(chunk.delta, end="", flush=True)
+```
+
+## Embeddings
+
+```python
+vector = embed_model.get_text_embedding("Hello, world!")
+print(vector[:5])
+```
+
+## RAG with Documents
+
+```python
+from llama_index.core import SimpleDirectoryReader, VectorStoreIndex
+
+documents = SimpleDirectoryReader("./data").load_data()
+index = VectorStoreIndex.from_documents(documents)
+
+query_engine = index.as_query_engine()
+response = query_engine.query("What is in my documents?")
+print(response)
+```
+
+## Chat Engine
+
+```python
+chat_engine = index.as_chat_engine(chat_mode="condense_question")
+
+response = chat_engine.chat("What is AI Sonar?")
+print(response)
+
+response = chat_engine.chat("How many models does it support?")
+print(response)
+```
+
+## Async Usage
+
+```python
+import asyncio
+
+async def main():
+    response = await llm.acomplete("Hello!")
+    print(response.text)
+
+asyncio.run(main())
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use OpenAILike for AI Sonar">
+    Prefer `llama_index.llms.openai_like.OpenAILike` and `llama_index.embeddings.openai_like.OpenAILikeEmbedding` for AI Sonar and other third-party OpenAI-compatible gateways.
+  </Accordion>
+
+  <Accordion title="Set api_base explicitly">
+    Pass `api_base="https://api.aisonar.dev/v1"` directly in code instead of relying on older OpenAI environment-variable names.
+  </Accordion>
+
+  <Accordion title="Keep model roles separated">
+    Use chat/reasoning models for synthesis and `text-embedding-3-small` or `text-embedding-3-large` for retrieval.
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,55 @@
+---
+title: "LiteLLM"
+description: "Gunakan LiteLLM dengan AI Sonar sebagai penyedia upstream atau lapisan gateway internal"
+---
+
+## Ikhtisar
+
+LiteLLM dan AI Sonar biasanya dipakai bersama dengan dua cara.
+
+- memakai AI Sonar sebagai **upstream kompatibel OpenAI** di belakang LiteLLM
+- menempatkan LiteLLM di depan AI Sonar untuk menangani virtual key, routing tambahan, atau observability terpusat
+
+Untuk AI Sonar, jalur default yang paling bersih adalah memakai mode **custom OpenAI / kompatibel OpenAI** milik LiteLLM dengan `api_base = https://api.aisonar.dev/v1`.
+
+<Note>
+Jika Anda benar-benar membutuhkan request shape Claude-native atau Gemini-native, lebih baik gunakan integrasi native AI Sonar daripada memaksa alur tersebut melewati abstraksi kompatibel OpenAI milik LiteLLM.
+</Note>
+
+<Note>
+**Jenis**: Framework atau platform
+
+**Jalur utama**: upstream kompatibel OpenAI
+
+**Tingkat dukungan**: Jalur didukung
+</Note>
+
+## Instalasi
+
+```bash
+pip install 'litellm[proxy]'
+```
+
+## Konfigurasi proxy
+
+```yaml
+model_list:
+  - model_name: aisonar-gpt-5.4
+    litellm_params:
+      model: custom_openai/gpt-5.4
+      api_base: https://api.aisonar.dev/v1
+      api_key: os.environ/OPENAI_API_KEY
+```
+
+Menjalankan proxy:
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+litellm --config litellm-config.yaml --port 4000
+```
+
+## Praktik terbaik
+
+- Perlakukan AI Sonar terlebih dahulu sebagai upstream `custom_openai`
+- Tempatkan LiteLLM di depan hanya jika Anda benar-benar membutuhkan lapisan gateway tambahan
+- Jangan menganggap semua detail native milik penyedia otomatis tersedia di jalur kompatibel OpenAI

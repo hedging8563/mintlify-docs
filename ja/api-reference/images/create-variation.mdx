@@ -1,0 +1,187 @@
+---
+title: "画像バリエーションを作成"
+openapi: "POST /v1/images/variations"
+description: "指定された画像のバリエーションを作成します"
+---
+
+## 概要
+
+指定された画像のバリエーションを作成します。`multipart/form-data` コンテンツタイプが必要です。
+
+## リクエストボディ
+
+**同期リクエストのタイムアウト:** ルーティング先の画像プロバイダーによっては、生成完了まで待って最終画像をインラインで返します。高解像度または高品質のリクエストは 1 分前後、またはそれ以上かかることがあるため、HTTP クライアントのタイムアウトは少なくとも `120s` に設定してください。作成レスポンスに `status: "pending"`、`task_id`、または `poll_url` が含まれる場合は、返された `poll_url` をポーリングしてください。
+
+<ParamField body="image" type="file" required>
+  バリエーションの基となる画像。有効な PNG ファイルで、50MB 未満、正方形である必要があります。
+</ParamField>
+
+<ParamField body="model" type="string" default="dall-e-2">
+  画像バリエーションに使用するモデル。現在は `dall-e-2` のみサポートされています。
+</ParamField>
+
+<ParamField body="n" type="integer" default="1">
+  生成する画像の数。1 から 10 の間である必要があります。
+</ParamField>
+
+<ParamField body="size" type="string">
+  生成される画像のサイズ。`256x256`、`512x512`、または `1024x1024` のいずれかである必要があります。
+</ParamField>
+
+<ParamField body="response_format" type="string" default="url">
+  生成された画像の返却形式。`url` または `b64_json` である必要があります。
+</ParamField>
+
+<ParamField body="user" type="string">
+  不正利用監視のためのエンドユーザーの一意識別子。
+</ParamField>
+
+## レスポンス
+
+<ResponseField name="created" type="integer">
+  画像が作成された時の Unix タイムスタンプ。
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  生成された画像バリエーションの配列。
+
+  各オブジェクトには以下が含まれます：
+  - `url` (string): バリエーション画像の URL（response_format が `url` の場合）
+  - `b64_json` (string): Base64 エンコードされた画像（response_format が `b64_json` の場合）
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/images/variations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F "image=@cat.png" \
+  -F "n=2" \
+  -F "size=1024x1024"
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.images.create_variation(
+    model="dall-e-2",
+    image=open("cat.png", "rb"),
+    n=2,
+    size="1024x1024"
+)
+
+for image in response.data:
+    print(image.url)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+import fs from 'fs';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.images.createVariation({
+  model: 'dall-e-2',
+  image: fs.createReadStream('cat.png'),
+  n: 2,
+  size: '1024x1024'
+});
+
+response.data.forEach(image => console.log(image.url));
+```
+
+```go Go
+package main
+
+import (
+    "bytes"
+    "fmt"
+    "io"
+    "mime/multipart"
+    "net/http"
+    "os"
+)
+
+func main() {
+    body := &bytes.Buffer{}
+    writer := multipart.NewWriter(body)
+
+    file, _ := os.Open("cat.png")
+    defer file.Close()
+    part, _ := writer.CreateFormFile("image", "cat.png")
+    io.Copy(part, file)
+
+    writer.WriteField("n", "2")
+    writer.WriteField("size", "1024x1024")
+    writer.Close()
+
+    req, _ := http.NewRequest("POST", "https://api.aisonar.dev/v1/images/variations", body)
+    req.Header.Set("Authorization", "Bearer sk-your-api-key")
+    req.Header.Set("Content-Type", writer.FormDataContentType())
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+
+    result, _ := io.ReadAll(resp.Body)
+    fmt.Println(string(result))
+}
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/images/variations');
+
+$image = new CURLFile('cat.png', 'image/png', 'cat.png');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => [
+        'image' => $image,
+        'n' => 2,
+        'size' => '1024x1024'
+    ]
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+foreach ($data['data'] as $image) {
+    echo $image['url'] . "\n";
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json レスポンス
+{
+  "created": 1706000000,
+  "data": [
+    {
+      "url": "https://..."
+    },
+    {
+      "url": "https://..."
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## 注意事項
+
+<Note>
+  画像バリエーションは DALL-E 2 でのみ利用可能です。モデルは元の画像とスタイルや内容が類似した新しい画像を生成します。
+</Note>

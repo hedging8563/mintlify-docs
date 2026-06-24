@@ -1,0 +1,169 @@
+---
+title: "Embedding erstellen"
+openapi: "POST /v1/embeddings"
+description: "Erstellt einen Embedding-Vektor, der den Eingabetext repräsentiert"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Anfragekörper
+
+**Timeout für synchrone Anfragen:** Dieser Nicht-Chat-Endpunkt wartet, bis das geroutete Modell fertig ist. Große Eingaben, lange Audiodateien oder große Batches können übliche 30s-Client-Defaults überschreiten; setzen Sie das Timeout Ihres HTTP-Clients daher auf mindestens `120s`.
+
+<ParamField body="model" type="string" required>
+  ID des zu verwendenden Embedding-Modells (z. B. `text-embedding-3-small`).
+</ParamField>
+
+<ParamField body="input" type="string | array" required>
+  Eingabetext für das Embedding. Kann ein String oder ein Array von Strings sein.
+</ParamField>
+
+<ParamField body="encoding_format" type="string" default="float">
+  Format für die Embeddings: `float` oder `base64`.
+</ParamField>
+
+<ParamField body="dimensions" type="integer">
+  Anzahl der Dimensionen für die Ausgabe (modellspezifisch).
+</ParamField>
+
+<ParamField body="user" type="string">
+  Eine eindeutige Kennung, die Ihren Endbenutzer für die Missbrauchsüberwachung repräsentiert.
+</ParamField>
+
+## Verfügbare Modelle
+
+| Modell | Dimensionen | Beschreibung |
+|-------|------------|-------------|
+| `text-embedding-3-large` | 3072 | Beste Qualität |
+| `text-embedding-3-small` | 1536 | Ausgewogen |
+| `text-embedding-ada-002` | 1536 | Veraltet |
+
+## Antwort
+
+<ResponseField name="object" type="string">
+  Immer `list`.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Array von Embedding-Objekten.
+
+  Jedes Objekt enthält:
+  - `object` (string): `embedding`
+  - `index` (integer): Index im Eingabe-Array
+  - `embedding` (array): Der Embedding-Vektor
+</ResponseField>
+
+<ResponseField name="model" type="string">
+  Verwendetes Modell.
+</ResponseField>
+
+<ResponseField name="usage" type="object">
+  Token-Nutzung mit `prompt_tokens` und `total_tokens`.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/embeddings" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "text-embedding-3-small",
+    "input": "The quick brown fox jumps over the lazy dog"
+  }'
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.embeddings.create(
+    model="text-embedding-3-small",
+    input="The quick brown fox jumps over the lazy dog"
+)
+
+embedding = response.data[0].embedding
+print(f"Embedding dimension: {len(embedding)}")
+print(f"First 5 values: {embedding[:5]}")
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.embeddings.create({
+  model: 'text-embedding-3-small',
+  input: 'The quick brown fox jumps over the lazy dog'
+});
+
+console.log(response.data[0].embedding.slice(0, 5));
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/embeddings');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Content-Type: application/json',
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => json_encode([
+        'model' => 'text-embedding-3-small',
+        'input' => 'The quick brown fox jumps over the lazy dog'
+    ])
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+print_r(array_slice($data['data'][0]['embedding'], 0, 5));
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "object": "list",
+  "data": [
+    {
+      "object": "embedding",
+      "index": 0,
+      "embedding": [0.0023, -0.0194, 0.0081, ...]
+    }
+  ],
+  "model": "text-embedding-3-small",
+  "usage": {
+    "prompt_tokens": 9,
+    "total_tokens": 9
+  }
+}
+```
+</ResponseExample>
+
+## Batch-Embeddings
+
+```python
+# Embed multiple texts at once
+response = client.embeddings.create(
+    model="text-embedding-3-small",
+    input=[
+        "First document text",
+        "Second document text",
+        "Third document text"
+    ]
+)
+
+for i, data in enumerate(response.data):
+    print(f"Document {i}: {len(data.embedding)} dimensions")
+```

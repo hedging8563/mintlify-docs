@@ -1,0 +1,193 @@
+---
+title: "LangChain"
+description: "Tích hợp AI Sonar với LangChain bằng chat và embeddings tương thích OpenAI tiêu chuẩn"
+---
+
+## Tổng quan
+
+AI Sonar hoạt động tốt với các tích hợp `ChatOpenAI` và `OpenAIEmbeddings` của LangChain khi bạn sử dụng bề mặt chat và embeddings tương thích OpenAI tiêu chuẩn.
+
+<Note>
+Tài liệu LangChain hiện tại lưu ý rằng `ChatOpenAI` nhắm đến các định dạng request/response tương thích OpenAI chính thức. Nếu bạn cần các trường phản hồi không tiêu chuẩn, đặc thù theo nhà cung cấp, hãy sử dụng tích hợp LangChain dành riêng cho nhà cung cấp đó thay vì dựa vào `ChatOpenAI`.
+</Note>
+
+<Note>
+**Loại**: Framework hoặc nền tảng
+
+**Đường chính**: surface LangChain tiêu chuẩn tương thích OpenAI
+
+**Mức hỗ trợ**: Hỗ trợ surface tiêu chuẩn
+</Note>
+
+Trang này chủ ý chỉ bao phủ surface LangChain chuẩn theo hướng tương thích OpenAI, chứ không mở rộng sang các tính năng LangChain riêng theo nhà cung cấp ngoài phạm vi đó.
+
+## Cài đặt
+
+```bash
+pip install langchain langchain-openai langchain-community faiss-cpu
+```
+
+## Cấu hình cơ bản
+
+```python
+from langchain_openai import ChatOpenAI
+
+llm = ChatOpenAI(
+    model="gpt-5.4",
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1",
+)
+
+response = llm.invoke("Explain AI Sonar in one sentence.")
+print(response.content)
+```
+
+## Sử dụng các model khác nhau
+
+```python
+from langchain_openai import ChatOpenAI
+
+gpt = ChatOpenAI(
+    model="gpt-5.4",
+    api_key="sk-your-key",
+    base_url="https://api.aisonar.dev/v1",
+)
+
+claude = ChatOpenAI(
+    model="claude-sonnet-4-6",
+    api_key="sk-your-key",
+    base_url="https://api.aisonar.dev/v1",
+)
+
+gemini = ChatOpenAI(
+    model="gemini-2.5-flash",
+    api_key="sk-your-key",
+    base_url="https://api.aisonar.dev/v1",
+)
+
+deepseek = ChatOpenAI(
+    model="deepseek-r1",
+    api_key="sk-your-key",
+    base_url="https://api.aisonar.dev/v1",
+)
+```
+
+## Lịch sử tin nhắn
+
+```python
+from langchain_core.messages import HumanMessage, SystemMessage
+
+messages = [
+    SystemMessage(content="You are a helpful assistant."),
+    HumanMessage(content="What is the capital of France?")
+]
+
+response = llm.invoke(messages)
+print(response.content)
+```
+
+## Phát trực tuyến
+
+```python
+for chunk in llm.stream("Write a short poem about coding."):
+    if chunk.content:
+        print(chunk.content, end="", flush=True)
+```
+
+## Embeddings
+
+```python
+from langchain_openai import OpenAIEmbeddings
+
+embeddings = OpenAIEmbeddings(
+    model="text-embedding-3-small",
+    api_key="sk-your-key",
+    base_url="https://api.aisonar.dev/v1",
+)
+
+vector = embeddings.embed_query("Hello world")
+print(vector[:5])
+```
+
+## Ví dụ RAG đơn giản
+
+```python
+from langchain_openai import OpenAIEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnablePassthrough
+
+embeddings = OpenAIEmbeddings(
+    model="text-embedding-3-small",
+    api_key="sk-your-key",
+    base_url="https://api.aisonar.dev/v1",
+)
+
+texts = [
+    "AI Sonar provides one API for many AI models.",
+    "AI Sonar supports OpenAI-compatible integrations."
+]
+
+vectorstore = FAISS.from_texts(texts, embeddings)
+retriever = vectorstore.as_retriever()
+
+prompt = ChatPromptTemplate.from_template(
+    "Answer using the context below.\\n\\nContext:\\n{context}\\n\\nQuestion:\\n{question}"
+)
+
+rag_chain = (
+    {"context": retriever, "question": RunnablePassthrough()}
+    | prompt
+    | llm
+)
+
+response = rag_chain.invoke("What does AI Sonar provide?")
+print(response.content)
+```
+
+## Agents
+
+<Note>
+Đối với các dự án agentic mới, LangChain khuyến nghị cân nhắc LangGraph để có khả năng kiểm soát tường minh hơn đối với các workflow chạy dài và sử dụng công cụ.
+</Note>
+
+```python
+from langchain.agents import create_openai_tools_agent, AgentExecutor
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.tools import tool
+
+@tool
+def search(query: str) -> str:
+    """Search for information."""
+    return f"Search results for: {query}"
+
+tools = [search]
+
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a helpful assistant with access to tools."),
+    ("human", "{input}"),
+    ("placeholder", "{agent_scratchpad}")
+])
+
+agent = create_openai_tools_agent(llm, tools, prompt)
+executor = AgentExecutor(agent=agent, tools=tools)
+
+result = executor.invoke({"input": "Search for AI Sonar pricing"})
+print(result["output"])
+```
+
+## Thực tiễn tốt nhất
+
+<AccordionGroup>
+  <Accordion title="Truyền `base_url` một cách tường minh">
+    Cấu hình AI Sonar đáng tin cậy nhất là truyền `base_url="https://api.aisonar.dev/v1"` trực tiếp vào `ChatOpenAI` và `OpenAIEmbeddings` thay vì phụ thuộc vào các alias biến môi trường cũ hơn.
+  </Accordion>
+
+  <Accordion title="Sử dụng các tính năng tiêu chuẩn ở đây">
+    Hãy bám theo chat tiêu chuẩn, tool calling, streaming và embeddings trên `ChatOpenAI`. Nếu bạn cần các tính năng bổ sung gốc của từng nhà cung cấp, hãy chuyển sang tích hợp LangChain riêng của nhà cung cấp đó.
+  </Accordion>
+
+  <Accordion title="Sử dụng model rẻ hơn cho truy xuất">
+    Sử dụng các model embedding như `text-embedding-3-small` cho truy xuất và dành các model chat mạnh hơn cho bước trả lời cuối cùng.
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,290 @@
+---
+title: "إنشاء استجابة"
+openapi: "POST /v1/responses"
+description: "ينشئ استجابة باستخدام تنسيق OpenAI Responses API"
+---
+
+تُعد Responses API واجهة محادثة جديدة ذات حالة من OpenAI. يدعم AI Sonar هذا التنسيق كمسار اختياري متقدم للنماذج المتوافقة؛ استخدم `POST /v1/chat/completions` كالمسار الافتراضي المتوافق مع OpenAI ما لم تكن تحتاج صراحةً إلى سلوك خاص بـ Responses.
+
+## جسم الطلب
+
+<ParamField body="model" type="string" required>
+  معرّف النموذج المطلوب استخدامه. راجع [Models](https://aisonar.dev/models) للاطلاع على الخيارات المتاحة.
+</ParamField>
+
+<ParamField body="input" type="array" required>
+  قائمة بعناصر الإدخال التي تتكوّن منها المحادثة.
+
+  يمكن أن يكون كل عنصر:
+  - `message`: رسالة محادثة تحتوي على الدور والمحتوى
+  - `function_call`: طلب استدعاء دالة
+  - `function_call_output`: المخرجات من استدعاء دالة
+
+  بالنسبة إلى الإدخال متعدد الوسائط، يمكن أن يكون `message.content` إما سلسلة نصية عادية أو مصفوفة من كتل المحتوى. بالنسبة إلى النماذج القادرة على التعامل مع الصور مثل متغيرات GPT-5.4، مرّر الصور على هيئة كتل `input_image` بدلًا من تضمين عناوين URL أو سلاسل Base64 مباشرة داخل النص العادي.
+
+  مقاطع محتوى مثال:
+  - `{ "type": "input_text", "text": "Describe this image" }`
+  - `{ "type": "input_image", "image_url": "https://example.com/image.jpg" }`
+  - `{ "type": "input_image", "image_url": "data:image/png;base64,..." }`
+</ParamField>
+
+<ParamField body="instructions" type="string">
+  تعليمات النظام للنموذج (المكافئة لرسالة النظام).
+</ParamField>
+
+<ParamField body="max_output_tokens" type="integer">
+  الحد الأقصى لعدد الرموز المميزة المراد توليدها.
+</ParamField>
+
+<ParamField body="temperature" type="number" default="1">
+  درجة الحرارة الخاصة بالعيننة بين 0 و2.
+</ParamField>
+
+<ParamField body="tools" type="array">
+  قائمة بالأدوات التي قد يستدعيها النموذج.
+
+  بالنسبة إلى أدوات `image_generation` المستضافة التي تستخدم نموذج أداة الصور الافتراضي أو تضبط صراحةً `model: "gpt-image-2"`، تزيل AI Sonar الحقل غير المدعوم `input_fidelity` قبل تمرير الطلب، لأن GPT Image 2 يعالج مدخلات الصور أصلًا بدقة عالية. لا ترسل `background: "transparent"` لهذه الأداة؛ لا تزيله AI Sonar بصمت لأن ذلك يغيّر دلالة الخرج.
+</ParamField>
+
+<ParamField body="stream" type="boolean" default="false">
+  إذا كانت true، فسيعيد تدفقًا من الأحداث.
+</ParamField>
+
+<ParamField body="previous_response_id" type="string">
+  معرّف استجابة سابقة لمتابعة المحادثة منها.
+</ParamField>
+
+<ParamField body="store" type="boolean" default="true">
+  ما إذا كان سيتم تخزين الاستجابة لاسترجاعها لاحقًا.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  بيانات وصفية تُضاف إلى الاستجابة لأغراض التتبع.
+</ParamField>
+
+<ParamField body="text" type="object">
+  خيارات تهيئة توليد النص. يعتمد سلوك `text.format` على النموذج المحدد والمسار الموجَّه؛ ولا يُضمن أن يكون موحدًا عبر كل نموذج.
+</ParamField>
+
+<ParamField body="parallel_tool_calls" type="boolean" default="true">
+  ما إذا كان يُسمح بعدة استدعاءات أدوات بالتوازي.
+</ParamField>
+
+<ParamField body="top_p" type="number">
+  معامل أخذ العينات النووية (0-1).
+</ParamField>
+
+<ParamField body="reasoning" type="object">
+  إعدادات الاستدلال للنماذج المفعّلة للاستدلال مثل متغيرات عائلة GPT-5.
+
+  - `effort` (string): مستوى جهد الاستدلال (`low`، `medium`، `high`)
+</ParamField>
+
+## الاستجابة
+
+<ResponseField name="id" type="string">
+  المعرّف الفريد للاستجابة.
+</ResponseField>
+
+<ResponseField name="object" type="string">
+  Always `response`.
+</ResponseField>
+
+<ResponseField name="created" type="integer">
+  الطابع الزمني بنظام Unix عند إنشاء الاستجابة.
+</ResponseField>
+
+<ResponseField name="output" type="array">
+  قائمة عناصر الإخراج التي تم إنشاؤها بواسطة النموذج.
+</ResponseField>
+
+<ResponseField name="usage" type="object">
+  إحصاءات استخدام الرموز.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/responses" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o",
+    "input": [
+      {"type": "message", "role": "user", "content": "Hello!"}
+    ],
+    "max_output_tokens": 1000
+  }'
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.responses.create(
+    model="gpt-4o",
+    input=[
+        {"type": "message", "role": "user", "content": "Hello!"}
+    ],
+    max_output_tokens=1000
+)
+
+print(response.output)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.responses.create({
+  model: 'gpt-4o',
+  input: [
+    { type: 'message', role: 'user', content: 'Hello!' }
+  ],
+  max_output_tokens: 1000
+});
+
+console.log(response.output);
+```
+
+```go Go
+package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "fmt"
+    "net/http"
+)
+
+func main() {
+    payload := map[string]interface{}{
+        "model": "gpt-4o",
+        "input": []map[string]interface{}{
+            {"type": "message", "role": "user", "content": "Hello!"},
+        },
+        "max_output_tokens": 1000,
+    }
+    body, _ := json.Marshal(payload)
+
+    req, _ := http.NewRequest("POST", "https://api.aisonar.dev/v1/responses", bytes.NewBuffer(body))
+    req.Header.Set("Authorization", "Bearer sk-your-api-key")
+    req.Header.Set("Content-Type", "application/json")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+
+    var result map[string]interface{}
+    json.NewDecoder(resp.Body).Decode(&result)
+    fmt.Println(result["output"])
+}
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/responses');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Content-Type: application/json',
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => json_encode([
+        'model' => 'gpt-4o',
+        'input' => [
+            ['type' => 'message', 'role' => 'user', 'content' => 'Hello!']
+        ],
+        'max_output_tokens' => 1000
+    ])
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+print_r($data['output']);
+```
+## مثال على إدخال الرؤية
+
+استخدم النماذج القادرة على التعامل مع الصور بوضع الصور داخل `message.content` ككتل `input_image`. يمكن أن تكون قيمة `image_url` إما عنوان URL عام أو عنوان URL للبيانات بصيغة Base64.
+
+```json
+{
+  "model": "gpt-5.4",
+  "input": [
+    {
+      "type": "message",
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "Please describe this image."
+        },
+        {
+          "type": "input_image",
+          "image_url": "https://example.com/demo.jpg"
+        }
+      ]
+    }
+  ]
+}
+```
+
+```json
+{
+  "model": "gpt-5.4",
+  "input": [
+    {
+      "type": "message",
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "Please describe this image."
+        },
+        {
+          "type": "input_image",
+          "image_url": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ..."
+        }
+      ]
+    }
+  ]
+}
+```
+
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "id": "resp_abc123",
+  "object": "response",
+  "created": 1706000000,
+  "model": "gpt-4o",
+  "output": [
+    {
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {"type": "text", "text": "Hello! How can I help you today?"}
+      ]
+    }
+  ],
+  "usage": {
+    "input_tokens": 10,
+    "output_tokens": 12,
+    "total_tokens": 22
+  }
+}
+```
+</ResponseExample>

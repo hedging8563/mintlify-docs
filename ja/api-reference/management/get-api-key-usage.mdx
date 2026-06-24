@@ -1,0 +1,44 @@
+---
+title: "API Key の使用量を取得"
+openapi: "GET /v1/management/api-keys/{keyId}/usage"
+description: "ユーザー API Key ごとの使用量明細をページネーション付きで返します。"
+---
+
+## 概要
+
+この endpoint は、物理ルーティングのメタデータを公開せずに、API Key 単位の使用量明細を返します。
+
+## Query パラメータ
+
+| パラメータ | 型 | 既定値 / 制約 | 説明 |
+|-----------|------|---------------|------|
+| `page` | integer | 既定値 `1`、最小 `1` | 1 始まりのページ番号 |
+| `limit` | integer | 既定値 `50`、最小 `1`、最大 `100` | 1 ページあたりの件数 |
+| `logicalModel` | string | 最大長 `100` | リクエスト時に指定された論理モデル名 |
+| `modelVendor` | string | 最大長 `100` | 公開モデルのベンダー名 |
+| `scene` | enum | - | `chat`、`image`、`audio`、`video`、`embedding`、`rerank`、`translation`、`music`、`3d` |
+| `accessChannel` | enum | - | `platform` または `byok` |
+| `startDate` | string | - | 開始日時（含む）。タイムゾーン付き RFC3339 または `YYYY-MM-DD` を受け付けます |
+| `endDate` | string | - | 終了日時（含む）。タイムゾーン付き RFC3339 または `YYYY-MM-DD` を受け付けます |
+
+`startDate` と `endDate` を同時に指定する場合、`startDate` は `endDate` 以下である必要があります。
+
+## 補足
+
+- レスポンスはページネーションされます。
+- レスポンスには公開可能な Billing / Reporting 項目のみが含まれます。
+- 基になるリクエストの課金精算が完了すると、各 usage 明細に `billing_transaction_id` が含まれる場合があります。`request_id` と合わせてリクエスト単位の照合に使用してください。
+- 内部ルーティングや物理チャネルのメタデータは非表示のままです。
+
+## 例
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/usage?page=1&limit=20&scene=video&accessChannel=platform&startDate=2026-03-01&endDate=2026-03-31" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## リクエスト / レスポンス
+
+正確な schema とレスポンス項目は、上部のインタラクティブな OpenAPI パネルを参照してください。

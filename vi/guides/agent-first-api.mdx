@@ -1,0 +1,327 @@
+---
+title: "✨ API Ưu Tiên Agent"
+description: "Gợi ý lỗi có cấu trúc cho các agent AI để tự sửa trong lần thử lại đầu tiên"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Tổng quan
+
+Agent-First API của AI Sonar làm giàu phản hồi lỗi với các gợi ý có cấu trúc mà các agent AI có thể phân tích và hành động ngay lập tức — không cần tìm kiếm web, không cần tra cứu tài liệu, không phải đoán mò.
+
+Mỗi phản hồi lỗi bao gồm các trường tuỳ chọn như `did_you_mean`, `suggestions`, `hint`, `retryable`, và `retry_after` bên trong đối tượng tiêu chuẩn `error`. Những trường này tương thích ngược — các client không sử dụng chúng sẽ không thấy khác biệt.
+
+## Trường Gợi Ý Lỗi
+
+Tất cả các trường gợi ý là phần mở rộng tuỳ chọn bên trong đối tượng `error`:
+
+| Trường | Kiểu | Mô tả |
+|-------|------|-------------|
+| `did_you_mean` | `string` | Tên model khớp gần nhất |
+| `suggestions` | `array` | Các model được khuyến nghị kèm metadata |
+| `alternatives` | `array` | Các model thay thế hiện khả dụng |
+| `hint` | `string` | Hướng dẫn bước tiếp theo đọc được bởi con người/agent |
+| `retryable` | `boolean` | Có khả năng thử lại cùng yêu cầu sẽ thành công hay không |
+| `retry_after` | `number` | Số giây cần chờ trước khi thử lại |
+| `balance_usd` | `number` | Số dư tài khoản hiện tại bằng USD |
+| `estimated_cost_usd` | `number` | Chi phí ước tính của yêu cầu bị lỗi |
+
+## Ví dụ Mã Lỗi
+
+### model_not_found (400)
+
+Khi tên model không khớp với bất kỳ model đang hoạt động nào:
+
+```json
+{
+  "error": {
+    "message": "Model not found: please check the model name",
+    "type": "invalid_request_error",
+    "param": "model",
+    "code": "model_not_found",
+    "did_you_mean": "gpt-5.4",
+    "suggestions": [
+      {"id": "gpt-5.4"},
+      {"id": "gpt-5-mini"},
+      {"id": "claude-sonnet-4-6"}
+    ],
+    "hint": "Did you mean 'gpt-5.4'? Use GET https://api.aisonar.dev/v1/models to list all available models."
+  }
+}
+```
+
+Phương pháp phân giải `did_you_mean` sử dụng:
+1. Bản đồ bí danh tĩnh (từ dữ liệu lỗi production)
+2. So khớp chuỗi đã chuẩn hóa (loại bỏ dấu gạch ngang, không phân biệt hoa/thường)
+3. So khớp theo khoảng chỉnh sửa (ngưỡng ≤ 3)
+
+Các route công khai không tiết lộ mã lỗi riêng cho các model ẩn, hoãn, hoặc không công khai. Xử lý các model công khai không khả dụng tương tự như một lỗi không tìm thấy: kiểm tra `did_you_mean`, `suggestions`, và `hint`, sau đó thử lại với một model công khai được hỗ trợ.
+
+### insufficient_balance (402)
+
+Khi số dư tài khoản quá thấp so với chi phí ước tính:
+
+```json
+{
+  "error": {
+    "message": "Insufficient balance: need ~$0.3500 for claude-sonnet-4-6, but balance is $0.1200.",
+    "type": "insufficient_balance",
+    "code": "insufficient_balance",
+    "balance_usd": 0.12,
+    "estimated_cost_usd": 0.35,
+    "suggestions": [
+      {"id": "gpt-5-mini"},
+      {"id": "deepseek-v3-2"}
+    ],
+    "hint": "Insufficient balance: need ~$0.3500 for claude-sonnet-4-6, but balance is $0.1200. Try a cheaper model, or top up at https://console.aisonar.dev/billing."
+  }
+}
+```
+
+`suggestions` chứa các model rẻ hơn so với chi phí ước tính mà agent có thể chuyển sang.
+
+### all_channels_failed (503)
+
+Khi tất cả các kênh upstream cho một model đều không khả dụng:
+
+```json
+{
+  "error": {
+    "message": "Model claude-opus-4-6 temporarily unavailable",
+    "code": "all_channels_failed",
+    "retryable": true,
+    "retry_after": 30,
+    "alternatives": [
+      {"id": "claude-sonnet-4-6", "status": "available", "tags": []},
+      {"id": "gpt-5-mini", "status": "available", "tags": []}
+    ],
+    "hint": "All channels for 'claude-opus-4-6' are temporarily unavailable. Retry in 30s or try an alternative model."
+  }
+}
+```
+
+<Note>
+`retryable` là `false` khi nguyên nhân là `no_channels` (không có kênh nào được cấu hình cho model này). Nó chỉ là `true` đối với các lỗi tạm thời như bộ ngắt mạch (circuit breaker) hoặc hết quota.
+</Note>
+
+### rate_limit_exceeded (429)
+
+```json
+{
+  "error": {
+    "message": "Rate limit: 60 rpm exceeded",
+    "type": "rate_limit_exceeded",
+    "code": "rate_limit_exceeded",
+    "retryable": true,
+    "retry_after": 8,
+    "hint": "Rate limited. Retry after 8s. Current limit: 60/min for user role."
+  }
+}
+```
+
+Giá trị `retry_after` được tính từ thời điểm thực tế cửa sổ giới hạn tần suất được đặt lại.
+
+<Note>
+Các endpoint tương thích OpenAI sử dụng các loại lỗi công khai ổn định của AI Sonar như `rate_limit_exceeded`, `upstream_error`, và `all_channels_failed`. Các endpoint tương thích Anthropic và Gemini sử dụng cấu trúc phản hồi gốc của chúng.
+</Note>
+
+### context_length_exceeded (400)
+
+Khi đầu vào vượt quá cửa sổ ngữ cảnh của model (lỗi upstream, được bổ sung gợi ý):
+
+```json
+{
+  "error": {
+    "message": "This model's maximum context length is 128000 tokens...",
+    "type": "invalid_request_error",
+    "code": "context_length_exceeded",
+    "retryable": false,
+    "suggestions": [
+      {"id": "gemini-2.5-pro"},
+      {"id": "claude-sonnet-4-6"}
+    ],
+    "hint": "Reduce your input or switch to a model with a larger context window."
+  }
+}
+```
+
+## Header của Native Endpoint
+
+Khi bạn gọi `/v1/chat/completions` với một model có native endpoint (Anthropic hoặc Gemini), phản hồi THÀNH CÔNG sẽ bao gồm các header tối ưu hoá:
+
+
+
+| Nhà cung cấp mô hình | Endpoint đề xuất | Lợi ích |
+|---------------|-------------------|---------|
+| Anthropic (Claude) | `/v1/messages` | Không cần chuyển đổi định dạng, suy nghĩ mở rộng, cache prompt |
+| Google (Gemini) | `/v1beta/gemini` | Không cần chuyển đổi định dạng, grounding, thiết lập an toàn |
+| OpenAI | — | Chat completions đã là định dạng gốc |
+
+Những header này xuất hiện trên cả phản hồi streaming và không streaming.
+
+## Cải tiến cho /v1/models
+
+`/v1/models` hiện mang metadata khuyến nghị phi-chat mà các agent có thể sử dụng trước khi gọi các endpoint hình ảnh, video, nhạc, 3D, TTS, STT, embedding, rerank, hoặc dịch thuật.
+
+```json
+{
+  "id": "gemini-2.5-flash-image",
+  "aisonar": {
+    "category": "image",
+    "pricing_unit": "per_request",
+    "agent_preferences": {
+      "image": {
+        "preferred_rank": 1,
+        "success_rate_24h": 0.98,
+        "sample_count_24h": 423,
+        "status": "ready",
+        "updated_at": "2026-03-28T12:00:00.000Z",
+        "basis": {
+          "score_source": "clickhouse_24h",
+          "channel_id": null,
+          "physical_model": null
+        }
+      }
+    }
+  }
+}
+```
+
+| Trường | Giá trị | Mô tả |
+|-------|--------|-------------|
+| `category` | `chat`, `image`, `video`, `audio`, `tts`, `stt`, `3d`, `embedding`, `rerank` | Loại model |
+| `pricing_unit` | `per_token`, `per_image`, `per_second`, `per_request` | Cách tính phí cho model |
+| `cache_pricing` | object or `null` | Chỉ trả về khi model có giá prompt cache upstream riêng. |
+| `agent_preferences.<scene>` | object | Snapshot khuyến nghị phi-chat chỉ xuất hiện với `GET /v1/models?recommended_for=<scene>` |
+
+Khi có `recommended_for`, `agent_preferences` được dẫn xuất từ một snapshot tỷ lệ thành công trong 24 giờ được cache:
+
+- Cửa sổ: 24 giờ
+- Bộ nhớ đệm snapshot: stale-while-revalidate
+- `status = "ready"` nghĩa là model có đủ mẫu gần đây để tham gia xếp hạng
+- `status = "insufficient_samples"` nghĩa là model vẫn hiển thị nhưng không được xếp trước các model đã có điểm
+
+### Lọc theo Category
+
+```bash
+GET https://api.aisonar.dev/v1/models?category=chat          # Chat models only
+GET https://api.aisonar.dev/v1/models?category=image         # Image generation models
+GET https://api.aisonar.dev/v1/models?tag=coding&category=chat  # Coding-optimized chat models
+```
+
+### Khám phá Khuyến nghị
+
+Đối với workflow phi-chat, agent nên lấy danh sách rút gọn được khuyến nghị hiện tại trước:
+
+```bash
+GET https://api.aisonar.dev/v1/models?recommended_for=image
+GET https://api.aisonar.dev/v1/models?recommended_for=translation
+GET https://api.aisonar.dev/v1/models?category=tts&recommended_for=tts
+```
+
+Các giá trị `recommended_for` hợp lệ là:
+
+- `image`
+- `video`
+- `music`
+- `3d`
+- `tts`
+- `stt`
+- `embedding`
+- `rerank`
+- `translation`
+
+Nếu cả `category` và `recommended_for` đều có mặt, chúng phải khớp chính xác.
+
+Luồng khuyến nghị cho agent:
+
+1. `GET /v1/models?recommended_for=<scene>`
+2. Chọn model đầu tiên có `agent_preferences.<scene>.status == "ready"`
+3. Gọi endpoint một cách rõ ràng với `model=<selected>`
+4. Chỉ khi xảy ra lỗi tạm thời, thử lại với model "ready" tiếp theo
+
+## llms.txt
+
+Một tổng quan API đọc được bằng máy có sẵn tại:
+
+```
+GET https://api.aisonar.dev/llms.txt
+```
+
+Nó bao gồm:
+- Mẫu lần gọi đầu với một ví dụ hoạt động
+- Tên model phổ biến (được sinh động từ dữ liệu sử dụng)
+- Tất cả 12 endpoint API
+- Các tham số lọc để khám phá model
+- Hướng dẫn xử lý lỗi
+
+Các agent AI đọc `llms.txt` trước lần gọi API đầu tiên của chúng thường có thể thành công ngay ở lần thử đầu.
+
+## Sử dụng trong Code Agent
+
+### Python (OpenAI SDK)
+
+```python
+from openai import OpenAI, BadRequestError
+
+client = OpenAI(
+    api_key="sk-your-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+def smart_chat(messages, model="gpt-4o"):
+    try:
+        return client.chat.completions.create(
+            model=model, messages=messages
+        )
+    except BadRequestError as e:
+        error = e.body.get("error", {}) if isinstance(e.body, dict) else {}
+        # Use did_you_mean for auto-correction
+        if error.get("code") == "model_not_found" and error.get("did_you_mean"):
+            return client.chat.completions.create(
+                model=error["did_you_mean"], messages=messages
+            )
+        raise
+```
+
+### JavaScript (OpenAI SDK)
+
+```javascript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+async function smartChat(messages, model = 'gpt-4o') {
+  try {
+    return await client.chat.completions.create({ model, messages });
+  } catch (error) {
+    const err = error?.error;
+    if (err?.code === 'model_not_found' && err?.did_you_mean) {
+      return client.chat.completions.create({
+        model: err.did_you_mean, messages
+      });
+    }
+    throw error;
+  }
+}
+```
+
+## Nguyên tắc Thiết kế
+
+<CardGroup cols={2}>
+  <Card title="Thất bại nhanh, thông tin rõ ràng" icon="bolt">
+    Lỗi trả về ngay lập tức với tất cả dữ liệu mà một agent cần để tự sửa.
+  </Card>
+  <Card title="Không định tuyến tự động" icon="route">
+    API không bao giờ âm thầm thay thế một model khác. Agent là người quyết định.
+  </Card>
+  <Card title="Gợi ý dựa trên dữ liệu" icon="database">
+    Tất cả khuyến nghị đến từ dữ liệu production, không phải danh sách mã hóa cứng.
+  </Card>
+  <Card title="Tương thích ngược" icon="plug">
+    Tất cả trường gợi ý đều là tuỳ chọn. Các client hiện có không thấy khác biệt.
+  </Card>
+</CardGroup>

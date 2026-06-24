@@ -1,0 +1,26 @@
+---
+title: "取得 API Key 帳單"
+openapi: "GET /v1/management/api-keys/{keyId}/billing"
+description: "返回某個使用者 API Key 的聚合帳單明細。"
+---
+
+## 概覽
+
+這個端點返回所選 API Key 的消費帳單聚合結果，包括總費用、總請求數、按計量單位拆分的用量，以及按請求中的模型名（`model`）、廠商、`scene`、`accessChannel`、快取類型統計的拆分與按天費用趨勢。
+
+## 注意事項
+
+- 儲值、發票等組織級財務流水不會包含在這裡。
+
+## 範例
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/billing?startDate=2026-01-01&endDate=2026-01-31" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## 請求 / 回應
+
+使用上方的互動式 OpenAPI 面板以取得確切的架構。

@@ -1,0 +1,122 @@
+---
+title: "Giriş"
+description: "Tek bir API üzerinden yüzlerce AI modeline erişim"
+---
+
+## AI Sonar Nedir?
+
+AI Sonar, OpenAI, Anthropic, Google, DeepSeek, Moonshot, MiniMax ve diğerleri gibi sağlayıcılardan **yüzlerce AI modele** birleşik erişim sağlayan bir AI API toplama platformudur.
+
+<CardGroup cols={2}>
+  <Card title="Yerel + uyumlu" icon="plug">
+    Sağlayıcı davranışı önemli olduğunda yerel Anthropic/Gemini yollarını, mevcut OpenAI tarzı araçlar için ise OpenAI uyumlu `/v1` yollarını kullanın.
+  </Card>
+  <Card title="Yerel Formatlar" icon="shuffle">
+    Tek bir platformdan OpenAI, Anthropic, Gemini ve Responses tarzı endpoint'leri çağırın.
+  </Card>
+  <Card title="Kullandıkça Öde" icon="coins">
+    Abonelik yok. Yalnızca gerçekten kullandığınız için ödeme yapın.
+  </Card>
+  <Card title="Yüksek Erişilebilirlik" icon="shield-check">
+    Akıllı yönlendirme, failover ve çok kanallı destek güvenilirliği artırır.
+  </Card>
+</CardGroup>
+
+## Desteklenen Yetenekler
+
+| Yetenek | Açıklama | Örnek Modeller |
+|------------|-------------|----------------|
+| **Sohbet ve Muhakeme** | Metin üretimi, planlama, araçlar | `gpt-5.4`, `claude-sonnet-4-6`, `deepseek-r1` |
+| **Görsel** | Görüntü anlama ve multimodal sohbet | `gpt-4o`, `claude-sonnet-4-6`, `gemini-2.5-flash` |
+| **Görüntü Üretimi** | Metinden görüntüye ve görüntü düzenleme | `dall-e-3`, `flux-pro`, `midjourney` |
+| **Ses** | TTS ve transkripsiyon | `gpt-4o-mini-tts`, `whisper-1`, `gpt-4o-transcribe` |
+| **Gömlemeler** | Metin vektörleştirme | `text-embedding-3-small`, `text-embedding-3-large` |
+| **Müzik** | AI ile müzik üretimi | `suno` |
+| **3B** | 3B varlık üretimi | `tripo3d` |
+
+## İstek Formatını Seçin
+
+İhtiyacınız olan davranışa uyan rotayla başlayın. Sağlayıcıya özgü özellikler için yerel Anthropic/Gemini rotalarını kullanın; mevcut OpenAI tarzı sohbet kodunu taşırken OpenAI uyumlu `/v1/chat/completions` kullanın.
+
+<CodeGroup>
+
+```bash cURL
+curl https://api.aisonar.dev/v1/chat/completions \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.4",
+    "messages": [
+      {"role": "user", "content": "Explain what AI Sonar does in one sentence."}
+    ]
+  }'
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "Explain what AI Sonar does in one sentence."}]
+)
+
+print(response.choices[0].message.content)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.chat.completions.create({
+  model: 'gpt-5.4',
+  messages: [{ role: 'user', content: 'Explain what AI Sonar does in one sentence.' }],
+});
+
+console.log(response.choices[0].message.content);
+```
+
+<Note>
+Yalnızca Responses'a özgü davranışa açıkça ihtiyaç duyduğunuzda `POST /v1/responses` kullanın. Bu tüm modeller için varsayılan uyumluluk yolu değildir.
+</Note>
+
+</CodeGroup>
+
+## Temel Özellikler
+
+<CardGroup cols={2}>
+  <Card title="Birden Fazla API Formatı" icon="layers" href="/guides/api-formats">
+    Tek bir hesapla OpenAI, Anthropic, Gemini veya Responses-yerel formatlarını kullanın.
+  </Card>
+  <Card title="Agent-First Hataları" icon="wand-magic-sparkles" href="/guides/agent-first-api">
+    Yapılandırılmış ipuçları, kodlama agentlerinin kendini daha hızlı düzeltmesine yardımcı olur.
+  </Card>
+  <Card title="Entegrasyon Kapsamı" icon="toolbox" href="/guides/ide-sdk-compatibility">
+    IDE'leri, SDK'ları, framework'leri ve sohbet uygulamalarını sağlayıcıya özgü değişiklikleri azaltarak bağlayın.
+  </Card>
+</CardGroup>
+
+## Sonraki Adımlar
+
+<CardGroup cols={2}>
+  <Card title="Hızlı Başlangıç" icon="rocket" href="/quickstart">
+    İlk isteğinizi birkaç dakika içinde çalışır hale getirin.
+  </Card>
+  <Card title="API Referansı" icon="book" href="/api-reference/introduction">
+    Endpoint bazında referansı keşfedin.
+  </Card>
+  <Card title="Entegrasyonlar" icon="puzzle-piece" href="/integrations/openai-sdk">
+    SDK, IDE ve uygulama entegrasyonlarıyla başlayın.
+  </Card>
+  <Card title="Modeller" icon="robot" href="https://aisonar.dev/models">
+    Mevcut model kullanılabilirliğini ve fiyatlandırmayı inceleyin.
+  </Card>
+</CardGroup>

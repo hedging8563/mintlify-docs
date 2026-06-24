@@ -1,0 +1,186 @@
+---
+title: "AI Sonar Provider 설정"
+description: "OpenAI, Responses, Anthropic 및 Gemini 호환 경로를 사용하여 OpenClaw에 AI Sonar를 커스텀 프로바이더로 구성하는 방법"
+---
+
+<Note>
+이 가이드는 AI Sonar를 AI 프로바이더로 연결하려는 **self-hosted OpenClaw** 사용자를 위한 것입니다.
+</Note>
+
+## 개요
+
+현재 OpenClaw 버전에서는 `models.providers`를 통해 AI Sonar를 구성하는 방법을 권장합니다.
+
+빠르게 시작하려면 `aisonar`만 구성하는 것으로 충분합니다. **Responses API**, **Claude native**, **Gemini native**, 또는 **MiniMax native** 동작이 명시적으로 필요할 때만 다른 프로바이더를 추가하세요.
+
+| 제공업체 | OpenClaw `api` | 적합한 용도 | baseUrl |
+|----------|----------------|------------|---------|
+| `aisonar` | `openai-completions` | GPT, DeepSeek, Qwen 및 대부분의 OpenAI 호환 호출 | `https://api.aisonar.dev/v1` |
+| `aisonar-responses` | `openai-responses` | `/v1/responses` 의미론을 기대하는 OpenAI Responses 워크플로우 | `https://api.aisonar.dev/v1` |
+| `aisonar-claude` | `anthropic-messages` | Claude Messages 네이티브 API | `https://api.aisonar.dev` |
+| `aisonar-gemini` | `google-generative-ai` | Gemini 네이티브 API 형식 | `https://api.aisonar.dev` |
+| `aisonar-minimax` | `anthropic-messages` | MiniMax 네이티브 라우팅 | `https://api.aisonar.dev` |
+
+<Warning>
+`/v1` 접미사는 `openai-completions` 및 `openai-responses`에만 사용하세요.
+
+`anthropic-messages` 및 `google-generative-ai`와 같은 네이티브 프로바이더는 `/v1` 없이 `https://api.aisonar.dev`를 사용해야 하며, 그렇지 않으면 OpenClaw가 잘못된 업스트림 경로를 구성할 수 있습니다.
+</Warning>
+
+## 사전 요구사항
+
+- self-hosted OpenClaw 인스턴스
+- AI Sonar API Key — [Get one here](https://console.aisonar.dev)
+
+## 구성
+
+OpenClaw 구성 파일을 편집하세요:
+
+- **셀프 호스트**: `~/.openclaw/openclaw.json`
+
+`models.providers` 아래에 AI Sonar 프로바이더를 추가합니다:
+
+```json5
+{
+  agents: {
+    defaults: {
+      model: {
+        primary: "aisonar-claude/claude-sonnet-4-6"
+      }
+    }
+  },
+  models: {
+    mode: "merge",
+    providers: {
+      aisonar: {
+        api: "openai-completions",
+        baseUrl: "https://api.aisonar.dev/v1",
+        apiKey: "sk-your-api-key",
+        models: [
+          { id: "gpt-4o", name: "GPT-4o" },
+          { id: "deepseek-r1", name: "DeepSeek R1" },
+          { id: "qwen3-32b", name: "Qwen 3 32B" }
+        ]
+      },
+      "aisonar-responses": {
+        api: "openai-responses",
+        baseUrl: "https://api.aisonar.dev/v1",
+        apiKey: "sk-your-api-key",
+        models: [
+          { id: "gpt-4o", name: "GPT-4o (Responses)" },
+          { id: "gpt-5.2", name: "GPT-5.2 (Responses)" }
+        ]
+      },
+      "aisonar-claude": {
+        api: "anthropic-messages",
+        baseUrl: "https://api.aisonar.dev",
+        apiKey: "sk-your-api-key",
+        models: [
+          { id: "claude-sonnet-4-6", name: "Claude Sonnet 4.6" },
+          { id: "claude-opus-4-6", name: "Claude Opus 4.6" }
+        ]
+      },
+      "aisonar-gemini": {
+        api: "google-generative-ai",
+        baseUrl: "https://api.aisonar.dev",
+        apiKey: "sk-your-api-key",
+        models: [
+          { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash" },
+          { id: "gemini-3-flash-preview", name: "Gemini 3 Flash Preview" }
+        ]
+      },
+      "aisonar-minimax": {
+        api: "anthropic-messages",
+        baseUrl: "https://api.aisonar.dev",
+        apiKey: "sk-your-api-key",
+        models: [
+          { id: "minimax-m1", name: "MiniMax M1" }
+        ]
+      }
+    }
+  }
+}
+```
+
+<Info>
+모든 5개 프로바이더는 **같은 API Key**를 사용합니다. AI Sonar 계정은 하나만 있으면 됩니다.
+</Info>
+
+<Info>
+위의 `models` 배열은 일반적인 예시만 보여줍니다. 필요에 따라 각 프로바이더에 더 많은 모델 ID를 추가하세요.
+</Info>
+
+## 모델 사용 방법
+
+OpenClaw은 여전히 `provider/model` 형식으로 모델을 참조합니다:
+
+```json5
+{
+  agents: {
+    defaults: {
+      model: {
+        primary: "aisonar-gemini/gemini-2.5-flash"
+      }
+    }
+  }
+}
+```
+
+### 모델 예시
+
+| 제공업체 | 모델 참조 | 설명 |
+|----------|-----------|------|
+| `aisonar` | `aisonar/gpt-4o` | OpenAI 호환 경로 |
+| `aisonar` | `aisonar/deepseek-r1` | DeepSeek 추론 모델 |
+| `aisonar-responses` | `aisonar-responses/gpt-4o` | Responses API 경로 |
+| `aisonar-claude` | `aisonar-claude/claude-sonnet-4-6` | Claude Messages 네이티브 경로 |
+| `aisonar-gemini` | `aisonar-gemini/gemini-2.5-flash` | Gemini 네이티브 경로 |
+| `aisonar-minimax` | `aisonar-minimax/minimax-m1` | MiniMax 네이티브 경로 |
+
+사용 가능한 모든 모델은 [aisonar.dev/models](https://aisonar.dev/models)에서 확인하세요.
+
+## 어떤 프로바이더를 언제 사용해야 하나요
+
+- `aisonar`: 대부분의 범용 에이전트 및 채팅 사용 사례에 대한 기본 선택입니다.
+- `aisonar-responses`: OpenClaw 워크플로우가 명시적으로 OpenAI Responses 의미론에 의존할 때 사용하세요.
+- `aisonar-claude`: Claude의 네이티브 Messages 동작이 필요할 때 사용하세요.
+- `aisonar-gemini`: Gemini 네이티브 요청/응답 포맷이나 기존 Gemini 스타일 통합을 사용하고자 할 때 사용하세요.
+- `aisonar-minimax`: MiniMax의 네이티브 경로를 사용하고자 할 때 사용하세요.
+
+Gemini 네이티브 동작이 필요하지 않다면 OpenAI 호환 경로를 통해 `aisonar/gemini-*`로 Gemini 모델을 호출할 수 있습니다.
+
+## 흔한 실수
+
+<AccordionGroup>
+  <Accordion title="여전히 이전의 최상위 providers 배열을 사용 중">
+    현재 OpenClaw 문서는 `models.providers`를 사용합니다. 이전의 최상위 `providers` 배열 형식을 유지하면 OpenClaw가 구성을 무시하거나 프로바이더 접두사를 예상대로 해결하지 못할 수 있습니다.
+  </Accordion>
+  <Accordion title="aisonar-responses에서 /v1을 깜빡함">
+    `openai-responses`는 AI Sonar의 `/v1/responses` 경로에 매핑되므로 `aisonar-responses`는 반드시 `https://api.aisonar.dev/v1`을 사용해야 합니다.
+  </Accordion>
+  <Accordion title="aisonar-claude, aisonar-gemini 또는 aisonar-minimax에 /v1을 추가함">
+    `anthropic-messages` 및 `google-generative-ai`는 `/v1` 없이 `https://api.aisonar.dev`를 사용해야 합니다. `/v1`을 추가하면 잘못된 요청 경로가 생성될 수 있습니다.
+  </Accordion>
+  <Accordion title="OpenClaw가 여전히 네이티브 Gemini를 지원하나요?">
+    예. 현재 OpenClaw 문서에는 내장된 `google` 프로바이더가 포함되어 있으며 `api: "google-generative-ai"`를 사용하는 커스텀 프로바이더도 지원합니다. 따라서 `aisonar-gemini`는 OpenClaw 사용자를 위한 유효한 네이티브 Gemini 경로로 남아 있습니다.
+  </Accordion>
+</AccordionGroup>
+
+## 설정 확인
+
+구성 파일을 저장한 후 OpenClaw 인스턴스를 재시작하고 간단한 메시지로 테스트하세요. 응답을 받으면 프로바이더가 올바르게 구성된 것입니다.
+
+```bash
+# 셀프 호스트: 서비스를 다시 시작
+systemctl --user restart openclaw    # Linux
+launchctl stop cc.aisonar.openclaw && launchctl start cc.aisonar.openclaw  # macOS
+```
+
+## 다음 단계
+
+OpenClaw가 연결된 후, 다음 가이드들이 AI Sonar를 보다 효과적으로 사용하는 데 도움이 됩니다:
+
+- [API 형식](/guides/api-formats) — OpenAI, Responses, Anthropic, Gemini 경로 간 차이 이해
+- [IDE / SDK Compatibility](/guides/ide-sdk-compatibility) — 언제 `/v1/responses`가 더 적합한지 확인
+- [오류 처리](/guides/error-handling) — 일반적인 실패 모드 및 복구 패턴 학습
+- [모델 개요](https://aisonar.dev/models) — 에이전트에 연결하기 전에 모델 ID를 살펴보세요

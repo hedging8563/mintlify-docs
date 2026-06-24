@@ -1,0 +1,46 @@
+---
+title: "Stability AI"
+description: "Stable Diffusion, SDXL"
+---
+
+## Overview
+
+AI Sonar provides access to Stability AI models. Total: **12 models** available.
+
+## Image Generation
+
+| Model ID | Pricing |
+|----------|--------|
+| `sd3.5-flash` | See dashboard |
+| `sd3.5-large` | See dashboard |
+| `sd3.5-large-turbo` | See dashboard |
+| `sd3.5-medium` | See dashboard |
+| `stability-control-sketch` | See dashboard |
+| `stability-control-structure` | See dashboard |
+| `stability-inpaint` | See dashboard |
+| `stability-style-guide` | See dashboard |
+| `stability-upscale-conservative` | See dashboard |
+| `stability-upscale-fast` | See dashboard |
+| `stable-image-core` | See dashboard |
+| `stable-image-ultra` | See dashboard |
+
+
+## Usage
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="sd3.5-flash",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+```
+
+<Note>
+Prices shown are platform prices (~70% of official rates).
+</Note>

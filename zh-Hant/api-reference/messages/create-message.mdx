@@ -1,0 +1,354 @@
+---
+title: "建立訊息"
+openapi: "POST /v1/messages"
+description: "使用 Anthropic Messages API 格式建立訊息"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## 概覽
+
+此端點提供原生的 Anthropic Messages API 相容性。對於具備延伸思考等功能的 Claude 模型，請使用此端點。
+
+
+此端點會保持 Anthropic 原生契約。`messages` 必須是 `user` / `assistant` 訊息陣列，`system` 應放在頂層 `system` 欄位，且 `max_tokens` 為必填。如果 payload 在 `messages` 中使用 OpenAI 的 `system`、`developer` 或 `tool` role，請改送 `/v1/chat/completions`。
+<Note>
+Anthropic SDK 的 Base URL：`https://api.aisonar.dev`（不含 `/v1` 後綴）
+</Note>
+
+## 請求標頭
+
+<ParamField header="x-api-key" type="string" required>
+  您的 AI Sonar API 金鑰。可作為 Bearer token 的替代方案。
+</ParamField>
+
+<ParamField header="anthropic-version" type="string" required>
+  Anthropic API 版本。請使用 `2023-06-01`。
+</ParamField>
+
+## 請求主體
+
+<ParamField body="model" type="string" required>
+  Claude 模型 ID（例如：`claude-sonnet-4-6` 或 `claude-opus-4-6`）。
+</ParamField>
+
+<ParamField body="messages" type="array" required>
+  訊息物件陣列，包含 `role` 與 `content`。
+</ParamField>
+
+<ParamField body="max_tokens" type="integer" required>
+  要生成的最大 token 數量。
+</ParamField>
+
+<ParamField body="system" type="string">
+  System prompt（與 messages 陣列分開）。
+</ParamField>
+
+<ParamField body="temperature" type="number" default="1">
+  取樣溫度（0-1）。
+</ParamField>
+
+<ParamField body="stream" type="boolean" default="false">
+  啟用串流回應。
+</ParamField>
+
+<ParamField body="thinking" type="object">
+  延伸思考設定（Claude Opus 4.5）。
+
+  - `type`（string）：設為 `"enabled"` 以啟用
+  - `budget_tokens`（integer）：思考可使用的 token 預算
+</ParamField>
+
+<ParamField body="tools" type="array">
+  模型可用的工具。
+</ParamField>
+
+<ParamField body="tool_choice" type="object">
+  模型應如何使用工具。選項：`auto`、`any`、`tool`（指定工具）。
+</ParamField>
+
+<ParamField body="top_p" type="number">
+  Nucleus sampling 參數。請使用 temperature 或 top_p 其中之一，不要同時使用。
+</ParamField>
+
+<ParamField body="top_k" type="integer">
+  每個 token 僅從前 K 個選項中取樣。
+</ParamField>
+
+<ParamField body="stop_sequences" type="array">
+  自訂停止序列，當出現時模型將停止生成。
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  附加到請求上的中繼資料，用於追蹤目的。
+</ParamField>
+
+## 回應
+
+<ResponseField name="id" type="string">
+  唯一的訊息識別碼。
+</ResponseField>
+
+<ResponseField name="type" type="string">
+  一律為 `message`。
+</ResponseField>
+
+<ResponseField name="role" type="string">
+  一律為 `assistant`。
+</ResponseField>
+
+<ResponseField name="content" type="array">
+  內容區塊陣列（text、thinking、tool_use）。
+</ResponseField>
+
+<ResponseField name="model" type="string">
+  所使用的模型。
+</ResponseField>
+
+<ResponseField name="stop_reason" type="string">
+  生成停止的原因（`end_turn`、`max_tokens`、`tool_use`）。
+</ResponseField>
+
+<ResponseField name="usage" type="object">
+  Token 使用情況，包含 `input_tokens` 與 `output_tokens`。
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/messages" \
+  -H "x-api-key: sk-your-api-key" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-sonnet-4-6",
+    "max_tokens": 1024,
+    "system": "You are a helpful assistant.",
+    "messages": [
+      {"role": "user", "content": "Hello, Claude!"}
+    ]
+  }'
+```
+
+```python Python
+from anthropic import Anthropic
+
+client = Anthropic(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev"
+)
+
+message = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    system="You are a helpful assistant.",
+    messages=[
+        {"role": "user", "content": "Hello, Claude!"}
+    ]
+)
+
+print(message.content[0].text)
+```
+
+```javascript JavaScript
+import Anthropic from '@anthropic-ai/sdk';
+
+const client = new Anthropic({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev'
+});
+
+const message = await client.messages.create({
+  model: 'claude-sonnet-4-6',
+  max_tokens: 1024,
+  system: 'You are a helpful assistant.',
+  messages: [
+    { role: 'user', content: 'Hello, Claude!' }
+  ]
+});
+
+console.log(message.content[0].text);
+```
+
+```go Go
+package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "fmt"
+    "io"
+    "net/http"
+)
+
+func main() {
+    payload := map[string]interface{}{
+        "model":      "claude-sonnet-4-6",
+        "max_tokens": 1024,
+        "system":     "You are a helpful assistant.",
+        "messages": []map[string]string{
+            {"role": "user", "content": "Hello, Claude!"},
+        },
+    }
+
+    jsonData, _ := json.Marshal(payload)
+    req, _ := http.NewRequest("POST", "https://api.aisonar.dev/v1/messages", bytes.NewBuffer(jsonData))
+    req.Header.Set("x-api-key", "sk-your-api-key")
+    req.Header.Set("anthropic-version", "2023-06-01")
+    req.Header.Set("Content-Type", "application/json")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+
+    body, _ := io.ReadAll(resp.Body)
+    fmt.Println(string(body))
+}
+```
+
+```php PHP
+<?php
+$payload = [
+    'model' => 'claude-sonnet-4-6',
+    'max_tokens' => 1024,
+    'system' => 'You are a helpful assistant.',
+    'messages' => [
+        ['role' => 'user', 'content' => 'Hello, Claude!']
+    ]
+];
+
+$ch = curl_init('https://api.aisonar.dev/v1/messages');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'x-api-key: sk-your-api-key',
+        'anthropic-version: 2023-06-01',
+        'Content-Type: application/json'
+    ],
+    CURLOPT_POSTFIELDS => json_encode($payload)
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+echo $data['content'][0]['text'];
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "id": "msg_abc123",
+  "type": "message",
+  "role": "assistant",
+  "content": [
+    {
+      "type": "text",
+      "text": "Hello! How can I help you today?"
+    }
+  ],
+  "model": "claude-sonnet-4-6",
+  "stop_reason": "end_turn",
+  "usage": {
+    "input_tokens": 15,
+    "output_tokens": 10
+  }
+}
+```
+</ResponseExample>
+
+## 圖片輸入示例
+
+對於支援視覺能力的 Claude 模型，請將圖片放在 `messages[].content` 中，作為結構化圖片內容區塊傳入。
+
+```json
+{
+  "model": "claude-sonnet-4-6",
+  "max_tokens": 1024,
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "請描述這張圖片。"
+        },
+        {
+          "type": "image",
+          "source": {
+            "type": "url",
+            "url": "https://example.com/demo.jpg"
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+```json
+{
+  "model": "claude-sonnet-4-6",
+  "max_tokens": 1024,
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "請描述這張圖片。"
+        },
+        {
+          "type": "image",
+          "source": {
+            "type": "base64",
+            "media_type": "image/jpeg",
+            "data": "/9j/4AAQSkZJRgABAQ..."
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+
+## 延伸思考範例
+
+```python
+message = client.messages.create(
+    model="claude-opus-4-6",
+    max_tokens=16000,
+    thinking={
+        "type": "enabled",
+        "budget_tokens": 10000
+    },
+    messages=[{"role": "user", "content": "Solve this math problem..."}]
+)
+
+for block in message.content:
+    if block.type == "thinking":
+        print(f"Thinking: {block.thinking}")
+    elif block.type == "text":
+        print(f"Response: {block.text}")
+```
+## Anthropic 訊息批次
+
+AI Sonar 現在除了 `/v1/messages` 之外，也提供原生 Anthropic Message Batches 流程。
+
+可用路由：
+
+- `POST /v1/messages/batches`
+- `GET /v1/messages/batches`
+- `GET /v1/messages/batches/:message_batch_id`
+- `GET /v1/messages/batches/:message_batch_id/results`
+- `POST /v1/messages/batches/:message_batch_id/cancel`
+- `DELETE /v1/messages/batches/:message_batch_id`
+
+使用說明：
+
+- 使用同一把 AI Sonar API key 與 Anthropic 原生請求標頭。
+- 如果 batch item 引用了 `file_id`，也要加上 `anthropic-beta: files-api-2025-04-14`。
+- Batch job 會維持 Anthropic 原生請求/回應格式，同時 AI Sonar 會追蹤其內部結算生命週期。

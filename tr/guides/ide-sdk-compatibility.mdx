@@ -1,0 +1,359 @@
+---
+title: "IDE & SDK Uyumluluğu"
+description: "Yapay zeka kodlama araçları, SDK'lar ve çerçeveler için kanıta dayalı uyumluluk rehberi"
+---
+
+## Genel Bakış
+
+AI Sonar, yaygın kodlama araçlarının, SDK'ların ve çerçevelerin minimum bağlantı kodu ile entegre olabilmesi için birden fazla API formatı sunar.
+
+Bu sayfa kasıtlı olarak bir pazarlama matrisinden daha dar kapsamlıdır:
+
+- **Supported** belgelenmiş somut bir kurulum yolunu ve AI Sonar'nın bu yolun beklediği protokol şekline uygunluğu sunduğu anlamına gelir.
+- **Güçlü native yol** depo ayrıca o protokol ailesi için doğrudan adaptör veya istek-formatı kanıtına sahip olduğunu gösterir.
+- **En iyi çaba** entegrasyonun çalışabileceği, ancak yukarı akış istemcisinin bu özel gateway iş akışını istikrarlı bir sözleşme olarak ele almadığı anlamına gelir.
+
+<Note>
+  Desteklenmeyen alanlar tutarlı şekilde ele alınmaz. Uyumluluk yollarında bazı alanlar yoksayılır veya normalize edilir. `/v1/responses` rotasında, istenen davranışı garanti edemediğinde desteklenmeyen alanlar açık `400` veya `503` hataları döndürebilir.
+</Note>
+
+## Desteklenen API Formatları
+
+| Endpoint | Format | Kullanım Durumu |
+|----------|--------|-----------------|
+| `/v1/chat/completions` | OpenAI Chat | Evrensel uyumluluk |
+| `/v1/responses` | OpenAI Responses | Durum bilgisi içeren konuşmalar |
+| `/v1/messages` | Anthropic Messages | Claude yerel özellikleri |
+| `/v1beta/models/:model:generateContent` | Google Gemini | Gemini yerel özellikleri |
+
+## IDE & CLI Uyumluluğu
+
+### Belgelendirilmiş Araç Yolları
+
+| Tool | Destek Seviyesi | Format | Notlar |
+|------|-----------------|--------|--------|
+| **Cursor** | Sınırlamalarla desteklenir | OpenAI uyumlu | BYOK standart sohbet/düzenleyici akışları için çalışır; Cursor tarafından yönetilen Tab Completion gibi özelliklerin yerine geçmez |
+| **Claude Code CLI** | Güçlü native yol | Anthropic | Düşünme ve `tool_choice` için adaptör kapsamı ile yerel `/v1/messages` rotası |
+| **Codex CLI** | Model/yol sınırlarıyla desteklenir | OpenAI Responses | Codex-özel iş akışları için gelişmiş bir yol olarak `/v1/responses`'i ele alın; bazı yalnızca Responses alanları her model ve yönlendirilmiş yol için garanti edilmez |
+| **Gemini CLI** | En iyi çaba / deneysel | Gemini | Özel AI Sonar base URL akışı istikrarlı bir yukarı akış sözleşmesi değildir |
+| **OpenCode** | Supported | OpenAI uyumlu | Varsayılan olarak OpenAI uyumlu bir sağlayıcı kullanın; yalnızca açıkça ihtiyaç duyduğunuzda Responses-temelli bir sağlayıcıya geçin |
+
+<Note>
+  Diğer OpenAI-uyumlu düzenleyiciler ve ajan araçlar genellikle aynı temel URL deseni ile çalışır, ancak bu depo şu anda Windsurf, Aider, Continue.dev, Cline/Roo Code, GitHub Copilot ve benzeri istemciler için araç-spesifik regresyon kapsamını sürdürmemektedir.
+</Note>
+
+### Yapılandırma Örnekleri
+
+<Tabs>
+  <Tab title="Cursor">
+    ```
+    Base URL: https://api.aisonar.dev/v1
+    API Key: sk-your-api-key
+    ```
+    Cursor dahili olarak Anthropic tarzı araç formatını kullanır. AI Sonar her iki formatı da destekler:
+    - OpenAI formatı: `{ type: "function", function: { name, parameters } }`
+    - Anthropic formatı: `{ name, input_schema }` (type alanı yok)
+  </Tab>
+  <Tab title="Claude Code">
+    ```bash
+    export ANTHROPIC_BASE_URL="https://api.aisonar.dev"
+    export ANTHROPIC_API_KEY="sk-your-api-key"
+    ```
+  </Tab>
+  <Tab title="OpenCode">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export LOCAL_ENDPOINT="https://api.aisonar.dev/v1"
+    ```
+  </Tab>
+  <Tab title="Aider">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export OPENAI_BASE_URL="https://api.aisonar.dev/v1"
+    aider --model gpt-5.4
+    ```
+  </Tab>
+</Tabs>
+
+## SDK Uyumluluğu
+
+### Belgelendirilmiş SDK & Çerçeve Yolları
+
+| SDK / Framework | Dil | Destek Seviyesi | Notlar |
+|-----------------|-----|-----------------|--------|
+| **OpenAI SDK** | Python/JS/Go | Desteklenen çekirdek yol | Chat Completions ve Embeddings varsayılan belgelenmiş yoldur; bazı yalnızca Responses alanları her model ve yönlendirilmiş yol için garanti edilmez |
+| **Anthropic SDK** | Python/JS | Güçlü native yol | Araçlar, düşünme ve prompt önbellekleme için doğrudan kanıtla yerel Messages rotası |
+| **Vercel AI SDK** | TypeScript | Önerilen entegrasyon deseni | `@ai-sdk/openai-compatible` tercih edin; yalnızca açıkça Responses-native davranışı istediğinizde `@ai-sdk/openai` kullanın |
+| **LangChain** | Python/JS | Desteklenen standart yüzeyler | Amaçlanan kapsam `ChatOpenAI` ve `OpenAIEmbeddings`'dir; satıcıya özgü ekstralar kapsam dışıdır |
+| **LlamaIndex** | Python | `OpenAILike` ile desteklenir | AI Sonar gibi üçüncü taraf gateway'ler için dahili OpenAI sınıfları yerine `OpenAILike` kullanın |
+| **Dify** | - | Kapsam sınırlarıyla desteklenir | OpenAI sağlayıcısı ve chat-completions odaklı akışlar amaçlanan yoldur; Codex-özel Responses veya WebSocket davranışı için uygun değildir |
+
+## Chat Completions Parametreleri
+
+### Temel Parametreler
+
+| Parametre | Tip | Açıklama |
+|-----------|-----|----------|
+| `model` | string | Model tanımlayıcısı (gerekli) |
+| `messages` | array | Konuşma mesajları (gerekli) |
+| `max_tokens` | integer | Maksimum çıktı token sayısı |
+| `temperature` | number | Örnekleme sıcaklığı (0-2) |
+| `top_p` | number | Nucleus örnekleme (0-1) |
+| `stream` | boolean | Akışı etkinleştirir |
+
+### Araç Çağrısı
+
+```json
+{
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_weather",
+        "description": "Get weather for a location",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "location": { "type": "string" }
+          }
+        },
+        "strict": true
+      }
+    }
+  ],
+  "tool_choice": "auto",
+  "parallel_tool_calls": true
+}
+```
+
+### Tool Choice Seçenekleri
+
+| Format | Örnek | Açıklama |
+|--------|-------|---------|
+| String | `"auto"`, `"none"`, `"required"` | Basit seçim |
+| OpenAI Object | `{ "type": "function", "function": { "name": "fn" } }` | Belirli bir fonksiyonu zorla |
+| Anthropic Object | `{ "type": "tool", "name": "fn", "disable_parallel_tool_use": true }` | Anthropic yerel formatı |
+
+### Gelişmiş Parametreler
+
+| Parametre | Tip | Açıklama |
+|-----------|-----|----------|
+| `stream_options` | object | Token sayımları için `{ include_usage: true }` |
+| `reasoning_effort` | string | Reasoning etkin GPT-5 modelleri için `"low"`, `"medium"`, `"high"` |
+| `service_tier` | string | `"auto"` veya `"default"` |
+| `seed` | integer | Deterministik çıktılar |
+| `logprobs` | boolean | Log olasılıklarını döndürür |
+| `top_logprobs` | integer | En iyi log olasılık sayısı (0-20) |
+| `logit_bias` | object | Token bias haritası (-100 ile 100 arası) |
+| `frequency_penalty` | number | Tekrar cezalandırma (-2 ile 2 arası) |
+| `presence_penalty` | number | Konu cezalandırması (-2 ile 2 arası) |
+| `stop` | string/array | Durdurma dizileri |
+| `n` | integer | Tamamlama sayısı (1-128) |
+| `user` | string | İzleme için kullanıcı tanımlayıcısı |
+
+### OpenAI Gelişmiş Özellikleri
+
+| Parametre | Tip | Açıklama |
+|-----------|-----|----------|
+| `modalities` | array | Çok modlu için `["text", "audio"]` |
+| `audio` | object | Ses çıktısı yapılandırması (voice, format) |
+| `prediction` | object | Daha hızlı tamamlamalar için tahmini çıktı |
+| `metadata` | object | İzleme için anahtar-değer çiftleri |
+| `store` | boolean | Daha sonra alınmak üzere saklama |
+
+### Sağlayıcıya Özgü Seçenekler
+
+```json
+{
+  "anthropic_options": {
+    "thinking": {
+      "type": "enabled",
+      "budget_tokens": 10000
+    },
+    "prompt_caching": true
+  },
+  "google_options": {
+    "safety_settings": [...],
+    "google_search": true,
+    "code_execution": true
+  }
+}
+```
+
+## Anthropic Messages Parametreleri
+
+### Temel Parametreler
+
+| Parametre | Tip | Açıklama |
+|-----------|-----|----------|
+| `model` | string | Model tanımlayıcısı |
+| `messages` | array | Konuşma mesajları |
+| `max_tokens` | integer | Maksimum çıktı (128000'e kadar) |
+| `system` | string/array | Sistem promptu |
+| `stream` | boolean | Akışı etkinleştirir |
+
+### Araç Çağrısı
+
+```json
+{
+  "tools": [
+    {
+      "name": "get_weather",
+      "description": "Get weather",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "location": { "type": "string" }
+        }
+      }
+    }
+  ],
+  "tool_choice": {
+    "type": "auto",
+    "disable_parallel_tool_use": false
+  }
+}
+```
+
+### Genişletilmiş Düşünme
+
+```json
+{
+  "model": "claude-opus-4-6",
+  "thinking": {
+    "type": "enabled",
+    "budget_tokens": 10000
+  }
+}
+```
+
+## Responses API Parametreleri
+
+### Temel Parametreler
+
+| Parametre | Tip | Açıklama |
+|-----------|-----|----------|
+| `model` | string | Model tanımlayıcısı |
+| `input` | string/array | Girdi içeriği |
+| `instructions` | string | Sistem talimatları |
+| `max_output_tokens` | integer | Maksimum çıktı token sayısı |
+| `previous_response_id` | string | Konuşmaya devam etme |
+
+### Gelişmiş Parametreler
+
+| Parametre | Tip | Açıklama |
+|-----------|-----|----------|
+| `truncation_strategy` | string | `"auto"` veya `"disabled"` |
+| `include` | array | `["reasoning.encrypted_content"]` |
+| `reasoning_effort` | string | Reasoning modelleri için |
+| `service_tier` | string | Öncelik katmanı |
+
+### Araç Formatı
+
+Hem OpenAI hem de Anthropic araç formatlarını destekler:
+
+```json
+// OpenAI format
+{ "type": "function", "name": "fn", "parameters": {...} }
+
+// Anthropic format (Cursor compatibility)
+{ "name": "fn", "input_schema": {...} }
+```
+
+## Gemini API Parametreleri
+
+### Temel Parametreler
+
+| Parametre | Tip | Açıklama |
+|-----------|-----|----------|
+| `contents` | array | Konuşma içeriği |
+| `systemInstruction` | object | Sistem promptu |
+| `generationConfig` | object | Üretim ayarları |
+
+### Araçlar
+
+```json
+{
+  "tools": [{
+    "functionDeclarations": [{
+      "name": "search",
+      "description": "Search the web",
+      "parameters": {...}
+    }],
+    "codeExecution": {},
+    "googleSearch": {}
+  }],
+  "toolConfig": {
+    "functionCallingConfig": {
+      "mode": "AUTO"
+    }
+  }
+}
+```
+
+### Güvenlik Ayarları
+
+```json
+{
+  "safetySettings": [
+    {
+      "category": "HARM_CATEGORY_HARASSMENT",
+      "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+    }
+  ]
+}
+```
+
+### Ek Parametreler
+
+| Parametre | Tip | Açıklama |
+|-----------|-----|----------|
+| `cachedContent` | string | Önbelleğe alınmış içerik referansı |
+| `responseMimeType` | string | `"text/plain"` veya `"application/json"` |
+| `responseSchema` | object | Yapılandırılmış çıktı için JSON şeması |
+
+## Akış (Streaming)
+
+Tüm endpoint'ler Server-Sent Events (SSE) akışını destekler:
+
+```bash
+# Chat Completions
+curl https://api.aisonar.dev/v1/chat/completions \
+  -H "Authorization: Bearer sk-xxx" \
+  -d '{"model": "gpt-4o", "messages": [...], "stream": true}'
+
+# With usage tracking
+-d '{"...", "stream_options": {"include_usage": true}}'
+```
+
+## Hata İşleme
+
+AI Sonar, OpenAI-uyumlu hata yanıtları döndürür:
+
+```json
+{
+  "error": {
+    "message": "Invalid API key",
+    "type": "invalid_api_key",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+Ayrıntılar için [Hata İşleme Rehberi](/guides/error-handling) bakınız.
+
+## En İyi Uygulamalar
+
+<AccordionGroup>
+  <Accordion title="Bilinmeyen parametreler için passthrough kullanın">
+    Tüm şemalar `.passthrough()` kullanır - bilinmeyen parametreler yukarı sağlayıcılara iletilir.
+  </Accordion>
+
+  <Accordion title="Doğru faturalama için stream_options tercih edin">
+    Akış yanıtlarında doğru token sayımları için `stream_options.include_usage`'ı etkinleştirin.
+  </Accordion>
+
+  <Accordion title="Uygun tool_choice formatını kullanın">
+    SDK'nızın beklediği formata uyun. AI Sonar hem OpenAI hem de Anthropic formatlarını kabul eder.
+  </Accordion>
+</AccordionGroup>

@@ -1,72 +1,2329 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Mintlify Starter Kit",
+  "name": "AI Sonar",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#6D28D9",
+    "light": "#7C3AED",
+    "dark": "#4C1D95"
   },
-  "favicon": "/favicon.svg",
+  "favicon": "/logo/aisonar-favicon.svg",
+  "logo": {
+    "light": "/logo/aisonar-light.svg",
+    "dark": "/logo/aisonar-dark.svg",
+    "href": "https://aisonar.dev"
+  },
+  "api": {
+    "baseUrl": "https://api.aisonar.dev",
+    "auth": {
+      "method": "bearer",
+      "name": "Authorization"
+    },
+    "playground": {
+      "mode": "interactive"
+    }
+  },
   "navigation": {
-    "pages": [
-      {
-        "group": "Getting Started",
-        "pages": [
-          "index",
-          "quickstart"
-        ]
-      }
-    ],
     "global": {
       "anchors": [
         {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
+          "anchor": "Models",
+          "href": "https://aisonar.dev/models",
+          "icon": "robot"
         },
         {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
+          "anchor": "Dashboard",
+          "href": "https://console.aisonar.dev",
+          "icon": "gauge"
+        },
+        {
+          "anchor": "API Status",
+          "href": "https://api.aisonar.dev/health",
+          "icon": "signal"
         }
       ]
-    }
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
+    },
+    "languages": [
       {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "language": "en",
+        "tabs": [
+          {
+            "tab": "Documentation",
+            "groups": [
+              {
+                "group": "Getting Started",
+                "pages": [
+                  "introduction",
+                  "quickstart",
+                  "authentication"
+                ]
+              },
+              {
+                "group": "Core Guides",
+                "pages": [
+                  "guides/agent-first-api",
+                  "guides/api-formats",
+                  "guides/prompt-cache",
+                  "integrations/coding-agent-skill",
+                  "guides/streaming",
+                  "guides/error-handling",
+                  "guides/rate-limits",
+                  "guides/billing",
+                  "guides/best-practices",
+                  "guides/video-generation"
+                ]
+              },
+              {
+                "group": "Coding Agents",
+                "pages": [
+                  "guides/coding-agents",
+                  "guides/coding-agent-cost",
+                  "guides/coding-agent-models",
+                  "guides/aisonar-provider"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "API Reference",
+            "groups": [
+              {
+                "group": "Core",
+                "pages": [
+                  "api-reference/introduction",
+                  "api-reference/models/list-models",
+                  "api-reference/models/get-model",
+                  "api-reference/pricing/get-pricing"
+                ]
+              },
+              {
+                "group": "Text",
+                "pages": [
+                  "api-reference/chat/create-completion",
+                  "api-reference/responses/create-response",
+                  "api-reference/messages/create-message",
+                  "api-reference/embeddings/create-embedding",
+                  "api-reference/rerank/create-rerank",
+                  "api-reference/translation/create-translation"
+                ]
+              },
+              {
+                "group": "Files & Batches",
+                "pages": [
+                  "api-reference/files/upload-file",
+                  "api-reference/files/list-files",
+                  "api-reference/files/retrieve-file",
+                  "api-reference/files/retrieve-file-content",
+                  "api-reference/batches/create-batch",
+                  "api-reference/batches/list-batches",
+                  "api-reference/batches/retrieve-batch",
+                  "api-reference/batches/cancel-batch"
+                ]
+              },
+              {
+                "group": "Images & Media",
+                "pages": [
+                  "api-reference/images/create-image",
+                  "api-reference/images/edit-image",
+                  "api-reference/images/create-variation",
+                  "api-reference/images/get-image-status",
+                  "api-reference/audio/create-speech",
+                  "api-reference/audio/create-transcription",
+                  "api-reference/audio/create-translation",
+                  "api-reference/realtime/connect",
+                  "api-reference/music/create-music",
+                  "api-reference/music/get-music-status",
+                  "api-reference/video/create-video",
+                  "api-reference/video/get-video-status",
+                  "api-reference/3d/create-3d",
+                  "api-reference/3d/get-3d-status"
+                ]
+              },
+              {
+                "group": "Async Jobs",
+                "pages": [
+                  "api-reference/tasks/get-task-status",
+                  "api-reference/tasks/cancel-task"
+                ]
+              },
+              {
+                "group": "Gemini Native",
+                "pages": [
+                  "api-reference/gemini/list-models",
+                  "api-reference/gemini/get-model",
+                  "api-reference/gemini/generate-content",
+                  "api-reference/gemini/stream-generate-content"
+                ]
+              },
+              {
+                "group": "Management",
+                "pages": [
+                  "api-reference/management/introduction",
+                  "api-reference/management/get-balance",
+                  "api-reference/management/list-api-keys",
+                  "api-reference/management/create-api-key",
+                  "api-reference/management/update-api-key",
+                  "api-reference/management/get-api-key-usage",
+                  "api-reference/management/get-api-key-billing"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "Integrations",
+            "groups": [
+              {
+                "group": "Compatibility Matrix",
+                "pages": [
+                  "guides/ide-sdk-compatibility",
+                  "guides/sdks"
+                ]
+              },
+              {
+                "group": "Coding Tools",
+                "pages": [
+                  "integrations/cursor",
+                  "integrations/claude-code",
+                  "integrations/codex-cli",
+                  "integrations/gemini-cli",
+                  "integrations/pi-coding-agent",
+                  "integrations/opencode"
+                ]
+              },
+              {
+                "group": "Native SDKs",
+                "pages": [
+                  "integrations/openai-sdk",
+                  "integrations/anthropic-sdk"
+                ]
+              },
+              {
+                "group": "Frameworks & Platforms",
+                "pages": [
+                  "integrations/litellm",
+                  "integrations/vercel-ai-sdk",
+                  "integrations/langchain",
+                  "integrations/llamaindex",
+                  "integrations/dify"
+                ]
+              },
+              {
+                "group": "Chat Apps",
+                "pages": [
+                  "integrations/ai-chat-apps"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "zh",
+        "tabs": [
+          {
+            "tab": "文档",
+            "groups": [
+              {
+                "group": "快速入门",
+                "pages": [
+                  "zh/introduction",
+                  "zh/quickstart",
+                  "zh/authentication"
+                ]
+              },
+              {
+                "group": "核心指南",
+                "pages": [
+                  "zh/guides/agent-first-api",
+                  "zh/guides/api-formats",
+                  "zh/guides/prompt-cache",
+                  "zh/integrations/coding-agent-skill",
+                  "zh/guides/streaming",
+                  "zh/guides/error-handling",
+                  "zh/guides/rate-limits",
+                  "zh/guides/billing",
+                  "zh/guides/best-practices",
+                  "zh/guides/video-generation"
+                ]
+              },
+              {
+                "group": "Coding Agents",
+                "pages": [
+                  "zh/guides/coding-agents",
+                  "zh/guides/coding-agent-cost",
+                  "zh/guides/coding-agent-models",
+                  "zh/guides/aisonar-provider"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "API 参考",
+            "groups": [
+              {
+                "group": "核心",
+                "pages": [
+                  "zh/api-reference/introduction",
+                  "zh/api-reference/models/list-models",
+                  "zh/api-reference/models/get-model",
+                  "zh/api-reference/pricing/get-pricing"
+                ]
+              },
+              {
+                "group": "文本",
+                "pages": [
+                  "zh/api-reference/chat/create-completion",
+                  "zh/api-reference/responses/create-response",
+                  "zh/api-reference/messages/create-message",
+                  "zh/api-reference/embeddings/create-embedding",
+                  "zh/api-reference/rerank/create-rerank",
+                  "zh/api-reference/translation/create-translation"
+                ]
+              },
+              {
+                "group": "文件与批处理",
+                "pages": [
+                  "zh/api-reference/files/upload-file",
+                  "zh/api-reference/files/list-files",
+                  "zh/api-reference/files/retrieve-file",
+                  "zh/api-reference/files/retrieve-file-content",
+                  "zh/api-reference/batches/create-batch",
+                  "zh/api-reference/batches/list-batches",
+                  "zh/api-reference/batches/retrieve-batch",
+                  "zh/api-reference/batches/cancel-batch"
+                ]
+              },
+              {
+                "group": "图像与媒体",
+                "pages": [
+                  "zh/api-reference/images/create-image",
+                  "zh/api-reference/images/edit-image",
+                  "zh/api-reference/images/create-variation",
+                  "zh/api-reference/images/get-image-status",
+                  "zh/api-reference/audio/create-speech",
+                  "zh/api-reference/audio/create-transcription",
+                  "zh/api-reference/audio/create-translation",
+                  "zh/api-reference/realtime/connect",
+                  "zh/api-reference/music/create-music",
+                  "zh/api-reference/music/get-music-status",
+                  "zh/api-reference/video/create-video",
+                  "zh/api-reference/video/get-video-status",
+                  "zh/api-reference/3d/create-3d",
+                  "zh/api-reference/3d/get-3d-status"
+                ]
+              },
+              {
+                "group": "异步任务",
+                "pages": [
+                  "zh/api-reference/tasks/get-task-status",
+                  "zh/api-reference/tasks/cancel-task"
+                ]
+              },
+              {
+                "group": "Gemini 原生",
+                "pages": [
+                  "zh/api-reference/gemini/list-models",
+                  "zh/api-reference/gemini/get-model",
+                  "zh/api-reference/gemini/generate-content",
+                  "zh/api-reference/gemini/stream-generate-content"
+                ]
+              },
+              {
+                "group": "管理",
+                "pages": [
+                  "zh/api-reference/management/introduction",
+                  "zh/api-reference/management/get-balance",
+                  "zh/api-reference/management/list-api-keys",
+                  "zh/api-reference/management/create-api-key",
+                  "zh/api-reference/management/update-api-key",
+                  "zh/api-reference/management/get-api-key-usage",
+                  "zh/api-reference/management/get-api-key-billing"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "集成",
+            "groups": [
+              {
+                "group": "兼容性矩阵",
+                "pages": [
+                  "zh/guides/ide-sdk-compatibility",
+                  "zh/guides/sdks"
+                ]
+              },
+              {
+                "group": "编码工具",
+                "pages": [
+                  "zh/integrations/cursor",
+                  "zh/integrations/claude-code",
+                  "zh/integrations/codex-cli",
+                  "zh/integrations/gemini-cli",
+                  "zh/integrations/pi-coding-agent",
+                  "zh/integrations/opencode"
+                ]
+              },
+              {
+                "group": "原生 SDK",
+                "pages": [
+                  "zh/integrations/openai-sdk",
+                  "zh/integrations/anthropic-sdk"
+                ]
+              },
+              {
+                "group": "框架与平台",
+                "pages": [
+                  "zh/integrations/litellm",
+                  "zh/integrations/vercel-ai-sdk",
+                  "zh/integrations/langchain",
+                  "zh/integrations/llamaindex",
+                  "zh/integrations/dify"
+                ]
+              },
+              {
+                "group": "聊天应用",
+                "pages": [
+                  "zh/integrations/ai-chat-apps"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "zh-Hant",
+        "tabs": [
+          {
+            "tab": "文件",
+            "groups": [
+              {
+                "group": "快速入門",
+                "pages": [
+                  "zh-Hant/introduction",
+                  "zh-Hant/quickstart",
+                  "zh-Hant/authentication"
+                ]
+              },
+              {
+                "group": "核心指南",
+                "pages": [
+                  "zh-Hant/guides/agent-first-api",
+                  "zh-Hant/guides/api-formats",
+                  "zh-Hant/guides/prompt-cache",
+                  "zh-Hant/integrations/coding-agent-skill",
+                  "zh-Hant/guides/streaming",
+                  "zh-Hant/guides/error-handling",
+                  "zh-Hant/guides/rate-limits",
+                  "zh-Hant/guides/billing",
+                  "zh-Hant/guides/best-practices",
+                  "zh-Hant/guides/video-generation"
+                ]
+              },
+              {
+                "group": "Coding Agents",
+                "pages": [
+                  "zh-Hant/guides/coding-agents",
+                  "zh-Hant/guides/coding-agent-cost",
+                  "zh-Hant/guides/coding-agent-models",
+                  "zh-Hant/guides/aisonar-provider"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "API 參考",
+            "groups": [
+              {
+                "group": "核心",
+                "pages": [
+                  "zh-Hant/api-reference/introduction",
+                  "zh-Hant/api-reference/models/list-models",
+                  "zh-Hant/api-reference/models/get-model",
+                  "zh-Hant/api-reference/pricing/get-pricing"
+                ]
+              },
+              {
+                "group": "文字",
+                "pages": [
+                  "zh-Hant/api-reference/chat/create-completion",
+                  "zh-Hant/api-reference/responses/create-response",
+                  "zh-Hant/api-reference/messages/create-message",
+                  "zh-Hant/api-reference/embeddings/create-embedding",
+                  "zh-Hant/api-reference/rerank/create-rerank",
+                  "zh-Hant/api-reference/translation/create-translation"
+                ]
+              },
+              {
+                "group": "檔案與批次",
+                "pages": [
+                  "zh-Hant/api-reference/files/upload-file",
+                  "zh-Hant/api-reference/files/list-files",
+                  "zh-Hant/api-reference/files/retrieve-file",
+                  "zh-Hant/api-reference/files/retrieve-file-content",
+                  "zh-Hant/api-reference/batches/create-batch",
+                  "zh-Hant/api-reference/batches/list-batches",
+                  "zh-Hant/api-reference/batches/retrieve-batch",
+                  "zh-Hant/api-reference/batches/cancel-batch"
+                ]
+              },
+              {
+                "group": "圖像與媒體",
+                "pages": [
+                  "zh-Hant/api-reference/images/create-image",
+                  "zh-Hant/api-reference/images/edit-image",
+                  "zh-Hant/api-reference/images/create-variation",
+                  "zh-Hant/api-reference/images/get-image-status",
+                  "zh-Hant/api-reference/audio/create-speech",
+                  "zh-Hant/api-reference/audio/create-transcription",
+                  "zh-Hant/api-reference/audio/create-translation",
+                  "zh-Hant/api-reference/realtime/connect",
+                  "zh-Hant/api-reference/music/create-music",
+                  "zh-Hant/api-reference/music/get-music-status",
+                  "zh-Hant/api-reference/video/create-video",
+                  "zh-Hant/api-reference/video/get-video-status",
+                  "zh-Hant/api-reference/3d/create-3d",
+                  "zh-Hant/api-reference/3d/get-3d-status"
+                ]
+              },
+              {
+                "group": "非同步任務",
+                "pages": [
+                  "zh-Hant/api-reference/tasks/get-task-status",
+                  "zh-Hant/api-reference/tasks/cancel-task"
+                ]
+              },
+              {
+                "group": "Gemini 原生",
+                "pages": [
+                  "zh-Hant/api-reference/gemini/list-models",
+                  "zh-Hant/api-reference/gemini/get-model",
+                  "zh-Hant/api-reference/gemini/generate-content",
+                  "zh-Hant/api-reference/gemini/stream-generate-content"
+                ]
+              },
+              {
+                "group": "管理",
+                "pages": [
+                  "zh-Hant/api-reference/management/introduction",
+                  "zh-Hant/api-reference/management/get-balance",
+                  "zh-Hant/api-reference/management/list-api-keys",
+                  "zh-Hant/api-reference/management/create-api-key",
+                  "zh-Hant/api-reference/management/update-api-key",
+                  "zh-Hant/api-reference/management/get-api-key-usage",
+                  "zh-Hant/api-reference/management/get-api-key-billing"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "整合",
+            "groups": [
+              {
+                "group": "相容性矩陣",
+                "pages": [
+                  "zh-Hant/guides/ide-sdk-compatibility",
+                  "zh-Hant/guides/sdks"
+                ]
+              },
+              {
+                "group": "程式工具",
+                "pages": [
+                  "zh-Hant/integrations/cursor",
+                  "zh-Hant/integrations/claude-code",
+                  "zh-Hant/integrations/codex-cli",
+                  "zh-Hant/integrations/gemini-cli",
+                  "zh-Hant/integrations/pi-coding-agent",
+                  "zh-Hant/integrations/opencode"
+                ]
+              },
+              {
+                "group": "原生 SDK",
+                "pages": [
+                  "zh-Hant/integrations/openai-sdk",
+                  "zh-Hant/integrations/anthropic-sdk"
+                ]
+              },
+              {
+                "group": "框架與平台",
+                "pages": [
+                  "zh-Hant/integrations/litellm",
+                  "zh-Hant/integrations/vercel-ai-sdk",
+                  "zh-Hant/integrations/langchain",
+                  "zh-Hant/integrations/llamaindex",
+                  "zh-Hant/integrations/dify"
+                ]
+              },
+              {
+                "group": "聊天應用",
+                "pages": [
+                  "zh-Hant/integrations/ai-chat-apps"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "ja",
+        "tabs": [
+          {
+            "tab": "ドキュメント",
+            "groups": [
+              {
+                "group": "はじめに",
+                "pages": [
+                  "ja/introduction",
+                  "ja/quickstart",
+                  "ja/authentication"
+                ]
+              },
+              {
+                "group": "コアガイド",
+                "pages": [
+                  "ja/guides/agent-first-api",
+                  "ja/guides/api-formats",
+                  "ja/guides/prompt-cache",
+                  "ja/integrations/coding-agent-skill",
+                  "ja/guides/streaming",
+                  "ja/guides/error-handling",
+                  "ja/guides/rate-limits",
+                  "ja/guides/billing",
+                  "ja/guides/best-practices",
+                  "ja/guides/video-generation"
+                ]
+              },
+              {
+                "group": "コーディングエージェント",
+                "pages": [
+                  "ja/guides/coding-agents",
+                  "ja/guides/coding-agent-cost",
+                  "ja/guides/coding-agent-models",
+                  "ja/guides/aisonar-provider"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "APIリファレンス",
+            "groups": [
+              {
+                "group": "コア",
+                "pages": [
+                  "ja/api-reference/introduction",
+                  "ja/api-reference/models/list-models",
+                  "ja/api-reference/models/get-model",
+                  "ja/api-reference/pricing/get-pricing"
+                ]
+              },
+              {
+                "group": "テキスト",
+                "pages": [
+                  "ja/api-reference/chat/create-completion",
+                  "ja/api-reference/responses/create-response",
+                  "ja/api-reference/messages/create-message",
+                  "ja/api-reference/embeddings/create-embedding",
+                  "ja/api-reference/rerank/create-rerank",
+                  "ja/api-reference/translation/create-translation"
+                ]
+              },
+              {
+                "group": "ファイルとバッチ",
+                "pages": [
+                  "ja/api-reference/files/upload-file",
+                  "ja/api-reference/files/list-files",
+                  "ja/api-reference/files/retrieve-file",
+                  "ja/api-reference/files/retrieve-file-content",
+                  "ja/api-reference/batches/create-batch",
+                  "ja/api-reference/batches/list-batches",
+                  "ja/api-reference/batches/retrieve-batch",
+                  "ja/api-reference/batches/cancel-batch"
+                ]
+              },
+              {
+                "group": "画像とメディア",
+                "pages": [
+                  "ja/api-reference/images/create-image",
+                  "ja/api-reference/images/edit-image",
+                  "ja/api-reference/images/create-variation",
+                  "ja/api-reference/images/get-image-status",
+                  "ja/api-reference/audio/create-speech",
+                  "ja/api-reference/audio/create-transcription",
+                  "ja/api-reference/audio/create-translation",
+                  "ja/api-reference/realtime/connect",
+                  "ja/api-reference/music/create-music",
+                  "ja/api-reference/music/get-music-status",
+                  "ja/api-reference/video/create-video",
+                  "ja/api-reference/video/get-video-status",
+                  "ja/api-reference/3d/create-3d",
+                  "ja/api-reference/3d/get-3d-status"
+                ]
+              },
+              {
+                "group": "非同期ジョブ",
+                "pages": [
+                  "ja/api-reference/tasks/get-task-status",
+                  "ja/api-reference/tasks/cancel-task"
+                ]
+              },
+              {
+                "group": "Gemini ネイティブ",
+                "pages": [
+                  "ja/api-reference/gemini/list-models",
+                  "ja/api-reference/gemini/get-model",
+                  "ja/api-reference/gemini/generate-content",
+                  "ja/api-reference/gemini/stream-generate-content"
+                ]
+              },
+              {
+                "group": "管理",
+                "pages": [
+                  "ja/api-reference/management/introduction",
+                  "ja/api-reference/management/get-balance",
+                  "ja/api-reference/management/list-api-keys",
+                  "ja/api-reference/management/create-api-key",
+                  "ja/api-reference/management/update-api-key",
+                  "ja/api-reference/management/get-api-key-usage",
+                  "ja/api-reference/management/get-api-key-billing"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "連携",
+            "groups": [
+              {
+                "group": "互換性マトリクス",
+                "pages": [
+                  "ja/guides/ide-sdk-compatibility",
+                  "ja/guides/sdks"
+                ]
+              },
+              {
+                "group": "コーディングツール",
+                "pages": [
+                  "ja/integrations/cursor",
+                  "ja/integrations/claude-code",
+                  "ja/integrations/codex-cli",
+                  "ja/integrations/gemini-cli",
+                  "ja/integrations/pi-coding-agent",
+                  "ja/integrations/opencode"
+                ]
+              },
+              {
+                "group": "ネイティブ SDK",
+                "pages": [
+                  "ja/integrations/openai-sdk",
+                  "ja/integrations/anthropic-sdk"
+                ]
+              },
+              {
+                "group": "フレームワークとプラットフォーム",
+                "pages": [
+                  "ja/integrations/litellm",
+                  "ja/integrations/vercel-ai-sdk",
+                  "ja/integrations/langchain",
+                  "ja/integrations/llamaindex",
+                  "ja/integrations/dify"
+                ]
+              },
+              {
+                "group": "チャットアプリ",
+                "pages": [
+                  "ja/integrations/ai-chat-apps"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "ko",
+        "tabs": [
+          {
+            "tab": "문서",
+            "groups": [
+              {
+                "group": "시작하기",
+                "pages": [
+                  "ko/introduction",
+                  "ko/quickstart",
+                  "ko/authentication"
+                ]
+              },
+              {
+                "group": "핵심 가이드",
+                "pages": [
+                  "ko/guides/agent-first-api",
+                  "ko/guides/api-formats",
+                  "ko/guides/prompt-cache",
+                  "ko/integrations/coding-agent-skill",
+                  "ko/guides/streaming",
+                  "ko/guides/error-handling",
+                  "ko/guides/rate-limits",
+                  "ko/guides/billing",
+                  "ko/guides/best-practices",
+                  "ko/guides/video-generation"
+                ]
+              },
+              {
+                "group": "코딩 에이전트",
+                "pages": [
+                  "ko/guides/coding-agents",
+                  "ko/guides/coding-agent-cost",
+                  "ko/guides/coding-agent-models",
+                  "ko/guides/aisonar-provider"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "API 레퍼런스",
+            "groups": [
+              {
+                "group": "핵심",
+                "pages": [
+                  "ko/api-reference/introduction",
+                  "ko/api-reference/models/list-models",
+                  "ko/api-reference/models/get-model",
+                  "ko/api-reference/pricing/get-pricing"
+                ]
+              },
+              {
+                "group": "텍스트",
+                "pages": [
+                  "ko/api-reference/chat/create-completion",
+                  "ko/api-reference/responses/create-response",
+                  "ko/api-reference/messages/create-message",
+                  "ko/api-reference/embeddings/create-embedding",
+                  "ko/api-reference/rerank/create-rerank",
+                  "ko/api-reference/translation/create-translation"
+                ]
+              },
+              {
+                "group": "파일 및 배치",
+                "pages": [
+                  "ko/api-reference/files/upload-file",
+                  "ko/api-reference/files/list-files",
+                  "ko/api-reference/files/retrieve-file",
+                  "ko/api-reference/files/retrieve-file-content",
+                  "ko/api-reference/batches/create-batch",
+                  "ko/api-reference/batches/list-batches",
+                  "ko/api-reference/batches/retrieve-batch",
+                  "ko/api-reference/batches/cancel-batch"
+                ]
+              },
+              {
+                "group": "이미지 및 미디어",
+                "pages": [
+                  "ko/api-reference/images/create-image",
+                  "ko/api-reference/images/edit-image",
+                  "ko/api-reference/images/create-variation",
+                  "ko/api-reference/images/get-image-status",
+                  "ko/api-reference/audio/create-speech",
+                  "ko/api-reference/audio/create-transcription",
+                  "ko/api-reference/audio/create-translation",
+                  "ko/api-reference/realtime/connect",
+                  "ko/api-reference/music/create-music",
+                  "ko/api-reference/music/get-music-status",
+                  "ko/api-reference/video/create-video",
+                  "ko/api-reference/video/get-video-status",
+                  "ko/api-reference/3d/create-3d",
+                  "ko/api-reference/3d/get-3d-status"
+                ]
+              },
+              {
+                "group": "비동기 작업",
+                "pages": [
+                  "ko/api-reference/tasks/get-task-status",
+                  "ko/api-reference/tasks/cancel-task"
+                ]
+              },
+              {
+                "group": "Gemini 네이티브",
+                "pages": [
+                  "ko/api-reference/gemini/list-models",
+                  "ko/api-reference/gemini/get-model",
+                  "ko/api-reference/gemini/generate-content",
+                  "ko/api-reference/gemini/stream-generate-content"
+                ]
+              },
+              {
+                "group": "관리",
+                "pages": [
+                  "ko/api-reference/management/introduction",
+                  "ko/api-reference/management/get-balance",
+                  "ko/api-reference/management/list-api-keys",
+                  "ko/api-reference/management/create-api-key",
+                  "ko/api-reference/management/update-api-key",
+                  "ko/api-reference/management/get-api-key-usage",
+                  "ko/api-reference/management/get-api-key-billing"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "통합",
+            "groups": [
+              {
+                "group": "호환성 매트릭스",
+                "pages": [
+                  "ko/guides/ide-sdk-compatibility",
+                  "ko/guides/sdks"
+                ]
+              },
+              {
+                "group": "코딩 도구",
+                "pages": [
+                  "ko/integrations/cursor",
+                  "ko/integrations/claude-code",
+                  "ko/integrations/codex-cli",
+                  "ko/integrations/gemini-cli",
+                  "ko/integrations/pi-coding-agent",
+                  "ko/integrations/opencode"
+                ]
+              },
+              {
+                "group": "네이티브 SDK",
+                "pages": [
+                  "ko/integrations/openai-sdk",
+                  "ko/integrations/anthropic-sdk"
+                ]
+              },
+              {
+                "group": "프레임워크 및 플랫폼",
+                "pages": [
+                  "ko/integrations/litellm",
+                  "ko/integrations/vercel-ai-sdk",
+                  "ko/integrations/langchain",
+                  "ko/integrations/llamaindex",
+                  "ko/integrations/dify"
+                ]
+              },
+              {
+                "group": "채팅 앱",
+                "pages": [
+                  "ko/integrations/ai-chat-apps"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "de",
+        "tabs": [
+          {
+            "tab": "Dokumentation",
+            "groups": [
+              {
+                "group": "Erste Schritte",
+                "pages": [
+                  "de/introduction",
+                  "de/quickstart",
+                  "de/authentication"
+                ]
+              },
+              {
+                "group": "Kernleitfäden",
+                "pages": [
+                  "de/guides/agent-first-api",
+                  "de/guides/api-formats",
+                  "de/guides/prompt-cache",
+                  "de/integrations/coding-agent-skill",
+                  "de/guides/streaming",
+                  "de/guides/error-handling",
+                  "de/guides/rate-limits",
+                  "de/guides/billing",
+                  "de/guides/best-practices",
+                  "de/guides/video-generation"
+                ]
+              },
+              {
+                "group": "Coding Agents",
+                "pages": [
+                  "de/guides/coding-agents",
+                  "de/guides/coding-agent-cost",
+                  "de/guides/coding-agent-models",
+                  "de/guides/aisonar-provider"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "API-Referenz",
+            "groups": [
+              {
+                "group": "Kern",
+                "pages": [
+                  "de/api-reference/introduction",
+                  "de/api-reference/models/list-models",
+                  "de/api-reference/models/get-model",
+                  "de/api-reference/pricing/get-pricing"
+                ]
+              },
+              {
+                "group": "Text & Chat",
+                "pages": [
+                  "de/api-reference/chat/create-completion",
+                  "de/api-reference/responses/create-response",
+                  "de/api-reference/messages/create-message",
+                  "de/api-reference/embeddings/create-embedding",
+                  "de/api-reference/rerank/create-rerank",
+                  "de/api-reference/translation/create-translation"
+                ]
+              },
+              {
+                "group": "Dateien & Batch-Jobs",
+                "pages": [
+                  "de/api-reference/files/upload-file",
+                  "de/api-reference/files/list-files",
+                  "de/api-reference/files/retrieve-file",
+                  "de/api-reference/files/retrieve-file-content",
+                  "de/api-reference/batches/create-batch",
+                  "de/api-reference/batches/list-batches",
+                  "de/api-reference/batches/retrieve-batch",
+                  "de/api-reference/batches/cancel-batch"
+                ]
+              },
+              {
+                "group": "Bilder & Medien",
+                "pages": [
+                  "de/api-reference/images/create-image",
+                  "de/api-reference/images/edit-image",
+                  "de/api-reference/images/create-variation",
+                  "de/api-reference/images/get-image-status",
+                  "de/api-reference/audio/create-speech",
+                  "de/api-reference/audio/create-transcription",
+                  "de/api-reference/audio/create-translation",
+                  "de/api-reference/realtime/connect",
+                  "de/api-reference/music/create-music",
+                  "de/api-reference/music/get-music-status",
+                  "de/api-reference/video/create-video",
+                  "de/api-reference/video/get-video-status",
+                  "de/api-reference/3d/create-3d",
+                  "de/api-reference/3d/get-3d-status"
+                ]
+              },
+              {
+                "group": "Asynchrone Jobs",
+                "pages": [
+                  "de/api-reference/tasks/get-task-status",
+                  "de/api-reference/tasks/cancel-task"
+                ]
+              },
+              {
+                "group": "Gemini nativ",
+                "pages": [
+                  "de/api-reference/gemini/list-models",
+                  "de/api-reference/gemini/get-model",
+                  "de/api-reference/gemini/generate-content",
+                  "de/api-reference/gemini/stream-generate-content"
+                ]
+              },
+              {
+                "group": "Verwaltung",
+                "pages": [
+                  "de/api-reference/management/introduction",
+                  "de/api-reference/management/get-balance",
+                  "de/api-reference/management/list-api-keys",
+                  "de/api-reference/management/create-api-key",
+                  "de/api-reference/management/update-api-key",
+                  "de/api-reference/management/get-api-key-usage",
+                  "de/api-reference/management/get-api-key-billing"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "Integrationen",
+            "groups": [
+              {
+                "group": "Kompatibilitätsmatrix",
+                "pages": [
+                  "de/guides/ide-sdk-compatibility",
+                  "de/guides/sdks"
+                ]
+              },
+              {
+                "group": "Coding-Tools",
+                "pages": [
+                  "de/integrations/cursor",
+                  "de/integrations/claude-code",
+                  "de/integrations/codex-cli",
+                  "de/integrations/gemini-cli",
+                  "de/integrations/pi-coding-agent",
+                  "de/integrations/opencode"
+                ]
+              },
+              {
+                "group": "Native SDKs (nativ)",
+                "pages": [
+                  "de/integrations/openai-sdk",
+                  "de/integrations/anthropic-sdk"
+                ]
+              },
+              {
+                "group": "Frameworks & Plattformen",
+                "pages": [
+                  "de/integrations/litellm",
+                  "de/integrations/vercel-ai-sdk",
+                  "de/integrations/langchain",
+                  "de/integrations/llamaindex",
+                  "de/integrations/dify"
+                ]
+              },
+              {
+                "group": "Chat-Apps",
+                "pages": [
+                  "de/integrations/ai-chat-apps"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "fr",
+        "tabs": [
+          {
+            "tab": "Documentation",
+            "groups": [
+              {
+                "group": "Démarrage",
+                "pages": [
+                  "fr/introduction",
+                  "fr/quickstart",
+                  "fr/authentication"
+                ]
+              },
+              {
+                "group": "Guides essentiels",
+                "pages": [
+                  "fr/guides/agent-first-api",
+                  "fr/guides/api-formats",
+                  "fr/guides/prompt-cache",
+                  "fr/integrations/coding-agent-skill",
+                  "fr/guides/streaming",
+                  "fr/guides/error-handling",
+                  "fr/guides/rate-limits",
+                  "fr/guides/billing",
+                  "fr/guides/best-practices",
+                  "fr/guides/video-generation"
+                ]
+              },
+              {
+                "group": "Agents de Codage",
+                "pages": [
+                  "fr/guides/coding-agents",
+                  "fr/guides/coding-agent-cost",
+                  "fr/guides/coding-agent-models",
+                  "fr/guides/aisonar-provider"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "Référence API",
+            "groups": [
+              {
+                "group": "Essentiel",
+                "pages": [
+                  "fr/api-reference/introduction",
+                  "fr/api-reference/models/list-models",
+                  "fr/api-reference/models/get-model",
+                  "fr/api-reference/pricing/get-pricing"
+                ]
+              },
+              {
+                "group": "Texte",
+                "pages": [
+                  "fr/api-reference/chat/create-completion",
+                  "fr/api-reference/responses/create-response",
+                  "fr/api-reference/messages/create-message",
+                  "fr/api-reference/embeddings/create-embedding",
+                  "fr/api-reference/rerank/create-rerank",
+                  "fr/api-reference/translation/create-translation"
+                ]
+              },
+              {
+                "group": "Fichiers & lots",
+                "pages": [
+                  "fr/api-reference/files/upload-file",
+                  "fr/api-reference/files/list-files",
+                  "fr/api-reference/files/retrieve-file",
+                  "fr/api-reference/files/retrieve-file-content",
+                  "fr/api-reference/batches/create-batch",
+                  "fr/api-reference/batches/list-batches",
+                  "fr/api-reference/batches/retrieve-batch",
+                  "fr/api-reference/batches/cancel-batch"
+                ]
+              },
+              {
+                "group": "Images & médias",
+                "pages": [
+                  "fr/api-reference/images/create-image",
+                  "fr/api-reference/images/edit-image",
+                  "fr/api-reference/images/create-variation",
+                  "fr/api-reference/images/get-image-status",
+                  "fr/api-reference/audio/create-speech",
+                  "fr/api-reference/audio/create-transcription",
+                  "fr/api-reference/audio/create-translation",
+                  "fr/api-reference/realtime/connect",
+                  "fr/api-reference/music/create-music",
+                  "fr/api-reference/music/get-music-status",
+                  "fr/api-reference/video/create-video",
+                  "fr/api-reference/video/get-video-status",
+                  "fr/api-reference/3d/create-3d",
+                  "fr/api-reference/3d/get-3d-status"
+                ]
+              },
+              {
+                "group": "Tâches asynchrones",
+                "pages": [
+                  "fr/api-reference/tasks/get-task-status",
+                  "fr/api-reference/tasks/cancel-task"
+                ]
+              },
+              {
+                "group": "Gemini natif",
+                "pages": [
+                  "fr/api-reference/gemini/list-models",
+                  "fr/api-reference/gemini/get-model",
+                  "fr/api-reference/gemini/generate-content",
+                  "fr/api-reference/gemini/stream-generate-content"
+                ]
+              },
+              {
+                "group": "Gestion",
+                "pages": [
+                  "fr/api-reference/management/introduction",
+                  "fr/api-reference/management/get-balance",
+                  "fr/api-reference/management/list-api-keys",
+                  "fr/api-reference/management/create-api-key",
+                  "fr/api-reference/management/update-api-key",
+                  "fr/api-reference/management/get-api-key-usage",
+                  "fr/api-reference/management/get-api-key-billing"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "Intégrations",
+            "groups": [
+              {
+                "group": "Matrice de compatibilité",
+                "pages": [
+                  "fr/guides/ide-sdk-compatibility",
+                  "fr/guides/sdks"
+                ]
+              },
+              {
+                "group": "Outils de code",
+                "pages": [
+                  "fr/integrations/cursor",
+                  "fr/integrations/claude-code",
+                  "fr/integrations/codex-cli",
+                  "fr/integrations/gemini-cli",
+                  "fr/integrations/pi-coding-agent",
+                  "fr/integrations/opencode"
+                ]
+              },
+              {
+                "group": "SDK natifs",
+                "pages": [
+                  "fr/integrations/openai-sdk",
+                  "fr/integrations/anthropic-sdk"
+                ]
+              },
+              {
+                "group": "Frameworks et plateformes",
+                "pages": [
+                  "fr/integrations/litellm",
+                  "fr/integrations/vercel-ai-sdk",
+                  "fr/integrations/langchain",
+                  "fr/integrations/llamaindex",
+                  "fr/integrations/dify"
+                ]
+              },
+              {
+                "group": "Apps de chat",
+                "pages": [
+                  "fr/integrations/ai-chat-apps"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "es",
+        "tabs": [
+          {
+            "tab": "Documentación",
+            "groups": [
+              {
+                "group": "Primeros pasos",
+                "pages": [
+                  "es/introduction",
+                  "es/quickstart",
+                  "es/authentication"
+                ]
+              },
+              {
+                "group": "Guías principales",
+                "pages": [
+                  "es/guides/agent-first-api",
+                  "es/guides/api-formats",
+                  "es/guides/prompt-cache",
+                  "es/integrations/coding-agent-skill",
+                  "es/guides/streaming",
+                  "es/guides/error-handling",
+                  "es/guides/rate-limits",
+                  "es/guides/billing",
+                  "es/guides/best-practices",
+                  "es/guides/video-generation"
+                ]
+              },
+              {
+                "group": "Agentes de Codificación",
+                "pages": [
+                  "es/guides/coding-agents",
+                  "es/guides/coding-agent-cost",
+                  "es/guides/coding-agent-models",
+                  "es/guides/aisonar-provider"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "Referencia API",
+            "groups": [
+              {
+                "group": "Base",
+                "pages": [
+                  "es/api-reference/introduction",
+                  "es/api-reference/models/list-models",
+                  "es/api-reference/models/get-model",
+                  "es/api-reference/pricing/get-pricing"
+                ]
+              },
+              {
+                "group": "Texto",
+                "pages": [
+                  "es/api-reference/chat/create-completion",
+                  "es/api-reference/responses/create-response",
+                  "es/api-reference/messages/create-message",
+                  "es/api-reference/embeddings/create-embedding",
+                  "es/api-reference/rerank/create-rerank",
+                  "es/api-reference/translation/create-translation"
+                ]
+              },
+              {
+                "group": "Archivos y lotes",
+                "pages": [
+                  "es/api-reference/files/upload-file",
+                  "es/api-reference/files/list-files",
+                  "es/api-reference/files/retrieve-file",
+                  "es/api-reference/files/retrieve-file-content",
+                  "es/api-reference/batches/create-batch",
+                  "es/api-reference/batches/list-batches",
+                  "es/api-reference/batches/retrieve-batch",
+                  "es/api-reference/batches/cancel-batch"
+                ]
+              },
+              {
+                "group": "Imágenes y medios",
+                "pages": [
+                  "es/api-reference/images/create-image",
+                  "es/api-reference/images/edit-image",
+                  "es/api-reference/images/create-variation",
+                  "es/api-reference/images/get-image-status",
+                  "es/api-reference/audio/create-speech",
+                  "es/api-reference/audio/create-transcription",
+                  "es/api-reference/audio/create-translation",
+                  "es/api-reference/realtime/connect",
+                  "es/api-reference/music/create-music",
+                  "es/api-reference/music/get-music-status",
+                  "es/api-reference/video/create-video",
+                  "es/api-reference/video/get-video-status",
+                  "es/api-reference/3d/create-3d",
+                  "es/api-reference/3d/get-3d-status"
+                ]
+              },
+              {
+                "group": "Trabajos asíncronos",
+                "pages": [
+                  "es/api-reference/tasks/get-task-status",
+                  "es/api-reference/tasks/cancel-task"
+                ]
+              },
+              {
+                "group": "Gemini nativo",
+                "pages": [
+                  "es/api-reference/gemini/list-models",
+                  "es/api-reference/gemini/get-model",
+                  "es/api-reference/gemini/generate-content",
+                  "es/api-reference/gemini/stream-generate-content"
+                ]
+              },
+              {
+                "group": "Administración",
+                "pages": [
+                  "es/api-reference/management/introduction",
+                  "es/api-reference/management/get-balance",
+                  "es/api-reference/management/list-api-keys",
+                  "es/api-reference/management/create-api-key",
+                  "es/api-reference/management/update-api-key",
+                  "es/api-reference/management/get-api-key-usage",
+                  "es/api-reference/management/get-api-key-billing"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "Integraciones",
+            "groups": [
+              {
+                "group": "Matriz de compatibilidad",
+                "pages": [
+                  "es/guides/ide-sdk-compatibility",
+                  "es/guides/sdks"
+                ]
+              },
+              {
+                "group": "Herramientas de código",
+                "pages": [
+                  "es/integrations/cursor",
+                  "es/integrations/claude-code",
+                  "es/integrations/codex-cli",
+                  "es/integrations/gemini-cli",
+                  "es/integrations/pi-coding-agent",
+                  "es/integrations/opencode"
+                ]
+              },
+              {
+                "group": "SDKs nativos",
+                "pages": [
+                  "es/integrations/openai-sdk",
+                  "es/integrations/anthropic-sdk"
+                ]
+              },
+              {
+                "group": "Frameworks y plataformas",
+                "pages": [
+                  "es/integrations/litellm",
+                  "es/integrations/vercel-ai-sdk",
+                  "es/integrations/langchain",
+                  "es/integrations/llamaindex",
+                  "es/integrations/dify"
+                ]
+              },
+              {
+                "group": "Apps de chat",
+                "pages": [
+                  "es/integrations/ai-chat-apps"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "pt",
+        "tabs": [
+          {
+            "tab": "Documentação",
+            "groups": [
+              {
+                "group": "Primeiros passos",
+                "pages": [
+                  "pt/introduction",
+                  "pt/quickstart",
+                  "pt/authentication"
+                ]
+              },
+              {
+                "group": "Guias principais",
+                "pages": [
+                  "pt/guides/agent-first-api",
+                  "pt/guides/api-formats",
+                  "pt/guides/prompt-cache",
+                  "pt/integrations/coding-agent-skill",
+                  "pt/guides/streaming",
+                  "pt/guides/error-handling",
+                  "pt/guides/rate-limits",
+                  "pt/guides/billing",
+                  "pt/guides/best-practices",
+                  "pt/guides/video-generation"
+                ]
+              },
+              {
+                "group": "Agentes de Codificação",
+                "pages": [
+                  "pt/guides/coding-agents",
+                  "pt/guides/coding-agent-cost",
+                  "pt/guides/coding-agent-models",
+                  "pt/guides/aisonar-provider"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "Referência da API",
+            "groups": [
+              {
+                "group": "Essencial",
+                "pages": [
+                  "pt/api-reference/introduction",
+                  "pt/api-reference/models/list-models",
+                  "pt/api-reference/models/get-model",
+                  "pt/api-reference/pricing/get-pricing"
+                ]
+              },
+              {
+                "group": "Texto",
+                "pages": [
+                  "pt/api-reference/chat/create-completion",
+                  "pt/api-reference/responses/create-response",
+                  "pt/api-reference/messages/create-message",
+                  "pt/api-reference/embeddings/create-embedding",
+                  "pt/api-reference/rerank/create-rerank",
+                  "pt/api-reference/translation/create-translation"
+                ]
+              },
+              {
+                "group": "Arquivos e lotes",
+                "pages": [
+                  "pt/api-reference/files/upload-file",
+                  "pt/api-reference/files/list-files",
+                  "pt/api-reference/files/retrieve-file",
+                  "pt/api-reference/files/retrieve-file-content",
+                  "pt/api-reference/batches/create-batch",
+                  "pt/api-reference/batches/list-batches",
+                  "pt/api-reference/batches/retrieve-batch",
+                  "pt/api-reference/batches/cancel-batch"
+                ]
+              },
+              {
+                "group": "Imagens e mídia",
+                "pages": [
+                  "pt/api-reference/images/create-image",
+                  "pt/api-reference/images/edit-image",
+                  "pt/api-reference/images/create-variation",
+                  "pt/api-reference/images/get-image-status",
+                  "pt/api-reference/audio/create-speech",
+                  "pt/api-reference/audio/create-transcription",
+                  "pt/api-reference/audio/create-translation",
+                  "pt/api-reference/realtime/connect",
+                  "pt/api-reference/music/create-music",
+                  "pt/api-reference/music/get-music-status",
+                  "pt/api-reference/video/create-video",
+                  "pt/api-reference/video/get-video-status",
+                  "pt/api-reference/3d/create-3d",
+                  "pt/api-reference/3d/get-3d-status"
+                ]
+              },
+              {
+                "group": "Tarefas assíncronas",
+                "pages": [
+                  "pt/api-reference/tasks/get-task-status",
+                  "pt/api-reference/tasks/cancel-task"
+                ]
+              },
+              {
+                "group": "Gemini nativo",
+                "pages": [
+                  "pt/api-reference/gemini/list-models",
+                  "pt/api-reference/gemini/get-model",
+                  "pt/api-reference/gemini/generate-content",
+                  "pt/api-reference/gemini/stream-generate-content"
+                ]
+              },
+              {
+                "group": "Gerenciamento",
+                "pages": [
+                  "pt/api-reference/management/introduction",
+                  "pt/api-reference/management/get-balance",
+                  "pt/api-reference/management/list-api-keys",
+                  "pt/api-reference/management/create-api-key",
+                  "pt/api-reference/management/update-api-key",
+                  "pt/api-reference/management/get-api-key-usage",
+                  "pt/api-reference/management/get-api-key-billing"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "Integrações",
+            "groups": [
+              {
+                "group": "Matriz de compatibilidade",
+                "pages": [
+                  "pt/guides/ide-sdk-compatibility",
+                  "pt/guides/sdks"
+                ]
+              },
+              {
+                "group": "Ferramentas de código",
+                "pages": [
+                  "pt/integrations/cursor",
+                  "pt/integrations/claude-code",
+                  "pt/integrations/codex-cli",
+                  "pt/integrations/gemini-cli",
+                  "pt/integrations/pi-coding-agent",
+                  "pt/integrations/opencode"
+                ]
+              },
+              {
+                "group": "SDKs nativos",
+                "pages": [
+                  "pt/integrations/openai-sdk",
+                  "pt/integrations/anthropic-sdk"
+                ]
+              },
+              {
+                "group": "Frameworks e plataformas",
+                "pages": [
+                  "pt/integrations/litellm",
+                  "pt/integrations/vercel-ai-sdk",
+                  "pt/integrations/langchain",
+                  "pt/integrations/llamaindex",
+                  "pt/integrations/dify"
+                ]
+              },
+              {
+                "group": "Apps de chat",
+                "pages": [
+                  "pt/integrations/ai-chat-apps"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "ar",
+        "tabs": [
+          {
+            "tab": "التوثيق",
+            "groups": [
+              {
+                "group": "البدء",
+                "pages": [
+                  "ar/introduction",
+                  "ar/quickstart",
+                  "ar/authentication"
+                ]
+              },
+              {
+                "group": "الأدلة الأساسية",
+                "pages": [
+                  "ar/guides/agent-first-api",
+                  "ar/guides/api-formats",
+                  "ar/guides/prompt-cache",
+                  "ar/integrations/coding-agent-skill",
+                  "ar/guides/streaming",
+                  "ar/guides/error-handling",
+                  "ar/guides/rate-limits",
+                  "ar/guides/billing",
+                  "ar/guides/best-practices",
+                  "ar/guides/video-generation"
+                ]
+              },
+              {
+                "group": "وكلاء البرمجة",
+                "pages": [
+                  "ar/guides/coding-agents",
+                  "ar/guides/coding-agent-cost",
+                  "ar/guides/coding-agent-models",
+                  "ar/guides/aisonar-provider"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "مرجع API",
+            "groups": [
+              {
+                "group": "الأساسيات",
+                "pages": [
+                  "ar/api-reference/introduction",
+                  "ar/api-reference/models/list-models",
+                  "ar/api-reference/models/get-model",
+                  "ar/api-reference/pricing/get-pricing"
+                ]
+              },
+              {
+                "group": "النص",
+                "pages": [
+                  "ar/api-reference/chat/create-completion",
+                  "ar/api-reference/responses/create-response",
+                  "ar/api-reference/messages/create-message",
+                  "ar/api-reference/embeddings/create-embedding",
+                  "ar/api-reference/rerank/create-rerank",
+                  "ar/api-reference/translation/create-translation"
+                ]
+              },
+              {
+                "group": "الملفات والدفعات",
+                "pages": [
+                  "ar/api-reference/files/upload-file",
+                  "ar/api-reference/files/list-files",
+                  "ar/api-reference/files/retrieve-file",
+                  "ar/api-reference/files/retrieve-file-content",
+                  "ar/api-reference/batches/create-batch",
+                  "ar/api-reference/batches/list-batches",
+                  "ar/api-reference/batches/retrieve-batch",
+                  "ar/api-reference/batches/cancel-batch"
+                ]
+              },
+              {
+                "group": "الصور والوسائط",
+                "pages": [
+                  "ar/api-reference/images/create-image",
+                  "ar/api-reference/images/edit-image",
+                  "ar/api-reference/images/create-variation",
+                  "ar/api-reference/images/get-image-status",
+                  "ar/api-reference/audio/create-speech",
+                  "ar/api-reference/audio/create-transcription",
+                  "ar/api-reference/audio/create-translation",
+                  "ar/api-reference/realtime/connect",
+                  "ar/api-reference/music/create-music",
+                  "ar/api-reference/music/get-music-status",
+                  "ar/api-reference/video/create-video",
+                  "ar/api-reference/video/get-video-status",
+                  "ar/api-reference/3d/create-3d",
+                  "ar/api-reference/3d/get-3d-status"
+                ]
+              },
+              {
+                "group": "المهام غير المتزامنة",
+                "pages": [
+                  "ar/api-reference/tasks/get-task-status",
+                  "ar/api-reference/tasks/cancel-task"
+                ]
+              },
+              {
+                "group": "Gemini الأصلي",
+                "pages": [
+                  "ar/api-reference/gemini/list-models",
+                  "ar/api-reference/gemini/get-model",
+                  "ar/api-reference/gemini/generate-content",
+                  "ar/api-reference/gemini/stream-generate-content"
+                ]
+              },
+              {
+                "group": "الإدارة",
+                "pages": [
+                  "ar/api-reference/management/introduction",
+                  "ar/api-reference/management/get-balance",
+                  "ar/api-reference/management/list-api-keys",
+                  "ar/api-reference/management/create-api-key",
+                  "ar/api-reference/management/update-api-key",
+                  "ar/api-reference/management/get-api-key-usage",
+                  "ar/api-reference/management/get-api-key-billing"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "التكاملات",
+            "groups": [
+              {
+                "group": "مصفوفة التوافق",
+                "pages": [
+                  "ar/guides/ide-sdk-compatibility",
+                  "ar/guides/sdks"
+                ]
+              },
+              {
+                "group": "أدوات البرمجة",
+                "pages": [
+                  "ar/integrations/cursor",
+                  "ar/integrations/claude-code",
+                  "ar/integrations/codex-cli",
+                  "ar/integrations/gemini-cli",
+                  "ar/integrations/pi-coding-agent",
+                  "ar/integrations/opencode"
+                ]
+              },
+              {
+                "group": "حِزم SDK الأصلية",
+                "pages": [
+                  "ar/integrations/openai-sdk",
+                  "ar/integrations/anthropic-sdk"
+                ]
+              },
+              {
+                "group": "الأطر والمنصات",
+                "pages": [
+                  "ar/integrations/litellm",
+                  "ar/integrations/vercel-ai-sdk",
+                  "ar/integrations/langchain",
+                  "ar/integrations/llamaindex",
+                  "ar/integrations/dify"
+                ]
+              },
+              {
+                "group": "تطبيقات الدردشة",
+                "pages": [
+                  "ar/integrations/ai-chat-apps"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "vi",
+        "tabs": [
+          {
+            "tab": "Tài liệu",
+            "groups": [
+              {
+                "group": "Bắt đầu",
+                "pages": [
+                  "vi/introduction",
+                  "vi/quickstart",
+                  "vi/authentication"
+                ]
+              },
+              {
+                "group": "Hướng dẫn cốt lõi",
+                "pages": [
+                  "vi/guides/agent-first-api",
+                  "vi/guides/api-formats",
+                  "vi/guides/prompt-cache",
+                  "vi/integrations/coding-agent-skill",
+                  "vi/guides/streaming",
+                  "vi/guides/error-handling",
+                  "vi/guides/rate-limits",
+                  "vi/guides/billing",
+                  "vi/guides/best-practices",
+                  "vi/guides/video-generation"
+                ]
+              },
+              {
+                "group": "Coding Agents",
+                "pages": [
+                  "vi/guides/coding-agents",
+                  "vi/guides/coding-agent-cost",
+                  "vi/guides/coding-agent-models",
+                  "vi/guides/aisonar-provider"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "Tham chiếu API",
+            "groups": [
+              {
+                "group": "Cốt lõi",
+                "pages": [
+                  "vi/api-reference/introduction",
+                  "vi/api-reference/models/list-models",
+                  "vi/api-reference/models/get-model",
+                  "vi/api-reference/pricing/get-pricing"
+                ]
+              },
+              {
+                "group": "Văn bản",
+                "pages": [
+                  "vi/api-reference/chat/create-completion",
+                  "vi/api-reference/responses/create-response",
+                  "vi/api-reference/messages/create-message",
+                  "vi/api-reference/embeddings/create-embedding",
+                  "vi/api-reference/rerank/create-rerank",
+                  "vi/api-reference/translation/create-translation"
+                ]
+              },
+              {
+                "group": "Tệp và lô",
+                "pages": [
+                  "vi/api-reference/files/upload-file",
+                  "vi/api-reference/files/list-files",
+                  "vi/api-reference/files/retrieve-file",
+                  "vi/api-reference/files/retrieve-file-content",
+                  "vi/api-reference/batches/create-batch",
+                  "vi/api-reference/batches/list-batches",
+                  "vi/api-reference/batches/retrieve-batch",
+                  "vi/api-reference/batches/cancel-batch"
+                ]
+              },
+              {
+                "group": "Hình ảnh và phương tiện",
+                "pages": [
+                  "vi/api-reference/images/create-image",
+                  "vi/api-reference/images/edit-image",
+                  "vi/api-reference/images/create-variation",
+                  "vi/api-reference/images/get-image-status",
+                  "vi/api-reference/audio/create-speech",
+                  "vi/api-reference/audio/create-transcription",
+                  "vi/api-reference/audio/create-translation",
+                  "vi/api-reference/realtime/connect",
+                  "vi/api-reference/music/create-music",
+                  "vi/api-reference/music/get-music-status",
+                  "vi/api-reference/video/create-video",
+                  "vi/api-reference/video/get-video-status",
+                  "vi/api-reference/3d/create-3d",
+                  "vi/api-reference/3d/get-3d-status"
+                ]
+              },
+              {
+                "group": "Tác vụ bất đồng bộ",
+                "pages": [
+                  "vi/api-reference/tasks/get-task-status",
+                  "vi/api-reference/tasks/cancel-task"
+                ]
+              },
+              {
+                "group": "Gemini gốc",
+                "pages": [
+                  "vi/api-reference/gemini/list-models",
+                  "vi/api-reference/gemini/get-model",
+                  "vi/api-reference/gemini/generate-content",
+                  "vi/api-reference/gemini/stream-generate-content"
+                ]
+              },
+              {
+                "group": "Quản lý",
+                "pages": [
+                  "vi/api-reference/management/introduction",
+                  "vi/api-reference/management/get-balance",
+                  "vi/api-reference/management/list-api-keys",
+                  "vi/api-reference/management/create-api-key",
+                  "vi/api-reference/management/update-api-key",
+                  "vi/api-reference/management/get-api-key-usage",
+                  "vi/api-reference/management/get-api-key-billing"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "Tích hợp",
+            "groups": [
+              {
+                "group": "Ma trận tương thích",
+                "pages": [
+                  "vi/guides/ide-sdk-compatibility",
+                  "vi/guides/sdks"
+                ]
+              },
+              {
+                "group": "Công cụ lập trình",
+                "pages": [
+                  "vi/integrations/cursor",
+                  "vi/integrations/claude-code",
+                  "vi/integrations/codex-cli",
+                  "vi/integrations/gemini-cli",
+                  "vi/integrations/pi-coding-agent",
+                  "vi/integrations/opencode"
+                ]
+              },
+              {
+                "group": "SDK gốc",
+                "pages": [
+                  "vi/integrations/openai-sdk",
+                  "vi/integrations/anthropic-sdk"
+                ]
+              },
+              {
+                "group": "Framework và nền tảng",
+                "pages": [
+                  "vi/integrations/litellm",
+                  "vi/integrations/vercel-ai-sdk",
+                  "vi/integrations/langchain",
+                  "vi/integrations/llamaindex",
+                  "vi/integrations/dify"
+                ]
+              },
+              {
+                "group": "Ứng dụng chat",
+                "pages": [
+                  "vi/integrations/ai-chat-apps"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "id",
+        "tabs": [
+          {
+            "tab": "Dokumentasi",
+            "groups": [
+              {
+                "group": "Memulai",
+                "pages": [
+                  "id/introduction",
+                  "id/quickstart",
+                  "id/authentication"
+                ]
+              },
+              {
+                "group": "Panduan inti",
+                "pages": [
+                  "id/guides/agent-first-api",
+                  "id/guides/api-formats",
+                  "id/guides/prompt-cache",
+                  "id/integrations/coding-agent-skill",
+                  "id/guides/streaming",
+                  "id/guides/error-handling",
+                  "id/guides/rate-limits",
+                  "id/guides/billing",
+                  "id/guides/best-practices",
+                  "id/guides/video-generation"
+                ]
+              },
+              {
+                "group": "Coding Agents",
+                "pages": [
+                  "id/guides/coding-agents",
+                  "id/guides/coding-agent-cost",
+                  "id/guides/coding-agent-models",
+                  "id/guides/aisonar-provider"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "Referensi API",
+            "groups": [
+              {
+                "group": "Inti",
+                "pages": [
+                  "id/api-reference/introduction",
+                  "id/api-reference/models/list-models",
+                  "id/api-reference/models/get-model",
+                  "id/api-reference/pricing/get-pricing"
+                ]
+              },
+              {
+                "group": "Teks",
+                "pages": [
+                  "id/api-reference/chat/create-completion",
+                  "id/api-reference/responses/create-response",
+                  "id/api-reference/messages/create-message",
+                  "id/api-reference/embeddings/create-embedding",
+                  "id/api-reference/rerank/create-rerank",
+                  "id/api-reference/translation/create-translation"
+                ]
+              },
+              {
+                "group": "Berkas & batch",
+                "pages": [
+                  "id/api-reference/files/upload-file",
+                  "id/api-reference/files/list-files",
+                  "id/api-reference/files/retrieve-file",
+                  "id/api-reference/files/retrieve-file-content",
+                  "id/api-reference/batches/create-batch",
+                  "id/api-reference/batches/list-batches",
+                  "id/api-reference/batches/retrieve-batch",
+                  "id/api-reference/batches/cancel-batch"
+                ]
+              },
+              {
+                "group": "Gambar & media",
+                "pages": [
+                  "id/api-reference/images/create-image",
+                  "id/api-reference/images/edit-image",
+                  "id/api-reference/images/create-variation",
+                  "id/api-reference/images/get-image-status",
+                  "id/api-reference/audio/create-speech",
+                  "id/api-reference/audio/create-transcription",
+                  "id/api-reference/audio/create-translation",
+                  "id/api-reference/realtime/connect",
+                  "id/api-reference/music/create-music",
+                  "id/api-reference/music/get-music-status",
+                  "id/api-reference/video/create-video",
+                  "id/api-reference/video/get-video-status",
+                  "id/api-reference/3d/create-3d",
+                  "id/api-reference/3d/get-3d-status"
+                ]
+              },
+              {
+                "group": "Pekerjaan asinkron",
+                "pages": [
+                  "id/api-reference/tasks/get-task-status",
+                  "id/api-reference/tasks/cancel-task"
+                ]
+              },
+              {
+                "group": "Gemini native",
+                "pages": [
+                  "id/api-reference/gemini/list-models",
+                  "id/api-reference/gemini/get-model",
+                  "id/api-reference/gemini/generate-content",
+                  "id/api-reference/gemini/stream-generate-content"
+                ]
+              },
+              {
+                "group": "Manajemen",
+                "pages": [
+                  "id/api-reference/management/introduction",
+                  "id/api-reference/management/get-balance",
+                  "id/api-reference/management/list-api-keys",
+                  "id/api-reference/management/create-api-key",
+                  "id/api-reference/management/update-api-key",
+                  "id/api-reference/management/get-api-key-usage",
+                  "id/api-reference/management/get-api-key-billing"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "Integrasi",
+            "groups": [
+              {
+                "group": "Matriks kompatibilitas",
+                "pages": [
+                  "id/guides/ide-sdk-compatibility",
+                  "id/guides/sdks"
+                ]
+              },
+              {
+                "group": "Alat coding",
+                "pages": [
+                  "id/integrations/cursor",
+                  "id/integrations/claude-code",
+                  "id/integrations/codex-cli",
+                  "id/integrations/gemini-cli",
+                  "id/integrations/pi-coding-agent",
+                  "id/integrations/opencode"
+                ]
+              },
+              {
+                "group": "SDK native",
+                "pages": [
+                  "id/integrations/openai-sdk",
+                  "id/integrations/anthropic-sdk"
+                ]
+              },
+              {
+                "group": "Framework & platform",
+                "pages": [
+                  "id/integrations/litellm",
+                  "id/integrations/vercel-ai-sdk",
+                  "id/integrations/langchain",
+                  "id/integrations/llamaindex",
+                  "id/integrations/dify"
+                ]
+              },
+              {
+                "group": "Aplikasi chat",
+                "pages": [
+                  "id/integrations/ai-chat-apps"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "tr",
+        "tabs": [
+          {
+            "tab": "Dokümantasyon",
+            "groups": [
+              {
+                "group": "Başlarken",
+                "pages": [
+                  "tr/introduction",
+                  "tr/quickstart",
+                  "tr/authentication"
+                ]
+              },
+              {
+                "group": "Temel kılavuzlar",
+                "pages": [
+                  "tr/guides/agent-first-api",
+                  "tr/guides/api-formats",
+                  "tr/guides/prompt-cache",
+                  "tr/integrations/coding-agent-skill",
+                  "tr/guides/streaming",
+                  "tr/guides/error-handling",
+                  "tr/guides/rate-limits",
+                  "tr/guides/billing",
+                  "tr/guides/best-practices",
+                  "tr/guides/video-generation"
+                ]
+              },
+              {
+                "group": "Kodlama Ajanları",
+                "pages": [
+                  "tr/guides/coding-agents",
+                  "tr/guides/coding-agent-cost",
+                  "tr/guides/coding-agent-models",
+                  "tr/guides/aisonar-provider"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "API Referansı",
+            "groups": [
+              {
+                "group": "Temel",
+                "pages": [
+                  "tr/api-reference/introduction",
+                  "tr/api-reference/models/list-models",
+                  "tr/api-reference/models/get-model",
+                  "tr/api-reference/pricing/get-pricing"
+                ]
+              },
+              {
+                "group": "Metin",
+                "pages": [
+                  "tr/api-reference/chat/create-completion",
+                  "tr/api-reference/responses/create-response",
+                  "tr/api-reference/messages/create-message",
+                  "tr/api-reference/embeddings/create-embedding",
+                  "tr/api-reference/rerank/create-rerank",
+                  "tr/api-reference/translation/create-translation"
+                ]
+              },
+              {
+                "group": "Dosyalar ve toplu işler",
+                "pages": [
+                  "tr/api-reference/files/upload-file",
+                  "tr/api-reference/files/list-files",
+                  "tr/api-reference/files/retrieve-file",
+                  "tr/api-reference/files/retrieve-file-content",
+                  "tr/api-reference/batches/create-batch",
+                  "tr/api-reference/batches/list-batches",
+                  "tr/api-reference/batches/retrieve-batch",
+                  "tr/api-reference/batches/cancel-batch"
+                ]
+              },
+              {
+                "group": "Görseller ve medya",
+                "pages": [
+                  "tr/api-reference/images/create-image",
+                  "tr/api-reference/images/edit-image",
+                  "tr/api-reference/images/create-variation",
+                  "tr/api-reference/images/get-image-status",
+                  "tr/api-reference/audio/create-speech",
+                  "tr/api-reference/audio/create-transcription",
+                  "tr/api-reference/audio/create-translation",
+                  "tr/api-reference/realtime/connect",
+                  "tr/api-reference/music/create-music",
+                  "tr/api-reference/music/get-music-status",
+                  "tr/api-reference/video/create-video",
+                  "tr/api-reference/video/get-video-status",
+                  "tr/api-reference/3d/create-3d",
+                  "tr/api-reference/3d/get-3d-status"
+                ]
+              },
+              {
+                "group": "Asenkron işler",
+                "pages": [
+                  "tr/api-reference/tasks/get-task-status",
+                  "tr/api-reference/tasks/cancel-task"
+                ]
+              },
+              {
+                "group": "Gemini yerel",
+                "pages": [
+                  "tr/api-reference/gemini/list-models",
+                  "tr/api-reference/gemini/get-model",
+                  "tr/api-reference/gemini/generate-content",
+                  "tr/api-reference/gemini/stream-generate-content"
+                ]
+              },
+              {
+                "group": "Yönetim",
+                "pages": [
+                  "tr/api-reference/management/introduction",
+                  "tr/api-reference/management/get-balance",
+                  "tr/api-reference/management/list-api-keys",
+                  "tr/api-reference/management/create-api-key",
+                  "tr/api-reference/management/update-api-key",
+                  "tr/api-reference/management/get-api-key-usage",
+                  "tr/api-reference/management/get-api-key-billing"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "Entegrasyonlar",
+            "groups": [
+              {
+                "group": "Uyumluluk matrisi",
+                "pages": [
+                  "tr/guides/ide-sdk-compatibility",
+                  "tr/guides/sdks"
+                ]
+              },
+              {
+                "group": "Kodlama araçları",
+                "pages": [
+                  "tr/integrations/cursor",
+                  "tr/integrations/claude-code",
+                  "tr/integrations/codex-cli",
+                  "tr/integrations/gemini-cli",
+                  "tr/integrations/pi-coding-agent",
+                  "tr/integrations/opencode"
+                ]
+              },
+              {
+                "group": "Native SDK'lar",
+                "pages": [
+                  "tr/integrations/openai-sdk",
+                  "tr/integrations/anthropic-sdk"
+                ]
+              },
+              {
+                "group": "Framework'ler ve platformlar",
+                "pages": [
+                  "tr/integrations/litellm",
+                  "tr/integrations/vercel-ai-sdk",
+                  "tr/integrations/langchain",
+                  "tr/integrations/llamaindex",
+                  "tr/integrations/dify"
+                ]
+              },
+              {
+                "group": "Sohbet uygulamaları",
+                "pages": [
+                  "tr/integrations/ai-chat-apps"
+                ]
+              }
+            ]
+          }
+        ]
       }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://app.mintlify.com"
-    }
-  },
-  "contextual": {
-    "options": [
-      "copy",
-      "view",
-      "chatgpt",
-      "claude",
-      "perplexity",
-      "mcp",
-      "cursor",
-      "vscode"
     ]
   },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
+  "navbar": {
+    "links": [],
+    "primary": {
+      "type": "button",
+      "label": "Open Console",
+      "href": "https://console.aisonar.dev"
+    }
+  },
+  "redirects": [
+    {
+      "source": "/v1/:slug*",
+      "destination": "https://api.aisonar.dev/v1/:slug*"
+    },
+    {
+      "source": "/v1beta/:slug*",
+      "destination": "https://api.aisonar.dev/v1beta/:slug*"
+    },
+    {
+      "source": "/integrations/claude-code-skill",
+      "destination": "/integrations/coding-agent-skill"
+    }
+  ],
+  "footer": {},
+  "openapi": [
+    "/openapi.json"
+  ],
+  "seo": {
+    "metatags": {
+      "robots": "noindex"
     }
   }
 }

@@ -1,0 +1,123 @@
+---
+title: "Tạo Giọng nói"
+openapi: "POST /v1/audio/speech"
+description: "Tạo audio từ văn bản đầu vào"
+---
+
+## Nội dung yêu cầu
+
+**Timeout cho yêu cầu đồng bộ:** endpoint không phải chat này chờ model được định tuyến hoàn tất. Input lớn, audio dài, hoặc batch lớn có thể vượt quá mặc định 30s phổ biến của client, vì vậy hãy đặt timeout của HTTP client ít nhất là `120s`.
+
+<ParamField body="model" type="string" default="tts-1">
+  Mô hình TTS: `tts-1` (tiêu chuẩn) hoặc `tts-1-hd` (chất lượng cao hơn).
+</ParamField>
+
+<ParamField body="input" type="string" required>
+  Văn bản dùng để tạo audio. Tối đa 4096 ký tự.
+</ParamField>
+
+<ParamField body="voice" type="string" required>
+  Giọng nói sử dụng: `alloy`, `ash`, `ballad`, `coral`, `echo`, `fable`, `nova`, `onyx`, `sage`, `shimmer`, `verse`.
+</ParamField>
+
+<ParamField body="response_format" type="string" default="mp3">
+  Định dạng audio: `mp3`, `opus`, `aac`, `flac`, `wav`, `pcm`.
+</ParamField>
+
+<ParamField body="speed" type="number" default="1.0">
+  Tốc độ audio (0.25 đến 4.0).
+</ParamField>
+
+## Phản hồi
+
+Trả về tệp audio theo định dạng đã yêu cầu.
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/audio/speech" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "tts-1-hd",
+    "voice": "nova",
+    "input": "Hello, welcome to AI Sonar!"
+  }' \
+  --output speech.mp3
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.audio.speech.create(
+    model="tts-1-hd",
+    voice="nova",
+    input="Hello, welcome to AI Sonar!"
+)
+
+response.stream_to_file("speech.mp3")
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+import fs from 'fs';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.audio.speech.create({
+  model: 'tts-1-hd',
+  voice: 'nova',
+  input: 'Hello, welcome to AI Sonar!'
+});
+
+const buffer = Buffer.from(await response.arrayBuffer());
+fs.writeFileSync('speech.mp3', buffer);
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/audio/speech');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Content-Type: application/json',
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => json_encode([
+        'model' => 'tts-1-hd',
+        'voice' => 'nova',
+        'input' => 'Hello, welcome to AI Sonar!'
+    ])
+]);
+
+$audio = curl_exec($ch);
+curl_close($ch);
+
+file_put_contents('speech.mp3', $audio);
+```
+</RequestExample>
+
+## Mẫu giọng nói
+
+| Voice | Mô tả |
+|-------|-------------|
+| `alloy` | Trung tính, cân bằng |
+| `ash` | Điềm tĩnh, chuẩn mực |
+| `ballad` | Du dương, giàu biểu cảm |
+| `coral` | Ấm áp, cuốn hút |
+| `echo` | Ấm áp, mang tính hội thoại |
+| `fable` | Giàu biểu cảm, phù hợp kể chuyện |
+| `nova` | Thân thiện, rõ ràng |
+| `onyx` | Trầm, uy quyền |
+| `sage` | Uyên bác, sâu sắc |
+| `shimmer` | Mềm mại, dịu dàng |
+| `verse` | Năng động, linh hoạt |

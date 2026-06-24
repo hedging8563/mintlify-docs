@@ -1,0 +1,66 @@
+---
+title: "コーディングエージェント"
+description: "スマートルーティング、キャッシュ、モデル選択でコーディングエージェントのコストを最大90%削減"
+---
+
+## なぜコーディングエージェントは高コストなのか
+
+Claude Code、Cursor、Codex CLI などのコーディングエージェントは強力ですが、トークン消費量はほとんどのチームの予想を超えます。
+
+**リクエストごとに長いコンテキスト。** 各呼び出しにはシステムプロンプト、プロジェクトファイル、会話履歴が含まれ、モデルが考え始める前に10,000〜100,000以上のトークンが必要です。
+
+**高頻度の呼び出し。** 1回のコーディングセッションで数十のAPI呼び出しが発生します：コード生成、検索、レビュー、オートコンプリート、ツール使用。1時間のセッションで200以上のリクエストに達することも珍しくありません。
+
+**会話の蓄積。** 各ターンで完全なメッセージ履歴が再送信されます。20ターン目には、同じコンテキストに20回分の料金を支払っていることになります。
+
+<Info>
+典型的な1時間のClaude Codeセッションは2〜5Mトークンを消費します。直接API料金では、モデルによって1時間あたり$6〜30以上になります。
+</Info>
+
+## AI Sonarの支援
+
+<CardGroup cols={2}>
+  <Card title="マルチプロバイダールーティング" icon="route" href="/ja/guides/coding-agent-cost#smart-model-selection">
+    各モデルに対して最も安価な利用可能プロバイダーに自動ルーティング。同じモデル、より低い価格。
+  </Card>
+  <Card title="Prompt Cacheパススルー" icon="bolt" href="/ja/guides/prompt-cache">
+    上流のプレフィックスキャッシュ（Anthropic、OpenAI、DeepSeek）が自動的に機能し、長いシステムプロンプトがプロバイダーレベルでキャッシュされます。
+  </Card>
+  <Card title="モデルフォールバック" icon="arrows-rotate" href="/ja/guides/coding-agent-models#how-aisonar-routing-works">
+    プロバイダーがダウンまたは低速の場合、リクエストは自動的に次の利用可能なプロバイダーにフォールバック。ダウンタイムゼロ。
+  </Card>
+</CardGroup>
+
+## 対応コーディングツール
+
+<CardGroup cols={3}>
+  <Card title="Cursor" icon="text-slash" href="/ja/integrations/cursor">
+    タブ補完とチャット機能を備えたAI搭載IDE
+  </Card>
+  <Card title="Claude Code" icon="terminal" href="/ja/integrations/claude-code">
+    Anthropic公式CLIコーディングエージェント
+  </Card>
+  <Card title="Codex CLI" icon="code" href="/ja/integrations/codex-cli">
+    OpenAIのターミナルベースコーディングエージェント
+  </Card>
+  <Card title="Gemini CLI" icon="gem" href="/ja/integrations/gemini-cli">
+    Googleのコマンドラインコーディングアシスタント
+  </Card>
+  <Card title="OpenCode" icon="laptop-code" href="/ja/integrations/opencode">
+    オープンソースターミナルコーディングエージェント
+  </Card>
+  <Card title="AI Sonar API Skill" icon="lemon" href="/ja/integrations/coding-agent-skill">
+    AI Sonar の共有 API 統合スキルを使用
+  </Card>
+</CardGroup>
+
+## さらに詳しく
+
+<CardGroup cols={2}>
+  <Card title="コスト最適化ガイド" icon="piggy-bank" href="/ja/guides/coding-agent-cost">
+    コーディングエージェントの費用を削減する具体的な戦略：モデル選択、キャッシュ、トークン管理、実際のコスト比較。
+  </Card>
+  <Card title="モデル選択ガイド" icon="microchip" href="/ja/guides/coding-agent-models">
+    どのコーディングタスクにどのモデル？比較表、タスク別推奨、ツールごとの設定。
+  </Card>
+</CardGroup>

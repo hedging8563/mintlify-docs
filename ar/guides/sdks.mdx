@@ -1,0 +1,114 @@
+---
+title: "SDKs والمكتبات"
+description: "SDKs والمكتبات الموصى بها لعمليات تكامل AI Sonar"
+---
+
+## نظرة عامة
+
+AI Sonar هو الأسهل في التكامل عبر مطابقة الـ SDK مع السلوك الذي تحتاجه:
+- المجموعات الرسمية **Anthropic SDKs** لسلوك `/v1/messages` الأصلي الخاص بـ Claude
+- أدوات **Gemini / Google AI** الرسمية لأشكال الطلبات الأصلية الخاصة بـ Gemini
+- حِزم **OpenAI SDKs** الرسمية للمسارات المتوافقة مع OpenAI `/v1` واستخدام بأسلوب Responses
+
+استخدم صفحات التكامل لمعرفة حدود الدعم. في مجموعة التوثيق هذه، تعني "موصى به" أو "مدعوم" أن هناك مسار إعداد موثقًا؛ ولا يعني ذلك تلقائيًا أن كل مساعد إطار عمل أو ميزة خاصة بالمزوّد قد خضعت لاختبارات تراجعية شاملة من البداية إلى النهاية في هذا المستودع.
+
+## SDKs الموصى بها
+
+<CardGroup cols={2}>
+  <Card title="OpenAI Python" icon="python" href="https://github.com/openai/openai-python">
+    `pip install openai`
+  </Card>
+  <Card title="OpenAI Node" icon="node-js" href="https://github.com/openai/openai-node">
+    `npm install openai`
+  </Card>
+  <Card title="OpenAI Go" icon="golang" href="https://github.com/openai/openai-go">
+    `go get github.com/openai/openai-go/v3`
+  </Card>
+  <Card title="Anthropic SDK" icon="robot" href="https://github.com/anthropics/anthropic-sdk-python">
+    دعم أصلي لـ Claude Messages API
+  </Card>
+</CardGroup>
+
+## مثال OpenAI SDK
+
+استخدم هذا عندما تكون بصدد ترحيل عميل موجود متوافق مع OpenAI أو تريد مسار التوافق `/v1`. بالنسبة إلى ميزات Claude الأصلية أو Gemini الأصلية، استخدم SDK الأصلي المطابق بدلًا من ذلك.
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.responses.create(
+    model="gpt-5.4",
+    input="Explain AI Sonar in one sentence."
+)
+
+print(response.output_text)
+```
+
+## مثال OpenAI Go
+
+```go
+package main
+
+import (
+    openai "github.com/openai/openai-go/v3"
+    "github.com/openai/openai-go/v3/option"
+)
+
+func main() {
+    client := openai.NewClient(
+        option.WithAPIKey("sk-your-api-key"),
+        option.WithBaseURL("https://api.aisonar.dev/v1"),
+    )
+
+    _ = client
+}
+```
+
+## مثال Anthropic SDK
+
+```python
+from anthropic import Anthropic
+
+client = Anthropic(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev"
+)
+
+message = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+```
+
+## أي SDK يجب أن تستخدم؟
+
+| الهدف | المسار الموصى به |
+|------|------------------|
+| سلوك أصلي للمزوّد | SDK أو مسار أصلي للمزوّد |
+| عميل متوافق مع OpenAI بالفعل | OpenAI SDK على AI Sonar `/v1` |
+| الدردشة المحمولة / التضمينات | مسارات `/v1` المتوافقة مع OpenAI |
+| الميزات الأصلية لـ Claude | Anthropic SDK |
+| أشكال الطلب الأصلية لـ Gemini | واجهة برمجة التطبيقات / SDK الأصلية لـ Gemini |
+| LangChain / LlamaIndex / Vercel AI SDK | استخدم صفحات التكامل المخصصة |
+
+## أفضل الممارسات
+
+<AccordionGroup>
+  <Accordion title="اختر المسارات الأصلية عندما يكون السلوك مهمًا">
+    استخدم المسارات الأصلية لـ Anthropic أو Gemini للحقول الخاصة بالمزوّد، والأدوات، وتفاصيل البث، والسلوك الآخر الذي لا ينبغي تمريره عبر تنسيق آخر.
+  </Accordion>
+
+  <Accordion title="استخدم `/v1` المتوافق مع OpenAI للترحيل">
+    تُعدّ SDKs المتوافقة مع OpenAI أفضل مسار للعملاء الحاليين على نمط OpenAI، والدردشة المحمولة، والتضمينات. اعتبرها مسارَ توافقٍ، لا السطحَ الوحيد لواجهة AI Sonar API.
+  </Accordion>
+
+  <Accordion title="اجعل عناوين Base URL صريحة">
+    مرّر عناوين URL الأساسية لـ AI Sonar مباشرةً في إعدادات العميل بدلاً من الاعتماد على أسماء بديلة قديمة لمتغيرات البيئة.
+  </Accordion>
+</AccordionGroup>

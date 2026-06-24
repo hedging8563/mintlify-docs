@@ -1,0 +1,222 @@
+---
+title: "Codex CLI"
+description: "Cấu hình OpenAI Codex CLI để sử dụng AI Sonar API"
+---
+
+## Tổng quan
+
+
+
+<Note>
+**Kiểu**: Công cụ lập trình
+
+**Primary Path**: OpenAI Responses (đường dẫn tùy chọn nâng cao)
+
+**Độ tin cậy hỗ trợ**: Được hỗ trợ với giới hạn theo mô hình/đường dẫn
+</Note>
+
+OpenAI Codex là một công cụ dòng lệnh (CLI) mã nguồn mở hoạt động như một đại lý lập trình nhẹ, có khả năng đọc, sửa đổi và chạy mã trong terminal. Nó được xây dựng trên các mô hình GPT và được tối ưu hóa cho việc tạo mã.
+
+Đối với AI Sonar, Codex CLI có thể sử dụng `/v1/responses`, nhưng bạn nên coi đó là một đường dẫn tương thích nâng cao. Một số tính năng chỉ dành cho Responses không được đảm bảo hoạt động trên mọi mô hình và đường dẫn.
+
+Nén từ xa của Codex CLI được hỗ trợ tại `POST /v1/responses/compact`. Codex gửi `model` của phiên hiện tại trong `body.model` cho `/compact` và tự động nén, vì vậy model bạn muốn dùng để nén phải có sẵn trên đường dẫn Responses. Không cấu hình `/v1/compact`.
+
+## Yêu cầu hệ thống
+
+- **OS**: macOS, Linux (hỗ trợ chính thức), Windows qua WSL
+- **Node.js**: Phiên bản 18+
+- **npm**: Phiên bản 10.x.x hoặc cao hơn
+
+## Cài đặt
+
+```bash
+npm install -g @openai/codex
+```
+
+Xác minh cài đặt:
+
+```bash
+codex --version
+```
+
+## Cấu hình
+
+### Bước 1: Thiết lập API Key
+
+**Tạm thời (phiên hiện tại):**
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+```
+
+**Cấu hình vĩnh viễn:**
+
+Thêm vào `~/.bashrc`, `~/.zshrc`, hoặc `~/.bash_profile`:
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+```
+
+Sau đó nạp lại:
+
+```bash
+source ~/.zshrc  # or source ~/.bashrc
+```
+
+### Bước 2: Cấu hình config.toml
+
+Chỉnh sửa `~/.codex/config.toml`:
+
+```toml
+model_provider = "aisonar"
+model = "gpt-5.4"
+model_reasoning_effort = "xhigh"
+plan_mode_reasoning_effort = "xhigh"
+fast_mode = true
+model_context_window = 1000000
+model_auto_compact_token_limit = 900000
+sandbox_mode = "danger-full-access"
+approval_policy = "never"
+
+disable_response_storage = false
+personality = "friendly"
+service_tier = "fast"
+
+[model_providers.aisonar]
+env_key = "OPENAI_API_KEY"
+name = "AI Sonar"
+base_url = "https://api.aisonar.dev/v1"
+wire_api = "responses"
+supports_websockets = true
+websocket_connect_timeout_ms = 15000
+
+[features]
+responses_websockets = true
+responses_websockets_v2 = true
+```
+
+Chế độ WebSocket này là cầu nối Responses-over-WebSocket cho client Codex. Nó nhận `response.create` và `response.cancel`; đây không phải OpenAI Realtime API và không nhận `session.update`, `conversation.item.*`, `input_audio_buffer.*`, âm thanh nhị phân hoặc envelope Realtime lồng nhau `response.create.response`.
+
+<Note>
+Nếu file config không tồn tại, chạy `codex` một lần để tạo file, sau đó chỉnh sửa file. Khởi động lại Codex hoàn toàn sau khi thay đổi `config.toml` để nạp lại các cài đặt nhà cung cấp mới.
+</Note>
+
+<Warning>
+Codex đang loại bỏ hỗ trợ `chat/completions` cho các nhà cung cấp tùy chỉnh. Giữ `wire_api = "responses"` cho AI Sonar trừ khi bạn cố ý sử dụng một đường dẫn tương thích cũ hơn.
+</Warning>
+
+<Note>
+Nếu một yêu cầu sử dụng các trường chỉ dành cho Responses mà không được hỗ trợ trên mô hình hoặc đường dẫn đã chọn, AI Sonar sẽ trả về lỗi rõ ràng thay vì hạ cấp yêu cầu một cách im lặng.
+</Note>
+
+## Sử dụng cơ bản
+
+**Bắt đầu chế độ tương tác:**
+
+```bash
+codex
+```
+
+**Lệnh trực tiếp:**
+
+```bash
+codex "Fix the bug in main.py line 42"
+```
+
+**Chỉ định model:**
+
+```bash
+codex -m gpt-5.4 "Build a REST API server"
+```
+
+## Các model được khuyến nghị
+
+| Mô hình | Phù hợp cho |
+|-------|-------------|
+| `gpt-5.4` | Lựa chọn mặc định tốt nhất cho việc lập trình và suy luận |
+| `gpt-5-mini` | Phương án dự phòng nhanh hơn, rẻ hơn cho quy trình làm việc viết mã |
+| `claude-sonnet-4-6` | Đánh giá mã, viết tài liệu |
+| `deepseek-r1` | Thiết kế thuật toán, suy luận |
+
+## Lệnh tương tác
+
+| Lệnh | Mô tả |
+|---------|-------------|
+| `/help` | Hiển thị trợ giúp |
+| `/exit` or `Ctrl+C` | Thoát |
+| `/clear` | Xóa cuộc hội thoại |
+| `/config` | Xem cấu hình |
+| `/model <name>` | Chuyển model |
+| `/tokens` | Xem lượng token đã sử dụng |
+
+## Xác minh cấu hình
+
+```bash
+# Check environment variable
+echo $OPENAI_API_KEY
+
+# Test API connection
+codex "Hello, Codex!"
+
+# View configuration
+cat ~/.codex/config.toml
+```
+
+## Các trường hợp sử dụng phổ biến
+
+**Đánh giá mã:**
+
+```bash
+git diff | codex "Review these code changes"
+```
+
+**Tạo commit messages:**
+
+```bash
+git diff --staged | codex "Generate a commit message for these changes"
+```
+
+**Sửa lỗi:**
+
+```bash
+codex "Fix the TypeScript errors in src/components/"
+```
+
+**Giải thích mã:**
+
+```bash
+cat main.py | codex "Explain what this code does"
+```
+
+## Xử lý sự cố
+
+<AccordionGroup>
+  <Accordion title="Lỗi kết nối">
+    - Xác nhận `base_url` trong config.toml là chính xác `https://api.aisonar.dev/v1`
+    - Kiểm tra kết nối mạng
+    - Đảm bảo không có can nhiễu proxy
+  </Accordion>
+
+  <Accordion title="Xác thực thất bại">
+    - Xác nhận `env_key = "OPENAI_API_KEY"` có trong `~/.codex/config.toml`
+    - Xác nhận biến môi trường `OPENAI_API_KEY` đã được đặt
+    - Kiểm tra rằng khóa bắt đầu bằng `sk-`
+    - Đảm bảo khóa đang hoạt động trong dashboard của AI Sonar
+  </Accordion>
+
+  <Accordion title="Không tìm thấy model">
+    - Kiểm tra tên model khớp chính xác
+    - Xác minh khả dụng của model tại [aisonar.dev/en/models](https://aisonar.dev/models)
+  </Accordion>
+
+  <Accordion title="Trường native của Responses bị từ chối">
+    - Một số trường chỉ có sẵn trên `/v1/responses` khi AI Sonar có thể đảm bảo hành vi đó cho mô hình và đường dẫn đã chọn
+    - Nếu bạn thấy `unsupported_request_field`, loại bỏ trường đó hoặc chuyển sang một luồng công việc không phụ thuộc vào nó
+  </Accordion>
+
+  <Accordion title="/compact hoặc tự động nén thất bại">
+    - Codex CLI gọi `POST /v1/responses/compact`, không phải `/v1/compact`
+    - Yêu cầu nén dùng `model` của phiên hiện tại, vì vậy model đó phải có sẵn trên đường dẫn Responses
+    - Giữ `wire_api = "responses"` và `base_url = "https://api.aisonar.dev/v1"`
+  </Accordion>
+</AccordionGroup>

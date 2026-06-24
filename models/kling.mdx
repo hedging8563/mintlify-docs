@@ -1,0 +1,51 @@
+---
+title: "Kuaishou (Kling)"
+description: "Kling video generation"
+---
+
+## Overview
+
+AI Sonar provides access to Kuaishou (Kling) models. Total: **12 models** available.
+
+## Image Generation
+
+| Model ID | Pricing |
+|----------|--------|
+| `kling-image-o1` | See dashboard |
+
+## Video Generation
+
+| Model ID | Pricing |
+|----------|--------|
+| `kling-2.6-motion-control` | See dashboard |
+| `kling-3.0-motion-control` | See dashboard |
+| `kling-3.0-video` | See dashboard |
+| `kling-ai-avatar-pro` | See dashboard |
+| `kling-ai-avatar-standard` | See dashboard |
+| `kling-v2.1-master` | See dashboard |
+| `kling-v2.5-turbo-pro` | See dashboard |
+| `kling-v2.6-pro` | See dashboard |
+| `kling-v2.6-std` | See dashboard |
+| `kling-video-o1-pro` | See dashboard |
+| `kling-video-o1-std` | See dashboard |
+
+
+## Usage
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="kling-v2.6-pro",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+```
+
+<Note>
+Prices shown are platform prices (~70% of official rates).
+</Note>

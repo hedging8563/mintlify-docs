@@ -1,0 +1,54 @@
+---
+title: "实时 WebSocket"
+openapi: "GET /v1/realtime"
+description: "通过 WebSocket 连接实时语音和多模态会话"
+---
+
+## 概览
+
+这个端点用于实时语音识别、语音合成、语音翻译或实时多模态模型等会话。普通 `GET` 请求会返回端点元信息；WebSocket 升级请求会代理到路由后的实时上游会话。
+
+<Note>Agent 应先通过 `/v1/models` 发现支持 realtime 的模型，再打开 socket。</Note>
+
+## 连接
+
+<ParamField query="model" type="string" required>
+  实时模型 ID。请选择公开契约中包含 realtime 支持的模型。
+</ParamField>
+
+<ParamField header="Authorization" type="string" required>
+  Bearer API Key。WebSocket 客户端应在升级请求中发送 `Authorization: Bearer sk-your-api-key`。
+</ParamField>
+
+<RequestExample>
+```javascript JavaScript
+import WebSocket from 'ws';
+
+const socket = new WebSocket('wss://api.aisonar.dev/v1/realtime?model=qwen-tts-realtime', {
+  headers: { Authorization: 'Bearer sk-your-api-key' }
+});
+
+socket.on('open', () => {
+  socket.send(JSON.stringify({ type: 'session.start' }));
+});
+
+socket.on('message', (data) => {
+  console.log('realtime event', data.toString());
+});
+```
+
+```bash cURL
+curl "https://api.aisonar.dev/v1/realtime" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+## 消息
+
+AI Sonar 会在客户端和路由后的实时提供方之间转发 WebSocket 消息。请保留所选模型的官方事件结构，并通过查询参数传入 `model`。
+
+## 计费与关闭
+
+实时会话使用同一 API Key 余额。AI Sonar 会在 socket 打开时预扣小额估算费用，并在会话关闭时结算或退款。
+
+会话完成后关闭客户端 socket。如果上游先关闭，AI Sonar 会尽可能把关闭码转发给客户端。

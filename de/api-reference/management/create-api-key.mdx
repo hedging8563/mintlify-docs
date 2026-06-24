@@ -1,0 +1,47 @@
+---
+title: "API-Key erstellen"
+openapi: "POST /v1/management/api-keys"
+description: "Erstellt einen neuen Benutzer-API-Key für die aktuelle Organisation."
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Übersicht
+
+Dieser Endpunkt erstellt einen neuen API-Key vom Typ `type=user` in der Organisation, die mit dem aktuellen Management-Token verknüpft ist.
+
+## Request-Body
+
+| Feld | Typ | Standard / Grenzen | Beschreibung |
+|------|-----|--------------------|--------------|
+| `name` | string | erforderlich, Standard `Default Key`, Länge `1-50` | Anzeigename; führende und nachgestellte Leerzeichen werden serverseitig entfernt |
+| `limitAmount` | number \| null | min. `0`, Eingabe max. `1000000` | `null` oder weggelassen = unbegrenzt, `0` = Nullkontingent. Positive Werte werden auf ein gespeichertes Limit normalisiert, das 100000 USD Gegenwert nicht überschreiten kann. |
+| `limitCurrency` | enum | Standardwert `USD` | Nur USD. Das Senden von `CNY` gibt `400 currency_retired` zurück. |
+| `models` | string[] | Standard `[]` | Optionale Allowlist für logische Modelle |
+| `expiresAt` | string \| null | RFC3339-Datetime | `null` bedeutet ohne Ablaufzeit |
+
+## Hinweise
+
+- Der vollständige API-Key-Wert wird nur einmal in der Antwort angezeigt.
+- `models: []` bedeutet, dass keine zusätzliche Modellbeschränkung über die Organisationsrichtlinie hinaus gilt.
+- `limitAmount: 0` erstellt einen gültigen Key, der zunächst kein Kontingent verbrauchen kann.
+
+## Beispiel
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/management/api-keys" \
+  -H "Authorization: Bearer mt-your-management-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Backend Worker",
+    "limitAmount": 500,
+    "models": ["veo3.1", "kling-3.0-video"],
+    "expiresAt": "2026-12-31T23:59:59Z"
+  }'
+```
+</RequestExample>
+
+## Anfrage / Antwort
+
+Verwenden Sie das interaktive OpenAPI-Panel oben für das genaue Schema und die Response-Felder.

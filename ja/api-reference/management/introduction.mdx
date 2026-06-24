@@ -1,0 +1,142 @@
+---
+title: "管理 API"
+description: "管理トークンを使って組織残高、組織 API Key、キー単位の使用量と請求を管理・取得します。"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## 概要
+
+Management API を使うと、通常の推論用 API Key を使わずに、組織残高の取得、組織 API Key の管理、キー単位の使用量・請求情報の取得ができます。
+
+管理トークンは Dashboard の **Settings** ページで発行・ローテーションできます。
+
+```bash
+Authorization: Bearer mt-your-management-token
+```
+
+<Warning>
+管理トークンは推論用 API Key とは異なります。`mt-...` は `/v1/management/*` 用、`sk-...` は `/v1/responses` などの推論エンドポイント用です。
+</Warning>
+
+## 利用できるエンドポイント
+
+| Endpoint | Method | 説明 |
+|----------|--------|------|
+| `/v1/management/balance` | GET | 現在の組織残高合計を取得 |
+| `/v1/management/api-keys` | GET | 現在の組織に属するユーザー API Key を一覧表示 |
+| `/v1/management/api-keys` | POST | 新しいユーザー API Key を作成 |
+| `/v1/management/api-keys/{keyId}` | PATCH | 名前、利用上限、許可モデル、有効期限、状態を更新 |
+| `/v1/management/api-keys/{keyId}/usage` | GET | 指定した Key の利用明細をページネーション付きで取得 |
+| `/v1/management/api-keys/{keyId}/billing` | GET | 指定した Key の集計済み請求内訳を取得 |
+
+## 利用フィルタ契約
+
+`GET /v1/management/api-keys/{keyId}/usage` では以下の query パラメータを利用できます。
+
+| パラメータ | 型 | 既定値 / 制約 | 説明 |
+|-----------|------|---------------|------|
+| `page` | integer | 既定値 `1`、最小 `1` | 1 始まりのページ番号 |
+| `limit` | integer | 既定値 `50`、最小 `1`、最大 `100` | 1 ページあたりの件数 |
+| `logicalModel` | string | 最大長 `100` | リクエスト時に指定された論理モデル名 |
+| `modelVendor` | string | 最大長 `100` | 公開モデルのベンダー名 |
+| `scene` | enum | - | `chat`、`image`、`audio`、`video`、`embedding`、`rerank`、`translation`、`music`、`3d` |
+| `accessChannel` | enum | - | `platform` または `byok` |
+| `startDate` | string | - | 開始日時（含む）。タイムゾーン付き RFC3339 または `YYYY-MM-DD` を受け付けます |
+| `endDate` | string | - | 終了日時（含む）。タイムゾーン付き RFC3339 または `YYYY-MM-DD` を受け付けます |
+
+`startDate` と `endDate` を同時に指定する場合、`startDate` は `endDate` 以下である必要があります。
+
+## API Key ボディ契約
+
+### POST /v1/management/api-keys
+
+| フィールド | 型 | 既定値 / 制約 | 説明 |
+|-----------|------|---------------|------|
+| `name` | string | 必須、既定値 `Default Key`、長さ `1-50` | 表示名。サーバー側で前後空白が取り除かれます |
+| `limitAmount` | number \| null | 最小 `0`、入力上限 `1000000` | `null` または省略 = 無制限、`0` = 利用可能額 0、正の値は保存時に正規化され、`100000` USD 相当を超えません |
+| `limitCurrency` | enum | 既定 `USD` | USD のみです。`CNY` を送信すると `400 currency_retired` が返されます。 |
+| `models` | string[] | 既定値 `[]` | 任意の論理モデル許可リスト |
+| `expiresAt` | string \| null | RFC3339 datetime | `null` は期限なしを意味します |
+
+### PATCH /v1/management/api-keys/{keyId}
+
+| フィールド | 型 | 既定値 / 制約 | 説明 |
+|-----------|------|---------------|------|
+| `status` | enum | - | `active`、`inactive`、`suspended`、`revoked` |
+| `name` | string | 長さ `1-50` | 更新後の表示名 |
+| `limitAmount` | number \| null | 最小 `0`、入力上限 `1000000` | `null` = 無制限、`0` = 利用可能額 0、正の値は保存時に正規化され、`100000` USD 相当を超えません |
+| `limitCurrency` | enum | 既定 `USD` | USD のみです。`CNY` を送信すると `400 currency_retired` が返されます。 |
+| `models` | string[] | - | 更新後の論理モデル許可リスト |
+| `expiresAt` | string \| null | RFC3339 datetime | `null` は有効期限を解除します |
+
+PATCH リクエストでは少なくとも 1 つのフィールドを指定する必要があります。
+
+## 金額契約
+
+
+## レポートの意味
+
+- `logicalModel` は、呼び出し元が要求した公開 logical model を指します。
+- `modelVendor` は、隠れた物理ルートではなく、公開 model vendor を指します。
+- `scene` は、endpoint または task type から導出される公開リクエストシーンです。
+- `accessChannel=platform` は、AI Sonar の platform channel 経由で課金されたことを意味します。
+- `accessChannel=byok` は、あなた自身の 上流プロバイダー key が使われたことを意味します。
+
+レスポンスには公開可能な Billing / Reporting 項目のみが含まれ、内部ルーティングや物理チャネルのメタデータは公開されません。
+- `/usage` の各明細には、基になるリクエストの精算完了後に `billing_transaction_id` が含まれる場合があります。リクエスト単位の照合には `request_id` + `billing_transaction_id` を使用してください。
+
+## Billing ページネーションに関する注意
+
+`/usage` はページネーション対応です。`/billing` は現在、集計済み請求内訳を返すエンドポイントであり、`page` / `limit` 型のページネーション情報は返しません。行レベルの明細が必要な場合は `/usage` を利用してください。
+
+## クイック例
+
+まずは現在の管理トークンで組織残高を確認します。
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/management/balance" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+次に、同じ管理トークンで参照可能な API Keys を一覧します。
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/management/api-keys" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response (200)
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "key_abc123def456",
+      "name": "Backend Worker",
+      "key_prefix": "sk-abc123...",
+      "status": "active",
+      "limit_amount": 500.0,
+      "used_amount": 148.25,
+      "models": ["gpt-4o-mini", "claude-3-7-sonnet"],
+      "expires_at": "2026-04-30T00:00:00.000Z",
+      "last_used_at": "2026-03-27T08:12:45.000Z",
+      "created_at": "2026-03-01T10:00:00.000Z"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## 次のステップ
+
+- [組織残高を取得](/ja/api-reference/management/get-balance)
+- [API Keys を一覧表示](/ja/api-reference/management/list-api-keys)
+- [API Key を作成](/ja/api-reference/management/create-api-key)
+- [API Key を更新](/ja/api-reference/management/update-api-key)
+- [API Key の使用量を取得](/ja/api-reference/management/get-api-key-usage)
+- [API Key の請求情報を取得](/ja/api-reference/management/get-api-key-billing)

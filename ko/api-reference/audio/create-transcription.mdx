@@ -1,0 +1,174 @@
+---
+title: "전사 생성"
+openapi: "POST /v1/audio/transcriptions"
+description: "오디오를 입력 언어로 전사합니다"
+---
+
+## 요청 본문
+
+**동기 요청 타임아웃:** 이 비채팅 엔드포인트는 라우팅된 모델이 완료될 때까지 기다립니다. 큰 입력, 긴 오디오, 큰 배치는 일반적인 30s 클라이언트 기본값을 초과할 수 있으므로 HTTP 클라이언트 타임아웃을 최소 `120s` 로 설정하세요.
+
+<ParamField body="file" type="file" required>
+  전사할 오디오 파일입니다. 지원 형식: flac, mp3, mp4, mpeg, mpga, m4a, ogg, wav, webm.
+</ParamField>
+
+<ParamField body="model" type="string" default="whisper-1">
+  사용할 모델입니다. 현재는 `whisper-1`만 지원됩니다.
+</ParamField>
+
+<ParamField body="language" type="string">
+  ISO-639-1 형식의 오디오 언어입니다(예: `en`, `zh`, `ja`).
+</ParamField>
+
+<ParamField body="prompt" type="string">
+  모델의 스타일을 유도하거나 이전 세그먼트를 이어가기 위한 선택적 텍스트입니다.
+</ParamField>
+
+<ParamField body="response_format" type="string" default="json">
+  출력 형식: `json`, `text`, `srt`, `verbose_json`, `vtt`.
+</ParamField>
+
+<ParamField body="temperature" type="number" default="0">
+  샘플링 temperature(0~1).
+</ParamField>
+
+<ParamField body="timestamp_granularities" type="array">
+  타임스탬프 세분성: `word` 및/또는 `segment`. `verbose_json`이 필요합니다.
+</ParamField>
+
+## 응답
+
+<ResponseField name="text" type="string">
+  전사된 텍스트입니다.
+</ResponseField>
+
+`verbose_json`의 경우:
+
+<ResponseField name="task" type="string">
+  항상 `transcribe`입니다.
+</ResponseField>
+
+<ResponseField name="language" type="string">
+  감지된 언어입니다.
+</ResponseField>
+
+<ResponseField name="duration" type="number">
+  초 단위 오디오 길이입니다.
+</ResponseField>
+
+<ResponseField name="segments" type="array">
+  타임스탬프가 포함된 전사 세그먼트입니다.
+</ResponseField>
+
+<ResponseField name="words" type="array">
+  단어 수준 타임스탬프입니다(요청한 경우).
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/audio/transcriptions" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F file="@audio.mp3" \
+  -F model="whisper-1" \
+  -F language="en"
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+with open("audio.mp3", "rb") as audio_file:
+    response = client.audio.transcriptions.create(
+        model="whisper-1",
+        file=audio_file,
+        language="en"
+    )
+
+print(response.text)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+import fs from 'fs';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.audio.transcriptions.create({
+  model: 'whisper-1',
+  file: fs.createReadStream('audio.mp3'),
+  language: 'en'
+});
+
+console.log(response.text);
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/audio/transcriptions');
+
+$file = new CURLFile('audio.mp3', 'audio/mpeg', 'audio.mp3');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => [
+        'file' => $file,
+        'model' => 'whisper-1',
+        'language' => 'en'
+    ]
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+echo $data['text'];
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response (json)
+{
+  "text": "Hello, this is a test of the transcription API."
+}
+```
+
+```json Response (verbose_json)
+{
+  "task": "transcribe",
+  "language": "english",
+  "duration": 5.5,
+  "text": "Hello, this is a test of the transcription API.",
+  "segments": [
+    {
+      "id": 0,
+      "start": 0.0,
+      "end": 2.5,
+      "text": "Hello, this is a test",
+      "tokens": [...]
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## 번역
+
+오디오를 영어로 번역하려면 translations 엔드포인트를 사용하세요:
+
+```python
+response = client.audio.translations.create(
+    model="whisper-1",
+    file=audio_file
+)
+```

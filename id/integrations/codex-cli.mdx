@@ -1,0 +1,222 @@
+---
+title: "Codex CLI"
+description: "Konfigurasi OpenAI Codex CLI untuk menggunakan AI Sonar API"
+---
+
+## Gambaran Umum
+
+
+
+<Note>
+**Tipe**: Alat Pengkodean
+
+**Jalur Utama**: OpenAI Responses (jalur opsional lanjutan)
+
+**Kepercayaan Dukungan**: Didukung dengan batasan model/jalur
+</Note>
+
+OpenAI Codex adalah alat baris perintah (CLI) sumber terbuka yang berfungsi sebagai agen pengkodean ringan, mampu membaca, memodifikasi, dan menjalankan kode di terminal. Ini dibangun di atas model GPT dan dioptimalkan untuk pembuatan kode.
+
+Untuk AI Sonar, Codex CLI dapat menggunakan `/v1/responses`, tetapi Anda harus menganggapnya sebagai jalur kompatibilitas lanjutan. Beberapa fitur khusus Responses tidak dijamin tersedia di setiap model dan jalur yang diarahkan.
+
+Kompaksi jarak jauh Codex CLI didukung di `POST /v1/responses/compact`. Codex mengirim `model` sesi saat ini di `body.model` untuk `/compact` dan auto-compact, jadi model yang ingin dipakai untuk kompaksi harus tersedia di jalur Responses. Jangan mengonfigurasi `/v1/compact`.
+
+## Persyaratan Sistem
+
+- **OS**: macOS, Linux (dukungan resmi), Windows melalui WSL
+- **Node.js**: Versi 18+
+- **npm**: Versi 10.x.x atau lebih tinggi
+
+## Instalasi
+
+```bash
+npm install -g @openai/codex
+```
+
+Verifikasi instalasi:
+
+```bash
+codex --version
+```
+
+## Konfigurasi
+
+### Langkah 1: Atur API Key
+
+**Sementara (sesi saat ini):**
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+```
+
+**Konfigurasi permanen:**
+
+Tambahkan ke `~/.bashrc`, `~/.zshrc`, atau `~/.bash_profile`:
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+```
+
+Kemudian muat ulang:
+
+```bash
+source ~/.zshrc  # or source ~/.bashrc
+```
+
+### Langkah 2: Konfigurasi config.toml
+
+Edit `~/.codex/config.toml`:
+
+```toml
+model_provider = "aisonar"
+model = "gpt-5.4"
+model_reasoning_effort = "xhigh"
+plan_mode_reasoning_effort = "xhigh"
+fast_mode = true
+model_context_window = 1000000
+model_auto_compact_token_limit = 900000
+sandbox_mode = "danger-full-access"
+approval_policy = "never"
+
+disable_response_storage = false
+personality = "friendly"
+service_tier = "fast"
+
+[model_providers.aisonar]
+env_key = "OPENAI_API_KEY"
+name = "AI Sonar"
+base_url = "https://api.aisonar.dev/v1"
+wire_api = "responses"
+supports_websockets = true
+websocket_connect_timeout_ms = 15000
+
+[features]
+responses_websockets = true
+responses_websockets_v2 = true
+```
+
+Mode WebSocket ini adalah bridge Responses-over-WebSocket untuk klien Codex. Mode ini menerima `response.create` dan `response.cancel`; ini bukan OpenAI Realtime API dan tidak menerima `session.update`, `conversation.item.*`, `input_audio_buffer.*`, audio biner, atau envelope Realtime bertingkat `response.create.response`.
+
+<Note>
+Jika file konfigurasi tidak ada, jalankan `codex` sekali untuk menghasilkannya, lalu edit file tersebut. Restart Codex sepenuhnya setelah mengubah `config.toml` agar pengaturan provider baru dimuat ulang.
+</Note>
+
+<Warning>
+Codex sedang menghentikan dukungan `chat/completions` untuk custom providers. Pertahankan `wire_api = "responses"` untuk AI Sonar kecuali Anda sengaja menggunakan jalur kompatibilitas yang lebih lama.
+</Warning>
+
+<Note>
+Jika sebuah permintaan menggunakan field khusus Responses yang tidak didukung pada model atau jalur yang dipilih, AI Sonar mengembalikan kesalahan eksplisit daripada menurunkan permintaan secara diam-diam.
+</Note>
+
+## Penggunaan Dasar
+
+**Mulai mode interaktif:**
+
+```bash
+codex
+```
+
+**Perintah langsung:**
+
+```bash
+codex "Fix the bug in main.py line 42"
+```
+
+**Menentukan model:**
+
+```bash
+codex -m gpt-5.4 "Build a REST API server"
+```
+
+## Model yang Direkomendasikan
+
+| Model | Cocok Untuk |
+|-------|-------------|
+| `gpt-5.4` | Pilihan default terbaik untuk pemrograman dan penalaran |
+| `gpt-5-mini` | Cadangan yang lebih cepat dan lebih murah untuk alur kerja pengodean |
+| `claude-sonnet-4-6` | Tinjauan kode, dokumentasi |
+| `deepseek-r1` | Perancangan algoritma, penalaran |
+
+## Perintah Interaktif
+
+| Perintah | Deskripsi |
+|---------|-----------|
+| `/help` | Tampilkan bantuan |
+| `/exit` or `Ctrl+C` | Keluar |
+| `/clear` | Bersihkan percakapan |
+| `/config` | Lihat konfigurasi |
+| `/model <name>` | Ganti model |
+| `/tokens` | Lihat penggunaan token |
+
+## Verifikasi Konfigurasi
+
+```bash
+# Check environment variable
+echo $OPENAI_API_KEY
+
+# Test API connection
+codex "Hello, Codex!"
+
+# View configuration
+cat ~/.codex/config.toml
+```
+
+## Kasus Penggunaan Umum
+
+**Tinjauan kode:**
+
+```bash
+git diff | codex "Review these code changes"
+```
+
+**Hasilkan pesan commit:**
+
+```bash
+git diff --staged | codex "Generate a commit message for these changes"
+```
+
+**Perbaiki kesalahan:**
+
+```bash
+codex "Fix the TypeScript errors in src/components/"
+```
+
+**Jelaskan kode:**
+
+```bash
+cat main.py | codex "Explain what this code does"
+```
+
+## Pemecahan Masalah
+
+<AccordionGroup>
+  <Accordion title="Kesalahan Koneksi">
+    - Pastikan `base_url` di config.toml persis `https://api.aisonar.dev/v1`
+    - Periksa konektivitas jaringan
+    - Pastikan tidak ada gangguan dari proxy
+  </Accordion>
+
+  <Accordion title="Autentikasi Gagal">
+    - Periksa bahwa `env_key = "OPENAI_API_KEY"` ada di `~/.codex/config.toml`
+    - Periksa bahwa variabel lingkungan `OPENAI_API_KEY` telah diatur
+    - Periksa bahwa kunci dimulai dengan `sk-`
+    - Pastikan kunci aktif di dashboard AI Sonar
+  </Accordion>
+
+  <Accordion title="Model Tidak Ditemukan">
+    - Periksa nama model agar cocok secara tepat
+    - Verifikasi ketersediaan model di [aisonar.dev/en/models](https://aisonar.dev/models)
+  </Accordion>
+
+  <Accordion title="Field khusus Responses ditolak">
+    - Beberapa field hanya tersedia di `/v1/responses` ketika AI Sonar dapat menjamin perilaku tersebut untuk model dan jalur yang dipilih
+    - Jika Anda melihat `unsupported_request_field`, hapus field tersebut atau beralih ke alur kerja yang tidak bergantung padanya
+  </Accordion>
+
+  <Accordion title="/compact atau auto-compact gagal">
+    - Codex CLI memanggil `POST /v1/responses/compact`, bukan `/v1/compact`
+    - Permintaan kompaksi menggunakan `model` sesi saat ini, jadi model tersebut harus tersedia di jalur Responses
+    - Pertahankan `wire_api = "responses"` dan `base_url = "https://api.aisonar.dev/v1"`
+  </Accordion>
+</AccordionGroup>

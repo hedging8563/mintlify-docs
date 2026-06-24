@@ -1,0 +1,359 @@
+---
+title: "IDE & SDK Tương thích"
+description: "Hướng dẫn tương thích có cơ sở bằng chứng cho công cụ lập trình AI, SDK và framework"
+---
+
+## Tổng quan
+
+AI Sonar cung cấp nhiều định dạng API khác nhau để các công cụ lập trình phổ biến, SDK và framework có thể tích hợp với ít mã kết nối nhất.
+
+Trang này cố ý hẹp hơn một ma trận tiếp thị:
+
+- **Supported** có nghĩa là chúng tôi ghi lại một đường dẫn thiết lập cụ thể và AI Sonar phơi bày hình dạng giao thức mà đường dẫn đó mong đợi.
+- **Đường dẫn native mạnh** có nghĩa là repo cũng có adapter trực tiếp hoặc bằng chứng về định dạng yêu cầu cho họ giao thức đó.
+- **Nỗ lực tối đa** có nghĩa là tích hợp có thể hoạt động, nhưng client upstream không coi workflow gateway tùy chỉnh này là một hợp đồng ổn định.
+
+<Note>
+  Các trường không được hỗ trợ không được xử lý đồng nhất. Trên các tuyến tương thích, một số trường bị bỏ qua hoặc chuẩn hóa. Trên `/v1/responses`, các trường không được hỗ trợ có thể trả về lỗi `400` hoặc `503` rõ ràng khi tuyến đó không thể đảm bảo hành vi được yêu cầu.
+</Note>
+
+## Định dạng API được hỗ trợ
+
+| Điểm cuối | Định dạng | Trường hợp sử dụng |
+|----------|--------|----------|
+| `/v1/chat/completions` | OpenAI Chat | Tương thích tổng quát |
+| `/v1/responses` | OpenAI Responses | Hội thoại có trạng thái |
+| `/v1/messages` | Anthropic Messages | Tính năng gốc của Claude |
+| `/v1beta/models/:model:generateContent` | Google Gemini | Tính năng gốc của Gemini |
+
+## Tương thích IDE & CLI
+
+### Đường dẫn công cụ được ghi chép
+
+| Công cụ | Mức hỗ trợ | Định dạng | Ghi chú |
+|------|---------------|--------|-------|
+| **Cursor** | Được hỗ trợ có giới hạn | tương thích OpenAI | Hoạt động cho luồng chat/editor tiêu chuẩn BYOK, không thay thế các tính năng do Cursor quản lý như Tab Completion |
+| **Claude Code CLI** | Đường dẫn native mạnh | Anthropic | Tuyến `/v1/messages` gốc với phạm vi adapter cho thinking và `tool_choice` |
+| **Codex CLI** | Được hỗ trợ với giới hạn model/đường dẫn | OpenAI Responses | Xử lý `/v1/responses` như một đường dẫn nâng cao cho workflow đặc thù Codex; một số trường chỉ có trong Responses không được đảm bảo trên mọi model và đường dẫn định tuyến |
+| **Gemini CLI** | Nỗ lực tối đa / thử nghiệm | Gemini | Luồng URL base tùy chỉnh của AI Sonar không phải là một hợp đồng upstream ổn định |
+| **OpenCode** | Supported | tương thích OpenAI | Sử dụng nhà cung cấp tương thích OpenAI theo mặc định; chuyển sang nhà cung cấp dựa trên Responses chỉ khi bạn thực sự cần |
+
+<Note>
+  Các trình soạn thảo và công cụ agent tương thích OpenAI khác thường hoạt động với cùng mẫu base URL, nhưng repo này hiện tại không duy trì kiểm thử hồi quy theo công cụ cụ thể cho Windsurf, Aider, Continue.dev, Cline/Roo Code, GitHub Copilot, và các client tương tự.
+</Note>
+
+### Ví dụ cấu hình
+
+<Tabs>
+  <Tab title="Cursor">
+    ```
+    Base URL: https://api.aisonar.dev/v1
+    API Key: sk-your-api-key
+    ```
+    Cursor sử dụng định dạng công cụ kiểu Anthropic nội bộ. AI Sonar hỗ trợ cả hai:
+    - Định dạng OpenAI: `{ type: "function", function: { name, parameters } }`
+    - Anthropic format: `{ name, input_schema }` (không có trường type)
+  </Tab>
+  <Tab title="Claude Code">
+    ```bash
+    export ANTHROPIC_BASE_URL="https://api.aisonar.dev"
+    export ANTHROPIC_API_KEY="sk-your-api-key"
+    ```
+  </Tab>
+  <Tab title="OpenCode">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export LOCAL_ENDPOINT="https://api.aisonar.dev/v1"
+    ```
+  </Tab>
+  <Tab title="Aider">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export OPENAI_BASE_URL="https://api.aisonar.dev/v1"
+    aider --model gpt-5.4
+    ```
+  </Tab>
+</Tabs>
+
+## Tương thích SDK
+
+### Đường dẫn SDK & Framework được ghi chép
+
+| SDK / Khung làm việc | Ngôn ngữ | Mức hỗ trợ | Ghi chú |
+|-----------------|----------|---------------|-------|
+| **OpenAI SDK** | Python/JS/Go | Đường dẫn lõi được hỗ trợ | Chat Completions và Embeddings là đường dẫn mặc định được ghi chép; một số trường chỉ có trong Responses không được đảm bảo trên mọi model và đường dẫn định tuyến |
+| **Anthropic SDK** | Python/JS | Đường dẫn native mạnh | Tuyến Messages gốc với bằng chứng trực tiếp cho tools, thinking, và prompt caching |
+| **Vercel AI SDK** | TypeScript | Mẫu tích hợp được khuyến nghị | Ưu tiên `@ai-sdk/openai-compatible`; dùng `@ai-sdk/openai` chỉ khi bạn muốn hành vi Responses-native rõ ràng |
+| **LangChain** | Python/JS | Bề mặt chuẩn được hỗ trợ | `ChatOpenAI` và `OpenAIEmbeddings` là phạm vi dự định; các phần mở rộng nhà cung cấp gốc nằm ngoài phạm vi |
+| **LlamaIndex** | Python | Được hỗ trợ qua `OpenAILike` | Dùng `OpenAILike`, không dùng các lớp OpenAI tích hợp sẵn, cho các gateway bên thứ ba như AI Sonar |
+| **Dify** | - | Được hỗ trợ với giới hạn phạm vi | Nhà cung cấp OpenAI và các luồng hướng đến chat-completions là đường dẫn dự định; không phù hợp cho Responses đặc thù Codex hoặc hành vi WebSocket |
+
+## Tham số Chat Completions
+
+### Tham số cốt lõi
+
+| Tham số | Kiểu | Mô tả |
+|-----------|------|-------------|
+| `model` | string | Model identifier (bắt buộc) |
+| `messages` | array | Nội dung hội thoại (bắt buộc) |
+| `max_tokens` | integer | Số token đầu ra tối đa |
+| `temperature` | number | Nhiệt độ lấy mẫu (0-2) |
+| `top_p` | number | Lấy mẫu hạt nhân (0-1) |
+| `stream` | boolean | Bật streaming |
+
+### Gọi công cụ
+
+```json
+{
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_weather",
+        "description": "Get weather for a location",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "location": { "type": "string" }
+          }
+        },
+        "strict": true
+      }
+    }
+  ],
+  "tool_choice": "auto",
+  "parallel_tool_calls": true
+}
+```
+
+### Tùy chọn Tool Choice
+
+| Định dạng | Ví dụ | Mô tả |
+|--------|---------|-------------|
+| String | `"auto"`, `"none"`, `"required"` | Lựa chọn đơn giản |
+| OpenAI Object | `{ "type": "function", "function": { "name": "fn" } }` | Ép cụ thể một function |
+| Anthropic Object | `{ "type": "tool", "name": "fn", "disable_parallel_tool_use": true }` | Định dạng gốc của Anthropic |
+
+### Tham số nâng cao
+
+| Tham số | Kiểu | Mô tả |
+|-----------|------|-------------|
+| `stream_options` | object | `{ include_usage: true }` để lấy số lượng token |
+| `reasoning_effort` | string | `"low"`, `"medium"`, `"high"` cho các model reasoning-enabled GPT-5 |
+| `service_tier` | string | `"auto"` hoặc `"default"` |
+| `seed` | integer | Kết quả xác định được |
+| `logprobs` | boolean | Trả về log probabilities |
+| `top_logprobs` | integer | Số logprobs hàng đầu (0-20) |
+| `logit_bias` | object | Bản đồ bias token (-100 đến 100) |
+| `frequency_penalty` | number | Hình phạt lặp lại (-2 đến 2) |
+| `presence_penalty` | number | Hình phạt xuất hiện chủ đề (-2 đến 2) |
+| `stop` | string/array | Các chuỗi dừng |
+| `n` | integer | Số lượng completions (1-128) |
+| `user` | string | Định danh người dùng để theo dõi |
+
+### Tính năng nâng cao của OpenAI
+
+| Tham số | Kiểu | Mô tả |
+|-----------|------|-------------|
+| `modalities` | array | `["text", "audio"]` cho đa phương thức |
+| `audio` | object | Cấu hình đầu ra audio (voice, format) |
+| `prediction` | object | Đầu ra dự đoán để hoàn thành nhanh hơn |
+| `metadata` | object | Các cặp key-value để theo dõi |
+| `store` | boolean | Lưu để truy xuất sau này |
+
+### Tùy chọn theo nhà cung cấp
+
+```json
+{
+  "anthropic_options": {
+    "thinking": {
+      "type": "enabled",
+      "budget_tokens": 10000
+    },
+    "prompt_caching": true
+  },
+  "google_options": {
+    "safety_settings": [...],
+    "google_search": true,
+    "code_execution": true
+  }
+}
+```
+
+## Tham số Anthropic Messages
+
+### Tham số cốt lõi
+
+| Tham số | Kiểu | Mô tả |
+|-----------|------|-------------|
+| `model` | string | Định danh mô hình |
+| `messages` | array | Nội dung hội thoại |
+| `max_tokens` | integer | Đầu ra tối đa (lên đến 128000) |
+| `system` | string/array | Prompt hệ thống |
+| `stream` | boolean | Bật streaming |
+
+### Gọi công cụ
+
+```json
+{
+  "tools": [
+    {
+      "name": "get_weather",
+      "description": "Get weather",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "location": { "type": "string" }
+        }
+      }
+    }
+  ],
+  "tool_choice": {
+    "type": "auto",
+    "disable_parallel_tool_use": false
+  }
+}
+```
+
+### Suy nghĩ mở rộng
+
+```json
+{
+  "model": "claude-opus-4-6",
+  "thinking": {
+    "type": "enabled",
+    "budget_tokens": 10000
+  }
+}
+```
+
+## Tham số Responses API
+
+### Tham số cốt lõi
+
+| Tham số | Kiểu | Mô tả |
+|-----------|------|-------------|
+| `model` | string | Định danh mô hình |
+| `input` | string/array | Nội dung đầu vào |
+| `instructions` | string | Hướng dẫn hệ thống |
+| `max_output_tokens` | integer | Số token đầu ra tối đa |
+| `previous_response_id` | string | Tiếp tục hội thoại |
+
+### Tham số nâng cao
+
+| Tham số | Kiểu | Mô tả |
+|-----------|------|-------------|
+| `truncation_strategy` | string | `"auto"` hoặc `"disabled"` |
+| `include` | array | `["reasoning.encrypted_content"]` |
+| `reasoning_effort` | string | Dành cho các model reasoning |
+| `service_tier` | string | Hạng ưu tiên |
+
+### Định dạng Tool
+
+Hỗ trợ cả định dạng tool của OpenAI và Anthropic:
+
+```json
+// OpenAI format
+{ "type": "function", "name": "fn", "parameters": {...} }
+
+// Anthropic format (Cursor compatibility)
+{ "name": "fn", "input_schema": {...} }
+```
+
+## Tham số Gemini API
+
+### Tham số cốt lõi
+
+| Tham số | Kiểu | Mô tả |
+|-----------|------|-------------|
+| `contents` | array | Nội dung hội thoại |
+| `systemInstruction` | object | Prompt hệ thống |
+| `generationConfig` | object | Cấu hình sinh |
+
+### Tools
+
+```json
+{
+  "tools": [{
+    "functionDeclarations": [{
+      "name": "search",
+      "description": "Search the web",
+      "parameters": {...}
+    }],
+    "codeExecution": {},
+    "googleSearch": {}
+  }],
+  "toolConfig": {
+    "functionCallingConfig": {
+      "mode": "AUTO"
+    }
+  }
+}
+```
+
+### Cài đặt an toàn
+
+```json
+{
+  "safetySettings": [
+    {
+      "category": "HARM_CATEGORY_HARASSMENT",
+      "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+    }
+  ]
+}
+```
+
+### Tham số bổ sung
+
+| Tham số | Kiểu | Mô tả |
+|-----------|------|-------------|
+| `cachedContent` | string | Tham chiếu nội dung đã cache |
+| `responseMimeType` | string | `"text/plain"` hoặc `"application/json"` |
+| `responseSchema` | object | JSON schema cho đầu ra có cấu trúc |
+
+## Phát trực tuyến
+
+Tất cả các endpoint hỗ trợ streaming Server-Sent Events (SSE):
+
+```bash
+# Chat Completions
+curl https://api.aisonar.dev/v1/chat/completions \
+  -H "Authorization: Bearer sk-xxx" \
+  -d '{"model": "gpt-4o", "messages": [...], "stream": true}'
+
+# With usage tracking
+-d '{"...", "stream_options": {"include_usage": true}}'
+```
+
+## Xử lý lỗi
+
+AI Sonar trả về phản hồi lỗi tương thích OpenAI:
+
+```json
+{
+  "error": {
+    "message": "Invalid API key",
+    "type": "invalid_api_key",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+Xem [Hướng dẫn xử lý lỗi](/guides/error-handling) để biết chi tiết.
+
+## Thực hành tốt nhất
+
+<AccordionGroup>
+  <Accordion title="Dùng passthrough cho tham số chưa biết">
+    Tất cả các schema sử dụng `.passthrough()` - các tham số không xác định được chuyển tiếp đến nhà cung cấp upstream.
+  </Accordion>
+
+  <Accordion title="Ưu tiên stream_options để tính phí chính xác">
+    Bật `stream_options.include_usage` để có số token chính xác trong các phản hồi streaming.
+  </Accordion>
+
+  <Accordion title="Dùng đúng định dạng tool_choice">
+    Khớp với định dạng mà SDK của bạn mong đợi. AI Sonar chấp nhận cả định dạng OpenAI và Anthropic.
+  </Accordion>
+</AccordionGroup>

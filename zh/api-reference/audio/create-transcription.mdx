@@ -1,0 +1,174 @@
+---
+title: "创建转录"
+openapi: "POST /v1/audio/transcriptions"
+description: "将音频转录为输入语言"
+---
+
+## 请求体
+
+**同步请求超时：** 这个非聊天端点会等待路由到的模型完成处理。大输入、长音频或大批量请求可能超过常见的 30s 客户端默认超时，因此请将 HTTP 客户端超时设置为至少 `120s`。
+
+<ParamField body="file" type="file" required>
+  要转录的音频文件。支持的格式：flac、mp3、mp4、mpeg、mpga、m4a、ogg、wav、webm。
+</ParamField>
+
+<ParamField body="model" type="string" default="whisper-1">
+  要使用的模型。目前仅支持 `whisper-1`。
+</ParamField>
+
+<ParamField body="language" type="string">
+  音频的语言，采用 ISO-639-1 格式（例如：`en`、`zh`、`ja`）。
+</ParamField>
+
+<ParamField body="prompt" type="string">
+  可选文本，用于引导模型的风格或续接上一段内容。
+</ParamField>
+
+<ParamField body="response_format" type="string" default="json">
+  输出格式：`json`、`text`、`srt`、`verbose_json`、`vtt`。
+</ParamField>
+
+<ParamField body="temperature" type="number" default="0">
+  采样温度（0 到 1）。
+</ParamField>
+
+<ParamField body="timestamp_granularities" type="array">
+  时间戳粒度：`word` 和/或 `segment`。需要 `verbose_json`。
+</ParamField>
+
+## 响应
+
+<ResponseField name="text" type="string">
+  转录后的文本。
+</ResponseField>
+
+对于 `verbose_json`：
+
+<ResponseField name="task" type="string">
+  始终为 `transcribe`。
+</ResponseField>
+
+<ResponseField name="language" type="string">
+  检测到的语言。
+</ResponseField>
+
+<ResponseField name="duration" type="number">
+  音频时长，单位为秒。
+</ResponseField>
+
+<ResponseField name="segments" type="array">
+  带时间戳的转录片段。
+</ResponseField>
+
+<ResponseField name="words" type="array">
+  词级时间戳（如已请求）。
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/audio/transcriptions" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F file="@audio.mp3" \
+  -F model="whisper-1" \
+  -F language="en"
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+with open("audio.mp3", "rb") as audio_file:
+    response = client.audio.transcriptions.create(
+        model="whisper-1",
+        file=audio_file,
+        language="en"
+    )
+
+print(response.text)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+import fs from 'fs';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.audio.transcriptions.create({
+  model: 'whisper-1',
+  file: fs.createReadStream('audio.mp3'),
+  language: 'en'
+});
+
+console.log(response.text);
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/audio/transcriptions');
+
+$file = new CURLFile('audio.mp3', 'audio/mpeg', 'audio.mp3');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => [
+        'file' => $file,
+        'model' => 'whisper-1',
+        'language' => 'en'
+    ]
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+echo $data['text'];
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response (json)
+{
+  "text": "Hello, this is a test of the transcription API."
+}
+```
+
+```json Response (verbose_json)
+{
+  "task": "transcribe",
+  "language": "english",
+  "duration": 5.5,
+  "text": "Hello, this is a test of the transcription API.",
+  "segments": [
+    {
+      "id": 0,
+      "start": 0.0,
+      "end": 2.5,
+      "text": "Hello, this is a test",
+      "tokens": [...]
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## 翻译
+
+要将音频翻译为英语，请使用 translations endpoint：
+
+```python
+response = client.audio.translations.create(
+    model="whisper-1",
+    file=audio_file
+)
+```

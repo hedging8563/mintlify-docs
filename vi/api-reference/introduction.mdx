@@ -1,0 +1,229 @@
+---
+title: 'Tham khảo API'
+description: 'Tài liệu tham khảo đầy đủ cho AI Sonar API'
+---
+
+## Tổng quan
+
+AI Sonar là **ưu tiên native và tương thích OpenAI**. Hãy dùng các tuyến gốc của nhà cung cấp như `POST /v1/messages` cho Anthropic và `/v1beta/models/...:generateContent` cho Gemini khi bạn cần hành vi native, và dùng các endpoint `/v1` tương thích OpenAI khi bạn đang chuyển đổi các SDK hoặc công cụ theo kiểu OpenAI hiện có. `POST /v1/responses` vẫn là một đường dẫn tùy chọn nâng cao cho hành vi riêng của Responses.
+
+## Base URL
+
+```
+https://api.aisonar.dev
+```
+
+## Xác thực
+
+Tất cả các endpoint API đều yêu cầu xác thực bằng Bearer token:
+
+```bash
+Authorization: Bearer sk-your-api-key
+```
+
+Lấy API key của bạn từ [Dashboard](https://console.aisonar.dev).
+
+<Warning>
+**Về Interactive Playground**: Playground trên trang tài liệu này chỉ dành cho mục đích minh họa và không hỗ trợ nhập API key. Để kiểm tra API, vui lòng sử dụng:
+- **cURL** - Sao chép các lệnh ví dụ và thay thế `sk-your-api-key` bằng key thực tế của bạn
+- **Postman** - Nhập [OpenAPI spec](/openapi.json) của chúng tôi
+- **SDK** - Sử dụng OpenAI/Anthropic SDK với base URL của chúng tôi
+</Warning>
+
+## Các Endpoint được hỗ trợ
+
+### Chat & Tạo văn bản
+
+| Endpoint | Phương thức | Mô tả |
+|----------|--------|-------------|
+| `/v1/chat/completions` | POST | Chat completions tương thích với OpenAI |
+| `/v1/messages` | POST | Messages API tương thích với Anthropic |
+| `/v1/responses` | POST | OpenAI Responses API |
+
+### Embeddings & Rerank
+
+| Endpoint | Phương thức | Mô tả |
+|----------|--------|-------------|
+| `/v1/embeddings` | POST | Tạo text embeddings |
+| `/v1/rerank` | POST | Xếp hạng lại (Rerank) tài liệu |
+
+### Hình ảnh
+
+| Endpoint | Phương thức | Mô tả |
+|----------|--------|-------------|
+| `/v1/images/generations` | POST | Tạo hình ảnh từ văn bản |
+| `/v1/images/edits` | POST | Chỉnh sửa hình ảnh |
+| `/v1/images/generations/{id}` | GET | Đường dẫn trạng thái tác vụ hình ảnh cho các phản hồi hình ảnh dựa trên tác vụ |
+
+<Info>
+Một số mô hình hình ảnh có thể trả về kết quả trực tiếp (inline), một số có thể trả về phản hồi dựa trên tác vụ, và một số có thể hoạt động theo cả hai cách tùy thuộc vào đường dẫn nhà cung cấp được điều hướng. Nếu phản hồi tạo bao gồm `poll_url`, hãy làm theo chính xác đường dẫn đó.
+</Info>
+
+### Âm thanh
+
+| Endpoint | Phương thức | Mô tả |
+|----------|--------|-------------|
+| `/v1/audio/speech` | POST | Chuyển đổi văn bản thành giọng nói (TTS) |
+| `/v1/audio/transcriptions` | POST | Chuyển đổi giọng nói thành văn bản (STT) |
+
+### Thời gian thực
+
+| Endpoint | Phương thức | Mô tả |
+|----------|--------|-------------|
+| `/v1/realtime?model={model}` | WS | Phiên WebSocket thời gian thực |
+
+<Info>
+Dùng `/v1/realtime` cho yêu cầu upgrade WebSocket. `GET /v1/realtime` thông thường trả về metadata endpoint cho client không thể kiểm tra trực tiếp route WebSocket.
+</Info>
+
+### Video
+
+| Endpoint | Phương thức | Mô tả |
+|----------|--------|-------------|
+| `/v1/videos/generations` | POST | Tạo tác vụ tạo video |
+| `/v1/tasks/{id}` | GET | Lấy trạng thái tác vụ bất đồng bộ cho các công việc video |
+| `/v1/videos/generations/{id}` | GET | Đường dẫn trạng thái tác vụ video tương thích với phiên bản cũ |
+
+<Info>
+Đối với các khách hàng mới, ưu tiên sử dụng `/v1/tasks/{id}` và làm theo `poll_url` được trả về bởi các phản hồi tạo. Chỉ giữ lại `/v1/videos/generations/{id}` để tương thích ngược.
+</Info>
+
+### Tác vụ bất đồng bộ (Async Tasks)
+
+| Endpoint | Phương thức | Mô tả |
+|----------|--------|-------------|
+| `/v1/tasks/{id}` | GET | Endpoint trạng thái tác vụ bất đồng bộ thống nhất. Được khuyến nghị khi làm theo `poll_url` được trả về |
+
+<Info>
+Endpoint này không giới hạn ở video, âm nhạc và 3D. Một số tác vụ hình ảnh cũng có thể sử dụng `/v1/tasks/{id}` làm đường dẫn thăm dò (polling) chuẩn.
+</Info>
+
+### Âm nhạc
+
+| Endpoint | Phương thức | Mô tả |
+|----------|--------|-------------|
+| `/v1/music/generations` | POST | Tạo tác vụ tạo âm nhạc |
+| `/v1/music/generations/{id}` | GET | Đường dẫn trạng thái dành riêng cho âm nhạc |
+
+<Info>
+Đối với các khách hàng mới, hãy ưu tiên `poll_url` được trả về trước. Nếu bạn cần một endpoint trạng thái tác vụ cố định, hãy sử dụng `/v1/tasks/{id}`; giữ lại `/v1/music/generations/{id}` cho các đường dẫn tương thích dành riêng cho âm nhạc.
+</Info>
+
+### Tạo 3D
+
+| Endpoint | Phương thức | Mô tả |
+|----------|--------|-------------|
+| `/v1/3d/generations` | POST | Tạo tác vụ tạo mô hình 3D |
+| `/v1/3d/generations/{id}` | GET | Đường dẫn trạng thái dành riêng cho 3D |
+
+<Info>
+Đối với các khách hàng mới, hãy ưu tiên `poll_url` được trả về trước. Nếu bạn cần một endpoint trạng thái tác vụ cố định, hãy sử dụng `/v1/tasks/{id}`; giữ lại `/v1/3d/generations/{id}` cho các đường dẫn tương thích dành riêng cho 3D.
+</Info>
+
+### Mô hình (Models)
+
+| Endpoint | Phương thức | Mô tả |
+|----------|--------|-------------|
+| `/v1/models` | GET | Liệt kê tất cả các mô hình có sẵn |
+| `/v1/models/{model}` | GET | Lấy thông tin mô hình cụ thể |
+
+### Gemini (v1beta)
+
+Hỗ trợ định dạng Google Gemini API gốc:
+
+| Endpoint | Phương thức | Mô tả |
+|----------|--------|-------------|
+| `/v1beta/models/{model}:generateContent` | POST | Tạo nội dung (định dạng Gemini) |
+| `/v1beta/models/{model}:streamGenerateContent` | POST | Tạo nội dung dạng stream (định dạng Gemini) |
+
+<Note>
+Các endpoint Gemini hỗ trợ xác thực qua tham số truy vấn `?key=` bên cạnh Bearer token tiêu chuẩn.
+</Note>
+
+## Định dạng phản hồi
+
+Tất cả các phản hồi đều tuân theo một định dạng nhất quán:
+
+### Phản hồi thành công
+
+```json
+{
+  "id": "chatcmpl-abc123",
+  "object": "chat.completion",
+  "created": 1234567890,
+  "model": "gpt-4o",
+  "choices": [...],
+  "usage": {
+    "prompt_tokens": 10,
+    "completion_tokens": 20,
+    "total_tokens": 30
+  }
+}
+```
+
+### Tính minh bạch trong điều hướng (Routing)
+
+Tất cả các phản hồi đều bao gồm trường `_routing` với thông tin kênh:
+
+```json
+{
+  "id": "chatcmpl-abc123",
+  ...,
+  "_routing": {
+    "channel": {
+      "id": "ch_xxx",
+      "name": "channel-name",
+      "provider": "openai",
+      "channelType": "PLATFORM"
+    },
+    "cached": false,
+    "retryCount": 0
+  }
+}
+```
+
+| Trường | Mô tả |
+|-------|-------------|
+| `channel.id` | Định danh kênh được sử dụng |
+| `channel.provider` | Nhà cung cấp thượng nguồn (openai, anthropic, v.v.) |
+| `channel.channelType` | `PLATFORM` (AI Sonar) hoặc `PRIVATE` (BYOK) |
+| `cached` | Liệu phản hồi có được cung cấp từ bộ nhớ đệm (cache) hay không |
+| `retryCount` | Số lần thử lại (nếu có) |
+
+### Phản hồi lỗi
+
+```json
+{
+  "error": {
+    "message": "Invalid API key provided",
+    "type": "invalid_api_key",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+## Giới hạn tốc độ (Rate Limits)
+
+Giới hạn tốc độ dựa trên vai trò và có thể cấu hình bởi quản trị viên. Các giá trị mặc định:
+
+| Vai trò | Yêu cầu/phút |
+|------|-------------|
+| User | 60 |
+| Partner | 300 |
+| VIP | 1,000 |
+
+<Note>
+Liên hệ bộ phận hỗ trợ để biết các giới hạn tốc độ tùy chỉnh. Các giá trị chính xác có thể thay đổi tùy theo cấu hình tài khoản.
+</Note>
+
+Khi vượt quá giới hạn tốc độ, API sẽ trả về mã trạng thái `429` với header `Retry-After` cho biết thời gian cần chờ đợi.
+
+## Thông số kỹ thuật OpenAPI
+
+<Card
+  title="Đặc tả OpenAPI"
+  icon="file-code"
+  href="/openapi.json"
+>
+  Tải xuống thông số kỹ thuật OpenAPI 3.0 đầy đủ
+</Card>

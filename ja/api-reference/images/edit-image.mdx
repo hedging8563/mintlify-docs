@@ -1,0 +1,237 @@
+---
+title: "画像を編集"
+openapi: "POST /v1/images/edits"
+description: "プロンプトとソース画像を使用して画像を編集します"
+---
+
+## 概要
+
+元の画像とプロンプトを使用して、編集または拡張された画像を作成します。
+
+このルートは次の両方をサポートします:
+
+- 下記で文書化されている従来の `multipart/form-data` DALL-E スタイルのアップロードフロー
+- サポートされる画像-to-画像ファミリー向けの `image_url`、`image_urls`、または公式 `images` 参照を含む JSON リクエスト
+
+<Note>
+`gpt-image-2` はこのエンドポイントで利用できます。multipart `image` アップロード、JSON `image_url` / `image_urls`、公式 `images[]` 参照（`image_url` または `file_id`）に対応し、最大 16 枚のソース画像を受け付けます。`file_id` は先に `/v1/files` で作成してください。`async: true` を指定すると先にタスクを返します。公式 FLUX/BFL 編集モデルも同じタスクポーリングフローを使用します。
+
+`gpt-image-2` の編集では `resolution` と `background` は受け付けません。出力寸法には `size` を使用してください。複数画像または高レイテンシの編集では `async: true` を推奨し、返されたタスクをポーリングしてください。
+
+Nano Banana の参照画像リクエスト（`nano-banana`、`nano-banana-2`、`nano-banana-pro`）は `/v1/images/generations` で公開され、`operation: "image-to-image"` と `image_urls` を使用します。この `/v1/images/edits` エンドポイントには送信しないでください。
+
+xAI Grok Imagine の画像編集モデル（`grok-imagine-image`、`grok-imagine-image-quality`、および legacy `grok-imagine-image-pro`）は最大 3 枚のソース画像まで受け付けます。3 枚を超えるリクエストは上流へ転送される前に `400 too_many_images` で失敗します。
+
+互換性メモ: `gpt-image-2` リクエストで `input_fidelity` が送信された場合、GPT Image 2 は画像入力を自動的に高忠実度で処理するため、AI Sonar は上流へ転送する前にこのフィールドを削除します。
+</Note>
+
+## リクエストボディ
+
+**同期リクエストのタイムアウト:** ルーティング先の画像プロバイダーによっては、生成完了まで待って最終画像をインラインで返します。高解像度または高品質のリクエストは 1 分前後、またはそれ以上かかることがあるため、HTTP クライアントのタイムアウトは少なくとも `120s` に設定してください。作成レスポンスに `status: "pending"`、`task_id`、または `poll_url` が含まれる場合は、返された `poll_url` をポーリングしてください。
+
+リモート画像 URL: ルーティング先プロバイダーが multipart 入力を要求する場合、AI Sonar は JSON `image_url`、`image_urls`、または `images[].image_url` を取得し、そのバイト列を multipart の `image` パートとして転送します。URL は公開 `http`/`https` で、埋め込み認証情報やフラグメントを含まず、localhost、プライベート IP、予約済み IP 範囲へ解決されてはいけません。リダイレクト先も毎回再検証されます。取得される内容は実際の PNG、JPEG、または WebP 画像である必要があります。制限は画像 1 枚あたり `50MB`、URL 取得画像の合計 `200MB`/リクエスト、取得 timeout `10s`、最大 `3` リダイレクトです。
+
+<ParamField body="image" type="file">
+  multipart のソース画像。複数の GPT Image ソースを渡す場合は `image` を繰り返してください。ファイルは PNG、JPEG、または WebP、最大 16 枚、各 `50MB` までです。xAI Grok Imagine 編集モデルは同じ入力フィールドを使用しますが、ソース画像は 3 枚までです。従来の DALL-E 2 マスク編集では、透明領域を持つ PNG 入力、または別の `mask` が引き続き必要です。
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  希望する編集内容のテキスト説明。
+</ParamField>
+
+<ParamField body="mask" type="file">
+  完全に透明な領域が編集箇所を示す追加画像。有効な PNG ファイルで、50MB 未満、`image` と同じサイズである必要があります。
+</ParamField>
+
+<ParamField body="model" type="string" default="dall-e-2">
+  画像編集に使用するモデル。`gpt-image-2` に対応しています。従来の DALL-E 形式の編集では引き続き `dall-e-2` を使用できます。
+</ParamField>
+
+<ParamField body="n" type="integer" default="1">
+  生成する画像の数。1 から 10 の間である必要があります。
+</ParamField>
+
+<ParamField body="size" type="string">
+  生成画像のサイズ。`gpt-image-2` では `auto` または `WIDTHxHEIGHT` を使用します。寸法は 16 の倍数、最長辺は `3840px` 以下、長辺/短辺比は `3:1` 以下、総ピクセル数は `655,360` から `8,294,400` の範囲である必要があります。従来の DALL-E 編集は `256x256`、`512x512`、`1024x1024` に対応します。
+</ParamField>
+
+<ParamField body="response_format" type="string" default="url">
+  生成画像の返却形式。`url` または `b64_json` である必要があり、デフォルトは `url` です。
+
+  Azure Official または Azure-compatible の `gpt-image-2` ルートでは、AI Sonar は `response_format` を upstream に転送しません。ゲートウェイは常に upstream から `b64_json` として画像データを受け取ります。`url` リクエストでは各画像を CDN にアップロードして `data[].url` を返します。CDN ストレージが利用できない、またはアップロードに失敗した場合は、Base64 にフォールバックせずリクエストを失敗させます。`b64_json` では生の Base64 を返します。
+</ParamField>
+
+<ParamField body="async" type="boolean" default="false">
+  `gpt-image-2` または公式 FLUX/BFL 編集モデルで `true` にすると、最終画像が準備できる前にタスクを返します。完了した非同期編集は、要求された `response_format` に関係なく URL を返します。`b64_json` が必要な場合は同期リクエストを使用してください。
+</ParamField>
+
+<ParamField body="user" type="string">
+  不正利用監視のためのエンドユーザーの一意識別子。
+</ParamField>
+
+## レスポンス
+
+<ResponseField name="created" type="integer">
+  画像が作成された時の Unix タイムスタンプ。
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  生成された画像の配列。
+
+  各オブジェクトには以下が含まれます：
+  - `url` (string): 編集された画像の URL（response_format が `url` の場合）
+  - `b64_json` (string): Base64 エンコードされた画像（response_format が `b64_json` の場合）
+</ResponseField>
+
+### 非同期タスクレスポンス
+
+`gpt-image-2` または公式 FLUX/BFL 編集モデルで `async: true` を指定すると、リクエスト内で編集済み画像を待たずにタスクを作成します。レスポンスには `status: "pending"`、`task_id`、`poll_url` が含まれます。タスクが `completed` または `failed` になるまで `/v1/tasks/{task_id}` をポーリングしてください。
+
+非同期編集タスクは最終画像の URL のみを返します。生の `b64_json` 画像データが必要な場合は、同期リクエストを使用してください。
+
+
+タスク作成時に見積もり金額が予約される場合があります。完了したタスクは実際の使用量で精算され、失敗またはタイムアウトしたタスクは予約が解放または返金されます。
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/images/edits" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F "image=@sunlit_lounge.png" \
+  -F "mask=@mask.png" \
+  -F "prompt=A sunlit indoor lounge area with a pool" \
+  -F "n=1" \
+  -F "size=1024x1024"
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.images.edit(
+    model="dall-e-2",
+    image=open("sunlit_lounge.png", "rb"),
+    mask=open("mask.png", "rb"),
+    prompt="A sunlit indoor lounge area with a pool",
+    n=1,
+    size="1024x1024"
+)
+
+print(response.data[0].url)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+import fs from 'fs';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.images.edit({
+  model: 'dall-e-2',
+  image: fs.createReadStream('sunlit_lounge.png'),
+  mask: fs.createReadStream('mask.png'),
+  prompt: 'A sunlit indoor lounge area with a pool',
+  n: 1,
+  size: '1024x1024'
+});
+
+console.log(response.data[0].url);
+```
+
+```go Go
+package main
+
+import (
+    "bytes"
+    "fmt"
+    "io"
+    "mime/multipart"
+    "net/http"
+    "os"
+)
+
+func main() {
+    body := &bytes.Buffer{}
+    writer := multipart.NewWriter(body)
+
+    image, _ := os.Open("sunlit_lounge.png")
+    defer image.Close()
+    part, _ := writer.CreateFormFile("image", "sunlit_lounge.png")
+    io.Copy(part, image)
+
+    mask, _ := os.Open("mask.png")
+    defer mask.Close()
+    maskPart, _ := writer.CreateFormFile("mask", "mask.png")
+    io.Copy(maskPart, mask)
+
+    writer.WriteField("prompt", "A sunlit indoor lounge area with a pool")
+    writer.WriteField("n", "1")
+    writer.WriteField("size", "1024x1024")
+    writer.Close()
+
+    req, _ := http.NewRequest("POST", "https://api.aisonar.dev/v1/images/edits", body)
+    req.Header.Set("Authorization", "Bearer sk-your-api-key")
+    req.Header.Set("Content-Type", writer.FormDataContentType())
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+
+    result, _ := io.ReadAll(resp.Body)
+    fmt.Println(string(result))
+}
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/images/edits');
+
+$image = new CURLFile('sunlit_lounge.png', 'image/png', 'sunlit_lounge.png');
+$mask = new CURLFile('mask.png', 'image/png', 'mask.png');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => [
+        'image' => $image,
+        'mask' => $mask,
+        'prompt' => 'A sunlit indoor lounge area with a pool',
+        'n' => 1,
+        'size' => '1024x1024'
+    ]
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+echo $data['data'][0]['url'];
+```
+</RequestExample>
+
+<ResponseExample>
+```json レスポンス
+{
+  "created": 1706000000,
+  "data": [
+    {
+      "url": "https://..."
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## 注意事項
+
+<Note>
+  リモート画像の取得失敗は、上流リクエスト送信前の入力エラーとして返されます。到達不能な URL、timeout、403/404 応答、プライベート/内部ホスト、URL 内の認証情報やフラグメント、画像ではない内容、未対応形式、サイズ超過は `400` または `413` となり、`image_url` / `image_urls[n]` 入力が示されます。プライベートまたはヘッダー保護された素材は、multipart `image` ファイルとして直接アップロードするか、`/v1/files` 参照を作成してください。
+</Note>

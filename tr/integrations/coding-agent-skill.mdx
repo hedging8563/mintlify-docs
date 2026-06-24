@@ -1,0 +1,261 @@
+---
+title: "✨ AI Sonar API Entegrasyon Yeteneği"
+description: "Agent-First hata kurtarma ile, herhangi bir kodlama ajanı için paylaşılan AI Sonar API entegrasyon yeteneğini yükleyin."
+---
+
+<Note>
+Bu yetenek, kodlama ajanınıza yalnızca neye ihtiyacınız olduğunu açıklayarak AI Sonar'nın **yüzlerce AI API'sini** nasıl entegre edeceğini öğretir. Tek bir paylaşılan Agent-First yeteneği olarak paketlenmiştir ve skill veya rules dosyalarını destekleyen herhangi bir kodlama ajanı ile çalışır.
+
+API **[Agent-First](/guides/agent-first-api)** yaklaşımındadır — ajan bir model adını yanlış tahmin etse bile, hata yanıtı bunu tam olarak nasıl düzelteceğini söyler.
+</Note>
+
+<Note>
+Bu sayfa yeniden kullanılabilir bir yetenek paketleme katmanını açıklar; bir protokol uyumluluk yüzeyi değildir. Uç nokta, SDK veya istemci kurulumu gerekiyorsa ilgili araçların özel entegrasyon sayfalarını kullanın.
+</Note>
+
+<Note>
+**Tür**: Paylaşılan yetenek
+
+**Birincil yol**: Yeniden kullanılabilir paylaşılan yetenek üzerinden yönlendirilmiş API kullanımı
+
+**Destek seviyesi**: En iyi çaba
+</Note>
+
+
+## Nasıl Çalışır
+
+1. **Neye ihtiyacınız olduğunu açıklarsınız** — "Python projemde GPT-4 kullanmak istiyorum"
+2. **Ajan API'yi çağırır** — bir model adını veya uç noktayı tahmin edebilir
+3. **Herhangi bir sorun olursa** — API yapılandırılmış ipuçları döndürür (`did_you_mean`, `suggestions`, `retry_after`)
+4. **Agent kendini düzeltir** — ipuçlarını okur ve doğru parametrelerle yeniden dener
+5. **Çalışan kodu alırsınız** — genellikle ilk veya ikinci denemede
+
+## Kurulum
+
+<Note>
+Kanonik non-interactive kurulum komutunu kullanın:
+
+```bash
+npx skills add https://github.com/hedging8563/aisonar-skills --skill aisonar-api-integration -y
+```
+
+Bu, AI Sonar skills deposundan paylaşılan `aisonar-api-integration` yeteneğini yükler.
+
+Aracınız yükleyiciyi desteklemiyorsa, depodaki `skills/aisonar-api-integration/` klasörünü aracınızın paylaşılan yetenek veya rules dizinine kopyalayın.
+</Note>
+
+### Kurulumu Doğrulama
+
+Kodlama ajanınıza şunu sorun:
+```
+Hangi yetenekler kullanılabilir?
+```
+
+`aisonar-api-integration` görüyorsanız, kurulum başarılı olmuştur.
+
+## API Key'inizi Alın
+
+<Steps>
+  <Step title="AI Sonar'yı Ziyaret Edin">
+    [aisonar.dev](https://aisonar.dev) adresine gidin
+  </Step>
+  <Step title="Oturum Açın">
+    Bir hesap oluşturun veya giriş yapın
+  </Step>
+  <Step title="API Key Alın">
+    [Dashboard → API Keys](https://console.aisonar.dev/api) sayfasına gidin ve yeni bir key oluşturun
+  </Step>
+  <Step title="Key'i Kopyalayın">
+    Key'iniz `sk-...` ile başlar — güvenli bir şekilde saklayın
+  </Step>
+</Steps>
+
+<Tip>
+API key değerini promptlara veya kaynak dosyalara yapıştırmanız gerekmez. Yetenek hangi ortam değişkeninin kullanılacağını sormalı ve key değerini o değişkenden okuyan kod üretmelidir.
+</Tip>
+
+## Örnekler
+
+### Sohbet Tamamlama
+
+**Siz şunu dersiniz:**
+```
+Python projemde GPT-4 kullanmak istiyorum
+```
+
+**Ajan şunu üretir:**
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["TOKENLAB_API_KEY"],
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+
+print(response.choices[0].message.content)
+```
+
+Şununla çalıştırın:
+
+```bash
+export TOKENLAB_API_KEY="sk-your-api-key"
+python app.py
+```
+
+Ajan yanlış bir model adı tahmin ederse (ör. `gpt5`), API şunu döndürür:
+```json
+{
+  "error": {
+    "code": "model_not_found",
+    "did_you_mean": "gpt-5.4",
+    "suggestions": [{"id": "gpt-5.4"}, {"id": "gpt-5-mini"}],
+    "hint": "Did you mean 'gpt-5.4'? Use GET https://api.aisonar.dev/v1/models to list all available models."
+  }
+}
+```
+
+Ajan `did_you_mean` değerini okur, model adını düzeltir ve yeniden dener — hepsi otomatik olarak.
+
+### Görsel Oluşturma
+
+**Siz şunu dersiniz:**
+```
+Node.js ile Flux kullanarak görsel oluştur
+```
+
+Ajan görsel API'sini çağırır, hataları işler ve indirme ile kaydetme mantığını içeren tam kod üretir.
+
+### Konuşma Tanıma
+
+**Siz şunu dersiniz:**
+```
+Uygulamama speech-to-text entegre et
+```
+
+Ajan, doğru `/v1/audio/transcriptions` uç noktası ve ses dosyası işleme ile kod üretir.
+
+## Agent-First Hata Kurtarma
+
+Her hata yanıtı, herhangi bir kodlama ajanının ayrıştırabileceği yapılandırılmış ipuçları içerir. Ayrıntılar için [tam Agent-First API referansına](/guides/agent-first-api) bakın.
+
+| Hata | API'nin Döndürdüğü | Ajanın Yaptığı |
+|-------|---------------------|---------------------|
+| Yanlış model adı | `did_you_mean` + `suggestions` | Otomatik düzeltir ve yeniden dener |
+| Yetersiz bakiye | `balance_usd` + daha ucuz `suggestions` | Uygun fiyatlı modele geçer |
+| Model kullanılamıyor | `alternatives` + `retry_after` | Kullanılabilir modele geçer |
+| Hız sınırına takıldı | `retry_after` (tam saniye) | Bekler ve yeniden dener |
+| Context çok uzun | daha büyük modellere sahip `suggestions` | Daha büyük context modeline geçer |
+| Chat dışı istek sözleşmesi uyuşmazlığı | `supported_operations`, `supported_parameters`, `request_endpoint`, `recommended_request` | İsteği modelin public contract bilgisinden yeniden oluşturur |
+
+### Native Uç Nokta Optimizasyonu
+
+`/v1/chat/completions` çağrısını bir Claude veya Gemini modeliyle yaptığınızda, API optimizasyon header'ları döndürür:
+
+
+
+Bu header’ları zorunlu otomatik geçiş değil, yönlendirme ipucu olarak değerlendirin. Claude native çağrıları `/v1/messages` kullanır; Gemini native çağrıları the native endpoint hint header tarafından bildirilen endpoint’i, genellikle `/v1beta/gemini` yolunu izlemelidir.
+
+### Model Keşfi
+
+Dokümantasyonda arama yapmanıza gerek yok:
+
+```bash
+# Makine tarafından okunabilir API genel görünümü
+curl https://api.aisonar.dev/llms.txt
+
+# List models by category
+curl "https://api.aisonar.dev/v1/models?category=chat" -H "Authorization: Bearer sk-KEY"
+curl "https://api.aisonar.dev/v1/models?category=image" -H "Authorization: Bearer sk-KEY"
+
+# Chat dışı senaryolar için önerilen liste
+curl "https://api.aisonar.dev/v1/models?recommended_for=image" -H "Authorization: Bearer sk-KEY"
+curl "https://api.aisonar.dev/v1/models?recommended_for=translation" -H "Authorization: Bearer sk-KEY"
+
+# Chat dışı isteği tekrar denemeden önce bir modelin public contract bilgisini okuyun
+curl "https://api.aisonar.dev/v1/models/gpt-image-2" -H "Authorization: Bearer sk-KEY"
+
+# Yeteneğe göre filtrele
+curl "https://api.aisonar.dev/v1/models?tag=coding" -H "Authorization: Bearer sk-KEY"
+```
+
+## Desteklenen Yetenekler
+
+| Tür | Örnekler |
+|------|----------|
+| Sohbet | GPT-5.4, Claude, Gemini, DeepSeek |
+| Görsel Oluşturma | GPT Image, Flux, Stable Diffusion, Gemini görsel modelleri |
+| Müzik Oluşturma | Suno |
+| 3D Modeller | Tripo3D |
+| Ses | Metinden konuşmaya, konuşmadan metne |
+| Gömlemeler | text-embedding-3 |
+| Yeniden Sıralama | bce-reranker, qwen3-rerank |
+
+## En İyi Uygulamalar
+
+<CardGroup cols={2}>
+  <Card title="API Key Güvenliği" icon="shield">
+    Environment variable'ları kullanın. Key'leri asla git'e commit etmeyin veya frontend kodunda açığa çıkarmayın.
+  </Card>
+  <Card title="Maliyet Yönetimi" icon="wallet">
+    [dashboard](https://console.aisonar.dev) üzerinde kullanım limitleri belirleyin. Maliyetleri programatik olarak izlemek için `error.balance_usd` değerini kontrol edin.
+  </Card>
+  <Card title="Doğrudan Olun" icon="bullseye">
+    "AI Sonar'nın bir görsel API'si var mı?" yerine "Python'da görsel üretmek istiyorum" deyin.
+  </Card>
+  <Card title="Senaryonuzu Açıklayın" icon="message">
+    "GPT-4 kullan" yerine "GPT-4 ile bir chatbot geliştiriyorum" demek, agent'e daha fazla context sağlar.
+  </Card>
+</CardGroup>
+
+## SSS
+
+<AccordionGroup>
+  <Accordion title="Skill otomatik olarak tetiklenmiyor mu?">
+    İsteğinizde "AI Sonar" veya "AI Sonar API" ifadesini belirtmeyi deneyin:
+    ```
+    Projeme GPT-4 entegre etmek için AI Sonar kullan
+    ```
+  </Accordion>
+
+  <Accordion title="API, agent'in doğru modeli bulmasına nasıl yardımcı olur?">
+    AI Sonar'nın [Agent-First API'si](/guides/agent-first-api) yapılandırılmış hata ipuçları döndürür. Agent yanlış bir model adı tahmin ederse, hata doğru adla birlikte `did_you_mean` ve alternatiflerle birlikte `suggestions` içerir. Agent bunları okur ve bir sonraki denemede otomatik düzeltme yapar.
+  </Accordion>
+
+  <Accordion title="Hangi coding agent'ler destekleniyor?">
+    Paylaşılan skill veya rules dizinlerini destekleyen herhangi bir coding agent. Yükleyici desteklendiğinde, `npx skills add` paylaşılan `aisonar-api-integration` skill'ini algılanan konuma otomatik olarak yerleştirir.
+  </Accordion>
+
+  <Accordion title="Skill nasıl güncellenir?">
+    Yükleyiciyi yeniden çalıştırın:
+    ```bash
+    npx skills add https://github.com/hedging8563/aisonar-skills --skill aisonar-api-integration -y
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Kaynaklar
+
+<CardGroup cols={2}>
+  <Card title="Agent-First API" icon="robot" href="/tr/guides/agent-first-api">
+    Yapılandırılmış hata ipuçları için tam referans
+  </Card>
+  <Card title="API Dokümantasyonu" icon="book" href="https://docs.aisonar.dev">
+    Tam API referansı
+  </Card>
+  <Card title="Modeller" icon="sparkles" href="https://aisonar.dev/models">
+    Mevcut yüzlerce modeli inceleyin
+  </Card>
+  <Card title="llms.txt" icon="file-lines" href="https://api.aisonar.dev/llms.txt">
+    AI agent'leri için makine tarafından okunabilir API genel görünümü
+  </Card>
+</CardGroup>
+
+<Info>
+**Sorularınız mı var?** [GitHub Issues](https://github.com/hedging8563/aisonar-skills/issues) sayfamıza göz atın veya [support@aisonar.dev](mailto:support@aisonar.dev) ile iletişime geçin
+</Info>

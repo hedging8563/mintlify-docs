@@ -1,0 +1,35 @@
+---
+title: "Batch İptal Et"
+openapi: "POST /v1/batches/{batch_id}/cancel"
+description: "Sıralı veya çalışan bir batch işini iptal eder."
+---
+
+## Genel Bakış
+
+Bu uç nokta, AI Sonar'nın OpenAI uyumlu Batch API'sinin bir parçasıdır. Batch işleri, yüklenen JSONL dosyalarını kullanır, asenkron olarak çalışır ve daha sonra çıktı/hata dosyaları döndürebilir.
+
+## Notlar
+
+- Batch girdi dosyaları `purpose=batch` kullanmalıdır.
+- `completion_window` şu anda `24s`'dir.
+- Çıktı sıralaması garanti edilmez; her zaman `custom_id` ile eşleştirin.
+- Batch öğeleri içinde akış desteği yoktur.
+
+## Örnek
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/batches/batch_abc123/cancel" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+## İstek / Yanıt
+
+Kesin şemayı görmek için yukarıdaki etkileşimli OpenAPI panelini kullanın.
+
+## Operasyonel İpuçları
+
+- İdempotent aşağı akış uzlaştırması için `custom_id` kullanın.
+- `output_file_id` ve `error_file_id`'yi yalnızca işçi batch'i tamamladıktan sonra bekleyin.
+- Batch fiyatlandırması, `isBatchRequest=true` indirim kuralları uygulandığı için senkron fiyatlandırmadan farklı olabilir.

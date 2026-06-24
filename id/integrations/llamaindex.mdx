@@ -1,0 +1,144 @@
+---
+title: "LlamaIndex"
+description: "Integrasikan AI Sonar dengan LlamaIndex menggunakan integrasi yang kompatibel dengan OpenAI"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Gambaran Umum
+
+Untuk AI Sonar, setup LlamaIndex yang lebih andal adalah menggunakan **integrasi yang kompatibel dengan OpenAI** alih-alih class OpenAI bawaan.
+
+Dokumentasi LlamaIndex saat ini secara eksplisit merekomendasikan `OpenAILike` untuk endpoint pihak ketiga yang kompatibel dengan OpenAI, karena class OpenAI bawaan menyimpulkan metadata dari nama model resmi.
+
+Dengan kata lain: di sini perlakukan `OpenAILike` sebagai jalur AI Sonar yang didukung, bukan kelas OpenAI bawaan.
+
+
+<Note>
+**Jenis**: Framework atau platform
+
+**Jalur utama**: kompatibel OpenAI melalui OpenAILike
+
+**Tingkat dukungan**: Didukung melalui OpenAILike
+</Note>
+
+## Instalasi
+
+```bash
+pip install llama-index-core \
+  llama-index-readers-file \
+  llama-index-llms-openai-like \
+  llama-index-embeddings-openai-like
+```
+
+## Konfigurasi Dasar
+
+```python
+from llama_index.core import Settings
+from llama_index.llms.openai_like import OpenAILike
+from llama_index.embeddings.openai_like import OpenAILikeEmbedding
+
+llm = OpenAILike(
+    model="gpt-5.4",
+    api_base="https://api.aisonar.dev/v1",
+    api_key="sk-your-api-key",
+    is_chat_model=True,
+)
+
+embed_model = OpenAILikeEmbedding(
+    model_name="text-embedding-3-small",
+    api_base="https://api.aisonar.dev/v1",
+    api_key="sk-your-api-key",
+)
+
+Settings.llm = llm
+Settings.embed_model = embed_model
+```
+
+## Penggunaan Dasar
+
+```python
+response = llm.complete("Explain AI Sonar in one sentence.")
+print(response.text)
+```
+
+## Chat
+
+```python
+from llama_index.core.llms import ChatMessage
+
+messages = [
+    ChatMessage(role="system", content="You are a helpful assistant."),
+    ChatMessage(role="user", content="What is the capital of France?")
+]
+
+response = llm.chat(messages)
+print(response.message.content)
+```
+
+## Streaming
+
+```python
+for chunk in llm.stream_complete("Write a short poem about AI."):
+    print(chunk.delta, end="", flush=True)
+```
+
+## Embeddings
+
+```python
+vector = embed_model.get_text_embedding("Hello, world!")
+print(vector[:5])
+```
+
+## RAG dengan Dokumen
+
+```python
+from llama_index.core import SimpleDirectoryReader, VectorStoreIndex
+
+documents = SimpleDirectoryReader("./data").load_data()
+index = VectorStoreIndex.from_documents(documents)
+
+query_engine = index.as_query_engine()
+response = query_engine.query("What is in my documents?")
+print(response)
+```
+
+## Mesin Chat
+
+```python
+chat_engine = index.as_chat_engine(chat_mode="condense_question")
+
+response = chat_engine.chat("What is AI Sonar?")
+print(response)
+
+response = chat_engine.chat("How many models does it support?")
+print(response)
+```
+
+## Penggunaan Async
+
+```python
+import asyncio
+
+async def main():
+    response = await llm.acomplete("Hello!")
+    print(response.text)
+
+asyncio.run(main())
+```
+
+## Praktik Terbaik
+
+<AccordionGroup>
+  <Accordion title="Gunakan OpenAILike untuk AI Sonar">
+    Utamakan `llama_index.llms.openai_like.OpenAILike` dan `llama_index.embeddings.openai_like.OpenAILikeEmbedding` untuk AI Sonar dan gateway pihak ketiga lain yang kompatibel dengan OpenAI.
+  </Accordion>
+
+  <Accordion title="Set api_base secara eksplisit">
+    Berikan `api_base="https://api.aisonar.dev/v1"` secara langsung di kode alih-alih mengandalkan nama environment variable OpenAI yang lebih lama.
+  </Accordion>
+
+  <Accordion title="Pisahkan peran model">
+    Gunakan model chat/reasoning untuk sintesis dan `text-embedding-3-small` atau `text-embedding-3-large` untuk retrieval.
+  </Accordion>
+</AccordionGroup>

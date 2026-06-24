@@ -1,0 +1,157 @@
+---
+title: "Vercel AI SDK"
+description: "Integra AI Sonar con Vercel AI SDK usando proveedores compatibles con OpenAI o nativos de Responses"
+---
+
+## Descripción general
+
+Para AI Sonar, la opción predeterminada más estable en Vercel AI SDK es el **proveedor compatible con OpenAI**.
+
+Si específicamente necesitas el comportamiento **nativo de Responses**, puedes cambiar al proveedor OpenAI y mantener la misma URL base de AI Sonar.
+
+Esta página debe leerse como un patrón de integración recomendado, no como una afirmación de que cada utilidad del Vercel AI SDK tenga cobertura de extremo a extremo dedicada en este repositorio.
+
+## Opción predeterminada recomendada: Proveedor compatible con OpenAI
+
+```bash
+npm install ai @ai-sdk/openai-compatible
+```
+
+```typescript
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
+
+export const aisonar = createOpenAICompatible({
+  name: 'aisonar',
+  apiKey: process.env.TOKENLAB_API_KEY,
+  baseURL: 'https://api.aisonar.dev/v1',
+});
+```
+
+## Generar texto
+
+```typescript
+import { generateText } from 'ai';
+import { aisonar } from './aisonar';
+
+const { text } = await generateText({
+  model: aisonar.chatModel('gpt-5.4'),
+  prompt: 'Explain AI Sonar in one sentence.',
+});
+
+console.log(text);
+```
+
+## Transmitir texto en streaming
+
+```typescript
+import { streamText } from 'ai';
+import { aisonar } from './aisonar';
+
+const result = await streamText({
+  model: aisonar.chatModel('gpt-5.4'),
+  prompt: 'Write a short poem about coding.',
+});
+
+for await (const textPart of result.textStream) {
+  process.stdout.write(textPart);
+}
+```
+
+## Llamada de herramientas
+
+```typescript
+import { generateText, tool } from 'ai';
+import { z } from 'zod';
+import { aisonar } from './aisonar';
+
+const result = await generateText({
+  model: aisonar.chatModel('gpt-5.4'),
+  prompt: 'What is the weather in San Francisco?',
+  tools: {
+    weather: tool({
+      description: 'Get weather in a location',
+      parameters: z.object({
+        location: z.string(),
+      }),
+      execute: async ({ location }) => ({
+        location,
+        temperature: 72,
+        condition: 'sunny',
+      }),
+    }),
+  },
+});
+
+console.log(result.text);
+```
+
+## Salida estructurada
+
+```typescript
+import { generateObject } from 'ai';
+import { z } from 'zod';
+import { aisonar } from './aisonar';
+
+const { object } = await generateObject({
+  model: aisonar.chatModel('gpt-5.4'),
+  schema: z.object({
+    name: z.string(),
+    role: z.string(),
+  }),
+  prompt: 'Generate a fake developer profile.',
+});
+
+console.log(object);
+```
+
+## Si explícitamente necesitas comportamiento nativo de Responses
+
+```bash
+npm install ai @ai-sdk/openai
+```
+
+```typescript
+import { createOpenAI } from '@ai-sdk/openai';
+
+export const aisonarResponses = createOpenAI({
+  apiKey: process.env.TOKENLAB_API_KEY,
+  baseURL: 'https://api.aisonar.dev/v1',
+});
+```
+
+```typescript
+import { generateText } from 'ai';
+import { aisonarResponses } from './aisonar-responses';
+
+const { text } = await generateText({
+  model: aisonarResponses('gpt-5.4'),
+  prompt: 'Explain AI Sonar in one sentence.',
+});
+```
+
+<Note>
+Usa `@ai-sdk/openai-compatible` como opción predeterminada segura para integraciones de estilo proxy. Cambia a `@ai-sdk/openai` solo cuando explícitamente quieras una ruta de proveedor construida sobre `/v1/responses`.
+</Note>
+
+## Variables de entorno
+
+```bash
+# .env.local
+TOKENLAB_API_KEY=sk-your-api-key
+```
+
+## Mejores prácticas
+
+<AccordionGroup>
+  <Accordion title="Prioriza openai-compatible primero">
+    Para pasarelas de terceros y servidores proxy, `@ai-sdk/openai-compatible` suele ser el punto de partida que genera menos sorpresas.
+  </Accordion>
+
+  <Accordion title="Cambia a Responses solo cuando sea necesario">
+    Si necesitas un comportamiento del proveedor vinculado a `/v1/responses`, cambia deliberadamente el paquete del proveedor en lugar de mezclar ambos patrones en un solo cliente.
+  </Accordion>
+
+  <Accordion title="Mantén los secretos en el servidor">
+    Nunca expongas tu API key de AI Sonar en código del lado del cliente. Coloca la configuración del proveedor en archivos del servidor o rutas de API.
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,252 @@
+---
+title: "OpenAI SDK"
+description: "Verwenden Sie AI Sonar mit offiziellen OpenAI-SDKs und OpenAI-kompatiblen Clients"
+---
+
+## Übersicht
+
+AI Sonar funktioniert mit den offiziellen OpenAI-SDKs, indem der Client auf `https://api.aisonar.dev/v1` zeigt.
+
+Bei den meisten neuen Projekten sollten Sie **Chat Completions** als standardmäßigen OpenAI-kompatiblen Pfad bevorzugen. Verwenden Sie die **Responses API** nur, wenn Sie explizit Responses-spezifisches Verhalten benötigen.
+
+Responses-spezifische Felder verhalten sich nicht zwangsläufig in jedem Modell und über jeden gerouteten Pfad identisch.
+
+<Note>
+Python, JavaScript und Go haben offizielle OpenAI-SDKs. PHP funktioniert gut mit OpenAI-kompatiblen Community-Clients, ist jedoch kein offizielles OpenAI-SDK.
+</Note>
+
+<Note>
+**Typ**: Native SDK
+
+**Primärer Pfad**: OpenAI-kompatibel / Chat Completions
+
+**Unterstützungszuverlässigkeit**: Unterstützter Kernpfad
+</Note>
+
+## Installation
+
+<CodeGroup>
+
+```bash Python
+pip install openai
+```
+
+```bash JavaScript
+npm install openai
+```
+
+```bash Go
+go get github.com/openai/openai-go/v3
+```
+
+</CodeGroup>
+
+<Note>
+Verwenden Sie `POST /v1/responses` nur, wenn Sie explizit Responses-spezifisches Verhalten benötigen. Einige nur für Responses bestimmte Felder können weiterhin vom ausgewählten Modell und dem gerouteten Pfad abhängen.
+</Note>
+
+## Client konfigurieren
+
+<CodeGroup>
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1",
+)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1',
+});
+```
+
+```go Go
+package main
+
+import (
+    openai "github.com/openai/openai-go/v3"
+    "github.com/openai/openai-go/v3/option"
+)
+
+func main() {
+    client := openai.NewClient(
+        option.WithAPIKey("sk-your-api-key"),
+        option.WithBaseURL("https://api.aisonar.dev/v1"),
+    )
+
+    _ = client
+}
+```
+
+</CodeGroup>
+
+## Empfohlen: Chat Completions
+
+<CodeGroup>
+
+```python Python
+response = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "Explain what AI Sonar does in one sentence."}]
+)
+
+print(response.choices[0].message.content)
+```
+
+```javascript JavaScript
+const response = await client.chat.completions.create({
+  model: 'gpt-5.4',
+  messages: [{ role: 'user', content: 'Explain what AI Sonar does in one sentence.' }],
+});
+
+console.log(response.choices[0].message.content);
+```
+
+```bash cURL
+curl https://api.aisonar.dev/v1/chat/completions \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.4",
+    "messages": [
+      {"role": "user", "content": "Explain what AI Sonar does in one sentence."}
+    ]
+  }'
+```
+
+</CodeGroup>
+
+## Erweitert: Responses API
+
+Verwenden Sie diesen Pfad nur, wenn Ihr Tool oder Workflow ausdrücklich von den OpenAI Responses-Semantiken abhängt.
+
+### Streaming mit Responses
+
+<CodeGroup>
+
+```python Python
+stream = client.responses.create(
+    model="gpt-5.4",
+    input="Write a short poem about coding.",
+    stream=True,
+)
+
+for event in stream:
+    if event.type == "response.output_text.delta":
+        print(event.delta, end="")
+```
+
+```javascript JavaScript
+const stream = await client.responses.create({
+  model: 'gpt-5.4',
+  input: 'Write a short poem about coding.',
+  stream: true,
+});
+
+for await (const event of stream) {
+  if (event.type === 'response.output_text.delta') {
+    process.stdout.write(event.delta);
+  }
+}
+```
+
+</CodeGroup>
+
+## Tools / Funktionsaufrufe
+
+```python
+response = client.responses.create(
+    model="gpt-5.4",
+    input="What's the weather in Tokyo?",
+    tools=[{
+        "type": "function",
+        "name": "get_weather",
+        "description": "Get weather for a location",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "location": {"type": "string"}
+            },
+            "required": ["location"]
+        }
+    }]
+)
+
+for item in response.output:
+    if item.type == "function_call":
+        print(item.name)
+        print(item.arguments)
+```
+
+## Vision mit Responses
+
+```python
+response = client.responses.create(
+    model="gpt-4o",
+    input=[{
+        "role": "user",
+        "content": [
+            {"type": "input_text", "text": "What's in this image?"},
+            {"type": "input_image", "image_url": "https://example.com/image.jpg"}
+        ]
+    }]
+)
+
+print(response.output_text)
+```
+
+## Embeddings
+
+```python
+response = client.embeddings.create(
+    model="text-embedding-3-small",
+    input="Hello world"
+)
+
+print(response.data[0].embedding[:5])
+```
+
+## Chat Completions
+
+Chat Completions ist der standardmäßige OpenAI-kompatible Pfad für AI Sonar:
+
+```python
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "Hello!"}
+    ]
+)
+
+print(response.choices[0].message.content)
+```
+
+## Fehlerbehebung
+
+<AccordionGroup>
+  <Accordion title="Verbindungsfehler">
+    - Überprüfen Sie, ob die Basis-URL genau `https://api.aisonar.dev/v1` ist
+    - Prüfen Sie auf Proxy-Interferenzen oder benutzerdefinierte HTTP-Client-Überschreibungen
+    - Stellen Sie sicher, dass Ihre SDK-Version aktuell ist, bevor Sie das Verhalten des Providers debuggen
+  </Accordion>
+
+  <Accordion title="Authentifizierung fehlgeschlagen">
+    - Prüfen Sie, ob Ihr API-Schlüssel mit `sk-` beginnt
+    - Überprüfen Sie, ob der Schlüssel im AI Sonar-Dashboard aktiv ist
+    - Bestätigen Sie, dass das SDK `Authorization: Bearer ...` sendet
+  </Accordion>
+
+  <Accordion title="Falscher API-Pfad">
+    - `responses.create(...)` sendet Anfragen an `/v1/responses`
+    - `chat.completions.create(...)` sendet Anfragen an `/v1/chat/completions`
+    - Verwenden Sie standardmäßig Chat Completions, es sei denn, Sie benötigen explizit Responses-spezifisches Verhalten
+  </Accordion>
+</AccordionGroup>

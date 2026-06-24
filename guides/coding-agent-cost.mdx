@@ -1,0 +1,145 @@
+---
+title: "Coding Agent Cost Optimization"
+description: "Practical strategies to reduce coding agent API costs by 60-90%"
+---
+
+## The Cost Problem
+
+A typical coding agent session burns through tokens fast:
+
+| Activity | Tokens per call | Calls per hour | Hourly tokens |
+|----------|----------------|----------------|---------------|
+| Code generation | 5,000–50,000 | 10–30 | 150K–1.5M |
+| Codebase search | 2,000–20,000 | 20–50 | 100K–1M |
+| Code review | 10,000–80,000 | 5–10 | 100K–800K |
+| Autocomplete | 500–3,000 | 50–200 | 50K–600K |
+| **Total** | | | **400K–4M+** |
+
+At premium model rates, that's $3–30/hour per developer. For a team of 10, that's $500–5,000/month.
+
+## Smart Model Selection
+
+Not every coding task needs the most expensive model. Match the task to the right tier:
+
+| Task | Recommended | Cost Tier | Why |
+|------|-------------|-----------|-----|
+| Architecture design | `claude-opus-4-6`, `gpt-5.4` | $$$$ Premium | Complex reasoning needed |
+| Code generation | `claude-sonnet-4-6`, `gemini-3-pro-preview` | $$$ Standard | Best quality/cost balance |
+| Code review | `claude-sonnet-4-6`, `deepseek-r1` | $$–$$$ | Pattern matching, less creativity |
+| Bug fixing | `claude-sonnet-4-6`, `gpt-5-mini` | $$–$$$ | Focused, well-defined tasks |
+| Tab completion | `gpt-5-mini`, `gemini-3-flash-preview` | $$ Budget | Speed matters more than depth |
+| Boilerplate | `deepseek-v3.2`, `gpt-5-mini` | $ Economy | Simple, repetitive patterns |
+
+<Tip>
+See [Model Selection Guide](/guides/coding-agent-models) for detailed model comparisons and per-tool configuration.
+</Tip>
+
+## Caching Strategies
+
+Coding agents are ideal for caching because they repeat similar patterns constantly.
+
+### Prompt Cache (Provider-Level)
+
+[Upstream prompt caching](/guides/prompt-cache) is automatic through AI Sonar. Long system prompts — which coding agents always include — get cached at the provider level:
+
+| Provider | Cache Discount | Min Tokens |
+|----------|---------------|------------|
+| Anthropic | 90% off reads | 1,024 |
+| OpenAI | 50% off reads | 1,024 |
+| DeepSeek | 90% off reads | 64 |
+
+Since coding agents send the same system prompt + project context on every call, prompt cache hit rates are typically **70–90%**.
+
+### Prompt Cache Savings Example
+
+For a request with 50,000 input tokens (typical coding agent call):
+
+```
+Direct API (no caching):
+  50,000 tokens × $3.00/1M = $0.150
+
+With prompt cache (40,000 cached + 10,000 new):
+  Cached:  40,000 × $0.30/1M = $0.012
+  New:     10,000 × $3.00/1M = $0.030
+  Total: $0.042 (72% savings)
+```
+
+## Real Cost Comparison
+
+Estimated costs for a typical 1-hour coding session (~3M tokens):
+
+| Setup | Hourly Cost | Monthly (160h) |
+|-------|-------------|----------------|
+| Direct API (premium model) | ~$15–25 | ~$2,400–4,000 |
+| AI Sonar (smart routing) | ~$10–18 | ~$1,600–2,900 |
+| AI Sonar + prompt cache | ~$4–8 | ~$640–1,280 |
+
+<Warning>
+These are illustrative estimates. Actual costs depend on your model choice, usage patterns, and cache hit rates. Check [real-time pricing](/api-reference/pricing/get-pricing) for current rates.
+</Warning>
+
+## Token Management Tips
+
+### Set max_tokens
+
+Prevent runaway generation:
+
+```json
+{
+  "model": "claude-sonnet-4-6",
+  "max_tokens": 4096,
+  "messages": [...]
+}
+```
+
+Most coding tasks need 1,000–4,000 output tokens. Setting a limit prevents the model from generating unnecessarily long responses.
+
+### Use Auto-Compact
+
+Most coding agents support context compaction — summarizing old conversation turns to reduce token count. Enable it:
+
+- **Claude Code**: Built-in auto-compact triggers at context limits
+- **Cursor**: Automatic context management
+- **Codex CLI**: Use `--max-context` flag
+
+### Avoid Context Bloat
+
+- Don't paste entire files when a function is enough
+- Use `.gitignore`-style patterns to exclude irrelevant files from agent context
+- Clear conversation history when switching tasks
+
+## Quick Configuration
+
+Each tool needs just a few lines to connect through AI Sonar:
+
+<AccordionGroup>
+  <Accordion title="Claude Code">
+    ```bash
+    export ANTHROPIC_API_KEY="sk-your-api-key"
+    export ANTHROPIC_BASE_URL="https://api.aisonar.dev"
+    ```
+    [Full setup guide →](/integrations/claude-code)
+  </Accordion>
+
+  <Accordion title="Cursor">
+    Settings → Models → OpenAI API Key: `sk-your-key`, Base URL: `https://api.aisonar.dev/v1`
+
+    [Full setup guide →](/integrations/cursor)
+  </Accordion>
+
+  <Accordion title="Codex CLI">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export OPENAI_BASE_URL="https://api.aisonar.dev/v1"
+    ```
+    [Full setup guide →](/integrations/codex-cli)
+  </Accordion>
+
+  <Accordion title="Gemini CLI">
+    ```bash
+    export GEMINI_API_KEY="sk-your-api-key"
+    export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"
+    ```
+    [Full setup guide →](/integrations/gemini-cli)
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,153 @@
+---
+title: "Lấy Model"
+openapi: "GET /v1/models/{model}"
+description: "Lấy một phiên bản model"
+---
+
+## Tham số Đường Dẫn
+
+<ParamField path="model" type="string" required>
+  ID của model cần lấy (ví dụ: `gpt-5.4`, `claude-sonnet-4-6`).
+</ParamField>
+
+## Phản hồi
+
+<ResponseField name="id" type="string">
+  Định danh model.
+</ResponseField>
+
+<ResponseField name="object" type="string">
+  Luôn là `model`.
+</ResponseField>
+
+<ResponseField name="created" type="integer">
+  Dấu thời gian tạo.
+</ResponseField>
+
+<ResponseField name="owned_by" type="string">
+  Nhà cung cấp model.
+</ResponseField>
+
+<ResponseField name="aisonar" type="object">
+  Metadata công khai đặc thù của AI Sonar. Route chi tiết có thể bao gồm `category`, `pricing_unit`, `capability_flags`, `supported_operations`, `pricing_provenance`, `public_contract_summary`, `public_contract` đầy đủ, và `agent_preferences` ở cấp scene cho các snapshot khuyến nghị phi-chat.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/models/gpt-5.4" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+model = client.models.retrieve("gpt-5.4")
+print(f"Model: {model.id}, Provider: {model.owned_by}")
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const model = await client.models.retrieve('gpt-5.4');
+console.log(`Model: ${model.id}, Provider: ${model.owned_by}`);
+```
+
+```go Go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "net/http"
+)
+
+func main() {
+    req, _ := http.NewRequest("GET", "https://api.aisonar.dev/v1/models/gpt-5.4", nil)
+    req.Header.Set("Authorization", "Bearer sk-your-api-key")
+
+    resp, _ := http.DefaultClient.Do(req)
+    defer resp.Body.Close()
+
+    var model map[string]interface{}
+    json.NewDecoder(resp.Body).Decode(&model)
+    fmt.Printf("Model: %s, Provider: %s\n", model["id"], model["owned_by"])
+}
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/models/gpt-5.4');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer sk-your-api-key'
+    ]
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$model = json_decode($response, true);
+echo "Model: {$model['id']}, Provider: {$model['owned_by']}\n";
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "id": "gpt-5.4",
+  "object": "model",
+  "created": 1706000000,
+  "owned_by": "openai"
+}
+```
+</ResponseExample>
+
+## Xử Lý Lỗi
+
+Nếu model không tồn tại, bạn sẽ nhận được lỗi 404:
+
+```json
+{
+  "error": {
+    "message": "Model 'invalid-model' not found",
+    "type": "invalid_request_error",
+    "code": "model_not_found"
+  }
+}
+```
+
+## Metadata Khuyến Nghị Phi-Chat
+
+Với các model phi-chat, route chi tiết cũng trả về `aisonar.agent_preferences.<scene>`.
+
+Dùng nó để xem:
+
+- `preferred_rank`
+- `success_rate_24h`
+- `sample_count_24h`
+- `status`
+- `updated_at`
+
+Phản hồi công khai cố ý giữ `basis.channel_id` và `basis.physical_model` là `null` để agents có thể dùng tín hiệu khuyến nghị mà không biết các định danh routing nội bộ.
+
+## Metadata Chi Tiết Công Khai
+
+So với `GET /v1/models`, route chi tiết cũng có thể trả thêm:
+
+- `aisonar.capability_flags`
+- `aisonar.supported_operations`
+- `aisonar.pricing_provenance`
+- `aisonar.public_contract_summary`
+- `aisonar.public_contract`

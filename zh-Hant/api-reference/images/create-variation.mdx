@@ -1,0 +1,187 @@
+---
+title: "建立圖像變體"
+openapi: "POST /v1/images/variations"
+description: "建立給定圖像的變體"
+---
+
+## 概述
+
+建立給定圖像的變體。需要 `multipart/form-data` 內容類型。
+
+## 請求主體
+
+**同步請求逾時：** 某些路由到的圖片提供者會以内嵌方式返回最終圖片，並等待生成完成。高解析度或高品質請求可能接近一分鐘甚至更久，因此請將 HTTP 用戶端逾時設定為至少 `120s`。如果建立回應包含 `status: "pending"`、`task_id` 或 `poll_url`，請改為依照返回的 `poll_url` 輪詢。
+
+<ParamField body="image" type="file" required>
+  用作變體基礎的圖像。必須是有效的 PNG 檔案，小於 50MB，且為正方形。
+</ParamField>
+
+<ParamField body="model" type="string" default="dall-e-2">
+  用於圖像變體的模型。目前僅支援 `dall-e-2`。
+</ParamField>
+
+<ParamField body="n" type="integer" default="1">
+  要生成的圖像數量。必須在 1 到 10 之間。
+</ParamField>
+
+<ParamField body="size" type="string">
+  生成圖像的尺寸。必須是 `256x256`、`512x512` 或 `1024x1024` 之一。
+</ParamField>
+
+<ParamField body="response_format" type="string" default="url">
+  回傳生成圖像的格式。必須是 `url` 或 `b64_json`。
+</ParamField>
+
+<ParamField body="user" type="string">
+  代表終端使用者的唯一識別碼，用於濫用監控。
+</ParamField>
+
+## 回應
+
+<ResponseField name="created" type="integer">
+  圖像建立時間的 Unix 時間戳。
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  生成的圖像變體陣列。
+
+  每個物件包含：
+  - `url` (string): 變體圖像的 URL（如果 response_format 是 `url`）
+  - `b64_json` (string): Base64 編碼的圖像（如果 response_format 是 `b64_json`）
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/images/variations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F "image=@cat.png" \
+  -F "n=2" \
+  -F "size=1024x1024"
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.images.create_variation(
+    model="dall-e-2",
+    image=open("cat.png", "rb"),
+    n=2,
+    size="1024x1024"
+)
+
+for image in response.data:
+    print(image.url)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+import fs from 'fs';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.images.createVariation({
+  model: 'dall-e-2',
+  image: fs.createReadStream('cat.png'),
+  n: 2,
+  size: '1024x1024'
+});
+
+response.data.forEach(image => console.log(image.url));
+```
+
+```go Go
+package main
+
+import (
+    "bytes"
+    "fmt"
+    "io"
+    "mime/multipart"
+    "net/http"
+    "os"
+)
+
+func main() {
+    body := &bytes.Buffer{}
+    writer := multipart.NewWriter(body)
+
+    file, _ := os.Open("cat.png")
+    defer file.Close()
+    part, _ := writer.CreateFormFile("image", "cat.png")
+    io.Copy(part, file)
+
+    writer.WriteField("n", "2")
+    writer.WriteField("size", "1024x1024")
+    writer.Close()
+
+    req, _ := http.NewRequest("POST", "https://api.aisonar.dev/v1/images/variations", body)
+    req.Header.Set("Authorization", "Bearer sk-your-api-key")
+    req.Header.Set("Content-Type", writer.FormDataContentType())
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+
+    result, _ := io.ReadAll(resp.Body)
+    fmt.Println(string(result))
+}
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/images/variations');
+
+$image = new CURLFile('cat.png', 'image/png', 'cat.png');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => [
+        'image' => $image,
+        'n' => 2,
+        'size' => '1024x1024'
+    ]
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+foreach ($data['data'] as $image) {
+    echo $image['url'] . "\n";
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json 回應
+{
+  "created": 1706000000,
+  "data": [
+    {
+      "url": "https://..."
+    },
+    {
+      "url": "https://..."
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## 注意事項
+
+<Note>
+  圖像變體僅適用於 DALL-E 2。模型將生成與原始圖像在風格和內容上相似的新圖像。
+</Note>

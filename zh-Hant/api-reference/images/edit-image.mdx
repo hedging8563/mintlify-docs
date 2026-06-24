@@ -1,0 +1,237 @@
+---
+title: "編輯圖像"
+openapi: "POST /v1/images/edits"
+description: "根據提示詞和來源圖像編輯圖像"
+---
+
+## 概述
+
+根據原始圖像和提示詞建立編輯或擴展的圖像。
+
+此路由同時支援：
+
+- 下方文件中的經典 `multipart/form-data` DALL-E 風格上傳流程
+- 為受支援的圖像到圖像模型提供 `image_url`、`image_urls` 或官方 `images` 參照的 JSON 請求
+
+<Note>
+`gpt-image-2` 已支援此端點。它支援 multipart `image` 上傳、JSON `image_url` / `image_urls`，以及官方 `images[]` 參照（`image_url` 或 `file_id`），最多 16 張來源圖。`file_id` 需先透過 `/v1/files` 建立。設定 `async: true` 會先返回任務；官方 FLUX/BFL 編輯模型也使用同一套任務輪詢流程。
+
+`gpt-image-2` 編輯不接受 `resolution` 或 `background`；輸出尺寸請使用 `size`。多圖或高延遲編輯建議設定 `async: true` 並輪詢返回任務。
+
+Nano Banana 參考圖請求（`nano-banana`、`nano-banana-2` 和 `nano-banana-pro`）公開在 `/v1/images/generations`，應使用 `operation: "image-to-image"` 與 `image_urls`，不要送到本 `/v1/images/edits` 端點。
+
+xAI Grok Imagine 圖像編輯模型（`grok-imagine-image`、`grok-imagine-image-quality` 以及 legacy `grok-imagine-image-pro`）最多接受 3 張來源圖。超過 3 張的請求會在轉送 upstream 前返回 `400 too_many_images`。
+
+相容性說明：如果 `gpt-image-2` 請求帶上 `input_fidelity`，AI Sonar 會在轉送前移除該欄位，因為 GPT Image 2 已自動以高保真處理圖片輸入。
+</Note>
+
+## 請求主體
+
+**同步請求逾時：** 某些路由到的圖片提供者會以内嵌方式返回最終圖片，並等待生成完成。高解析度或高品質請求可能接近一分鐘甚至更久，因此請將 HTTP 用戶端逾時設定為至少 `120s`。如果建立回應包含 `status: "pending"`、`task_id` 或 `poll_url`，請改為依照返回的 `poll_url` 輪詢。
+
+遠端圖片 URL：當路由到的上游要求 multipart 輸入時，AI Sonar 會抓取 JSON `image_url`、`image_urls` 或 `images[].image_url`，並把圖片位元組作為 multipart `image` 檔案轉發。URL 必須是公網 `http`/`https`，不能包含使用者名稱密碼或 fragment，不能解析到 localhost、內網或保留 IP；每次重新導向後的目標也會重新校驗。抓取到的內容必須是真實 PNG、JPEG 或 WebP 圖片。限制為單圖 `50MB`、單次請求 URL 抓取圖片總計 `200MB`、抓取逾時 `10s`、最多 `3` 次重新導向。
+
+<ParamField body="image" type="file">
+  multipart 來源圖片。需要多張 GPT Image 來源圖時，可以重複傳送 `image` 欄位。檔案必須是 PNG、JPEG 或 WebP，最多 16 張來源圖，每張不超過 `50MB`。xAI Grok Imagine 編輯模型使用相同輸入欄位，但來源圖最多 3 張。傳統 DALL-E 2 遮罩編輯仍要求 PNG 輸入帶透明區域，或額外提供 `mask`。
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  描述所需編輯的文字。
+</ParamField>
+
+<ParamField body="mask" type="file">
+  一個附加圖像，其完全透明的區域指示應編輯圖像的位置。必須是有效的 PNG 檔案，小於 50MB，且與 `image` 具有相同的尺寸。
+</ParamField>
+
+<ParamField body="model" type="string" default="dall-e-2">
+  用於圖像編輯的模型。`gpt-image-2` 已支援；傳統 DALL-E 風格編輯仍可使用 `dall-e-2`。
+</ParamField>
+
+<ParamField body="n" type="integer" default="1">
+  要生成的圖像數量。必須在 1 到 10 之間。
+</ParamField>
+
+<ParamField body="size" type="string">
+  生成圖像的尺寸。對於 `gpt-image-2`，使用 `auto` 或 `WIDTHxHEIGHT`；寬高必須是 16 的倍數，最長邊不超過 `3840px`，長邊/短邊比例不超過 `3:1`，總像素介於 `655,360` 和 `8,294,400` 之間。傳統 DALL-E 編輯支援 `256x256`、`512x512` 或 `1024x1024`。
+</ParamField>
+
+<ParamField body="response_format" type="string" default="url">
+  回傳生成圖像的格式。必須是 `url` 或 `b64_json`，預設為 `url`。
+
+  對於 Azure Official 或 Azure-compatible 的 `gpt-image-2` 路由，AI Sonar 不會把 `response_format` 傳給上游。閘道始終從上游取得 `b64_json` 圖片資料；請求 `url` 時會把每張圖上傳到 CDN 並返回 `data[].url`。如果 CDN 儲存不可用或上傳失敗，請求會失敗，而不是降級返回 Base64；請求 `b64_json` 時直接返回原始 Base64。
+</ParamField>
+
+<ParamField body="async" type="boolean" default="false">
+  搭配 `gpt-image-2` 或官方 FLUX/BFL 編輯模型設為 `true` 時，會在最終圖片完成前先返回任務。完成後的非同步編輯無論請求的 `response_format` 是什麼，都只返回 URL；如果需要 `b64_json`，請使用同步請求。
+</ParamField>
+
+<ParamField body="user" type="string">
+  代表終端使用者的唯一識別碼，用於濫用監控。
+</ParamField>
+
+## 回應
+
+<ResponseField name="created" type="integer">
+  圖像建立時間的 Unix 時間戳。
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  生成的圖像陣列。
+
+  每個物件包含：
+  - `url` (string): 編輯後圖像的 URL（如果 response_format 是 `url`）
+  - `b64_json` (string): Base64 編碼的圖像（如果 response_format 是 `b64_json`）
+</ResponseField>
+
+### 非同步任務回應
+
+搭配 `gpt-image-2` 或官方 FLUX/BFL 編輯模型設定 `async: true` 後，請求會先建立任務，而不是等待編輯後圖片完成。回應包含 `status: "pending"`、`task_id` 和 `poll_url`。請輪詢 `/v1/tasks/{task_id}`，直到任務進入 `completed` 或 `failed`。
+
+非同步編輯任務最終只返回圖片 URL。如果你需要原始 `b64_json` 圖片資料，請使用同步請求。
+
+
+任務建立時可能會先預留預估費用。任務完成後按實際用量結算；失敗或逾時的任務會釋放預留費用或退回費用。
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/images/edits" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F "image=@sunlit_lounge.png" \
+  -F "mask=@mask.png" \
+  -F "prompt=A sunlit indoor lounge area with a pool" \
+  -F "n=1" \
+  -F "size=1024x1024"
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.images.edit(
+    model="dall-e-2",
+    image=open("sunlit_lounge.png", "rb"),
+    mask=open("mask.png", "rb"),
+    prompt="A sunlit indoor lounge area with a pool",
+    n=1,
+    size="1024x1024"
+)
+
+print(response.data[0].url)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+import fs from 'fs';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.images.edit({
+  model: 'dall-e-2',
+  image: fs.createReadStream('sunlit_lounge.png'),
+  mask: fs.createReadStream('mask.png'),
+  prompt: 'A sunlit indoor lounge area with a pool',
+  n: 1,
+  size: '1024x1024'
+});
+
+console.log(response.data[0].url);
+```
+
+```go Go
+package main
+
+import (
+    "bytes"
+    "fmt"
+    "io"
+    "mime/multipart"
+    "net/http"
+    "os"
+)
+
+func main() {
+    body := &bytes.Buffer{}
+    writer := multipart.NewWriter(body)
+
+    image, _ := os.Open("sunlit_lounge.png")
+    defer image.Close()
+    part, _ := writer.CreateFormFile("image", "sunlit_lounge.png")
+    io.Copy(part, image)
+
+    mask, _ := os.Open("mask.png")
+    defer mask.Close()
+    maskPart, _ := writer.CreateFormFile("mask", "mask.png")
+    io.Copy(maskPart, mask)
+
+    writer.WriteField("prompt", "A sunlit indoor lounge area with a pool")
+    writer.WriteField("n", "1")
+    writer.WriteField("size", "1024x1024")
+    writer.Close()
+
+    req, _ := http.NewRequest("POST", "https://api.aisonar.dev/v1/images/edits", body)
+    req.Header.Set("Authorization", "Bearer sk-your-api-key")
+    req.Header.Set("Content-Type", writer.FormDataContentType())
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+
+    result, _ := io.ReadAll(resp.Body)
+    fmt.Println(string(result))
+}
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/images/edits');
+
+$image = new CURLFile('sunlit_lounge.png', 'image/png', 'sunlit_lounge.png');
+$mask = new CURLFile('mask.png', 'image/png', 'mask.png');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => [
+        'image' => $image,
+        'mask' => $mask,
+        'prompt' => 'A sunlit indoor lounge area with a pool',
+        'n' => 1,
+        'size' => '1024x1024'
+    ]
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+echo $data['data'][0]['url'];
+```
+</RequestExample>
+
+<ResponseExample>
+```json 回應
+{
+  "created": 1706000000,
+  "data": [
+    {
+      "url": "https://..."
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## 注意事項
+
+<Note>
+  遠端圖片抓取失敗會在請求送往上游前作為輸入錯誤返回。URL 無法存取、逾時、403/404、私有或內網主機、URL 中包含使用者名稱密碼或 fragment、非圖片內容、不支援的格式、超過大小限制，都會返回 `400` 或 `413`，並指向 `image_url` / `image_urls[n]` 輸入。私有或需要請求標頭鑑權的素材，請直接用 multipart `image` 上傳，或建立 `/v1/files` 參照。
+</Note>

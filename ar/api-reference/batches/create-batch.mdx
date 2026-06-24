@@ -1,0 +1,41 @@
+---
+title: "إنشاء دفعة"
+openapi: "POST /v1/batches"
+description: "ينشئ مهمة دفعة متوافقة مع OpenAI من ملف إدخال تم تحميله."
+---
+
+## نظرة عامة
+
+تعتبر هذه النقطة جزءًا من واجهة برمجة التطبيقات للدفعات المتوافقة مع OpenAI من AI Sonar. تستخدم مهام الدفعة ملفات JSONL المحملة، وتعمل بشكل غير متزامن، ويمكن أن تعيد ملفات الإخراج/الأخطاء لاحقًا.
+
+## ملاحظات
+
+- يجب أن تستخدم ملفات إدخال الدفعة `purpose=batch`.
+- `completion_window` حاليًا `24h`.
+- ترتيب الإخراج غير مضمون؛ يجب دائمًا المطابقة بواسطة `custom_id`.
+- لا يتم دعم البث داخل عناصر الدفعة.
+
+## مثال
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/batches" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input_file_id": "file_abc123",
+    "endpoint": "/v1/chat/completions",
+    "completion_window": "24h"
+  }'
+```
+</RequestExample>
+
+## الطلب / الاستجابة
+
+استخدم لوحة OpenAPI التفاعلية أعلاه للحصول على المخطط الدقيق.
+
+## نصائح تشغيلية
+
+- استخدم `custom_id` للتسوية غير المتكررة في الأسفل.
+- توقع `output_file_id` و `error_file_id` فقط بعد أن ينهي العامل الدفعة.
+- قد تختلف أسعار الدفعة عن أسعار المعالجة المتزامنة لأن قواعد الخصم لـ `isBatchRequest=true` تنطبق.

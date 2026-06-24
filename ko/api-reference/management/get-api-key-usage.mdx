@@ -1,0 +1,44 @@
+---
+title: "API 키 사용량 조회"
+openapi: "GET /v1/management/api-keys/{keyId}/usage"
+description: "사용자 API 키의 페이지네이션된 사용 내역을 반환합니다."
+---
+
+## 개요
+
+이 엔드포인트는 물리 라우팅 메타데이터를 노출하지 않고 API 키 단위 사용 내역을 반환합니다.
+
+## 쿼리 파라미터
+
+| 파라미터 | 타입 | 기본값 / 제한 | 설명 |
+|-----------|------|---------------|------|
+| `page` | integer | 기본값 `1`, 최소 `1` | 1부터 시작하는 페이지 번호 |
+| `limit` | integer | 기본값 `50`, 최소 `1`, 최대 `100` | 페이지 크기 |
+| `logicalModel` | string | 최대 길이 `100` | 요청된 논리 모델 이름 |
+| `modelVendor` | string | 최대 길이 `100` | 공개 모델 공급자 |
+| `scene` | enum | - | `chat`, `image`, `audio`, `video`, `embedding`, `rerank`, `translation`, `music`, `3d` |
+| `accessChannel` | enum | - | `platform` 또는 `byok` |
+| `startDate` | string | - | 포함되는 시작 경계값. 타임존이 포함된 RFC3339 또는 `YYYY-MM-DD` 지원 |
+| `endDate` | string | - | 포함되는 종료 경계값. 타임존이 포함된 RFC3339 또는 `YYYY-MM-DD` 지원 |
+
+`startDate` 와 `endDate` 를 함께 보내는 경우 `startDate` 는 `endDate` 보다 빠르거나 같아야 합니다.
+
+## 참고 사항
+
+- 응답은 페이지네이션됩니다.
+- 응답에는 공개 가능한 과금 및 리포팅 필드만 포함됩니다.
+- 기본 요청의 정산이 완료되면 각 usage 항목에 `billing_transaction_id` 가 포함될 수 있습니다. 요청 단위 정산 대조에는 `request_id` 와 함께 사용하세요.
+- 내부 라우팅 및 물리 채널 메타데이터는 의도적으로 숨겨집니다.
+
+## 예시
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/usage?page=1&limit=20&scene=video&accessChannel=platform&startDate=2026-03-01&endDate=2026-03-31" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## 요청 / 응답
+
+정확한 스키마와 응답 필드는 상단의 인터랙티브 OpenAPI 패널을 참고하세요.

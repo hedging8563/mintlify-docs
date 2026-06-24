@@ -1,0 +1,142 @@
+---
+title: "Management API"
+description: "Manage organization balance, API keys, and key-level usage and billing with a management token."
+---
+
+## Overview
+
+The Management API lets you retrieve organization balance totals, manage organization API keys, and retrieve usage and billing for a specific key without using a standard inference API key.
+
+Use a management token from your Dashboard **Settings** page:
+
+```bash
+Authorization: Bearer mt-your-management-token
+```
+
+<Warning>
+Management tokens are different from inference API keys. Use `mt-...` for `/v1/management/*`, and use `sk-...` for model inference endpoints such as `/v1/responses`.
+</Warning>
+
+## Available Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/v1/management/balance` | GET | Retrieve current organization balance totals |
+| `/v1/management/api-keys` | GET | List user-managed API keys in the current organization |
+| `/v1/management/api-keys` | POST | Create a new user API key |
+| `/v1/management/api-keys/{keyId}` | PATCH | Update name, usage limit, allowed models, expiry, or status |
+| `/v1/management/api-keys/{keyId}/usage` | GET | Retrieve paginated usage details for a specific key |
+| `/v1/management/api-keys/{keyId}/billing` | GET | Retrieve aggregated billing breakdowns for a specific key |
+
+## Usage Filter Contract
+
+`GET /v1/management/api-keys/{keyId}/usage` supports the following query parameters:
+
+| Parameter | Type | Default / Limits | Notes |
+|-----------|------|------------------|-------|
+| `page` | integer | default `1`, min `1` | 1-based page number |
+| `limit` | integer | default `50`, min `1`, max `100` | Page size |
+| `logicalModel` | string | max length `100` | Requested logical model name |
+| `modelVendor` | string | max length `100` | Public model vendor |
+| `scene` | enum | - | `chat`, `image`, `audio`, `video`, `embedding`, `rerank`, `translation`, `music`, `3d` |
+| `accessChannel` | enum | - | `platform` or `byok` |
+| `startDate` | string | - | Inclusive lower bound; accepts RFC3339 with timezone or `YYYY-MM-DD` |
+| `endDate` | string | - | Inclusive upper bound; accepts RFC3339 with timezone or `YYYY-MM-DD` |
+
+If both `startDate` and `endDate` are present, `startDate` must be earlier than or equal to `endDate`.
+
+## API Key Body Contract
+
+### POST /v1/management/api-keys
+
+| Field | Type | Default / Limits | Notes |
+|-------|------|------------------|-------|
+| `name` | string | required, default `Default Key`, length `1-50` | Display name, trimmed server-side |
+| `limitAmount` | number \| null | min `0`, input max `1000000` | `null` or omitted = unlimited, `0` = zero quota. Positive values are normalized to a stored cap that cannot exceed `100000` USD equivalent. |
+| `limitCurrency` | enum | default `USD` | USD only. Sending `CNY` returns `400 currency_retired`. |
+| `models` | string[] | default `[]` | Optional logical model allowlist |
+| `expiresAt` | string \| null | RFC3339 datetime | `null` means no expiry |
+
+### PATCH /v1/management/api-keys/{keyId}
+
+| Field | Type | Default / Limits | Notes |
+|-------|------|------------------|-------|
+| `status` | enum | - | `active`, `inactive`, `suspended`, `revoked` |
+| `name` | string | length `1-50` | Updated display name |
+| `limitAmount` | number \| null | min `0`, input max `1000000` | `null` means unlimited, `0` means zero quota. Positive values are normalized to a stored cap that cannot exceed `100000` USD equivalent. |
+| `limitCurrency` | enum | default `USD` | USD only. Sending `CNY` returns `400 currency_retired`. |
+| `models` | string[] | - | Updated logical model allowlist |
+| `expiresAt` | string \| null | RFC3339 datetime | `null` clears the expiry |
+
+At least one PATCH field must be provided.
+
+## Monetary Contract
+
+- Management API monetary request and response fields are USD-only.
+- `limitCurrency` defaults to `USD`; sending `CNY` returns `400` with `currency_retired`.
+
+## Reporting Semantics
+
+- `logicalModel` refers to the public logical model requested by the caller.
+- `modelVendor` refers to the public model vendor, not the hidden physical route.
+- `scene` is the public request scene derived from the endpoint or task type.
+- `accessChannel=platform` means the request was billed via AI Sonar’s platform channel.
+- `accessChannel=byok` means the request used your own upstream provider key.
+
+Responses expose public billing and reporting fields only. Internal routing details and physical provider metadata remain hidden.
+- `/usage` line items can include `billing_transaction_id` once the underlying request has reached settled billing state. Use `request_id` + `billing_transaction_id` for request-level reconciliation.
+
+## Billing Pagination Note
+
+`/usage` is paginated. `/billing` is currently an aggregated breakdown endpoint and does **not** return page / limit style pagination metadata. If you need line-level records, use `/usage`.
+
+## Quick Example
+
+First check the current organization balance with the management token:
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/management/balance" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+Then list the API keys available to the same management token:
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/management/api-keys" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response (200)
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "key_abc123def456",
+      "name": "Backend Worker",
+      "key_prefix": "sk-abc123...",
+      "status": "active",
+      "limit_amount": 500.0,
+      "used_amount": 148.25,
+      "models": ["gpt-4o-mini", "claude-3-7-sonnet"],
+      "expires_at": "2026-04-30T00:00:00.000Z",
+      "last_used_at": "2026-03-27T08:12:45.000Z",
+      "created_at": "2026-03-01T10:00:00.000Z"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## Next Steps
+
+- [Get Organization Balance](/api-reference/management/get-balance)
+- [List API Keys](/api-reference/management/list-api-keys)
+- [Create API Key](/api-reference/management/create-api-key)
+- [Update API Key](/api-reference/management/update-api-key)
+- [Get API Key Usage](/api-reference/management/get-api-key-usage)
+- [Get API Key Billing](/api-reference/management/get-api-key-billing)

@@ -1,0 +1,123 @@
+---
+title: "음성 생성"
+openapi: "POST /v1/audio/speech"
+description: "입력 텍스트로부터 오디오를 생성합니다"
+---
+
+## 요청 본문
+
+**동기 요청 타임아웃:** 이 비채팅 엔드포인트는 라우팅된 모델이 완료될 때까지 기다립니다. 큰 입력, 긴 오디오, 큰 배치는 일반적인 30s 클라이언트 기본값을 초과할 수 있으므로 HTTP 클라이언트 타임아웃을 최소 `120s` 로 설정하세요.
+
+<ParamField body="model" type="string" default="tts-1">
+  TTS 모델: `tts-1` (표준) 또는 `tts-1-hd` (더 높은 품질).
+</ParamField>
+
+<ParamField body="input" type="string" required>
+  오디오를 생성할 텍스트입니다. 최대 4096자.
+</ParamField>
+
+<ParamField body="voice" type="string" required>
+  사용할 음성: `alloy`, `ash`, `ballad`, `coral`, `echo`, `fable`, `nova`, `onyx`, `sage`, `shimmer`, `verse`.
+</ParamField>
+
+<ParamField body="response_format" type="string" default="mp3">
+  오디오 형식: `mp3`, `opus`, `aac`, `flac`, `wav`, `pcm`.
+</ParamField>
+
+<ParamField body="speed" type="number" default="1.0">
+  오디오 속도 (0.25~4.0).
+</ParamField>
+
+## 응답
+
+요청한 형식의 오디오 파일을 반환합니다.
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/audio/speech" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "tts-1-hd",
+    "voice": "nova",
+    "input": "Hello, welcome to AI Sonar!"
+  }' \
+  --output speech.mp3
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.audio.speech.create(
+    model="tts-1-hd",
+    voice="nova",
+    input="Hello, welcome to AI Sonar!"
+)
+
+response.stream_to_file("speech.mp3")
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+import fs from 'fs';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.audio.speech.create({
+  model: 'tts-1-hd',
+  voice: 'nova',
+  input: 'Hello, welcome to AI Sonar!'
+});
+
+const buffer = Buffer.from(await response.arrayBuffer());
+fs.writeFileSync('speech.mp3', buffer);
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/audio/speech');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Content-Type: application/json',
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => json_encode([
+        'model' => 'tts-1-hd',
+        'voice' => 'nova',
+        'input' => 'Hello, welcome to AI Sonar!'
+    ])
+]);
+
+$audio = curl_exec($ch);
+curl_close($ch);
+
+file_put_contents('speech.mp3', $audio);
+```
+</RequestExample>
+
+## 음성 샘플
+
+| 음성 | 설명 |
+|-------|-------------|
+| `alloy` | 중립적이고 균형 잡힘 |
+| `ash` | 차분하고 절제됨 |
+| `ballad` | 선율적이고 표현력이 풍부함 |
+| `coral` | 따뜻하고 친근함 |
+| `echo` | 따뜻하고 대화체 느낌 |
+| `fable` | 표현력이 풍부하고 서사적임 |
+| `nova` | 친근하고 명확함 |
+| `onyx` | 깊이 있고 권위적임 |
+| `sage` | 현명하고 사려 깊음 |
+| `shimmer` | 부드럽고 온화함 |
+| `verse` | 역동적이고 다재다능함 |

@@ -1,0 +1,166 @@
+---
+title: "Übersetzung erstellen"
+openapi: "POST /v1/audio/translations"
+description: "Übersetzt Audio in englischen Text"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Überblick
+
+Übersetzt Audio in jeder unterstützten Sprache in englischen Text. Im Gegensatz zur Transkription gibt dieser Endpoint unabhängig von der Eingabesprache immer englischen Text aus.
+
+## Anfragekörper
+
+**Timeout für synchrone Anfragen:** Dieser Nicht-Chat-Endpunkt wartet, bis das geroutete Modell fertig ist. Große Eingaben, lange Audiodateien oder große Batches können übliche 30s-Client-Defaults überschreiten; setzen Sie das Timeout Ihres HTTP-Clients daher auf mindestens `120s`.
+
+<ParamField body="file" type="file" required>
+  Die Audio-Datei, die übersetzt werden soll. Unterstützte Formate: `flac`, `mp3`, `mp4`, `mpeg`, `mpga`, `m4a`, `ogg`, `wav`, `webm`. Die maximale Dateigröße beträgt 25 MB.
+</ParamField>
+
+<ParamField body="model" type="string" default="whisper-1">
+  Das zu verwendende Modell. Derzeit wird nur `whisper-1` unterstützt.
+</ParamField>
+
+<ParamField body="prompt" type="string">
+  Ein optionaler Text, um den Stil des Modells zu steuern oder ein vorheriges Segment fortzusetzen. Sollte auf Englisch sein.
+</ParamField>
+
+<ParamField body="response_format" type="string" default="json">
+  Das Format der Ausgabe. Optionen: `json`, `text`, `srt`, `verbose_json`, `vtt`.
+</ParamField>
+
+<ParamField body="temperature" type="number">
+  Die Sampling-Temperatur zwischen 0 und 1. Höhere Werte wie 0.8 erzeugen zufälligere Ausgaben, während niedrigere Werte wie 0.2 die Ausgabe fokussierter und deterministischer machen.
+</ParamField>
+
+## Antwort
+
+<ResponseField name="text" type="string">
+  Der übersetzte Text auf Englisch.
+</ResponseField>
+
+Für das Format `verbose_json` enthält die Antwort außerdem:
+
+<ResponseField name="language" type="string">
+  Die erkannte Sprache des Eingabe-Audios.
+</ResponseField>
+
+<ResponseField name="duration" type="number">
+  Die Dauer des Eingabe-Audios in Sekunden.
+</ResponseField>
+
+<ResponseField name="segments" type="array">
+  Segmente des übersetzten Textes mit Zeitstempeln.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/audio/translations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F "file=@german_audio.mp3" \
+  -F "model=whisper-1"
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+with open("german_audio.mp3", "rb") as audio_file:
+    response = client.audio.translations.create(
+        model="whisper-1",
+        file=audio_file
+    )
+
+print(response.text)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+import fs from 'fs';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.audio.translations.create({
+  model: 'whisper-1',
+  file: fs.createReadStream('german_audio.mp3')
+});
+
+console.log(response.text);
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/audio/translations');
+
+$file = new CURLFile('german_audio.mp3', 'audio/mpeg', 'german_audio.mp3');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => [
+        'file' => $file,
+        'model' => 'whisper-1'
+    ]
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+echo $data['text'];
+```
+</RequestExample>
+
+<ResponseExample>
+```json json
+{
+  "text": "Hello, my name is Wolfgang and I come from Germany. Where are you from?"
+}
+```
+
+```json verbose_json
+{
+  "task": "translate",
+  "language": "german",
+  "duration": 8.470000267028809,
+  "text": "Hello, my name is Wolfgang and I come from Germany. Where are you from?",
+  "segments": [
+    {
+      "id": 0,
+      "seek": 0,
+      "start": 0.0,
+      "end": 4.0,
+      "text": " Hello, my name is Wolfgang and I come from Germany.",
+      "tokens": [50364, 2425, 11, 452, 1315, 307, 25329, 293, 286, 808, 490, 5765, 13, 50564],
+      "temperature": 0.0,
+      "avg_logprob": -0.45,
+      "compression_ratio": 1.0,
+      "no_speech_prob": 0.0
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## Übersetzung vs. Transkription
+
+| Funktion | Übersetzung | Transkription |
+|---------|-------------|---------------|
+| Ausgabesprache | Immer Englisch | Gleich wie die Eingabe |
+| Anwendungsfall | Fremdsprachiges Audio in Englisch umwandeln | Originalsprache beibehalten |
+| Sprachparameter | Nicht anwendbar | Optionaler Hinweis |
+
+<Note>
+  Der Übersetzungs-Endpoint erkennt die Ausgangssprache automatisch und übersetzt ins Englische. Der `language`-Parameter aus der Transkription wird ignoriert.
+</Note>

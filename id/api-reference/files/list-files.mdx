@@ -1,0 +1,38 @@
+---
+title: "Daftar File"
+openapi: "GET /v1/files"
+description: "Daftar file yang diunggah untuk workflow batch dan mode kompatibilitas berbasis file yang didukung."
+---
+
+## Ikhtisar
+
+Endpoint ini terutama melayani Batch API AI Sonar yang kompatibel dengan OpenAI, termasuk input batch yang diunggah dan file output atau error yang dihasilkan.
+
+Ketika request memakai mode kompatibilitas Anthropic Files, route yang sama juga dapat menampilkan file bergaya Anthropic yang tersedia untuk workspace yang terikat.
+
+## Catatan
+
+- File input batch harus menggunakan `purpose=batch`.
+- Gunakan `purpose=batch_output` untuk fokus pada file output yang dihasilkan.
+- `completion_window` saat ini adalah `24h`.
+- Urutan output tidak dijamin; selalu cocokkan berdasarkan `custom_id`.
+- Streaming tidak didukung di dalam item batch.
+
+## Contoh
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/files?purpose=batch&limit=20" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+## Request / Respons
+
+Gunakan panel OpenAPI interaktif di atas untuk skema yang tepat.
+
+## Tips Operasional
+
+- Gunakan `custom_id` untuk rekonsiliasi downstream yang idempotent.
+- Harapkan `output_file_id` dan `error_file_id` hanya setelah worker menyelesaikan batch.
+- Harga batch bisa berbeda dari harga sinkron karena aturan diskon `isBatchRequest=true` diterapkan.

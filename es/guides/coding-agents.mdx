@@ -1,0 +1,66 @@
+---
+title: "Agentes de Codificación"
+description: "Reduce los costos de los agentes de codificación hasta un 90% con enrutamiento inteligente, caché y selección de modelos"
+---
+
+## Por qué los Coding Agents son caros
+
+Agentes como Claude Code, Cursor y Codex CLI son potentes, pero consumen tokens a un ritmo que sorprende a la mayoría de los equipos.
+
+**Contexto largo por solicitud.** Cada llamada incluye un system prompt, archivos del proyecto e historial de conversación — a menudo 10,000–100,000+ tokens antes de que el modelo empiece a pensar.
+
+**Llamadas de alta frecuencia.** Una sola sesión de codificación genera decenas de llamadas API: generación de código, búsqueda, revisión, autocompletado y uso de herramientas. Una sesión de 1 hora supera fácilmente las 200 solicitudes.
+
+**Acumulación de conversaciones.** Cada turno reenvía el historial completo de mensajes. En el turno 20, estás pagando 20 veces por el mismo contexto.
+
+<Info>
+Una sesión típica de 1 hora de Claude Code puede consumir 2–5M tokens. A tarifas directas de API, eso es $6–30+ por hora según el modelo.
+</Info>
+
+## Cómo ayuda AI Sonar
+
+<CardGroup cols={2}>
+  <Card title="Enrutamiento multi-proveedor" icon="route" href="/es/guides/coding-agent-cost#smart-model-selection">
+    Enrutamiento automático al proveedor más barato disponible para cada modelo. Mismo modelo, menor precio.
+  </Card>
+  <Card title="Prompt Cache passthrough" icon="bolt" href="/es/guides/prompt-cache">
+    El caché de prefijo upstream (Anthropic, OpenAI, DeepSeek) funciona automáticamente — los system prompts largos se cachean a nivel de proveedor.
+  </Card>
+  <Card title="Fallback de modelo" icon="arrows-rotate" href="/es/guides/coding-agent-models#how-aisonar-routing-works">
+    Si un proveedor no está disponible o es lento, las solicitudes cambian automáticamente al siguiente proveedor. Cero tiempo de inactividad.
+  </Card>
+</CardGroup>
+
+## Herramientas de codificación soportadas
+
+<CardGroup cols={3}>
+  <Card title="Cursor" icon="text-slash" href="/es/integrations/cursor">
+    IDE con IA con autocompletado por tabulación y chat
+  </Card>
+  <Card title="Claude Code" icon="terminal" href="/es/integrations/claude-code">
+    Agente de codificación CLI oficial de Anthropic
+  </Card>
+  <Card title="Codex CLI" icon="code" href="/es/integrations/codex-cli">
+    Agente de codificación de terminal de OpenAI
+  </Card>
+  <Card title="Gemini CLI" icon="gem" href="/es/integrations/gemini-cli">
+    Asistente de codificación de línea de comandos de Google
+  </Card>
+  <Card title="OpenCode" icon="laptop-code" href="/es/integrations/opencode">
+    Agente de codificación de terminal de código abierto
+  </Card>
+  <Card title="AI Sonar API Skill" icon="lemon" href="/es/integrations/coding-agent-skill">
+    Usa la skill compartida de integración API de AI Sonar
+  </Card>
+</CardGroup>
+
+## Profundiza más
+
+<CardGroup cols={2}>
+  <Card title="Guía de optimización de costos" icon="piggy-bank" href="/es/guides/coding-agent-cost">
+    Estrategias concretas para reducir tu factura: selección de modelos, caché, gestión de tokens y comparaciones de costos reales.
+  </Card>
+  <Card title="Guía de selección de modelos" icon="microchip" href="/es/guides/coding-agent-models">
+    ¿Qué modelo para qué tarea? Tabla comparativa, recomendaciones por tarea y configuración por herramienta.
+  </Card>
+</CardGroup>

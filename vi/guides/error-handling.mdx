@@ -1,0 +1,284 @@
+---
+title: "Xử lý lỗi"
+description: "Xử lý lỗi API một cách trơn tru"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Định dạng phản hồi lỗi
+
+Tất cả lỗi trả về định dạng JSON nhất quán với tùy chọn [gợi ý Agent-First](/guides/agent-first-api):
+
+```json
+{
+  "error": {
+    "message": "Human-readable error description",
+    "type": "error_type",
+    "code": "error_code",
+    "param": "parameter_name",
+    "did_you_mean": "suggested_model",
+    "suggestions": [{"id": "model-id"}],
+    "hint": "Next step guidance",
+    "retryable": true,
+    "retry_after": 30
+  }
+}
+```
+
+Các trường cơ bản (`message`, `type`, `code`, `param`) luôn tồn tại. Các trường gợi ý (`did_you_mean`, `suggestions`, `hint`, `retryable`, `retry_after`, `balance_usd`, `estimated_cost_usd`) là phần mở rộng tùy chọn để AI agent tự sửa. Xem [Hướng dẫn Agent-First API](/guides/agent-first-api) để biết chi tiết.
+
+Các endpoint tương thích OpenAI sử dụng các loại lỗi cổng ổn định của AI Sonar. Các endpoint tương thích Anthropic và Gemini sử dụng họ lỗi và cấu trúc phản hồi gốc của chúng.
+
+## Mã trạng thái HTTP
+
+| Mã | Mô tả |
+|------|-------------|
+| 400 | Yêu cầu không hợp lệ - Tham số không hợp lệ |
+| 401 | Không xác thực - API key không hợp lệ hoặc bị thiếu |
+| 402 | Yêu cầu thanh toán - Số dư không đủ |
+| 403 | Bị cấm - Từ chối truy cập hoặc model không được phép |
+| 404 | Không tìm thấy - Model hoặc tài nguyên không tồn tại |
+| 413 | Dữ liệu tải lên quá lớn - Vượt quá kích thước input hoặc file |
+| 429 | Quá nhiều yêu cầu - Vượt quá giới hạn tốc độ |
+| 500 | Lỗi máy chủ nội bộ |
+| 502 | Bad Gateway - Lỗi từ nhà cung cấp thượng nguồn |
+| 503 | Dịch vụ không khả dụng - Dịch vụ tạm thời không có |
+| 504 | Gateway Timeout - Yêu cầu hết thời gian chờ |
+
+## Các loại lỗi
+
+### Lỗi xác thực (401)
+
+| Kiểu | Mã | Mô tả |
+|------|------|-------------|
+| `invalid_api_key` | `invalid_api_key` | API key bị thiếu hoặc không hợp lệ |
+| `expired_api_key` | `expired_api_key` | API key đã bị thu hồi |
+
+```python
+from openai import OpenAI, AuthenticationError
+
+try:
+    response = client.chat.completions.create(...)
+except AuthenticationError as e:
+    print(f"Authentication failed: {e.message}")
+```
+
+### Lỗi thanh toán (402)
+
+| Kiểu | Mã | Mô tả |
+|------|------|-------------|
+| `insufficient_balance` | `insufficient_balance` | Số dư tài khoản quá thấp |
+| `quota_exceeded` | `quota_exceeded` | Đã đạt giới hạn sử dụng API key |
+
+```python
+from openai import OpenAI, APIStatusError
+
+try:
+    response = client.chat.completions.create(...)
+except APIStatusError as e:
+    if e.status_code == 402:
+        print("Please top up your account balance")
+```
+
+### Lỗi truy cập (403)
+
+| Kiểu | Mã | Mô tả |
+|------|------|-------------|
+| `access_denied` | `access_denied` | Bị từ chối quyền truy cập tài nguyên |
+| `access_denied` | `model_not_allowed` | Model không được phép sử dụng với API key này |
+
+```json
+{
+  "error": {
+    "message": "You don't have permission to access this model",
+    "type": "access_denied",
+    "code": "model_not_allowed"
+  }
+}
+```
+
+### Lỗi xác thực tham số (400)
+
+| Kiểu | Mô tả |
+|------|-------------|
+| `invalid_request_error` | Tham số yêu cầu không hợp lệ |
+| `context_length_exceeded` | Đầu vào quá dài cho model |
+| `model_not_found` | Model yêu cầu không có sẵn trong hợp đồng công khai hiện tại |
+
+```json
+{
+  "error": {
+    "message": "Model not found: please check the model name",
+    "type": "invalid_request_error",
+    "param": "model",
+    "code": "model_not_found",
+    "did_you_mean": "gpt-5.4",
+    "suggestions": [{"id": "gpt-5.4"}, {"id": "gpt-5-mini"}],
+    "hint": "Did you mean 'gpt-5.4'? Use GET https://api.aisonar.dev/v1/models to list all available models."
+  }
+}
+```
+
+Các route công khai không phân biệt lỗi chính tả, model ẩn, model trì hoãn, hoặc trạng thái không công khai trong thân phản hồi. Nếu một model hiện không có sẵn qua hợp đồng công khai, AI Sonar trả về `model_not_found`.
+
+### Lỗi giới hạn tốc độ (429)
+
+Khi bạn vượt quá giới hạn tốc độ:
+
+```json
+{
+  "error": {
+    "message": "Rate limit: 60 rpm exceeded",
+    "type": "rate_limit_exceeded",
+    "code": "rate_limit_exceeded",
+    "retryable": true,
+    "retry_after": 8,
+    "hint": "Rate limited. Retry after 8s. Current limit: 60/min for user role."
+  }
+}
+```
+
+**Các header được kèm theo:**
+
+```
+Retry-After: 8
+```
+
+Header `Retry-After` và trường `retry_after` đều chỉ ra số giây chính xác cần chờ trước khi thử lại.
+
+### Dữ liệu tải lên quá lớn (413)
+
+Khi kích thước input hoặc file vượt quá giới hạn:
+
+```json
+{
+  "error": {
+    "message": "Input size exceeds maximum allowed",
+    "type": "invalid_request_error",
+    "code": "payload_too_large"
+  }
+}
+```
+
+Nguyên nhân phổ biến:
+- File ảnh quá lớn (tối đa 20MB)
+- File âm thanh quá lớn (tối đa 25MB)
+- Văn bản đầu vào vượt quá độ dài ngữ cảnh của model
+
+### Lỗi thượng nguồn (502, 503)
+
+| Kiểu | Mô tả |
+|------|-------------|
+| `upstream_error` | Nhà cung cấp trả về lỗi |
+| `all_channels_failed` | Không có nhà cung cấp khả dụng |
+| `timeout_error` | Yêu cầu hết thời gian chờ |
+
+Khi tất cả các kênh thất bại, phản hồi bao gồm các model thay thế:
+
+```json
+{
+  "error": {
+    "message": "Model claude-opus-4-6 temporarily unavailable",
+    "code": "all_channels_failed",
+    "retryable": true,
+    "retry_after": 30,
+    "alternatives": [
+      {"id": "claude-sonnet-4-6", "status": "available", "tags": []},
+      {"id": "gpt-5-mini", "status": "available", "tags": []}
+    ],
+    "hint": "Retry in 30s or switch to an available model."
+  }
+}
+```
+
+## Xử lý lỗi trong Python
+
+```python
+from openai import OpenAI, APIError, RateLimitError, APIConnectionError
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+def chat_with_retry(messages, max_retries=3):
+    for attempt in range(max_retries):
+        try:
+            return client.chat.completions.create(
+                model="gpt-4o",
+                messages=messages
+            )
+        except RateLimitError as e:
+            if attempt < max_retries - 1:
+                import time
+                time.sleep(2 ** attempt)  # Exponential backoff
+                continue
+            raise
+        except APIConnectionError as e:
+            print(f"Connection error: {e}")
+            raise
+        except APIError as e:
+            print(f"API error: {e.status_code} - {e.message}")
+            raise
+```
+
+## Xử lý lỗi trong JavaScript
+
+```javascript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+async function chatWithRetry(messages, maxRetries = 3) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await client.chat.completions.create({
+        model: 'gpt-4o',
+        messages
+      });
+    } catch (error) {
+      if (error instanceof OpenAI.RateLimitError) {
+        if (attempt < maxRetries - 1) {
+          await new Promise(r => setTimeout(r, 2 ** attempt * 1000));
+          continue;
+        }
+      }
+      throw error;
+    }
+  }
+}
+```
+
+## Thực hành tốt nhất
+
+<AccordionGroup>
+  <Accordion title="Áp dụng exponential backoff">
+    Khi bị giới hạn tốc độ, chờ ngày càng lâu hơn giữa các lần thử lại:
+    ```python
+    wait_time = 2 ** attempt  # 1s, 2s, 4s, 8s...
+    ```
+  </Accordion>
+
+  <Accordion title="Đặt timeout">
+    Luôn đặt timeout hợp lý để tránh các yêu cầu treo:
+    ```python
+    client = OpenAI(timeout=60.0)  # 60 second timeout
+    ```
+  </Accordion>
+
+  <Accordion title="Ghi nhật ký lỗi để gỡ lỗi">
+    Ghi lại toàn bộ phản hồi lỗi bao gồm request ID để hỗ trợ:
+    ```python
+    except APIError as e:
+        logger.error(f"API Error: {e.status_code} - {e.message}")
+    ```
+  </Accordion>
+
+  <Accordion title="Xử lý lỗi riêng cho từng model">
+    Một số model có yêu cầu riêng (ví dụ: số token tối đa, định dạng ảnh).
+    Kiểm tra hợp lệ đầu vào trước khi thực hiện yêu cầu.
+  </Accordion>
+</AccordionGroup>

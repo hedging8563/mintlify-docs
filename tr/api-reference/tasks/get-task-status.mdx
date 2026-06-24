@@ -1,0 +1,89 @@
+---
+title: "Görev Durumunu Al"
+openapi: "GET /v1/tasks/{id}"
+description: "Create endpoint'leri tarafından döndürülen `poll_url` kullanılarak herhangi bir async görevin durumunu ve sonucunu alın"
+---
+
+## Genel Bakış
+
+Video, görsel, müzik ve 3D üretimi gibi görev türleri arasında birleşik async polling için bu endpoint'i kullanın.
+
+Bir create yanıtı `poll_url` içeriyorsa, tam olarak o path'i çağırın. Daha yeni async workflow'lar için `poll_url`, `/v1/tasks/{taskId}` adresini işaret edebilir.
+
+## Path Parametreleri
+
+<ParamField path="taskId" type="string" required>
+  Create isteğinden döndürülen görev kimliği.
+</ParamField>
+
+## Yanıt
+
+<ResponseField name="id" type="string">
+  Görev tanımlayıcısı.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Görev durumu: `pending`, `processing`, `completed` veya `failed`. İptal edilen görevler `failed` ve `cancelled: true` olarak temsil edilir.
+</ResponseField>
+
+<ResponseField name="cancelled" type="boolean">
+  Kuyruktaki bir asenkron görev yürütülmeden önce iptal edildiyse `true`.
+</ResponseField>
+
+<ResponseField name="cancellation_status" type="string">
+  İptal işareti. İptal başarılı olduğunda `cancelled` olarak bulunur.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Tamamlanan görüntü görevleri için oluşturulan görüntü sonuçları burada döndürülür. Görüntü görevleri URL’leri `data[].url` içinde döndürür.
+</ResponseField>
+
+<ResponseField name="video_url" type="string">
+  Görev tamamlandığında ve bir video ürettiğinde sonuç varlığının URL'si.
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  Görev başarısız olduğunda hata mesajı.
+</ResponseField>
+
+## Hata Davranışı
+
+Görev artık mevcut değilse, süresi dolmuşsa veya genel async-task sözleşmesi üzerinden çözümlenemiyorsa AI Sonar şunu döndürür:
+
+```json
+{
+  "error": {
+    "message": "Task not found or no longer available.",
+    "type": "invalid_request_error",
+    "code": "async_task_not_found"
+  }
+}
+```
+
+## Örnekler
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+```python Python
+import requests
+
+poll_url = "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+response = requests.get(
+    f"https://api.aisonar.dev{poll_url}",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+)
+print(response.json())
+```
+
+```javascript JavaScript
+const pollUrl = '/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+const response = await fetch(`https://api.aisonar.dev${pollUrl}`, {
+  headers: { Authorization: 'Bearer sk-your-api-key' },
+});
+console.log(await response.json());
+```

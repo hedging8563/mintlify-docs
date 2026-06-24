@@ -1,0 +1,282 @@
+---
+title: "エラー処理"
+description: "APIエラーを適切に処理する"
+---
+
+## エラー応答形式
+
+すべてのエラーは、オプションの [Agent-First hints](/guides/agent-first-api) を含む一貫した JSON 形式で返されます:
+
+```json
+{
+  "error": {
+    "message": "Human-readable error description",
+    "type": "error_type",
+    "code": "error_code",
+    "param": "parameter_name",
+    "did_you_mean": "suggested_model",
+    "suggestions": [{"id": "model-id"}],
+    "hint": "Next step guidance",
+    "retryable": true,
+    "retry_after": 30
+  }
+}
+```
+
+基本フィールド（`message`, `type`, `code`, `param`）は常に含まれます。ヒント系フィールド（`did_you_mean`, `suggestions`, `hint`, `retryable`, `retry_after`, `balance_usd`, `estimated_cost_usd`）は、AIエージェントの自己修正のための任意の拡張です。詳細は [Agent-First API guide](/guides/agent-first-api) を参照してください。
+
+OpenAI互換のエンドポイントはAI Sonarの安定したゲートウェイエラータイプを使用します。Anthropic互換およびGemini互換のエンドポイントは、それぞれネイティブのエラー系列とレスポンス形式を使用します。
+
+## HTTP ステータスコード
+
+| コード | 説明 |
+|------|-------------|
+| 400 | Bad Request - 無効なパラメータ |
+| 401 | Unauthorized - 無効または欠落したAPIキー |
+| 402 | Payment Required - 残高不足 |
+| 403 | Forbidden - アクセス拒否またはモデルが許可されていない |
+| 404 | Not Found - モデルまたはリソースが見つからない |
+| 413 | ペイロードが大きすぎます - 入力またはファイルサイズが超過 |
+| 429 | Too Many Requests - レート制限超過 |
+| 500 | Internal Server Error - 内部サーバーエラー |
+| 502 | Bad Gateway - 上流プロバイダエラー |
+| 503 | Service Unavailable - サービス一時的に利用不可 |
+| 504 | Gateway Timeout - リクエストがタイムアウト |
+
+## エラータイプ
+
+### 認証エラー (401)
+
+| タイプ | コード | 説明 |
+|------|------|-------------|
+| `invalid_api_key` | `invalid_api_key` | API key が見つからないか無効です |
+| `expired_api_key` | `expired_api_key` | API key は取り消されています |
+
+```python
+from openai import OpenAI, AuthenticationError
+
+try:
+    response = client.chat.completions.create(...)
+except AuthenticationError as e:
+    print(f"Authentication failed: {e.message}")
+```
+
+### 支払いエラー (402)
+
+| タイプ | コード | 説明 |
+|------|------|-------------|
+| `insufficient_balance` | `insufficient_balance` | アカウント残高が不足しています |
+| `quota_exceeded` | `quota_exceeded` | APIキーの使用上限に達しました |
+
+```python
+from openai import OpenAI, APIStatusError
+
+try:
+    response = client.chat.completions.create(...)
+except APIStatusError as e:
+    if e.status_code == 402:
+        print("Please top up your account balance")
+```
+
+### アクセスエラー (403)
+
+| タイプ | コード | 説明 |
+|------|------|-------------|
+| `access_denied` | `access_denied` | リソースへのアクセスが拒否されました |
+| `access_denied` | `model_not_allowed` | このAPIキーではモデルが許可されていません |
+
+```json
+{
+  "error": {
+    "message": "You don't have permission to access this model",
+    "type": "access_denied",
+    "code": "model_not_allowed"
+  }
+}
+```
+
+### バリデーションエラー (400)
+
+| タイプ | 説明 |
+|------|-------------|
+| `invalid_request_error` | リクエストパラメータが無効です |
+| `context_length_exceeded` | モデルに対して入力が長すぎます |
+| `model_not_found` | 要求したモデルは現在のパブリック契約で利用できません |
+
+```json
+{
+  "error": {
+    "message": "Model not found: please check the model name",
+    "type": "invalid_request_error",
+    "param": "model",
+    "code": "model_not_found",
+    "did_you_mean": "gpt-5.4",
+    "suggestions": [{"id": "gpt-5.4"}, {"id": "gpt-5-mini"}],
+    "hint": "Did you mean 'gpt-5.4'? Use GET https://api.aisonar.dev/v1/models to list all available models."
+  }
+}
+```
+
+パブリックルートは、レスポンス本文でタイポ、非表示、保留、非公開のモデル状態を区別しません。モデルが現在パブリック契約を通じて利用できない場合、AI Sonarは`model_not_found`を返します。
+
+### レート制限エラー (429)
+
+当該レート制限を超えた場合:
+
+```json
+{
+  "error": {
+    "message": "Rate limit: 60 rpm exceeded",
+    "type": "rate_limit_exceeded",
+    "code": "rate_limit_exceeded",
+    "retryable": true,
+    "retry_after": 8,
+    "hint": "Rate limited. Retry after 8s. Current limit: 60/min for user role."
+  }
+}
+```
+
+**含まれるヘッダー:**
+
+```
+Retry-After: 8
+```
+
+`Retry-After`ヘッダーと`retry_after`フィールドは、いずれも再試行するまで待つ秒数を示します。
+
+### ペイロードが大きすぎる (413)
+
+入力またはファイルサイズが制限を超えた場合:
+
+```json
+{
+  "error": {
+    "message": "Input size exceeds maximum allowed",
+    "type": "invalid_request_error",
+    "code": "payload_too_large"
+  }
+}
+```
+
+主な原因:
+- 画像ファイルが大きすぎる（最大20MB）
+- 音声ファイルが大きすぎる（最大25MB）
+- 入力テキストがモデルのコンテキスト長を超えている
+
+### 上流エラー (502, 503)
+
+| タイプ | 説明 |
+|------|-------------|
+| `upstream_error` | プロバイダがエラーを返しました |
+| `all_channels_failed` | 利用可能なプロバイダがありません |
+| `timeout_error` | リクエストがタイムアウトしました |
+
+すべてのチャネルが失敗した場合、レスポンスには代替モデルが含まれます:
+
+```json
+{
+  "error": {
+    "message": "Model claude-opus-4-6 temporarily unavailable",
+    "code": "all_channels_failed",
+    "retryable": true,
+    "retry_after": 30,
+    "alternatives": [
+      {"id": "claude-sonnet-4-6", "status": "available", "tags": []},
+      {"id": "gpt-5-mini", "status": "available", "tags": []}
+    ],
+    "hint": "Retry in 30s or switch to an available model."
+  }
+}
+```
+
+## Pythonでのエラー処理
+
+```python
+from openai import OpenAI, APIError, RateLimitError, APIConnectionError
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+def chat_with_retry(messages, max_retries=3):
+    for attempt in range(max_retries):
+        try:
+            return client.chat.completions.create(
+                model="gpt-4o",
+                messages=messages
+            )
+        except RateLimitError as e:
+            if attempt < max_retries - 1:
+                import time
+                time.sleep(2 ** attempt)  # Exponential backoff
+                continue
+            raise
+        except APIConnectionError as e:
+            print(f"Connection error: {e}")
+            raise
+        except APIError as e:
+            print(f"API error: {e.status_code} - {e.message}")
+            raise
+```
+
+## JavaScriptでのエラー処理
+
+```javascript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+async function chatWithRetry(messages, maxRetries = 3) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await client.chat.completions.create({
+        model: 'gpt-4o',
+        messages
+      });
+    } catch (error) {
+      if (error instanceof OpenAI.RateLimitError) {
+        if (attempt < maxRetries - 1) {
+          await new Promise(r => setTimeout(r, 2 ** attempt * 1000));
+          continue;
+        }
+      }
+      throw error;
+    }
+  }
+}
+```
+
+## ベストプラクティス
+
+<AccordionGroup>
+  <Accordion title="指数バックオフを実装する">
+    レート制限にかかった場合、再試行の間隔を徐々に長くしてください:
+    ```python
+    wait_time = 2 ** attempt  # 1s, 2s, 4s, 8s...
+    ```
+  </Accordion>
+
+  <Accordion title="タイムアウトを設定する">
+    ハングするリクエストを避けるために、常に適切なタイムアウトを設定してください:
+    ```python
+    client = OpenAI(timeout=60.0)  # 60 second timeout
+    ```
+  </Accordion>
+
+  <Accordion title="デバッグのためにエラーをログする">
+    サポートのためにリクエストIDを含む完全なエラー応答をログに記録してください:
+    ```python
+    except APIError as e:
+        logger.error(f"API Error: {e.status_code} - {e.message}")
+    ```
+  </Accordion>
+
+  <Accordion title="モデル固有のエラーを処理する">
+    一部のモデルには特定の要件（例：最大トークン数、画像フォーマット）があります。
+    リクエストを行う前に入力を検証してください。
+  </Accordion>
+</AccordionGroup>

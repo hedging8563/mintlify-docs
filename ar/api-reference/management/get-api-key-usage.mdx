@@ -1,0 +1,44 @@
+---
+title: "جلب استخدام مفتاح API"
+openapi: "GET /v1/management/api-keys/{keyId}/usage"
+description: "يعيد تفاصيل استخدام مرقمة لصفحات لمفتاح API خاص بالمستخدم."
+---
+
+## نظرة عامة
+
+يعيد هذا الـ endpoint تفاصيل الاستخدام على مستوى مفتاح API من دون كشف بيانات التوجيه الفيزيائي.
+
+## معلمات الاستعلام
+
+| المعامل | النوع | القيم الافتراضية / القيود | الوصف |
+|---------|------|----------------------------|-------|
+| `page` | integer | الافتراضي `1`، الحد الأدنى `1` | رقم الصفحة بدءًا من 1 |
+| `limit` | integer | الافتراضي `50`، الحد الأدنى `1`، الحد الأقصى `100` | حجم الصفحة |
+| `logicalModel` | string | أقصى طول `100` | اسم النموذج المنطقي المطلوب |
+| `modelVendor` | string | أقصى طول `100` | مزود النموذج العام |
+| `scene` | enum | - | `chat` و `image` و `audio` و `video` و `embedding` و `rerank` و `translation` و `music` و `3d` |
+| `accessChannel` | enum | - | `platform` أو `byok` |
+| `startDate` | string | - | حد سفلي شامل؛ يقبل RFC3339 مع منطقة زمنية أو `YYYY-MM-DD` |
+| `endDate` | string | - | حد علوي شامل؛ يقبل RFC3339 مع منطقة زمنية أو `YYYY-MM-DD` |
+
+إذا تم إرسال `startDate` و `endDate` معًا، فيجب أن يكون `startDate` أسبق من أو مساويًا لـ `endDate`.
+
+## ملاحظات
+
+- هذه الاستجابة تدعم ترقيم الصفحات.
+- لا تتضمن الاستجابة إلا حقول الفوترة والتقارير العامة.
+- قد تتضمن كل سطر usage أيضاً الحقل `billing_transaction_id` بعد اكتمال تسوية الطلب الأساسي. استخدمه مع `request_id` للمطابقة على مستوى الطلب.
+- يتم إخفاء بيانات التوجيه الداخلي والقنوات الفيزيائية عمدًا.
+
+## مثال
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/usage?page=1&limit=20&scene=video&accessChannel=platform&startDate=2026-03-01&endDate=2026-03-31" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## الطلب / الاستجابة
+
+استخدم لوحة OpenAPI التفاعلية أعلاه للاطلاع على المخطط الدقيق وحقول الاستجابة.

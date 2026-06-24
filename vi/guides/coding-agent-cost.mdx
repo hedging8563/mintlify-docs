@@ -1,0 +1,148 @@
+---
+title: "Tối Ưu Chi Phí Coding Agent"
+description: "Các chiến lược thực tế để giảm chi phí API của coding agent từ 60–90%"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Vấn Đề Chi Phí
+
+Một phiên coding agent điển hình tiêu thụ token rất nhanh:
+
+| Hoạt động | Token mỗi lần gọi | Lần gọi mỗi giờ | Token mỗi giờ |
+|-----------|------------------|-----------------|---------------|
+| Sinh code | 5.000–50.000 | 10–30 | 150K–1,5M |
+| Tìm kiếm code | 2.000–20.000 | 20–50 | 100K–1M |
+| Review code | 10.000–80.000 | 5–10 | 100K–800K |
+| Tự động hoàn thành | 500–3.000 | 50–200 | 50K–600K |
+| **Tổng** | | | **400K–4M+** |
+
+Với mức giá model cao cấp, đó là $3–30/giờ mỗi lập trình viên. Với nhóm 10 người, đó là $500–5.000/tháng.
+
+## Lựa Chọn Model Thông Minh
+
+Không phải mọi tác vụ code đều cần model đắt nhất. Hãy chọn model phù hợp với từng loại tác vụ:
+
+| Tác vụ | Khuyến nghị | Mức chi phí | Lý do |
+|--------|-------------|-------------|-------|
+| Thiết kế kiến trúc | `claude-opus-4-6`, `gpt-5.4` | $$$$ Cao cấp | Cần lý luận phức tạp |
+| Sinh code | `claude-sonnet-4-6`, `gemini-3-pro-preview` | $$$ Tiêu chuẩn | Cân bằng tốt nhất chất lượng/chi phí |
+| Review code | `claude-sonnet-4-6`, `deepseek-r1` | $$–$$$ | Nhận dạng mẫu, ít sáng tạo hơn |
+| Sửa lỗi | `claude-sonnet-4-6`, `gpt-5-mini` | $$–$$$ | Tác vụ tập trung, xác định rõ ràng |
+| Tự động hoàn thành | `gpt-5-mini`, `gemini-3-flash-preview` | $$ Tiết kiệm | Tốc độ quan trọng hơn độ sâu |
+| Boilerplate | `deepseek-v3.2`, `gpt-5-mini` | $ Cơ bản | Mẫu đơn giản, lặp lại |
+
+<Tip>
+Xem [Hướng Dẫn Chọn Model](/vi/guides/coding-agent-models) để so sánh chi tiết và cấu hình theo từng công cụ.
+</Tip>
+
+## Chiến Lược Cache
+
+Coding agent rất phù hợp để cache vì chúng liên tục lặp lại các mẫu tương tự.
+
+### Cache Prompt (Cấp Nhà Cung Cấp)
+
+[Cache prompt upstream](/guides/prompt-cache) được tự động hóa qua AI Sonar. Các system prompt dài — mà coding agent luôn bao gồm — được cache ở cấp nhà cung cấp:
+
+| Nhà cung cấp | Giảm giá Cache | Token tối thiểu |
+|-------------|----------------|-----------------|
+| Anthropic | Giảm 90% khi đọc | 1.024 |
+| OpenAI | Giảm 50% khi đọc | 1.024 |
+| DeepSeek | Giảm 90% khi đọc | 64 |
+
+Vì coding agent gửi cùng system prompt + ngữ cảnh dự án trong mỗi lần gọi, tỷ lệ cache hit của prompt cache thường là **70–90%**.
+
+### Ví Dụ Tiết Kiệm Kết Hợp
+
+Với yêu cầu có 50.000 token đầu vào (lần gọi coding agent điển hình):
+
+```
+API trực tiếp (không cache):
+  50.000 token × $3,00/1M = $0,150
+
+Với cache prompt (40.000 đã cache + 10.000 mới):
+  Đã cache:  40.000 × $0,30/1M = $0,012
+  Mới:       10.000 × $3,00/1M = $0,030
+  Tổng: $0,042 (tiết kiệm 72%)
+
+```
+
+## So Sánh Chi Phí Thực Tế
+
+Chi phí ước tính cho một phiên code điển hình 1 giờ (~3M token):
+
+| Cấu hình | Chi phí mỗi giờ | Hàng tháng (160h) |
+|----------|-----------------|-------------------|
+| API trực tiếp (model cao cấp) | ~$15–25 | ~$2.400–4.000 |
+| AI Sonar (định tuyến thông minh) | ~$10–18 | ~$1.600–2.900 |
+| AI Sonar + cache prompt | ~$4–8 | ~$640–1.280 |
+
+<Warning>
+Đây là các ước tính minh họa. Chi phí thực tế phụ thuộc vào lựa chọn model, mẫu sử dụng và tỷ lệ cache hit. Kiểm tra [giá thời gian thực](/api-reference/pricing/get-pricing) để biết mức giá hiện tại.
+</Warning>
+
+## Mẹo Quản Lý Token
+
+### Đặt max_tokens
+
+Ngăn chặn việc sinh quá mức:
+
+```json
+{
+  "model": "claude-sonnet-4-6",
+  "max_tokens": 4096,
+  "messages": [...]
+}
+```
+
+Hầu hết các tác vụ code cần 1.000–4.000 token đầu ra. Đặt giới hạn ngăn model tạo ra phản hồi dài không cần thiết.
+
+### Sử Dụng Auto-Compact
+
+Hầu hết coding agent hỗ trợ nén ngữ cảnh — tóm tắt các lượt hội thoại cũ để giảm số lượng token. Bật tính năng này:
+
+- **Claude Code**: Auto-compact tích hợp kích hoạt tại giới hạn ngữ cảnh
+- **Cursor**: Quản lý ngữ cảnh tự động
+- **Codex CLI**: Sử dụng flag `--max-context`
+
+### Tránh Phình To Ngữ Cảnh
+
+- Đừng dán toàn bộ file khi chỉ cần một hàm
+- Sử dụng các mẫu kiểu `.gitignore` để loại trừ các file không liên quan khỏi ngữ cảnh agent
+- Xóa lịch sử hội thoại khi chuyển sang tác vụ khác
+
+## Cấu Hình Nhanh
+
+Mỗi công cụ chỉ cần vài dòng để kết nối qua AI Sonar:
+
+<AccordionGroup>
+  <Accordion title="Claude Code">
+    ```bash
+    export ANTHROPIC_API_KEY="sk-your-api-key"
+    export ANTHROPIC_BASE_URL="https://api.aisonar.dev"
+    ```
+    [Hướng dẫn đầy đủ →](/integrations/claude-code)
+  </Accordion>
+
+  <Accordion title="Cursor">
+    Cài đặt → Mô hình → Khóa API OpenAI: `sk-your-key`, URL cơ sở: `https://api.aisonar.dev/v1`
+
+    [Hướng dẫn đầy đủ →](/integrations/cursor)
+  </Accordion>
+
+  <Accordion title="Codex CLI">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export OPENAI_BASE_URL="https://api.aisonar.dev/v1"
+    ```
+    [Hướng dẫn đầy đủ →](/integrations/codex-cli)
+  </Accordion>
+
+  <Accordion title="Gemini CLI">
+    ```bash
+    export GEMINI_API_KEY="sk-your-api-key"
+    export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"
+    ```
+    [Hướng dẫn đầy đủ →](/integrations/gemini-cli)
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,148 @@
+---
+title: "Otimização de Custos do Agente de Código"
+description: "Estratégias práticas para reduzir os custos de API do agente de código em 60–90%"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## O Problema dos Custos
+
+Uma sessão típica de agente de código consome tokens rapidamente:
+
+| Atividade | Tokens por chamada | Chamadas por hora | Tokens por hora |
+|-----------|-------------------|-------------------|-----------------|
+| Geração de código | 5.000–50.000 | 10–30 | 150K–1,5M |
+| Busca no código | 2.000–20.000 | 20–50 | 100K–1M |
+| Revisão de código | 10.000–80.000 | 5–10 | 100K–800K |
+| Autocompletar | 500–3.000 | 50–200 | 50K–600K |
+| **Total** | | | **400K–4M+** |
+
+Nas tarifas de modelos premium, isso representa $3–30/hora por desenvolvedor. Para uma equipe de 10, são $500–5.000/mês.
+
+## Seleção Inteligente de Modelos
+
+Nem toda tarefa de código precisa do modelo mais caro. Combine a tarefa com o nível certo:
+
+| Tarefa | Recomendado | Nível de Custo | Por quê |
+|--------|-------------|----------------|---------|
+| Design de arquitetura | `claude-opus-4-6`, `gpt-5.4` | $$$$ Premium | Raciocínio complexo necessário |
+| Geração de código | `claude-sonnet-4-6`, `gemini-3-pro-preview` | $$$ Padrão | Melhor equilíbrio qualidade/custo |
+| Revisão de código | `claude-sonnet-4-6`, `deepseek-r1` | $$–$$$ | Reconhecimento de padrões, menos criatividade |
+| Correção de bugs | `claude-sonnet-4-6`, `gpt-5-mini` | $$–$$$ | Tarefas focadas e bem definidas |
+| Autocompletar | `gpt-5-mini`, `gemini-3-flash-preview` | $$ Econômico | Velocidade importa mais que profundidade |
+| Boilerplate | `deepseek-v3.2`, `gpt-5-mini` | $ Básico | Padrões simples e repetitivos |
+
+<Tip>
+Veja o [Guia de Seleção de Modelos](/pt/guides/coding-agent-models) para comparações detalhadas e configuração por ferramenta.
+</Tip>
+
+## Estratégias de Cache
+
+Agentes de código são ideais para cache porque repetem padrões similares constantemente.
+
+### Cache de Prompt (Nível do Provedor)
+
+O [cache de prompt upstream](/guides/prompt-cache) é automático pelo AI Sonar. Prompts de sistema longos — que agentes de código sempre incluem — são armazenados em cache no nível do provedor:
+
+| Provedor | Desconto no Cache | Mínimo de Tokens |
+|----------|------------------|------------------|
+| Anthropic | 90% de desconto nas leituras | 1.024 |
+| OpenAI | 50% de desconto nas leituras | 1.024 |
+| DeepSeek | 90% de desconto nas leituras | 64 |
+
+Como agentes de código enviam o mesmo prompt de sistema + contexto do projeto em cada chamada, as taxas de acerto no cache de prompt são tipicamente **70–90%**.
+
+### Exemplo de Economia Combinada
+
+Para uma requisição com 50.000 tokens de entrada (chamada típica de agente de código):
+
+```
+API direta (sem cache):
+  50.000 tokens × $3,00/1M = $0,150
+
+Com cache de prompt (40.000 em cache + 10.000 novos):
+  Em cache:  40.000 × $0,30/1M = $0,012
+  Novos:     10.000 × $3,00/1M = $0,030
+  Total: $0,042 (72% de economia)
+```
+
+## Comparação de Custos Reais
+
+Custos estimados para uma sessão típica de 1 hora de código (~3M tokens):
+
+| Configuração | Custo por Hora | Mensal (160h) |
+|--------------|----------------|---------------|
+| API direta (modelo premium) | ~$15–25 | ~$2.400–4.000 |
+| AI Sonar (roteamento inteligente) | ~$10–18 | ~$1.600–2.900 |
+| AI Sonar + cache de prompt | ~$4–8 | ~$640–1.280 |
+| AI Sonar + ambos os caches | ~$2–5 | ~$320–800 |
+
+<Warning>
+Estas são estimativas ilustrativas. Os custos reais dependem da sua escolha de modelo, padrões de uso e taxas de acerto no cache. Consulte os [preços em tempo real](/api-reference/pricing/get-pricing) para tarifas atuais.
+</Warning>
+
+## Dicas de Gerenciamento de Tokens
+
+### Defina max_tokens
+
+Evite geração descontrolada:
+
+```json
+{
+  "model": "claude-sonnet-4-6",
+  "max_tokens": 4096,
+  "messages": [...]
+}
+```
+
+A maioria das tarefas de código precisa de 1.000–4.000 tokens de saída. Definir um limite evita que o modelo gere respostas desnecessariamente longas.
+
+### Usar Auto-Compact
+
+A maioria dos agentes de código suporta compactação de contexto — resumindo turnos antigos da conversa para reduzir a contagem de tokens. Ative-o:
+
+- **Claude Code**: Auto-compact integrado ativa nos limites de contexto
+- **Cursor**: Gerenciamento automático de contexto
+- **Codex CLI**: Use a flag `--max-context`
+
+### Evite Inchaço de Contexto
+
+- Não cole arquivos inteiros quando uma função é suficiente
+- Use padrões no estilo `.gitignore` para excluir arquivos irrelevantes do contexto do agente
+- Limpe o histórico da conversa ao trocar de tarefa
+
+## Configuração Rápida
+
+Cada ferramenta precisa de apenas algumas linhas para se conectar pelo AI Sonar:
+
+<AccordionGroup>
+  <Accordion title="Claude Code">
+    ```bash
+    export ANTHROPIC_API_KEY="sk-your-api-key"
+    export ANTHROPIC_BASE_URL="https://api.aisonar.dev"
+    ```
+    [Guia completo →](/integrations/claude-code)
+  </Accordion>
+
+  <Accordion title="Cursor">
+    Configurações → Modelos → Chave da API da OpenAI: `sk-your-key`, URL base: `https://api.aisonar.dev/v1`
+
+    [Guia completo →](/integrations/cursor)
+  </Accordion>
+
+  <Accordion title="Codex CLI">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export OPENAI_BASE_URL="https://api.aisonar.dev/v1"
+    ```
+    [Guia completo →](/integrations/codex-cli)
+  </Accordion>
+
+  <Accordion title="Gemini CLI">
+    ```bash
+    export GEMINI_API_KEY="sk-your-api-key"
+    export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"
+    ```
+    [Guia completo →](/integrations/gemini-cli)
+  </Accordion>
+</AccordionGroup>

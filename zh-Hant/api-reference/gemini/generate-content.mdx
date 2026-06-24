@@ -1,0 +1,366 @@
+---
+title: "生成內容"
+openapi: "POST /v1beta/models/{model}:generateContent"
+description: "使用 Google Gemini API 格式生成內容"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+AI Sonar 支援 Gemini 模型的原生 Google Gemini API 格式。這使得與 Google AI SDK 具有直接的相容性。
+
+## 路徑參數
+
+<ParamField path="model" type="string" required>
+  模型名稱（例如：`gemini-2.5-pro`、`gemini-2.5-flash`）。
+
+
+  在正式整合中，建議使用以 URL 為基礎的 `fileData` / `file_data` 媒體片段，並搭配公開的 `https` URL。
+  當可行時，AI Sonar 會將受支援的 Gemini 原生通道透過原生路徑轉送，並在某個多模態請求沒有可用的原生就緒路由時，自動回退到相容的內部轉換路徑。
+
+</ParamField>
+
+## 查詢參數
+
+<ParamField query="key" type="string">
+  API key（標頭驗證的替代方案）。
+</ParamField>
+
+## 驗證
+
+Gemini 端點支援多種驗證方式：
+- `?key=YOUR_API_KEY` 查詢參數
+- `x-goog-api-key: YOUR_API_KEY` 標頭
+- `Authorization: Bearer YOUR_API_KEY` 標頭
+
+## 請求主體
+
+<ParamField body="contents" type="array" required>
+  對話內容。
+
+  每個內容物件包含：
+  - `role` (string)：`user` 或 `model`
+  - `parts` (array)：內容 part。AI Sonar 目前支援：
+    - 文字 part：`{ "text": "..." }`
+    - 內嵌媒體 part：`inlineData` / `inline_data`
+    - 基於 URL 的檔案 part：`fileData` / `file_data`
+
+  對於媒體 part，AI Sonar 目前接受圖片、音訊、影片三類 MIME type，並透過 Gemini 相容公共契約向下游轉發。
+
+  `user` 和 `model` role 會以不區分大小寫的方式正規化。`application/octet-stream` 的 `inlineData` / `inline_data` 只有在 AI Sonar 能辨識為支援的圖片或影片位元組時才會接受，否則會在路由前失敗。原生圖片輸出請求只接受 Google search/maps 工具族，不支援的工具組合會在上游重試前失敗。
+</ParamField>
+
+<ParamField body="systemInstruction" type="object">
+  模型的系統指令。
+</ParamField>
+
+<ParamField body="generationConfig" type="object">
+  生成配置：
+  - `temperature` (number)：取樣溫度
+  - `topP` (number)：核取樣機率
+  - `topK` (integer)：Top-K 取樣
+  - `maxOutputTokens` (integer)：最大輸出 token 數
+  - `stopSequences` (array)：停止序列
+</ParamField>
+
+<ParamField body="safetySettings" type="array">
+  安全過濾器設定。
+</ParamField>
+
+## 回應
+
+<ResponseField name="candidates" type="array">
+  生成的內容候選。
+</ResponseField>
+
+<ResponseField name="usageMetadata" type="object">
+  Token 使用資訊。
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1beta/models/gemini-2.5-pro:generateContent?key=sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "contents": [
+      {
+        "parts": [{"text": "Hello, Gemini!"}]
+      }
+    ],
+    "generationConfig": {
+      "temperature": 0.7,
+      "maxOutputTokens": 1024
+    }
+  }'
+```
+
+```python Python
+import google.generativeai as genai
+
+genai.configure(
+    api_key="sk-your-api-key",
+    transport="rest",
+    client_options={"api_endpoint": "api.aisonar.dev"}
+)
+
+model = genai.GenerativeModel("gemini-2.5-pro")
+response = model.generate_content("Hello, Gemini!")
+
+print(response.text)
+```
+
+```javascript JavaScript
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+const genAI = new GoogleGenerativeAI("sk-your-api-key", {
+  baseUrl: "https://api.aisonar.dev"
+});
+
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+const result = await model.generateContent("Hello, Gemini!");
+
+console.log(result.response.text());
+```
+
+```go Go
+package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "fmt"
+    "io"
+    "net/http"
+)
+
+func main() {
+    payload := map[string]interface{}{
+        "contents": []map[string]interface{}{
+            {
+                "parts": []map[string]string{
+                    {"text": "Hello, Gemini!"},
+                },
+            },
+        },
+        "generationConfig": map[string]interface{}{
+            "temperature":    0.7,
+            "maxOutputTokens": 1024,
+        },
+    }
+
+    jsonData, _ := json.Marshal(payload)
+    req, _ := http.NewRequest("POST",
+        "https://api.aisonar.dev/v1beta/models/gemini-2.5-pro:generateContent?key=sk-your-api-key",
+        bytes.NewBuffer(jsonData))
+    req.Header.Set("Content-Type", "application/json")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+
+    body, _ := io.ReadAll(resp.Body)
+    fmt.Println(string(body))
+}
+```
+
+```php PHP
+<?php
+$payload = [
+    'contents' => [
+        [
+            'parts' => [
+                ['text' => 'Hello, Gemini!']
+            ]
+        ]
+    ],
+    'generationConfig' => [
+        'temperature' => 0.7,
+        'maxOutputTokens' => 1024
+    ]
+];
+
+$ch = curl_init('https://api.aisonar.dev/v1beta/models/gemini-2.5-pro:generateContent?key=sk-your-api-key');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Content-Type: application/json'
+    ],
+    CURLOPT_POSTFIELDS => json_encode($payload)
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+echo $data['candidates'][0]['content']['parts'][0]['text'];
+```
+</RequestExample>
+
+## 多模態輸入範例
+
+對於 Gemini 多模態請求，請把媒體放在 `contents[].parts[]` 中，可以使用「內嵌位元組」或「基於 URL 的檔案引用」兩種方式。
+
+目前公共 Gemini 契約支援的媒體類別：
+- 圖片
+- 音訊
+- 影片
+
+對於內嵌媒體，請使用 `inlineData` 或 `inline_data`，並傳入檔案位元組的 Base64 內容。
+
+對於 URL 媒體，請使用 `fileData` 或 `file_data`，並傳入可公開存取的 `https` URL。
+
+### 圖片輸入範例
+
+使用內嵌圖片位元組：
+
+```json
+{
+  "contents": [
+    {
+      "role": "user",
+      "parts": [
+        { "text": "請描述這張圖片。" },
+        {
+          "inlineData": {
+            "mimeType": "image/jpeg",
+            "data": "/9j/4AAQSkZJRgABAQ..."
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+使用圖片 URL：
+
+```json
+{
+  "contents": [
+    {
+      "role": "user",
+      "parts": [
+        { "text": "請描述這張圖片。" },
+        {
+          "fileData": {
+            "mimeType": "image/jpeg",
+            "fileUri": "https://example.com/demo.jpg"
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+### 音訊輸入範例
+
+```json
+{
+  "contents": [
+    {
+      "role": "user",
+      "parts": [
+        { "text": "請轉寫並摘要這段音訊。" },
+        {
+          "file_data": {
+            "mime_type": "audio/mpeg",
+            "file_uri": "https://example.com/sample.mp3"
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+### 影片輸入範例
+
+```json
+{
+  "contents": [
+    {
+      "role": "user",
+      "parts": [
+        { "text": "請簡要描述這段影片。" },
+        {
+          "fileData": {
+            "mimeType": "video/mp4",
+            "fileUri": "https://example.com/sample.mp4"
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+<ResponseExample>
+```json Response
+{
+  "candidates": [
+    {
+      "content": {
+        "role": "model",
+        "parts": [
+          {"text": "Hello! How can I assist you today?"}
+        ]
+      },
+      "finishReason": "STOP",
+      "safetyRatings": [
+        {"category": "HARM_CATEGORY_HARASSMENT", "probability": "NEGLIGIBLE"}
+      ]
+    }
+  ],
+  "usageMetadata": {
+    "promptTokenCount": 5,
+    "candidatesTokenCount": 10,
+    "totalTokenCount": 15
+  }
+}
+```
+</ResponseExample>
+
+
+## 影片輸入範例
+
+```json
+{
+  "contents": [
+    {
+      "role": "user",
+      "parts": [
+        { "text": "Please describe this video." },
+        {
+          "fileData": {
+            "mimeType": "video/mp4",
+            "fileUri": "https://example.com/demo.mp4"
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+## 音訊輸入範例
+
+```json
+{
+  "contents": [
+    {
+      "role": "user",
+      "parts": [
+        { "text": "Please describe this audio." },
+        {
+          "fileData": {
+            "mimeType": "audio/mpeg",
+            "fileUri": "https://example.com/demo.mp3"
+          }
+        }
+      ]
+    }
+  ]
+}
+```

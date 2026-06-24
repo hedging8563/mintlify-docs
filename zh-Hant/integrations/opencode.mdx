@@ -1,0 +1,201 @@
+---
+title: "OpenCode"
+description: "設定 OpenCode 以使用 AI Sonar API"
+---
+
+## 概覽
+
+
+
+<Note>
+**類型**: 程式工具
+
+**主要路徑**: OpenAI 相容
+
+**支援級別**: 支援路徑
+</Note>
+
+OpenCode 是一個在終端機中執行的開源 AI 程式設計助理。它支援多種 LLM 供應商，並可設定為使用 AI Sonar 的 API，以存取數百個模型。
+
+## 安裝
+
+<Tabs>
+  <Tab title="安裝腳本">
+    ```bash
+    curl -fsSL https://opencode.ai/install | bash
+    ```
+  </Tab>
+  <Tab title="Homebrew">
+    ```bash
+    brew install opencode-ai/tap/opencode
+    ```
+
+    或使用社群 tap（更新更頻繁）：
+    ```bash
+    brew install anomalyco/tap/opencode
+    ```
+  </Tab>
+  <Tab title="Go">
+    ```bash
+    go install github.com/opencode-ai/opencode@latest
+    ```
+  </Tab>
+</Tabs>
+
+驗證安裝：
+
+```bash
+opencode --version
+```
+
+## 設定
+
+### 步驟 1：設定環境變數
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+```
+
+如需永久設定，請加入至 `~/.bashrc` 或 `~/.zshrc`：
+
+```bash
+echo 'export OPENAI_API_KEY="sk-your-api-key"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+### 步驟 2：設定 OpenCode
+
+OpenCode 目前的文件建議透過 `opencode.json` 或 `opencode.jsonc` 設定供應商。對於 AI Sonar，請使用自訂供應商，而不是覆寫內建的 `openai` 供應商：
+
+```jsonc
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "aisonar": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "AI Sonar",
+      "options": {
+        "baseURL": "https://api.aisonar.dev/v1",
+        "apiKey": "{env:OPENAI_API_KEY}"
+      },
+      "models": {
+        "gpt-5.4": {
+          "name": "GPT-5.4"
+        },
+        "gpt-5-mini": {
+          "name": "GPT-5 Mini"
+        }
+      }
+    }
+  },
+  "model": "aisonar/gpt-5.4"
+}
+```
+
+<Note>
+使用 `@ai-sdk/openai-compatible` 以相容於 chat-completions 風格。如果你明確需要建立在 `/v1/responses` 上的供應商路徑，OpenCode 的文件建議將套件切換為 `@ai-sdk/openai`。
+</Note>
+
+## 基本用法
+
+**啟動互動模式：**
+
+```bash
+opencode
+```
+
+**搭配 prompt 執行：**
+
+```bash
+opencode "Explain this codebase"
+```
+
+**指定模型：**
+
+```bash
+opencode --model aisonar/gpt-5.4 "Fix the bugs in main.py"
+```
+
+## 可用模型
+
+| 模型 | 最適合用途 |
+|-------|----------|
+| `gpt-5.4` | 複雜任務、程式碼架構 |
+| `gpt-5-mini` | 快速修正、簡單查詢 |
+| `claude-sonnet-4-6` | 程式碼審查、文件撰寫 |
+| `claude-opus-4-6` | 複雜推理 |
+| `gemini-2.5-flash` | 快速回應 |
+| `deepseek-r1` | 演算法設計 |
+
+## 常用指令
+
+**分析程式碼：**
+
+```bash
+opencode "What does this function do?" < src/utils.ts
+```
+
+**產生程式碼：**
+
+```bash
+opencode "Create a REST API with Express"
+```
+
+**檢查變更：**
+
+```bash
+git diff | opencode "Review these changes"
+```
+
+**修正錯誤：**
+
+```bash
+opencode "Fix the TypeScript errors in this project"
+```
+
+## 互動指令
+
+| 指令 | 說明 |
+|---------|-------------|
+| `/help` | 顯示可用指令 |
+| `/model <name>` | 切換至不同模型 |
+| `/clear` | 清除對話歷史 |
+| `/exit` | 結束 OpenCode |
+
+## 疑難排解
+
+<AccordionGroup>
+  <Accordion title="連線錯誤">
+    - 確認 `options.baseURL` 已設為 `https://api.aisonar.dev/v1`
+    - 檢查網路連線
+    - 嘗試 `curl https://api.aisonar.dev/v1/models` 進行測試
+  </Accordion>
+
+  <Accordion title="驗證失敗">
+    - 確認已設定 `OPENAI_API_KEY` 環境變數
+    - 確認 `options.apiKey` 參照的是 `{env:OPENAI_API_KEY}` 或其他有效的 secret 來源
+    - 檢查 key 是否以 `sk-` 開頭
+    - 確保該 key 已在 AI Sonar dashboard 中啟用
+  </Accordion>
+
+  <Accordion title="找不到模型">
+    - 檢查設定中的模型名稱是否完全一致
+    - 在 [aisonar.dev/en/models](https://aisonar.dev/models) 確認模型是否可用
+  </Accordion>
+</AccordionGroup>
+
+## 最佳實務
+
+<AccordionGroup>
+  <Accordion title="使用專案內容">
+    從你的專案根目錄執行 OpenCode，以更好地理解你的程式碼庫。
+  </Accordion>
+
+  <Accordion title="選擇合適的模型">
+    對於簡單任務使用較快的模型（`gpt-5-mini`），對於複雜任務則使用較強的模型（`gpt-5.4`、`claude-sonnet-4-6`）。
+  </Accordion>
+
+  <Accordion title="審查產生的程式碼">
+    在將變更套用到你的專案之前，務必審查 AI 產生的程式碼。
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,26 @@
+---
+title: "API 키 목록"
+openapi: "GET /v1/management/api-keys"
+description: "현재 조직 관리 토큰에 연결된 사용자 API 키를 나열합니다."
+---
+
+## 개요
+
+현재 관리 토큰에 연결된 조직의 사용자 API 키 목록을 반환합니다.
+
+## 주의 사항
+
+- Playground나 Claw 전용 키 같은 시스템 관리 키는 제외됩니다.
+
+## 예시
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/management/api-keys" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## 요청 / 응답
+
+정확한 스키마를 위해 위의 대화형 OpenAPI 패널을 사용하세요.

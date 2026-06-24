@@ -1,0 +1,79 @@
+---
+title: "Pi Coding Agent"
+description: "将 AI Sonar 与 Pi 结合使用。Pi 是一个极简终端编码代理工具，同时支持 OpenAI、Anthropic 和 Google 风格的接入配置"
+---
+
+## 概述
+
+<Note>
+**类型**: 编码工具
+
+**主要路径**: OpenAI 兼容
+
+**支持级别**: 支持路径
+</Note>
+
+[Pi](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent) 是一个极简终端编码代理工具。在 AI Sonar 的文档信息架构里，它更适合归类到 **Coding Tools**，而不是原生 SDK。
+
+Pi 的特殊点在于它介于经典 CLI 工具和可嵌入运行时之间：
+
+- 可交互的终端编码工作流
+- 用于进程集成的 JSON / RPC 模式
+- 可嵌入你自己应用里的 SDK 风格能力
+
+对 AI Sonar 来说，Pi 通常最适合先走 **OpenAI 兼容** 路径，除非你明确要用 Anthropic-native 或 Google-native 行为。
+
+## 推荐的 AI Sonar 路径
+
+将 AI Sonar 作为 OpenAI 兼容 端点 使用：
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+export OPENAI_BASE_URL="https://api.aisonar.dev/v1"
+```
+
+然后在 Pi 的 provider 或自定义模型配置中，把它的 OpenAI 风格路径指向 AI Sonar。
+
+<Note>
+Pi 也可以走 Anthropic 风格和 Google 风格的接入配置。如果你需要 Claude-native 或 Gemini-native 行为，请把它视为 Pi 的专用配置，而不是通用的 OpenAI 兼容 配置。
+</Note>
+
+## 为什么 Pi 不能简单归为 SDK
+
+Pi 不只是“另一个 SDK”。
+
+- 如果你把 Pi 当作终端代理使用，它更像 **coding tool**
+- 如果你把 Pi 嵌入自己的应用里，它又更像 **代理运行时 / 执行框架**
+
+因此这页更关注 AI Sonar 的实际接入路径，而不是把 Pi 简化成纯 SDK。
+
+## 实用配置说明
+
+<AccordionGroup>
+  <Accordion title="默认先走 OpenAI 兼容">
+    除非你的 Pi 工作流明确依赖原生协议，否则优先从 AI Sonar 的 `https://api.aisonar.dev/v1` 路径开始。
+  </Accordion>
+
+  <Accordion title="原生接入配置应单独看待">
+    Claude-native 或 Gemini-native 的 Pi 配置应被视为独立的专用路径，不应默认等同于 OpenAI 兼容 路径。
+  </Accordion>
+
+  <Accordion title="不要过度承诺扩展层能力">
+    Pi 的可配置性很强。AI Sonar 可以文档化连接路径，但不应把每个 extension、skill 或自定义执行框架行为都视为兼容性契约的一部分。
+  </Accordion>
+</AccordionGroup>
+
+## 故障排查
+
+<AccordionGroup>
+  <Accordion title="连接错误">
+    - 确认配置的 OpenAI 风格 base URL 完全等于 `https://api.aisonar.dev/v1`
+    - 确认 key 以 `sk-` 开头
+    - 确认 Pi 当前走的接入路径和你预期的协议一致
+  </Accordion>
+
+  <Accordion title="模型不匹配">
+    - 把 AI Sonar 模型 id 和 Pi 本地 alias 分开管理
+    - 如果你在测试原生协议行为，请确认 Pi 实际走的是对应原生路径
+  </Accordion>
+</AccordionGroup>

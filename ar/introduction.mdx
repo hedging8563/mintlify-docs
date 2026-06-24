@@ -1,0 +1,122 @@
+---
+title: "مقدمة"
+description: "الوصول إلى مئات نماذج الذكاء الاصطناعي عبر API موحّد"
+---
+
+## ما هي AI Sonar؟
+
+AI Sonar هي منصة تجميع واجهات برمجة تطبيقات الذكاء الاصطناعي تمنحك وصولاً موحّداً إلى **مئات نماذج الذكاء الاصطناعي** من مزودين مثل OpenAI وAnthropic وGoogle وDeepSeek وMoonshot وMiniMax والمزيد.
+
+<CardGroup cols={2}>
+  <Card title="أصلي + متوافق" icon="plug">
+    استخدم مسارات Anthropic/Gemini الأصلية عندما يهم سلوك المزوّد، أو مسارات `/v1` المتوافقة مع OpenAI للأدوات الحالية على نمط OpenAI.
+  </Card>
+  <Card title="تنسيقات أصلية" icon="shuffle">
+    استدعِ نقاط نهاية بنمط OpenAI وAnthropic وGemini وResponses من منصة واحدة.
+  </Card>
+  <Card title="ادفع حسب الاستخدام" icon="coins">
+    لا اشتراكات. ادفع فقط مقابل ما تستخدمه فعليًا.
+  </Card>
+  <Card title="توفر عالي" icon="shield-check">
+    التوجيه الذكي، والتبديل عند الفشل، ودعم قنوات متعددة تحسّن الموثوقية.
+  </Card>
+</CardGroup>
+
+## الإمكانيات المدعومة
+
+| الإمكانية | الوصف | أمثلة على النماذج |
+|------------|-------------|----------------|
+| **الدردشة والاستدلال** | توليد النصوص، التخطيط، الأدوات | `gpt-5.4`, `claude-sonnet-4-6`, `deepseek-r1` |
+| **الرؤية** | فهم الصور والدردشة متعددة الوسائط | `gpt-4o`, `claude-sonnet-4-6`, `gemini-2.5-flash` |
+| **توليد الصور** | تحويل النص إلى صورة وتحرير الصور | `dall-e-3`, `flux-pro`, `midjourney` |
+| **الصوت** | TTS والتفريغ الصوتي | `gpt-4o-mini-tts`, `whisper-1`, `gpt-4o-transcribe` |
+| **التضمينات** | تحويل النص إلى متجهات | `text-embedding-3-small`, `text-embedding-3-large` |
+| **الموسيقى** | توليد الموسيقى بواسطة AI | `suno` |
+| **3D** | توليد أصول ثلاثية الأبعاد | `tripo3d` |
+
+## اختر صيغة الطلب
+
+ابدأ بالمسار الذي يطابق السلوك الذي تحتاجه. استخدم المسارات الأصلية لـ Anthropic/Gemini للميزات الأصلية الخاصة بالمزوّد؛ واستخدم `/v1/chat/completions` المتوافق مع OpenAI عند ترحيل شيفرة الدردشة الحالية بأسلوب OpenAI.
+
+<CodeGroup>
+
+```bash cURL
+curl https://api.aisonar.dev/v1/chat/completions \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.4",
+    "messages": [
+      {"role": "user", "content": "Explain what AI Sonar does in one sentence."}
+    ]
+  }'
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "Explain what AI Sonar does in one sentence."}]
+)
+
+print(response.choices[0].message.content)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.chat.completions.create({
+  model: 'gpt-5.4',
+  messages: [{ role: 'user', content: 'Explain what AI Sonar does in one sentence.' }],
+});
+
+console.log(response.choices[0].message.content);
+```
+
+<Note>
+استخدم `POST /v1/responses` فقط عندما تحتاج صراحةً إلى سلوك مخصص لـ Responses. ليست هذه هي مسار التوافق الافتراضي عبر جميع النماذج.
+</Note>
+
+</CodeGroup>
+
+## الميزات الرئيسية
+
+<CardGroup cols={2}>
+  <Card title="صيغ API متعددة" icon="layers" href="/guides/api-formats">
+    استخدم صيغ OpenAI أو Anthropic أو Gemini أو Responses-native بحساب واحد.
+  </Card>
+  <Card title="أخطاء موجهة للوكلاء" icon="wand-magic-sparkles" href="/guides/agent-first-api">
+    تلميحات مُهيكلة تساعد الوكلاء البرمجيين على تصحيح أنفسهم بصورة أسرع.
+  </Card>
+  <Card title="تغطية التكامل" icon="toolbox" href="/guides/ide-sdk-compatibility">
+    ربط IDEs وSDKs والأُطر وتطبيقات الدردشة مع تغييرات أقل خاصة بالمزود.
+  </Card>
+</CardGroup>
+
+## الخطوات التالية
+
+<CardGroup cols={2}>
+  <Card title="البدء السريع" icon="rocket" href="/quickstart">
+    شغّل طلبك الأولي خلال دقيقتين تقريبًا.
+  </Card>
+  <Card title="مرجع API" icon="book" href="/api-reference/introduction">
+    استكشف المرجع نقطة بنقطة.
+  </Card>
+  <Card title="التكاملات" icon="puzzle-piece" href="/integrations/openai-sdk">
+    ابدأ بتكاملات SDK وIDE والتطبيقات.
+  </Card>
+  <Card title="النماذج" icon="robot" href="https://aisonar.dev/models">
+    تصفّح توفر النماذج الحالي والأسعار.
+  </Card>
+</CardGroup>

@@ -1,0 +1,355 @@
+---
+title: "Criar imagem"
+openapi: "POST /v1/images/generations"
+description: "Cria uma imagem a partir de um prompt"
+---
+
+## Visão geral
+
+Para agentes de código, descubra primeiro a lista de imagens recomendadas atuais com `GET /v1/models?recommended_for=image` e, em seguida, envie o `model` selecionado explicitamente para este endpoint.
+
+`gpt-image-2` é um modelo GPT Image com cobrança por token. A AI Sonar segue o detalhamento oficial de `usage` da OpenAI para liquidar tokens de entrada de texto, entrada de imagem, entrada em cache quando informada, e saída de imagem; ele não é cobrado como preço fixo por imagem.
+
+Para geração de imagens com `gpt-image-2`, os parâmetros públicos aceitos são `prompt`, `n`, `size`, `quality`, `response_format`, `async`, `background`, `output_format`, `output_compression` ou `compression`, `moderation`, `partial_images` e `user`. Se `size` ou `quality` for omitido, a AI Sonar usa `auto`; valores personalizados de `size` devem seguir o contrato flexível `WIDTHxHEIGHT` documentado abaixo.
+
+Nota de compatibilidade: se uma solicitação `gpt-image-2` enviar `input_fidelity`, a AI Sonar remove esse campo antes de encaminhar, porque o GPT Image 2 já processa entradas de imagem com alta fidelidade automaticamente.
+
+### Observações sobre comportamento dos modelos
+
+Google Gemini não usam exatamente o mesmo contrato de seleção:
+
+- `gemini-3.1-flash-image-preview`, `gemini-3-pro-image-preview` e `nano-banana-pro` aceitam `aspect_ratio` mais `resolution` (`1k`, `2k`, `4k`) para suas operações públicas text-to-image e image-edit/image-to-image.
+- `nano-banana-2` aceita `aspect_ratio` mais `resolution` (`1k`, `2k`, `4k`) apenas para text-to-image no contrato atual da AI Sonar.
+- `gemini-2.5-flash-image`, `nano-banana` e `nano-banana-edit` aceitam `aspect_ratio`, mas não expõem seleção pública de `resolution`.
+- `gemini-2.0-flash-preview-image-generation` é documentado aqui como texto-para-imagem somente por prompt.
+- Para solicitações Nano Banana com imagem de referência, use `nano-banana-edit` ou `nano-banana-pro` neste endpoint (`/v1/images/generations`) com `operation: "image-to-image"` e `image_urls`. Não envie solicitações de referência Nano Banana para `/v1/images/edits`.
+- Em solicitações Nano Banana image-to-image, `nano-banana-pro` pode incluir `resolution` (`1k`, `2k`, `4k`); `nano-banana-edit` deve omiti-lo. `nano-banana` e `nano-banana-2` são modelos text-to-image no contrato público atual.
+- Imagens de referência neste endpoint podem ser enviadas como JSON `image_url` / `image_urls` ou como arquivo multipart `image`. `/v1/images/generations` não aceita `images[]` nem `file_id`; referências de `/v1/files` só valem para modelos de `/v1/images/edits` que documentam `images[].file_id`.
+
+Para as famílias de imagem do Google, prefira `aspect_ratio` e envie `resolution` apenas quando o modelo suportar explicitamente.
+
+Os modelos de imagem xAI Grok Imagine (`grok-imagine-image`, `grok-imagine-image-quality` e o legacy `grok-imagine-image-pro`) aceitam `aspect_ratio` mais `resolution` (`1k`, `2k`). `grok-imagine-image-pro` é mantido como ID de compatibilidade e roteia upstream para `grok-imagine-image-quality`.
+
+## Corpo da requisição
+
+**Timeout de solicitações síncronas:** alguns provedores de imagem roteados retornam a imagem final inline e aguardam a geração terminar. Solicitações de alta resolução ou alta qualidade podem levar perto de um minuto ou mais, então configure o timeout do seu cliente HTTP para pelo menos `120s`. Se a resposta de criação incluir `status: "pending"`, `task_id` ou `poll_url`, siga o `poll_url` retornado.
+
+<ParamField body="model" type="string" default="dall-e-3">
+  Modelo a usar (por exemplo, `gpt-image-2`, `dall-e-3`, `flux-pro`, `midjourney`).
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  Descrição em texto da imagem desejada.
+</ParamField>
+
+<ParamField body="image_url" type="string">
+  URL HTTPS pública de imagem de referência para geração image-to-image. Em solicitações Nano Banana com imagem de referência, defina `operation` como `image-to-image`; `nano-banana-pro` pode incluir `resolution`, enquanto `nano-banana-edit` deve omiti-lo.
+</ParamField>
+
+<ParamField body="image_urls" type="string[]">
+  URLs HTTPS públicas de imagens de referência. Use para uma ou mais imagens de referência em requests JSON. `file_id` e `images[]` não são suportados neste endpoint.
+</ParamField>
+
+<ParamField body="reference_image_urls" type="string[]">
+  URLs adicionais de imagens de referência específicas do modelo para provedores que distinguem imagens principais de referências.
+</ParamField>
+
+<ParamField body="image" type="file">
+  Arquivo multipart de imagem de referência para geração image-to-image. Use quando a imagem de origem for privada ou exigir headers. Isso não é um `file_id` de /v1/files; este endpoint não aceita `file_id`.
+</ParamField>
+
+<ParamField body="n" type="integer" default="1">
+  Número de imagens a gerar (1-10, dependendo do modelo).
+</ParamField>
+
+<ParamField body="size" type="string" default="1024x1024">
+  Tamanho da imagem. Use isto para famílias de imagem no estilo OpenAI e outros modelos que aceitam tamanhos exatos em pixels.
+
+  Para `gpt-image-2`, `size` aceita `auto` ou `WIDTHxHEIGHT`. Dimensões personalizadas devem ter ambos os lados como múltiplos de 16, a maior aresta deve ter no máximo `3840px`, a razão maior/menor lado deve ser no máximo `3:1`, e o total de pixels deve ficar entre `655,360` e `8,294,400`. `aspect_ratio` e `resolution` não fazem parte do contrato público atual da AI Sonar para `gpt-image-2`.
+
+  Para famílias de imagem Google Gemini, `size` é tratado como um alias de compatibilidade que mapeia para o contrato público de `aspect_ratio` do modelo e, quando suportado, para `resolution`. Para esses modelos, prefira enviar `aspect_ratio` diretamente.
+</ParamField>
+
+<ParamField body="aspect_ratio" type="string">
+  Seletor de proporção dependente do modelo.
+
+  Valores comuns para as famílias de imagem do Google incluem `1:1`, `16:9`, `9:16`, `3:2` e `2:3`.
+</ParamField>
+
+<ParamField body="resolution" type="string">
+  Seletor de resolução de saída dependente do modelo.
+
+  Suportado em `gemini-3.1-flash-image-preview` e `gemini-3-pro-image-preview` para text-to-image e image-edit, em `nano-banana-pro` para text-to-image e image-to-image, e em `nano-banana-2` apenas para text-to-image. Os valores típicos são `1k`, `2k` e `4k`. Não envie esse parâmetro para famílias de imagem Gemini que só aceitam proporção, a menos que o modelo documente isso explicitamente. Para modelos de imagem xAI Grok Imagine, use `1k` ou `2k`.
+</ParamField>
+
+<ParamField body="quality" type="string" default="standard">
+  Qualidade da imagem. Modelos DALL-E usam `standard` ou `hd`; modelos GPT Image como `gpt-image-2` usam `auto`, `low`, `medium` ou `high`.
+</ParamField>
+
+<ParamField body="response_format" type="string" default="url">
+  Formato da resposta: `url` ou `b64_json`. O padrão é `url`.
+
+  Para rotas `gpt-image-2` Azure Official ou compatíveis com Azure, a AI Sonar não encaminha `response_format` para o upstream. O gateway sempre recebe os dados de imagem upstream como `b64_json`; para solicitações `url`, envia cada imagem ao CDN e retorna `data[].url`. Se o armazenamento CDN estiver indisponível ou o upload falhar, a solicitação falha em vez de voltar para Base64. Para `b64_json`, o Base64 bruto é retornado.
+</ParamField>
+
+<ParamField body="async" type="boolean" default="false">
+  Defina como `true` com `gpt-image-2` ou modelos de imagem oficiais FLUX/BFL para criar uma tarefa primeiro. Tarefas assíncronas concluídas retornam URLs independentemente do `response_format` solicitado; use solicitações síncronas se precisar de `b64_json`.
+</ParamField>
+
+<ParamField body="style" type="string" default="vivid">
+  Estilo para DALL-E 3: `vivid` ou `natural`.
+</ParamField>
+
+<ParamField body="user" type="string">
+  Um identificador único para o usuário final.
+</ParamField>
+
+## Resposta
+
+### Resposta em linha
+
+<ResponseField name="created" type="integer">
+  Timestamp Unix da criação.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Array de imagens geradas.
+
+  Cada objeto contém:
+  - `url` (string): URL da imagem gerada
+  - `b64_json` (string): Imagem codificada em Base64 (se solicitada)
+  - `revised_prompt` (string): O prompt usado (DALL-E 3)
+</ResponseField>
+
+### Resposta de tarefa assíncrona
+
+Defina `async: true` com `gpt-image-2` ou modelos de imagem oficiais FLUX/BFL para criar uma tarefa em vez de esperar pela imagem final na solicitação de criação. A resposta inclui `status: "pending"`, `task_id` e `poll_url`. Consulte `/v1/tasks/{task_id}` até a tarefa chegar a `completed` ou `failed`.
+
+Tarefas assíncronas de imagem retornam apenas URLs das imagens finais. Se precisar dos dados brutos `b64_json`, use uma solicitação síncrona.
+
+A criação da tarefa pode reservar o valor estimado. Tarefas concluídas são cobradas pelo uso real; tarefas com falha ou timeout liberam ou reembolsam a reserva.
+
+<ResponseField name="created" type="integer">
+  Timestamp Unix de criação.
+</ResponseField>
+
+<ResponseField name="task_id" type="string">
+  Identificador único da tarefa para polling.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Status inicial: `pending`.
+</ResponseField>
+
+<ResponseField name="poll_url" type="string">
+  URL relativa para fazer polling dos resultados, por exemplo `/v1/tasks/{id}`.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Vazio enquanto a tarefa estiver pendente. Tarefas de imagem concluídas retornam URLs de imagens geradas em `data[].url`.
+</ResponseField>
+
+Quando você receber `status: "pending"`, use `poll_url` ou `GET /v1/tasks/{task_id}` para recuperar o resultado.
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/images/generations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gemini-3-pro-image-preview",
+    "prompt": "A cinematic portrait of a white cat sitting on a rainy windowsill",
+    "aspect_ratio": "16:9",
+    "resolution": "2k",
+    "n": 1
+  }'
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.images.generate(
+    model="gemini-3-pro-image-preview",
+    prompt="A cinematic portrait of a white cat sitting on a rainy windowsill",
+    aspect_ratio="16:9",
+    resolution="2k",
+    n=1
+)
+
+print(response.data[0].url)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.images.generate({
+  model: 'gemini-3-pro-image-preview',
+  prompt: 'A cinematic portrait of a white cat sitting on a rainy windowsill',
+  aspect_ratio: '16:9',
+  resolution: '2k',
+  n: 1
+});
+
+console.log(response.data[0].url);
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/images/generations');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Content-Type: application/json',
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => json_encode([
+        'model' => 'gemini-3-pro-image-preview',
+        'prompt' => 'A cinematic portrait of a white cat sitting on a rainy windowsill',
+        'aspect_ratio' => '16:9',
+        'resolution' => '2k',
+        'n' => 1
+    ])
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+echo $data['data'][0]['url'];
+```
+
+Exemplo de família de imagem que só aceita proporção: para `gemini-2.5-flash-image`, `nano-banana` ou `nano-banana-edit`, envie `aspect_ratio` mas omita `resolution`:
+
+```json
+{
+  "model": "gemini-2.5-flash-image",
+  "prompt": "A clean editorial product shot of a citrus soda can",
+  "aspect_ratio": "16:9"
+}
+```
+
+Exemplo Nano Banana Pro com imagem de referência: envie a solicitação para `/v1/images/generations`, não para `/v1/images/edits`. `resolution` é opcional e pode ser `1k`, `2k` ou `4k`:
+
+```json
+{
+  "model": "nano-banana-pro",
+  "prompt": "Create a clean cinematic character image based on the reference images",
+  "operation": "image-to-image",
+  "image_urls": ["https://example.com/reference-1.png"],
+  "aspect_ratio": "1:1",
+  "resolution": "2k"
+}
+```
+
+
+Para imagens de origem privadas ou locais, faça upload multipart direto. Não envie `file_id` para `/v1/images/generations`:
+
+```bash
+curl -X POST "https://api.aisonar.dev/v1/images/generations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F "model=nano-banana-pro" \
+  -F "prompt=Create a clean cinematic character image based on this reference" \
+  -F "operation=image-to-image" \
+  -F "image=@reference.png" \
+  -F "aspect_ratio=1:1" \
+  -F "resolution=2k"
+```
+
+</RequestExample>
+
+<ResponseExample>
+```json Inline Response
+{
+  "created": 1706000000,
+  "data": [
+    {
+      "url": "https://...",
+      "revised_prompt": "A fluffy white cat with bright eyes sitting peacefully on a wooden windowsill, watching raindrops stream down the glass window..."
+    }
+  ]
+}
+```
+
+```json Async Task Response
+{
+  "created": 1706000000,
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "pending",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "data": []
+}
+```
+</ResponseExample>
+
+## Modelos disponíveis
+
+| Modelo | Tipo | Recursos |
+|-------|------|----------|
+| `dall-e-3` | Normalmente em linha | Melhor qualidade, aprimoramento de prompt |
+| `dall-e-2` | Normalmente em linha | Mais rápido, mais acessível |
+| `flux-pro` | Frequentemente baseado em tarefa | Fotorrealista, alta qualidade |
+| `flux-schnell` | Normalmente em linha | Muito rápido |
+| `midjourney` | Frequentemente baseado em tarefa | Estilo artístico |
+| `ideogram-v3` | Frequentemente baseado em tarefa | Melhor renderização de texto |
+| `stable-diffusion-3` | Normalmente em linha | Open source, personalizável |
+
+Não assuma que um modelo é sempre síncrono ou sempre assíncrono. Se a resposta de criação retornar `status: "pending"`, siga `poll_url` e faça polling até a conclusão.
+
+## Lidando com respostas baseadas em tarefa
+
+Para modelos de imagem, sempre verifique se a resposta contém `status: "pending"`:
+
+```python
+import requests
+import time
+
+def generate_image(prompt, model="midjourney"):
+    # Criar solicitação de imagem
+    response = requests.post(
+        "https://api.aisonar.dev/v1/images/generations",
+        headers={"Authorization": "Bearer sk-your-api-key"},
+        json={"model": model, "prompt": prompt}
+    )
+    data = response.json()
+
+    # Verifica se é baseada em tarefa
+    if data.get("status") == "pending":
+        task_id = data["task_id"]
+        poll_url = data.get("poll_url")
+        print(f"Tarefa de imagem iniciada: {task_id}")
+
+        # Fazer polling do resultado
+        while True:
+            status_resp = requests.get(
+                f"https://api.aisonar.dev{poll_url}" if poll_url else f"https://api.aisonar.dev/v1/tasks/{task_id}",
+                headers={"Authorization": "Bearer sk-your-api-key"}
+            )
+            status_data = status_resp.json()
+
+            if status_data["status"] == "completed":
+                return status_data["data"][0]["url"]
+            elif status_data["status"] == "failed":
+                raise Exception(status_data.get("error", "Falha na geração"))
+
+            time.sleep(3)
+    else:
+        # Resposta em linha
+        return data["data"][0]["url"]
+
+# Uso
+url = generate_image("a beautiful sunset over mountains", model="midjourney")
+print(f"Imagem gerada: {url}")
+```

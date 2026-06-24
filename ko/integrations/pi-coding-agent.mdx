@@ -1,0 +1,37 @@
+---
+title: "Pi Coding Agent"
+description: "Pi와 AI Sonar를 함께 사용합니다. Pi는 OpenAI, Anthropic, Google 스타일 설정을 지원하는 최소한의 터미널 코딩 도구입니다"
+---
+
+## 개요
+
+<Note>
+**유형**: 코딩 도구
+
+**주요 경로**: OpenAI 호환
+
+**지원 수준**: 지원 경로
+</Note>
+
+[Pi](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent)는 최소한의 터미널 코딩 도구입니다. AI Sonar의 IA에서는 native SDK가 아니라 **코딩 도구**로 분류하는 것이 맞습니다.
+
+Pi는 다음 사이에 위치합니다.
+
+- 대화형 터미널 작업 흐름
+- 프로세스 통합용 JSON / RPC 모드
+- 자체 앱에 임베드할 수 있는 SDK 스타일 실행 환경
+
+AI Sonar에서는 특별한 이유가 없다면 **OpenAI 호환** 경로부터 시작하는 것이 가장 무난합니다.
+
+## 권장 경로
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+export OPENAI_BASE_URL="https://api.aisonar.dev/v1"
+```
+
+그다음 Pi의 제공자 설정 또는 custom model 설정을 AI Sonar로 향하게 하세요.
+
+<Note>
+Claude-native 또는 Gemini-native 동작이 필요하다면, 그것은 공용 OpenAI 호환 설정이 아니라 Pi 전용 설정으로 취급해야 합니다.
+</Note>

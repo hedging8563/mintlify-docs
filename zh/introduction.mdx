@@ -1,0 +1,122 @@
+---
+title: "简介"
+description: "通过统一的 API 访问数百个 AI 模型"
+---
+
+## 什么是 AI Sonar?
+
+AI Sonar 是一个 AI API 聚合平台，提供对来自 OpenAI、Anthropic、Google、DeepSeek、Moonshot、MiniMax 等提供者的 **数百个 AI 模型** 的统一访问。
+
+<CardGroup cols={2}>
+  <Card title="原生 + 兼容" icon="plug">
+    需要提供商原生行为时使用 Anthropic/Gemini 原生路由；已有 OpenAI 风格工具时使用 OpenAI 兼容的 `/v1` 路由。
+  </Card>
+  <Card title="原生格式" icon="shuffle">
+    在同一平台上调用 OpenAI、Anthropic、Gemini 和 Responses 风格的端点。
+  </Card>
+  <Card title="按用量付费" icon="coins">
+    无需订阅。只为实际使用付费。
+  </Card>
+  <Card title="高可用性" icon="shield-check">
+    智能路由、故障切换和多通道支持提升可靠性。
+  </Card>
+</CardGroup>
+
+## 支持的功能
+
+| 能力 | 描述 | 示例模型 |
+|------------|-------------|----------------|
+| **聊天与推理** | 文本生成、规划、工具 | `gpt-5.4`, `claude-sonnet-4-6`, `deepseek-r1` |
+| **Vision** | 图像理解与多模态对话 | `gpt-4o`, `claude-sonnet-4-6`, `gemini-2.5-flash` |
+| **图像生成** | 文本到图像及图像编辑 | `dall-e-3`, `flux-pro`, `midjourney` |
+| **Audio** | TTS 与转录 | `gpt-4o-mini-tts`, `whisper-1`, `gpt-4o-transcribe` |
+| **Embeddings** | 文本向量化 | `text-embedding-3-small`, `text-embedding-3-large` |
+| **Music** | AI 音乐生成 | `suno` |
+| **3D** | 3D 资产生成 | `tripo3d` |
+
+## 先选择请求格式
+
+从你需要的行为出发选择路由。需要提供商原生能力时使用 Anthropic/Gemini 原生路由；迁移已有 OpenAI 风格聊天代码时，使用 OpenAI 兼容的 `/v1/chat/completions`。
+
+<CodeGroup>
+
+```bash cURL
+curl https://api.aisonar.dev/v1/chat/completions \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.4",
+    "messages": [
+      {"role": "user", "content": "Explain what AI Sonar does in one sentence."}
+    ]
+  }'
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "Explain what AI Sonar does in one sentence."}]
+)
+
+print(response.choices[0].message.content)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.chat.completions.create({
+  model: 'gpt-5.4',
+  messages: [{ role: 'user', content: 'Explain what AI Sonar does in one sentence.' }],
+});
+
+console.log(response.choices[0].message.content);
+```
+
+<Note>
+仅在明确需要 Responses 特定行为时使用 `POST /v1/responses`。这并非所有模型的默认兼容路径。
+</Note>
+
+</CodeGroup>
+
+## 主要功能
+
+<CardGroup cols={2}>
+  <Card title="多种 API 格式" icon="layers" href="/guides/api-formats">
+    使用一个账号即可采用 OpenAI、Anthropic、Gemini 或 Responses 原生格式。
+  </Card>
+  <Card title="面向 Agent 的错误" icon="wand-magic-sparkles" href="/guides/agent-first-api">
+    结构化提示帮助编码 agents 更快自我修正。
+  </Card>
+  <Card title="集成覆盖" icon="toolbox" href="/guides/ide-sdk-compatibility">
+    以更少的提供商特定更改连接 IDE、SDK、框架和聊天应用。
+  </Card>
+</CardGroup>
+
+## 下一步
+
+<CardGroup cols={2}>
+  <Card title="快速开始" icon="rocket" href="/quickstart">
+    在几分钟内完成你的第一个请求。
+  </Card>
+  <Card title="API 参考" icon="book" href="/api-reference/introduction">
+    浏览逐端点的参考文档。
+  </Card>
+  <Card title="集成" icon="puzzle-piece" href="/integrations/openai-sdk">
+    从 SDK、IDE 和应用集成开始。
+  </Card>
+  <Card title="模型" icon="robot" href="https://aisonar.dev/models">
+    浏览当前模型可用性与定价。
+  </Card>
+</CardGroup>

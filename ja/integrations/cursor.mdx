@@ -1,0 +1,98 @@
+---
+title: "Cursor"
+description: "Cursor AI コードエディタで AI Sonar を使用する"
+---
+
+## 概要
+
+<Note>
+**種類**: コーディングツール
+
+**主要パス**: OpenAI 互換
+
+**サポートレベル**: 制約付きサポート
+</Note>
+
+[Cursor](https://cursor.sh) は bring-your-own-key (BYOK) 型のプロバイダーをサポートしていますが、カスタム API キーが機能するのは標準的なチャットモデルのみです。ここでは AI Sonar を、あらゆる Cursor のモデル機能を完全に置き換えるものとしてではなく、チャット型のエディタ作業向け OpenAI 互換エンドポイントとして使用してください。
+
+## 設定
+
+1. Cursor Settings (`Cmd/Ctrl + ,`) を開きます
+2. 左側のサイドバーで **Models** に移動します
+3. **OpenAI API Key** セクションまでスクロールします
+4. AI Sonar API key を入力します
+5. **Override OpenAI Base URL** を有効にします
+6. Base URL を次のように設定します:
+
+```
+https://api.aisonar.dev/v1
+```
+
+<Warning>
+Cursor のカスタム API キーは標準的なチャットモデルにのみ適用されます。Tab Completion やその他の Cursor 管理機能は、引き続き Cursor の組み込みプロバイダーを使用します。
+</Warning>
+
+<Warning>
+Cursor のカスタム API キー経路は、標準的なチャットモデルにのみ適用されます。Tab Completion や一部の推論専用フローなど、Cursor 管理の専用モデルを必要とする機能は、引き続き Cursor の組み込みプロバイダーを使用します。また、Cursor は最終的なプロンプト組み立てのために、リクエストが引き続き自社のバックエンドを通ることも明記しています。
+</Warning>
+
+## モデルの選択
+
+設定後は、AI Sonar を通じて提供される標準的なチャットモデルを優先して使用してください:
+
+### コーディング向けの推奨モデル
+
+| モデル | 最適な用途 |
+|-------|----------|
+| `gpt-5.4` | 一般的なコーディング、デバッグ、チャット |
+| `gpt-5-mini` | 高速な編集と軽いプロンプト |
+
+## 最も適した用途
+
+### チャットとエディタ作業
+
+Cursor で AI Sonar を使用する対象:
+
+- コードの説明
+- バグ修正
+- リファクタリングの提案
+- ドキュメント生成
+
+### Cursor 管理 model のままになるもの
+
+これらの機能は、AI Sonar エンドポイントへ確実には切り替わりません:
+
+- タブ補完
+- 専用の非標準チャットモデル
+- Cursor が組み込みモデルでのみ有効化するプロバイダー固有機能
+
+## トラブルシューティング
+
+<AccordionGroup>
+  <Accordion title="モデルが表示されない">
+    Cursor はモデルとプロバイダーの状態をキャッシュします。API キーと base URL を設定した後、Cursor を再起動してください。
+  </Accordion>
+
+  <Accordion title="BYOK モードでモデルがサポートされていない">
+    カスタム API キーは標準的なチャットモデルでのみ機能します。対象モデルが Cursor の専用インフラを使っている場合は、`gpt-5.4` などの標準的なチャットモデルに切り替えてください。
+  </Accordion>
+
+  <Accordion title="認証エラー">
+    API キーが正しく、十分な残高があることを確認してください。
+  </Accordion>
+
+  <Accordion title="AI Sonar を有効にした後、別のプロバイダーが動作しなくなった">
+    Cursor の BYOK 設定は他のプロバイダー経路に影響を与える可能性があります。OpenAI base URL override を有効にした後で別のモデル経路が動作しなくなった場合は、override を無効にして Cursor を再起動してください。
+  </Accordion>
+</AccordionGroup>
+
+## ヒント
+
+<CardGroup cols={2}>
+  <Card title="適切な Model を使用する" icon="gauge-high">
+    素早いチャット型タスクには `gpt-5-mini` を、より負荷の高いコーディング作業には `gpt-5.4` を使用してください。
+  </Card>
+  <Card title="残高を確認する" icon="wallet">
+    AI Sonar ダッシュボードで使用状況を監視してください。
+  </Card>
+</CardGroup>

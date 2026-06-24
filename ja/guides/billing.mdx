@@ -1,0 +1,196 @@
+---
+title: "料金と支払い"
+description: "AI Sonarの従量課金制について理解する"
+---
+
+## 概要
+
+AI Sonarは**従量課金制（pay-as-you-go pricing）**を採用しています。サブスクリプションや最低利用料金はなく、利用した分だけお支払いいただきます。
+
+## 支払いの仕組み
+
+1. アカウントに**クレジットを追加**します
+2. **APIを使用**します - リクエストごとにコストが差し引かれます
+3. ダッシュボードで**使用状況を監視**します
+4. 残高が少なくなったら**チャージ（Top up）**します
+
+## 料金モデル
+
+### トークン単位の料金
+
+ほとんどのテキスト生成モデルは、100万トークンあたりの価格が設定されています：
+
+| モデル | インプット (1Mトークンあたり) | アウトプット (1Mトークンあたり) |
+|-------|----------------------|------------------------|
+| GPT-4o | $1.75 | $7.00 |
+| GPT-4o-mini | $0.105 | $0.42 |
+| Claude Opus 4.5 | $3.50 | $17.50 |
+| Claude Sonnet 4.5 | $2.10 | $10.50 |
+| Claude Haiku 4.5 | $0.70 | $3.50 |
+| Gemini 2.5 Pro | $0.875 | $7.00 |
+| Gemini 2.5 Flash | $0.1225 | $0.525 |
+| DeepSeek R1 | $0.385 | $1.533 |
+| DeepSeek V3.2 | $0.196 | $0.294 |
+
+<Note>
+  表示されている価格は割引後のプラットフォーム価格です。実際の価格は変動する場合があります。最新の料金については [pricing page](https://aisonar.dev/ja/pricing) を確認してください。
+</Note>
+
+### リクエスト単位の料金
+
+画像、ビデオ、およびオーディオモデルは、リクエストごとに課金されます：
+
+| モデル | リクエストあたりの料金 |
+|-------|-------------------|
+| DALL-E 3 (1024x1024) | $0.04 |
+| Midjourney | $0.05 |
+| Whisper (1分あたり) | $0.006 |
+| TTS-1 | $0.015 |
+
+### 非同期タスクの課金（ビデオ/音楽/3Dおよび一部の画像モデル）
+
+<Note>
+  タスクベースの生成では、タスク作成時に見積額が予約または事前控除される場合があります。最終的な課金は、ポーリングまたは最終化処理で非同期タスクが成功の終端状態になった後にのみ確定します。
+</Note>
+
+タスクベースの生成フロー（ビデオ、音楽、3D、および一部の画像モデル）の場合：
+
+1. タスクを送信します。AI Sonar は残高と API Key の利用上限を確認するため、見積額を事前控除または予約する場合があります。
+2. 返された `poll_url` をポーリングするか、`GET /v1/tasks/{id}` を呼び出して、タスクが終端状態になるまで確認します。
+3. タスクが正常に完了すると、最終決済が行われ、使用量が記録され、タスクレスポンスに `billing_transaction_id` が含まれます。
+4. 作成に失敗した場合、または終端状態が failed の場合、保留中の金額は返金または解放され、そのリクエストは非課金として記録されます。
+
+終端状態が確認できるにもかかわらず dashboard に決済または返金が反映されない場合は、support@aisonar.dev までお問い合わせください。
+
+```python
+# 例: 動画生成の課金
+response = client.post("/v1/videos/generations", json={
+    "model": "veo3.1",
+    "prompt": "A sunset over the ocean"
+})
+# 見積額がいま予約される場合があります。最終課金は成功後に表示されます。
+
+poll_url = response.json()["poll_url"]
+task_id = response.json()["task_id"]
+# poll_url をポーリングします。決済後に billing_transaction_id が表示されます。
+```
+
+### 請求トランザクション ID
+
+課金対象の OpenAI 互換の非ストリーミング JSON レスポンスでは、レスポンス確定前に決済が完了している場合に `billing_transaction_id` が含まれます。同じ値は `X-Billing-Transaction-ID` レスポンスヘッダーにも公開され、ブラウザやサーバー統合から参照できます。Gemini `/v1beta` などのネイティブ互換ルートでは、provider ネイティブのレスポンス形状を維持するため、ヘッダーのみで公開される場合があります。非同期メディアタスクでは、作成レスポンスの `poll_url` または `GET /v1/tasks/{id}` をポーリングしてください。決済完了後、タスクレスポンスに `billing_transaction_id` が含まれます。ストリーミングレスポンスは送信後に決済される場合があるため、ヘッダーがない場合は dashboard の利用ログで照合してください。
+
+## トークン数のカウント
+
+トークンはテキスト処理の基本単位です：
+
+- 約4文字 = 1トークン（英語）
+- 約1〜2文字 = 1トークン（中国語）
+- 1画像 = サイズと詳細度により異なります
+
+### トークンの見積もり
+
+```python
+# Rough estimation
+def estimate_tokens(text):
+    return len(text) / 4  # Approximate for English
+
+# Actual count (for OpenAI models)
+import tiktoken
+encoder = tiktoken.encoding_for_model("gpt-4o")
+tokens = encoder.encode("Your text here")
+print(f"Token count: {len(tokens)}")
+```
+
+## 使用状況の追跡
+
+### ダッシュボード
+
+[ダッシュボード](https://console.aisonar.dev)で使用状況を監視できます：
+
+- リアルタイムの残高
+- モデル別の使用履歴
+- コストの内訳
+- APIキーの使用状況
+
+### APIレスポンス
+
+各レスポンスには使用状況の情報が含まれています：
+
+```json
+{
+  "usage": {
+    "prompt_tokens": 50,
+    "completion_tokens": 100,
+    "total_tokens": 150
+  }
+}
+```
+
+## コストの最適化
+
+<AccordionGroup>
+  <Accordion title="適切なモデルの使用">
+    シンプルなタスクには小規模なモデル（GPT-4o-mini, Gemini Flash）を使用します。
+  </Accordion>
+
+  <Accordion title="キャッシュの実装">
+    繰り返される同一のリクエストに対してレスポンスをキャッシュします。
+  </Accordion>
+
+  <Accordion title="プロンプトの最適化">
+    明確さを維持しつつ、プロンプトを簡潔に保ちます。
+  </Accordion>
+
+  <Accordion title="max_tokens の設定">
+    完全なレスポンスが必要ない場合は、レスポンスの長さを制限します。
+  </Accordion>
+
+  <Accordion title="長いレスポンスにはストリーミングを使用">
+    ストリーミングに追加料金はかかりませんが、体感的なパフォーマンスが向上します。
+  </Accordion>
+</AccordionGroup>
+
+## 残高不足のアラート
+
+残高が少なくなった際のアラートを設定できます：
+
+1. **Dashboard → Settings → Notifications** に移動します
+2. しきい値を設定します
+3. メール通知を受け取ります
+
+## クレジットの追加
+
+### 支払い方法
+
+- Stripe (Visa, Mastercard)
+
+### 手順
+
+1. [ダッシュボード](https://console.aisonar.dev)にログインします
+2. **Add Credits** をクリックします
+3. 金額と支払い方法を選択します
+4. 支払いを完了します
+
+クレジットは支払い確認後、即座に追加されます。
+
+## APIキーの制限
+
+個別のAPIキーに使用制限を設定できます：
+
+1. **Dashboard → API Keys** に移動します
+2. 編集するキーをクリックします
+3. **Usage Limit** を設定します
+
+制限に達すると、そのキーを使用したリクエストは `402 Payment Required` を返します。
+
+## 請求書
+
+ビジネスアカウントでは請求書を利用できます：
+
+1. **Dashboard → Billing** に移動します
+2. 取引履歴を表示します
+3. 請求書をPDFとしてダウンロードします
+
+## ご質問がある場合
+
+請求に関するお問い合わせは support@aisonar.dev までご連絡ください。

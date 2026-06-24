@@ -1,0 +1,295 @@
+---
+title: "Các phương pháp hay nhất"
+description: "Tối ưu hóa việc sử dụng AI Sonar API của bạn về chi phí, hiệu năng và độ tin cậy"
+---
+
+## Lựa chọn model
+
+Việc chọn đúng model có thể ảnh hưởng đáng kể đến chi phí và chất lượng.
+
+### Khuyến nghị theo tác vụ
+
+| Tác vụ | Model khuyến nghị | Lý do |
+|------|-------------------|-----------|
+| **Hỏi & đáp đơn giản** | `gpt-5-mini`, `gemini-2.5-flash` | Nhanh, rẻ, đủ tốt |
+| **Suy luận phức tạp** | `gpt-5.4`, `claude-opus-4-6`, `deepseek-r1` | Logic và lập kế hoạch tốt hơn |
+| **Lập trình** | `claude-sonnet-4-6`, `gpt-4o`, `deepseek-v3.2` | Được tối ưu cho code |
+| **Viết sáng tạo** | `claude-sonnet-4-6`, `gpt-4o` | Chất lượng văn phong tốt hơn |
+| **Thị giác/Hình ảnh** | `gpt-4o`, `claude-sonnet-4-6`, `gemini-2.5-flash` | Hỗ trợ thị giác gốc |
+| **Ngữ cảnh dài** | `gemini-2.5-pro`, `claude-sonnet-4-6` | Cửa sổ token 1M+ |
+| **Nhạy cảm về chi phí** | `gpt-5-mini`, `gemini-2.5-flash`, `deepseek-v3.2` | Giá trị tốt nhất |
+
+### Các mức chi phí
+
+```
+$$$$ Premium: gpt-5.4, claude-opus-4-6
+$$$  Standard: claude-sonnet-4-6, gpt-4o
+$$   Budget:   gpt-5-mini, gemini-2.5-flash
+$    Economy:  deepseek-v3.2, deepseek-r1
+```
+
+## Tối ưu chi phí
+
+### 1. Ưu tiên sử dụng model nhỏ hơn trước
+
+```python
+def smart_query(question: str, complexity: str = "auto"):
+    """Use cheaper models for simple tasks."""
+
+    if complexity == "simple":
+        model = "gpt-5-mini"
+    elif complexity == "complex":
+        model = "gpt-4o"
+    else:
+        # Start cheap, escalate if needed
+        model = "gpt-5-mini"
+
+    response = client.chat.completions.create(
+        model=model,
+        messages=[{"role": "user", "content": question}]
+    )
+    return response
+```
+
+### 2. Thiết lập `max_tokens`
+
+Luôn đặt giới hạn `max_tokens` hợp lý:
+
+```python
+# ❌ Bad: No limit, could generate thousands of tokens
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Summarize this article"}]
+)
+
+# ✅ Good: Limit response length
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Summarize this article"}],
+    max_tokens=500  # Reasonable limit for a summary
+)
+```
+
+### 3. Tối ưu prompt
+
+```python
+# ❌ Verbose prompt (more input tokens)
+prompt = """
+I would like you to please help me by analyzing the following text
+and providing a comprehensive summary of the main points. Please be
+thorough but also concise in your response. The text is as follows:
+{text}
+"""
+
+# ✅ Concise prompt (fewer tokens)
+prompt = "Summarize the key points:\n{text}"
+```
+
+### 4. Gộp các request tương tự theo lô
+
+```python
+# ❌ Many small requests
+for question in questions:
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{"role": "user", "content": question}]
+    )
+
+# ✅ Fewer larger requests
+combined_prompt = "\n".join([f"{i+1}. {q}" for i, q in enumerate(questions)])
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": f"Answer each question:\n{combined_prompt}"}]
+)
+```
+
+## Tối ưu hiệu năng
+
+### 5. Sử dụng streaming cho UX
+
+Streaming cải thiện hiệu năng được cảm nhận:
+
+```python
+stream = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Write a long essay"}],
+    stream=True
+)
+
+for chunk in stream:
+    if chunk.choices[0].delta.content:
+        print(chunk.choices[0].delta.content, end="", flush=True)
+```
+
+### 6. Chọn model nhanh cho các trường hợp sử dụng tương tác
+
+| Trường hợp sử dụng | Khuyến nghị | Độ trễ |
+|----------|-------------|---------|
+| Chat UI | `gpt-5-mini`, `gemini-2.5-flash` | ~200ms token đầu tiên |
+| Hoàn thành tab | `claude-haiku-4-5` | ~150ms token đầu tiên |
+| Xử lý nền | `gpt-4o`, `claude-sonnet-4-6` | ~500ms token đầu tiên |
+
+### 7. Thiết lập timeout
+
+```python
+client = OpenAI(
+    api_key="sk-your-key",
+    base_url="https://api.aisonar.dev/v1",
+    timeout=60.0  # 60 second timeout
+)
+```
+
+## Độ tin cậy
+
+### 8. Triển khai retry
+
+```python
+import time
+from openai import RateLimitError, APIError
+
+def chat_with_retry(messages, max_retries=3):
+    for attempt in range(max_retries):
+        try:
+            return client.chat.completions.create(
+                model="gpt-4o",
+                messages=messages
+            )
+        except RateLimitError:
+            wait = 2 ** attempt
+            print(f"Rate limited, waiting {wait}s...")
+            time.sleep(wait)
+        except APIError as e:
+            if attempt == max_retries - 1:
+                raise
+            time.sleep(1)
+    raise Exception("Max retries exceeded")
+```
+
+### 9. Xử lý lỗi một cách phù hợp
+
+```python
+from openai import APIError, AuthenticationError, RateLimitError
+
+try:
+    response = client.chat.completions.create(...)
+except AuthenticationError:
+    # Check API key
+    notify_admin("Invalid API key")
+except RateLimitError:
+    # Queue for later or use backup
+    add_to_queue(request)
+except APIError as e:
+    if e.status_code == 402:
+        notify_admin("Balance low")
+    elif e.status_code >= 500:
+        # Server error, retry later
+        schedule_retry(request)
+```
+
+### 10. Sử dụng model dự phòng
+
+```python
+FALLBACK_CHAIN = ["gpt-4o", "claude-sonnet-4-6", "gemini-2.5-flash"]
+
+def chat_with_fallback(messages):
+    for model in FALLBACK_CHAIN:
+        try:
+            return client.chat.completions.create(
+                model=model,
+                messages=messages
+            )
+        except APIError:
+            continue
+    raise Exception("All models failed")
+```
+
+## Bảo mật
+
+### 11. Bảo vệ API key
+
+```python
+# ❌ Never hardcode keys
+client = OpenAI(api_key="sk-abc123...")
+
+# ✅ Use environment variables
+import os
+client = OpenAI(api_key=os.environ["TOKENLAB_API_KEY"])
+```
+
+### 12. Xác thực dữ liệu đầu vào của người dùng
+
+```python
+def validate_message(content: str) -> bool:
+    """Validate user input before sending to API."""
+    if len(content) > 100000:
+        raise ValueError("Message too long")
+    # Add other validation as needed
+    return True
+```
+
+### 13. Thiết lập giới hạn cho API key
+
+Tạo các API key riêng biệt với giới hạn chi tiêu cho:
+- Phát triển/kiểm thử
+- Môi trường production
+- Các ứng dụng khác nhau
+
+## Giám sát
+
+### 14. Theo dõi mức sử dụng
+
+Kiểm tra dashboard của bạn thường xuyên để theo dõi:
+- Mức sử dụng token theo model
+- Phân tích chi phí
+- Tỷ lệ cache hit
+- Tỷ lệ lỗi
+
+### 15. Ghi log các chỉ số quan trọng
+
+```python
+import logging
+
+response = client.chat.completions.create(...)
+
+logging.info({
+    "model": response.model,
+    "prompt_tokens": response.usage.prompt_tokens,
+    "completion_tokens": response.usage.completion_tokens,
+    "total_tokens": response.usage.total_tokens,
+})
+```
+
+### 16. Thiết lập cảnh báo
+
+Cấu hình cảnh báo số dư thấp trong dashboard của bạn để tránh gián đoạn dịch vụ.
+
+## Danh sách kiểm tra
+
+<AccordionGroup>
+  <Accordion title="Tối ưu chi phí">
+    - [ ] Sử dụng model phù hợp cho từng tác vụ
+    - [ ] Thiết lập giới hạn max_tokens
+    - [ ] Prompt ngắn gọn
+    - [ ] Bật caching ở những nơi phù hợp
+    - [ ] Gộp các request tương tự
+  </Accordion>
+
+  <Accordion title="Hiệu năng">
+    - [ ] Streaming cho UX tương tác
+    - [ ] Model nhanh cho sử dụng thời gian thực
+    - [ ] Đã cấu hình timeout
+  </Accordion>
+
+  <Accordion title="Độ tin cậy">
+    - [ ] Đã triển khai logic retry
+    - [ ] Đã có xử lý lỗi
+    - [ ] Đã cấu hình model dự phòng
+  </Accordion>
+
+  <Accordion title="Bảo mật">
+    - [ ] API key trong biến môi trường
+    - [ ] Xác thực dữ liệu đầu vào
+    - [ ] Key riêng cho dev/prod
+    - [ ] Đã đặt giới hạn chi tiêu
+  </Accordion>
+</AccordionGroup>

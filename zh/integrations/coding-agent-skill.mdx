@@ -1,0 +1,252 @@
+---
+title: "✨ AI Sonar API 集成技能"
+description: "为任意编码代理安装共享的 AI Sonar API 集成技能，并具备 Agent-First 错误恢复能力。"
+---
+
+<Note>
+这个技能会教你的编码代理只需通过描述需求，就能集成 AI Sonar 的 **数百个 AI API**。它被打包为一个共享的 Agent-First 技能，并适用于任何支持 skill 或 rules 文件的编码代理。
+
+该 API 是 **[Agent-First](/guides/agent-first-api)** —— 即使代理猜错了模型名称，错误响应也会准确告诉它该如何修复。
+</Note>
+
+<Note>
+本页文档化的是可复用的技能封装层，而不是协议兼容层。如果你需要端点、SDK 或客户端配置说明，请查看对应工具的专门集成页。
+</Note>
+
+## 工作原理
+
+1. **你描述你的需求** —— “我想在我的 Python 项目中使用 GPT-4”
+2. **代理调用 API** —— 它可能会猜测一个模型名称或端点
+3. **如果出现任何问题** —— API 会返回结构化提示（`did_you_mean`, `suggestions`, `retry_after`）
+4. **agent 自我纠正** —— 读取提示并使用正确参数重试
+5. **你获得可运行的代码** —— 通常在第一次或第二次尝试时即可完成
+
+## 安装
+
+<Note>
+请使用规范的非交互式安装命令：
+
+```bash
+npx skills add https://github.com/hedging8563/aisonar-skills --skill aisonar-api-integration -y
+```
+
+这会从 AI Sonar skills 仓库安装共享的 `aisonar-api-integration` 技能。
+
+如果你的工具不支持安装器，请将仓库中的 `skills/aisonar-api-integration/` 文件夹复制到你工具的共享 skills 或 rules 目录中。
+</Note>
+
+### 验证安装
+
+询问你的编码代理：
+```
+有哪些可用的 skills？
+```
+
+如果你看到了 `aisonar-api-integration`，则表示安装成功。
+
+## 获取你的 API Key
+
+<Steps>
+  <Step title="访问 AI Sonar">
+    前往 [aisonar.dev](https://aisonar.dev)
+  </Step>
+  <Step title="登录">
+    创建账户或登录
+  </Step>
+  <Step title="获取 API Key">
+    进入 [Dashboard → API Keys](https://console.aisonar.dev/api) 并创建一个新的 key
+  </Step>
+  <Step title="复制 key">
+    你的 key 以 `sk-...` 开头——请安全保存
+  </Step>
+</Steps>
+
+<Tip>
+你不需要把 API Key 粘贴进提示或源码。使用该技能时，agent 应询问要读取哪个环境变量，并生成从环境变量读取 key 的代码。
+</Tip>
+
+## 示例
+
+### 聊天补全
+
+**你说：**
+```
+我想在我的 Python 项目中使用 GPT-4
+```
+
+**agent 生成：**
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["TOKENLAB_API_KEY"],
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+
+print(response.choices[0].message.content)
+```
+
+运行方式：
+
+```bash
+export TOKENLAB_API_KEY="sk-your-api-key"
+python app.py
+```
+
+如果代理猜错了模型名称（例如 `gpt5`），API 会返回：
+```json
+{
+  "error": {
+    "code": "model_not_found",
+    "did_you_mean": "gpt-5.4",
+    "suggestions": [{"id": "gpt-5.4"}, {"id": "gpt-5-mini"}],
+    "hint": "Did you mean 'gpt-5.4'? Use GET https://api.aisonar.dev/v1/models to list all available models."
+  }
+}
+```
+
+代理会读取 `did_you_mean`，修正模型名称，并重新尝试——这一切都会自动完成。
+
+### 图像生成
+
+**你说：**
+```
+Generate images with Flux in Node.js
+```
+
+agent 会调用图像 API、处理错误，并生成包含下载与保存逻辑的完整代码。
+
+### 语音识别
+
+**你说：**
+```
+Integrate speech-to-text in my app
+```
+
+代理会使用正确的 `/v1/audio/transcriptions` 端点和音频文件处理逻辑来生成代码。
+
+## Agent-First 错误恢复
+
+每个错误响应都包含任何编码代理都可以解析的结构化提示。详情请参阅[完整的 Agent-First API 参考](/guides/agent-first-api)。
+
+| 错误 | API 返回内容 | 代理的处理方式 |
+|-------|---------------------|---------------------|
+| 错误的模型名称 | `did_you_mean` + `suggestions` | 自动纠正并重试 |
+| 余额不足 | `balance_usd` + 更便宜的 `suggestions` | 切换到可负担的模型 |
+| 模型不可用 | `alternatives` + `retry_after` | 切换到可用的模型 |
+| 触发速率限制 | `retry_after`（精确秒数） | 等待后重试 |
+| 上下文过长 | `suggestions` 包含更大的 model | 切换到更大上下文的 model |
+| 非聊天请求契约不匹配 | `supported_operations`, `supported_parameters`, `request_endpoint`, `recommended_request` | 按公开模型契约重建请求 |
+
+### 原生端点优化
+
+当你使用 Claude 或 Gemini 模型调用 `/v1/chat/completions` 时，API 会返回优化 header：
+
+
+
+请把这些 header 视为路由提示，而不是强制自动切换。Claude 原生调用使用 `/v1/messages`；Gemini 原生调用应遵循 the native endpoint hint header 返回的端点，通常是 `/v1beta/gemini`。
+
+### Model 发现
+
+无需搜索文档：
+
+```bash
+# 机器可读 API 概览
+curl https://api.aisonar.dev/llms.txt
+
+# List models by category
+curl "https://api.aisonar.dev/v1/models?category=chat" -H "Authorization: Bearer sk-KEY"
+curl "https://api.aisonar.dev/v1/models?category=image" -H "Authorization: Bearer sk-KEY"
+
+# 非聊天场景推荐列表
+curl "https://api.aisonar.dev/v1/models?recommended_for=image" -H "Authorization: Bearer sk-KEY"
+curl "https://api.aisonar.dev/v1/models?recommended_for=translation" -H "Authorization: Bearer sk-KEY"
+
+# 重试非聊天请求前，先读取单个模型的公开契约
+curl "https://api.aisonar.dev/v1/models/gpt-image-2" -H "Authorization: Bearer sk-KEY"
+
+# 按能力筛选
+curl "https://api.aisonar.dev/v1/models?tag=coding" -H "Authorization: Bearer sk-KEY"
+```
+
+## 支持的能力
+
+| 类型 | 示例 |
+|------|----------|
+| 聊天 | GPT-5.4, Claude, Gemini, DeepSeek |
+| 图像生成 | GPT Image, Flux, Stable Diffusion, Gemini 图像模型 |
+| 音乐生成 | Suno |
+| 3D 模型 | Tripo3D |
+| 音频 | 文本转语音、语音转文本 |
+| 嵌入 | text-embedding-3 |
+| 重排序 | bce-reranker, qwen3-rerank |
+
+## 最佳实践
+
+<CardGroup cols={2}>
+  <Card title="API Key 安全" icon="shield">
+    使用环境变量。切勿将 key 提交到 git，也不要在前端代码中暴露它们。
+  </Card>
+  <Card title="成本管理" icon="wallet">
+    在你的 [dashboard](https://console.aisonar.dev) 中设置使用限制。检查 `error.balance_usd` 以通过编程方式监控成本。
+  </Card>
+  <Card title="直接表达需求" icon="bullseye">
+    说“我想在 Python 中生成图像”，而不是“AI Sonar 有图像 API 吗？”
+  </Card>
+  <Card title="描述你的场景" icon="message">
+    “我正在使用 GPT-4 构建一个 chatbot”比“使用 GPT-4”能给 agent 提供更多上下文。
+  </Card>
+</CardGroup>
+
+## FAQ
+
+<AccordionGroup>
+  <Accordion title="技能没有自动触发？">
+    尝试在你的请求中提及 “AI Sonar” 或 “AI Sonar API”：
+    ```
+    我想用 AI Sonar 把 GPT-4 集成到我的项目中
+    ```
+  </Accordion>
+
+  <Accordion title="API 如何帮助 agent 找到正确的 model？">
+    AI Sonar 的 [Agent-First API](/guides/agent-first-api) 会返回结构化错误提示。如果 agent 猜错了 model 名称，错误中会包含带有正确名称的 `did_you_mean` 以及带有替代项的 `suggestions`。agent 会读取这些信息，并在下一次尝试时自动纠正。
+  </Accordion>
+
+  <Accordion title="支持哪些 coding agent？">
+    任何支持共享 skill 或 rules 目录的 coding agent 都可以。当支持安装器时，`npx skills add` 会自动将共享的 `aisonar-api-integration` 技能放置到检测到的位置。
+  </Accordion>
+
+  <Accordion title="如何更新技能？">
+    重新运行安装器：
+    ```bash
+    npx skills add https://github.com/hedging8563/aisonar-skills --skill aisonar-api-integration -y
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## 资源
+
+<CardGroup cols={2}>
+  <Card title="Agent-First API" icon="robot" href="/zh/guides/agent-first-api">
+    结构化错误提示的完整参考
+  </Card>
+  <Card title="API 文档" icon="book" href="https://docs.aisonar.dev">
+    完整的 API 参考
+  </Card>
+  <Card title="模型" icon="sparkles" href="https://aisonar.dev/models">
+    浏览数百个可用模型
+  </Card>
+  <Card title="llms.txt" icon="file-lines" href="https://api.aisonar.dev/llms.txt">
+    面向 AI agents 的机器可读 API 概览
+  </Card>
+</CardGroup>
+
+<Info>
+**有问题？** 请查看我们的 [GitHub Issues](https://github.com/hedging8563/aisonar-skills/issues) 或联系 [support@aisonar.dev](mailto:support@aisonar.dev)
+</Info>

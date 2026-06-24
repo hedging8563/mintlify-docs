@@ -1,0 +1,44 @@
+---
+title: "Lấy mức sử dụng API key"
+openapi: "GET /v1/management/api-keys/{keyId}/usage"
+description: "Trả về chi tiết mức sử dụng có phân trang cho một API key người dùng."
+---
+
+## Tổng quan
+
+Endpoint này trả về chi tiết mức sử dụng theo API key mà không làm lộ metadata routing vật lý.
+
+## Tham số query
+
+| Tham số | Kiểu | Mặc định / giới hạn | Mô tả |
+|---------|------|---------------------|------|
+| `page` | integer | mặc định `1`, tối thiểu `1` | Số trang bắt đầu từ 1 |
+| `limit` | integer | mặc định `50`, tối thiểu `1`, tối đa `100` | Kích thước mỗi trang |
+| `logicalModel` | string | độ dài tối đa `100` | Tên model logic được yêu cầu |
+| `modelVendor` | string | độ dài tối đa `100` | Nhà cung cấp model công khai |
+| `scene` | enum | - | `chat`, `image`, `audio`, `video`, `embedding`, `rerank`, `translation`, `music`, `3d` |
+| `accessChannel` | enum | - | `platform` hoặc `byok` |
+| `startDate` | string | - | Cận dưới bao gồm; chấp nhận RFC3339 có múi giờ hoặc `YYYY-MM-DD` |
+| `endDate` | string | - | Cận trên bao gồm; chấp nhận RFC3339 có múi giờ hoặc `YYYY-MM-DD` |
+
+Nếu truyền đồng thời `startDate` và `endDate`, thì `startDate` phải nhỏ hơn hoặc bằng `endDate`.
+
+## Lưu ý
+
+- Phản hồi có phân trang.
+- Phản hồi chỉ bao gồm các trường chi phí và báo cáo công khai.
+- Mỗi dòng usage cũng có thể bao gồm `billing_transaction_id` sau khi request gốc đã được settlement xong. Hãy dùng giá trị này cùng với `request_id` để đối soát ở cấp request.
+- Metadata routing nội bộ và kênh vật lý sẽ tiếp tục bị ẩn.
+
+## Ví dụ
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/usage?page=1&limit=20&scene=video&accessChannel=platform&startDate=2026-03-01&endDate=2026-03-31" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## Yêu cầu / Phản hồi
+
+Hãy dùng bảng OpenAPI tương tác phía trên để xem schema chính xác và các trường phản hồi.

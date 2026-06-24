@@ -1,0 +1,35 @@
+---
+title: "Recuperar Lote"
+openapi: "GET /v1/batches/{batch_id}"
+description: "Recupera el estado actual, los conteos y los archivos de resultados para un lote."
+---
+
+## Descripción General
+
+Este endpoint es parte de la API de Lote compatible con OpenAI de AI Sonar. Los trabajos por lotes utilizan archivos JSONL cargados, se ejecutan de manera asíncrona y pueden devolver archivos de salida/error más tarde.
+
+## Notas
+
+- Los archivos de entrada del lote deben usar `purpose=batch`.
+- `completion_window` es actualmente `24h`.
+- El orden de salida no está garantizado; siempre coincida por `custom_id`.
+- La transmisión no es compatible dentro de los elementos del lote.
+
+## Ejemplo
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/batches/batch_abc123" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+## Solicitud / Respuesta
+
+Utilice el panel interactivo de OpenAPI arriba para el esquema exacto.
+
+## Consejos Operativos
+
+- Use `custom_id` para la reconciliación idempotente en downstream.
+- Espere `output_file_id` y `error_file_id` solo después de que el trabajador finalice el lote.
+- La tarificación por lotes puede diferir de la tarificación sincrónica porque se aplican las reglas de descuento de `isBatchRequest=true`.

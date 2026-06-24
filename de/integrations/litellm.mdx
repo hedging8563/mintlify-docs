@@ -1,0 +1,57 @@
+---
+title: "LiteLLM"
+description: "LiteLLM mit AI Sonar als Upstream-Anbieter oder interne Gateway-Schicht verwenden"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Überblick
+
+LiteLLM und AI Sonar lassen sich meist auf zwei Arten kombinieren.
+
+- AI Sonar als **OpenAI-kompatiblen Upstream** hinter LiteLLM verwenden
+- LiteLLM vor AI Sonar setzen, um virtuelle Keys, zusätzliches Routing oder zentrale Observability abzubilden
+
+Für AI Sonar ist der sauberste Standardpfad die Nutzung des **custom OpenAI / OpenAI-kompatiblen**-Pfads von LiteLLM mit `api_base = https://api.aisonar.dev/v1`.
+
+<Note>
+Wenn Sie explizit Claude-native oder Gemini-native Request-Shapes benötigen, bevorzugen Sie die nativen AI Sonar-Integrationen, statt diese Abläufe durch LiteLLMs OpenAI-kompatible Abstraktion zu zwingen.
+</Note>
+
+<Note>
+**Typ**: Framework oder Plattform
+
+**Primärer Pfad**: OpenAI-kompatibler Upstream
+
+**Support-Niveau**: Unterstützter Pfad
+</Note>
+
+## Installation
+
+```bash
+pip install 'litellm[proxy]'
+```
+
+## Proxy-Konfiguration
+
+```yaml
+model_list:
+  - model_name: aisonar-gpt-5.4
+    litellm_params:
+      model: custom_openai/gpt-5.4
+      api_base: https://api.aisonar.dev/v1
+      api_key: os.environ/OPENAI_API_KEY
+```
+
+Starten:
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+litellm --config litellm-config.yaml --port 4000
+```
+
+## Bewährte Praktiken
+
+- Behandeln Sie AI Sonar zunächst als `custom_openai`-Upstream
+- Setzen Sie LiteLLM nur dann davor, wenn Sie wirklich eine zusätzliche Gateway-Schicht benötigen
+- Erwarten Sie auf dem OpenAI-kompatiblen Pfad nicht automatisch jedes anbieternative Detail

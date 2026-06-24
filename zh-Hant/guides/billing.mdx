@@ -1,0 +1,196 @@
+---
+title: "計費與定價"
+description: "瞭解 AI Sonar 的按量計費定價"
+---
+
+## 概覽
+
+AI Sonar 採用 **按量計費 (pay-as-you-go)**。您只需為實際使用的部分付費，無需訂閱或最低消費承諾。
+
+## 計費運作方式
+
+1. **儲值點數** 到您的帳戶
+2. **使用 API** - 費用將按請求扣除
+3. **監控用量** 在您的控制面板中
+4. **餘額不足時儲值**
+
+## 定價模式
+
+### 按 Token 計費
+
+大多數文本生成模型按每百萬個 tokens 計費：
+
+| 模型 | 輸入 (每 1M tokens) | 輸出 (每 1M tokens) |
+|-------|----------------------|------------------------|
+| GPT-4o | $1.75 | $7.00 |
+| GPT-4o-mini | $0.105 | $0.42 |
+| Claude Opus 4.5 | $3.50 | $17.50 |
+| Claude Sonnet 4.5 | $2.10 | $10.50 |
+| Claude Haiku 4.5 | $0.70 | $3.50 |
+| Gemini 2.5 Pro | $0.875 | $7.00 |
+| Gemini 2.5 Flash | $0.1225 | $0.525 |
+| DeepSeek R1 | $0.385 | $1.533 |
+| DeepSeek V3.2 | $0.196 | $0.294 |
+
+<Note>
+  顯示的價格為平台折扣價。實際價格可能有所變動。請查看 [定價頁面](https://aisonar.dev/zh-TW/pricing) 以獲取最新費率。
+</Note>
+
+### 按請求計費
+
+圖像、影片和音訊模型按請求計費：
+
+| 模型 | 每個請求的價格 |
+|-------|-------------------|
+| DALL-E 3 (1024x1024) | $0.04 |
+| Midjourney | $0.05 |
+| Whisper (每分鐘) | $0.006 |
+| TTS-1 | $0.015 |
+
+### 非同步任務計費 (影片/音樂/3D 及部分圖像模型)
+
+<Note>
+  對於基於任務的生成，建立任務時可能會預留或預扣預估費用。最終結算只會在非同步任務透過輪詢或終態處理進入成功終態後完成。
+</Note>
+
+對於基於任務的生成流程（影片、音樂、3D 和部分圖像模型）：
+
+1. 提交任務。AI Sonar 可能會先做預估預扣或餘額預留，用於檢查餘額與 API Key 消費限制。
+2. 按返回的 `poll_url` 輪詢，或呼叫 `GET /v1/tasks/{id}`，直到任務進入終態。
+3. 任務成功完成時，系統完成最終結算並記錄用量，任務回應會包含 `billing_transaction_id`。
+4. 如果建立失敗或終態為失敗，待處理的預扣金額會退款或釋放，並將該請求標記為非計費。
+
+如果任務已經進入終態，但 dashboard 中沒有看到對應結算或退款，請聯繫 support@aisonar.dev 尋求協助。
+
+```python
+# 示例：影片生成計費
+response = client.post("/v1/videos/generations", json={
+    "model": "veo3.1",
+    "prompt": "A sunset over the ocean"
+})
+# 現在可能會預留預估費用；最終帳單會在任務成功後出現。
+
+poll_url = response.json()["poll_url"]
+task_id = response.json()["task_id"]
+# 輪詢 poll_url 查看狀態；結算後會出現 billing_transaction_id。
+```
+
+### 帳單交易 ID
+
+已完成結算的 OpenAI 相容非串流 JSON 回應會返回 `billing_transaction_id`。同一個值也會透過 `X-Billing-Transaction-ID` 回應標頭暴露，方便瀏覽器與服務端整合讀取。Gemini `/v1beta` 等原生相容路由為了保持 provider 原生回應形狀，可能只透過回應標頭暴露該值。對於非同步媒體任務，請輪詢建立回應返回的 `poll_url` 或 `GET /v1/tasks/{id}`；當結算完成後，任務回應會包含 `billing_transaction_id`。串流回應可能在內容已送出後才完成結算，因此如果回應標頭中沒有該欄位，請透過 dashboard 用量記錄進行對帳。
+
+## Token 計數
+
+Token 是文本處理的基本單位：
+
+- 約 4 個字元 = 1 token (英文)
+- 約 1-2 個字元 = 1 token (中文)
+- 1 張圖片 = 視尺寸和細節而定
+
+### 估算 Token
+
+```python
+# Rough estimation
+def estimate_tokens(text):
+    return len(text) / 4  # Approximate for English
+
+# Actual count (for OpenAI models)
+import tiktoken
+encoder = tiktoken.encoding_for_model("gpt-4o")
+tokens = encoder.encode("Your text here")
+print(f"Token count: {len(tokens)}")
+```
+
+## 用量追蹤
+
+### 控制面板
+
+在 [控制面板](https://console.aisonar.dev) 中監控您的用量：
+
+- 即時餘額
+- 按模型的用量歷史
+- 費用明細
+- API key 使用情況
+
+### API 響應
+
+每個響應都包含用量資訊：
+
+```json
+{
+  "usage": {
+    "prompt_tokens": 50,
+    "completion_tokens": 100,
+    "total_tokens": 150
+  }
+}
+```
+
+## 成本優化
+
+<AccordionGroup>
+  <Accordion title="使用合適的模型">
+    對於簡單任務，使用較小的模型 (GPT-4o-mini, Gemini Flash)。
+  </Accordion>
+
+  <Accordion title="實施快取">
+    為重複的相同請求快取響應。
+  </Accordion>
+
+  <Accordion title="優化提示詞">
+    在保持清晰的同時，讓提示詞保持簡潔。
+  </Accordion>
+
+  <Accordion title="設置 max_tokens">
+    當不需要完整響應時，限制響應長度。
+  </Accordion>
+
+  <Accordion title="對長響應使用串流">
+    串流 (Streaming) 不會增加額外費用，但能提升感知效能。
+  </Accordion>
+</AccordionGroup>
+
+## 餘額不足警報
+
+配置當餘額下降時的警報：
+
+1. 前往 **控制面板 → 設置 → 通知**
+2. 設置您的閾值金額
+3. 接收電子郵件通知
+
+## 儲值點數
+
+### 付款方式
+
+- Stripe (Visa, Mastercard)
+
+### 步驟
+
+1. 登入 [控制面板](https://console.aisonar.dev)
+2. 點擊 **儲值點數**
+3. 選擇金額和付款方式
+4. 完成付款
+
+點數將在付款確認後立即入帳。
+
+## API Key 限制
+
+您可以為個別 API key 設置支出限制：
+
+1. 前往 **控制面板 → API Keys**
+2. 點擊某個 key 進行編輯
+3. 設置 **用量限制**
+
+當達到限制時，使用該 key 的請求將返回 `402 Payment Required`。
+
+## 發票
+
+對於企業帳戶，可提供發票：
+
+1. 前往 **控制面板 → 計費**
+2. 查看交易歷史
+3. 下載 PDF 格式發票
+
+## 有疑問嗎？
+
+如有計費諮詢，請聯繫 support@aisonar.dev。

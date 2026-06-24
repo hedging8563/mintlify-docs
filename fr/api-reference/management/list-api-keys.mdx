@@ -1,0 +1,26 @@
+---
+title: "Lister les clés API"
+openapi: "GET /v1/management/api-keys"
+description: "Liste les clés API gérées par l'utilisateur pour le jeton de gestion actuel de l'organisation."
+---
+
+## Aperçu
+
+Retourne les clés API utilisateur de l'organisation associée au jeton de gestion actuel.
+
+## Remarques
+
+- Les clés gérées par le système, comme celles de Playground ou de Claw, sont exclues.
+
+## Exemple
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/management/api-keys" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## Demande / Réponse
+
+Utilisez le panneau OpenAPI interactif ci-dessus pour le schéma exact.

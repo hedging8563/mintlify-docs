@@ -1,0 +1,41 @@
+---
+title: "Toplu Oluştur"
+openapi: "POST /v1/batches"
+description: "Yüklenen bir girdi dosyasından OpenAI uyumlu bir toplu iş oluşturur."
+---
+
+## Genel Bakış
+
+Bu uç nokta, AI Sonar'nın OpenAI uyumlu Toplu API'sinin bir parçasıdır. Toplu işler, yüklenen JSONL dosyalarını kullanır, asenkron olarak çalışır ve daha sonra çıktı/hata dosyaları döndürebilir.
+
+## Notlar
+
+- Toplu girdi dosyaları `purpose=batch` kullanmalıdır.
+- `completion_window` şu anda `24s`.
+- Çıktı sıralaması garanti edilmez; her zaman `custom_id` ile eşleştirin.
+- Toplu öğeler içinde akış desteği yoktur.
+
+## Örnek
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/batches" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input_file_id": "file_abc123",
+    "endpoint": "/v1/chat/completions",
+    "completion_window": "24h"
+  }'
+```
+</RequestExample>
+
+## İstek / Yanıt
+
+Tam şema için yukarıdaki etkileşimli OpenAPI panelini kullanın.
+
+## Operasyonel İpuçları
+
+- İdempotent aşağı akış uzlaştırması için `custom_id` kullanın.
+- `output_file_id` ve `error_file_id`'yi yalnızca işçi toplu işi tamamladıktan sonra bekleyin.
+- Toplu fiyatlandırma, `isBatchRequest=true` indirim kuralları uygulandığı için senkron fiyatlandırmadan farklı olabilir.

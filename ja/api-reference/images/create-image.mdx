@@ -1,0 +1,295 @@
+---
+title: "画像の生成"
+openapi: "POST /v1/images/generations"
+description: "プロンプトに基づいて画像を生成します"
+---
+
+## 概要
+
+コーディング agent の場合は、まず `GET /v1/models?recommended_for=image` で現在推奨される画像モデルの候補を見つけ、そのうえで選んだ `model` をこのエンドポイントに明示的に渡してください。
+
+`gpt-image-2` は token 単位で課金される GPT Image モデルです。AI Sonar は OpenAI 公式の usage 内訳に従い、テキスト入力、画像入力、報告されたキャッシュ入力、画像出力 token を精算します。固定の画像単価モデルとしては扱いません。
+
+`gpt-image-2` の画像生成でサポートされる公開パラメーターは、`prompt`、`n`、`size`、`quality`、`response_format`、`async`、`background`、`output_format`、`output_compression` または `compression`、`moderation`、`partial_images`、`user` です。`size` または `quality` を省略すると AI Sonar は `auto` を使用します。カスタム `size` は下記の柔軟な `WIDTHxHEIGHT` 契約に従う必要があります。
+
+互換性メモ: `gpt-image-2` リクエストで `input_fidelity` が送信された場合、GPT Image 2 は画像入力を自動的に高忠実度で処理するため、AI Sonar は上流へ転送する前にこのフィールドを削除します。
+
+### モデル動作メモ
+
+Google Gemini の画像ファミリーは、同じセレクター契約を共有していません:
+
+- `gemini-3.1-flash-image-preview`、`gemini-3-pro-image-preview`、`nano-banana-pro` は、公開されているテキストから画像、画像編集/image-to-image 操作で `aspect_ratio` と `resolution`（`1k`、`2k`、`4k`）をサポートします。
+- `nano-banana-2` は、現在の AI Sonar 契約ではテキストから画像の生成でのみ `aspect_ratio` と `resolution`（`1k`、`2k`、`4k`）をサポートします。
+- `gemini-2.5-flash-image`、`nano-banana`、`nano-banana-edit` は `aspect_ratio` をサポートしますが、公開されている `resolution` の選択肢はありません。
+- `gemini-2.0-flash-preview-image-generation` は、ここではプロンプトのみのテキストから画像への生成として説明されています。
+- Nano Banana の参照画像リクエストでは、このエンドポイント（`/v1/images/generations`）で `nano-banana-edit` または `nano-banana-pro` を使い、`operation: "image-to-image"` と `image_urls` を送信してください。Nano Banana の参照画像リクエストを `/v1/images/edits` に送信しないでください。
+- Nano Banana の image-to-image リクエストでは、`nano-banana-pro` は `resolution`（`1k`、`2k`、`4k`）を指定できます。`nano-banana-edit` では省略してください。`nano-banana` と `nano-banana-2` は現在の公開契約ではテキストから画像モデルです。
+- このエンドポイントの参照画像は、JSON の `image_url` / `image_urls`、または multipart の `image` ファイルとして渡せます。`/v1/images/generations` では `images[]` と `file_id` は受け付けません。`/v1/files` の参照は、`images[].file_id` を明示的にサポートする `/v1/images/edits` モデルでのみ使用します。
+
+Google の画像ファミリーでは `aspect_ratio` を優先し、モデルが明示的に対応している場合だけ `resolution` を送信してください。
+
+xAI Grok Imagine 画像モデル（`grok-imagine-image`、`grok-imagine-image-quality`、および legacy `grok-imagine-image-pro`）は `aspect_ratio` と `resolution`（`1k`、`2k`）をサポートします。`grok-imagine-image-pro` は互換 ID として保持され、upstream では `grok-imagine-image-quality` にルーティングされます。
+
+## リクエストボディ
+
+**同期リクエストのタイムアウト:** ルーティング先の画像プロバイダーによっては、生成完了まで待って最終画像をインラインで返します。高解像度または高品質のリクエストは 1 分前後、またはそれ以上かかることがあるため、HTTP クライアントのタイムアウトは少なくとも `120s` に設定してください。作成レスポンスに `status: "pending"`、`task_id`、または `poll_url` が含まれる場合は、返された `poll_url` をポーリングしてください。
+
+<ParamField body="model" type="string" default="dall-e-3">
+  使用するモデル（例: `gpt-image-2`、`dall-e-3`、`flux-pro`、`midjourney`）。
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  生成したい画像の説明テキスト。
+</ParamField>
+
+<ParamField body="image_url" type="string">
+  image-to-image 生成に使う公開 HTTPS 参照画像 URL。Nano Banana の参照画像リクエストでは `operation` を `image-to-image` に設定してください。`nano-banana-pro` は `resolution` を指定でき、`nano-banana-edit` では省略してください。
+</ParamField>
+
+<ParamField body="image_urls" type="string[]">
+  公開 HTTPS 参照画像 URL の配列。JSON リクエストで 1 枚以上の参照画像を渡す場合に使います。このエンドポイントでは `file_id` と `images[]` はサポートされません。
+</ParamField>
+
+<ParamField body="reference_image_urls" type="string[]">
+  主入力画像と参照画像を区別するプロバイダー向けの、追加のモデル固有参照画像 URL。
+</ParamField>
+
+<ParamField body="image" type="file">
+  image-to-image 生成用の multipart 参照画像ファイル。元画像が非公開、またはヘッダー認証を必要とする場合に使います。これは /v1/files の `file_id` とは異なり、このエンドポイントでは `file_id` は受け付けません。
+</ParamField>
+
+<ParamField body="n" type="integer" default="1">
+  生成する画像の数（1-10、モデルに依存）。
+</ParamField>
+
+<ParamField body="size" type="string" default="1024x1024">
+  画像サイズ。OpenAI 形式の画像ファミリーや、正確なピクセルサイズを受け付ける他のモデルで使用します。
+
+  `gpt-image-2` では、`size` は `auto` または `WIDTHxHEIGHT` を受け付けます。カスタム寸法は両辺とも 16 の倍数、最長辺は `3840px` 以下、長辺/短辺の比率は `3:1` 以下、総ピクセル数は `655,360` から `8,294,400` の範囲である必要があります。`aspect_ratio` と `resolution` は、現時点では AI Sonar の `gpt-image-2` 公開契約には含まれません。
+
+  Google Gemini 画像ファミリーでは、`size` は互換エイリアスとして扱われ、モデル公開の `aspect_ratio` 契約、および対応時の `resolution` 契約にマッピングされます。これらのモデルでは `aspect_ratio` を直接送信することを推奨します。
+</ParamField>
+
+<ParamField body="aspect_ratio" type="string">
+  モデル依存のアスペクト比セレクタ。
+
+  Google 画像ファミリーでよく使われる値には `1:1`、`16:9`、`9:16`、`3:2`、`2:3` があります。
+</ParamField>
+
+<ParamField body="resolution" type="string">
+  モデル依存の出力解像度セレクタ。
+
+  `gemini-3.1-flash-image-preview` と `gemini-3-pro-image-preview` ではテキストから画像と画像編集で、`nano-banana-pro` ではテキストから画像と image-to-image で、`nano-banana-2` ではテキストから画像のみでサポートされます。一般的な値は `1k`、`2k`、`4k` です。モデル側で明記されていない限り、アスペクト比のみの Gemini 画像ファミリーには送信しないでください。xAI Grok Imagine 画像モデルでは `1k` または `2k` を使用してください。
+</ParamField>
+
+<ParamField body="quality" type="string" default="standard">
+  画像品質。DALL-E モデルでは `standard` または `hd` を使用します。`gpt-image-2` などの GPT Image モデルでは `auto`、`low`、`medium`、`high` を使用します。
+</ParamField>
+
+<ParamField body="response_format" type="string" default="url">
+  レスポンス形式：`url` または `b64_json`。デフォルトは `url` です。
+
+  Azure Official または Azure-compatible の `gpt-image-2` ルートでは、AI Sonar は `response_format` を upstream に転送しません。ゲートウェイは常に upstream から `b64_json` として画像データを受け取ります。`url` リクエストでは各画像を CDN にアップロードして `data[].url` を返します。CDN ストレージが利用できない、またはアップロードに失敗した場合は、Base64 にフォールバックせずリクエストを失敗させます。`b64_json` では生の Base64 を返します。
+</ParamField>
+
+<ParamField body="async" type="boolean" default="false">
+  `gpt-image-2` または公式 FLUX/BFL 画像モデルで `true` にすると、まずタスクを作成します。完了した非同期画像タスクは、要求された `response_format` に関係なく URL を返します。`b64_json` が必要な場合は同期リクエストを使用してください。
+</ParamField>
+
+<ParamField body="style" type="string" default="vivid">
+  DALL-E 3のスタイル：`vivid` または `natural`。
+</ParamField>
+
+<ParamField body="user" type="string">
+  エンドユーザーの一意識別子。
+</ParamField>
+
+## レスポンス
+
+### インラインレスポンス
+
+<ResponseField name="created" type="integer">
+  作成時のUnixタイムスタンプ。
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  生成された画像の配列。
+
+  各オブジェクトに含まれるもの：
+  - `url` (string): 生成された画像のURL
+  - `b64_json` (string): Base64エンコードされた画像（リクエストされた場合）
+  - `revised_prompt` (string): 使用されたプロンプト（DALL-E 3）
+</ResponseField>
+
+### 非同期タスクレスポンス
+
+`gpt-image-2` または公式 FLUX/BFL 画像モデルで `async: true` を指定すると、作成リクエスト内で最終画像を待たずにタスクを作成します。レスポンスには `status: "pending"`、`task_id`、`poll_url` が含まれます。タスクが `completed` または `failed` になるまで `/v1/tasks/{task_id}` をポーリングしてください。
+
+非同期画像タスクは最終画像の URL のみを返します。生の `b64_json` 画像データが必要な場合は、同期リクエストを使用してください。
+
+タスク作成時に見積額が予約される場合があります。完了したタスクは実使用量で精算され、失敗またはタイムアウトしたタスクは予約が解放または返金されます。
+
+<ResponseField name="created" type="integer">
+  作成時刻の Unix タイムスタンプ。
+</ResponseField>
+
+<ResponseField name="task_id" type="string">
+  ポーリング用の一意なタスク識別子。
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  初期ステータス: `pending`。
+</ResponseField>
+
+<ResponseField name="poll_url" type="string">
+  結果をポーリングするための相対URL。例: `/v1/tasks/{id}`。
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  タスクが保留中の間は空です。完了した画像タスクは `data[].url` に生成された画像URLを返します。
+</ResponseField>
+
+`status: "pending"` を受け取ったら、`poll_url` または `GET /v1/tasks/{task_id}` を使用して結果を取得します。
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/images/generations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gemini-3-pro-image-preview",
+    "prompt": "A cinematic portrait of a white cat sitting on a rainy windowsill",
+    "aspect_ratio": "16:9",
+    "resolution": "2k",
+    "n": 1
+  }'
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.images.generate(
+    model="gemini-3-pro-image-preview",
+    prompt="A cinematic portrait of a white cat sitting on a rainy windowsill",
+    aspect_ratio="16:9",
+    resolution="2k",
+    n=1
+)
+
+print(response.data[0].url)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.images.generate({
+  model: 'gemini-3-pro-image-preview',
+  prompt: 'A cinematic portrait of a white cat sitting on a rainy windowsill',
+  aspect_ratio: '16:9',
+  resolution: '2k',
+  n: 1
+});
+
+console.log(response.data[0].url);
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/images/generations');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Content-Type: application/json',
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => json_encode([
+        'model' => 'gemini-3-pro-image-preview',
+        'prompt' => 'A cinematic portrait of a white cat sitting on a rainy windowsill',
+        'aspect_ratio' => '16:9',
+        'resolution' => '2k',
+        'n' => 1
+    ])
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+echo $data['data'][0]['url'];
+```
+
+アスペクト比のみの画像ファミリーの例: `gemini-2.5-flash-image`、`nano-banana`、または `nano-banana-edit` では、`aspect_ratio` を送信し、`resolution` は省略します:
+
+```json
+{
+  "model": "gemini-2.5-flash-image",
+  "prompt": "A clean editorial product shot of a citrus soda can",
+  "aspect_ratio": "16:9"
+}
+```
+
+Nano Banana Pro の参照画像の例: リクエストは `/v1/images/generations` に送信し、`/v1/images/edits` には送信しません。`resolution` は任意で、`1k`、`2k`、`4k` を指定できます。
+
+```json
+{
+  "model": "nano-banana-pro",
+  "prompt": "Create a clean cinematic character image based on the reference images",
+  "operation": "image-to-image",
+  "image_urls": ["https://example.com/reference-1.png"],
+  "aspect_ratio": "1:1",
+  "resolution": "2k"
+}
+```
+
+
+非公開またはローカルの元画像は multipart で直接アップロードできます。`/v1/images/generations` に `file_id` は渡さないでください:
+
+```bash
+curl -X POST "https://api.aisonar.dev/v1/images/generations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F "model=nano-banana-pro" \
+  -F "prompt=Create a clean cinematic character image based on this reference" \
+  -F "operation=image-to-image" \
+  -F "image=@reference.png" \
+  -F "aspect_ratio=1:1" \
+  -F "resolution=2k"
+```
+
+</RequestExample>
+
+<ResponseExample>
+```json Inline Response
+{
+  "created": 1706000000,
+  "data": [
+    {
+      "url": "https://...",
+      "revised_prompt": "A fluffy white cat with bright eyes sitting peacefully on a wooden windowsill, watching raindrops stream down the glass window..."
+    }
+  ]
+}
+```
+
+```json Async Task Response
+{
+  "created": 1706000000,
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "pending",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "data": []
+}
+```
+</ResponseExample>

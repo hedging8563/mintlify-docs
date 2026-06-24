@@ -1,0 +1,199 @@
+---
+title: "OpenCode"
+description: "AI Sonar API를 사용하도록 OpenCode 구성하기"
+---
+
+## 개요
+
+<Note>
+**유형**: 코딩 도구
+
+**주요 경로**: OpenAI 호환
+
+**지원 수준**: 지원 경로
+</Note>
+
+OpenCode는 터미널에서 실행되는 오픈소스 AI 코딩 도우미입니다. 여러 LLM 제공자를 지원하며, 수백 개의 모델에 접근할 수 있도록 AI Sonar API를 사용하도록 구성할 수 있습니다.
+
+## 설치
+
+<Tabs>
+  <Tab title="설치 스크립트">
+    ```bash
+    curl -fsSL https://opencode.ai/install | bash
+    ```
+  </Tab>
+  <Tab title="Homebrew">
+    ```bash
+    brew install opencode-ai/tap/opencode
+    ```
+
+    또는 커뮤니티 tap을 사용하세요(더 자주 업데이트됨):
+    ```bash
+    brew install anomalyco/tap/opencode
+    ```
+  </Tab>
+  <Tab title="Go">
+    ```bash
+    go install github.com/opencode-ai/opencode@latest
+    ```
+  </Tab>
+</Tabs>
+
+설치 확인:
+
+```bash
+opencode --version
+```
+
+## 구성
+
+### 1단계: 환경 변수 설정
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+```
+
+영구적으로 구성하려면 `~/.bashrc` 또는 `~/.zshrc`에 추가하세요:
+
+```bash
+echo 'export OPENAI_API_KEY="sk-your-api-key"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+### 2단계: OpenCode 구성
+
+OpenCode의 현재 문서는 `opencode.json` 또는 `opencode.jsonc`를 통해 제공자를 구성할 것을 권장합니다. AI Sonar의 경우, 내장된 `openai` 제공자를 덮어쓰는 대신 사용자 지정 제공자를 사용하세요:
+
+```jsonc
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "aisonar": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "AI Sonar",
+      "options": {
+        "baseURL": "https://api.aisonar.dev/v1",
+        "apiKey": "{env:OPENAI_API_KEY}"
+      },
+      "models": {
+        "gpt-5.4": {
+          "name": "GPT-5.4"
+        },
+        "gpt-5-mini": {
+          "name": "GPT-5 Mini"
+        }
+      }
+    }
+  },
+  "model": "aisonar/gpt-5.4"
+}
+```
+
+<Note>
+chat-completions 스타일 호환성을 위해 `@ai-sdk/openai-compatible`를 사용하세요. `/v1/responses` 기반 경로가 특별히 필요한 경우, OpenCode 문서에서는 패키지를 `@ai-sdk/openai`로 변경할 것을 권장합니다.
+</Note>
+
+## 기본 사용법
+
+**대화형 모드 시작:**
+
+```bash
+opencode
+```
+
+**프롬프트와 함께 실행:**
+
+```bash
+opencode "Explain this codebase"
+```
+
+**모델 지정:**
+
+```bash
+opencode --model aisonar/gpt-5.4 "Fix the bugs in main.py"
+```
+
+## 사용 가능한 모델
+
+| 모델 | 적합한 용도 |
+|-------|----------|
+| `gpt-5.4` | 복잡한 작업, 코드 아키텍처 |
+| `gpt-5-mini` | 빠른 수정, 간단한 질의 |
+| `claude-sonnet-4-6` | 코드 리뷰, 문서화 |
+| `claude-opus-4-6` | 복잡한 추론 |
+| `gemini-2.5-flash` | 빠른 응답 |
+| `deepseek-r1` | 알고리즘 설계 |
+
+## 자주 사용하는 명령어
+
+**코드 분석:**
+
+```bash
+opencode "What does this function do?" < src/utils.ts
+```
+
+**코드 생성:**
+
+```bash
+opencode "Create a REST API with Express"
+```
+
+**변경 사항 검토:**
+
+```bash
+git diff | opencode "Review these changes"
+```
+
+**오류 수정:**
+
+```bash
+opencode "Fix the TypeScript errors in this project"
+```
+
+## 대화형 명령어
+
+| 명령어 | 설명 |
+|---------|-------------|
+| `/help` | 사용 가능한 명령어 표시 |
+| `/model <name>` | 다른 모델로 전환 |
+| `/clear` | 대화 기록 지우기 |
+| `/exit` | OpenCode 종료 |
+
+## 문제 해결
+
+<AccordionGroup>
+  <Accordion title="연결 오류">
+    - `options.baseURL`이 `https://api.aisonar.dev/v1`로 설정되어 있는지 확인하세요
+    - 네트워크 연결 상태를 확인하세요
+    - 테스트를 위해 `curl https://api.aisonar.dev/v1/models`를 시도해 보세요
+  </Accordion>
+
+  <Accordion title="인증 실패">
+    - `OPENAI_API_KEY` 환경 변수가 설정되어 있는지 확인하세요
+    - `options.apiKey`가 `{env:OPENAI_API_KEY}` 또는 다른 유효한 secret source를 참조하는지 확인하세요
+    - 키가 `sk-`로 시작하는지 확인하세요
+    - AI Sonar dashboard에서 키가 활성 상태인지 확인하세요
+  </Accordion>
+
+  <Accordion title="모델을 찾을 수 없음">
+    - config의 모델 이름이 정확히 일치하는지 확인하세요
+    - [aisonar.dev/en/models](https://aisonar.dev/models)에서 모델 사용 가능 여부를 확인하세요
+  </Accordion>
+</AccordionGroup>
+
+## 모범 사례
+
+<AccordionGroup>
+  <Accordion title="프로젝트 컨텍스트 사용">
+    코드베이스를 더 잘 이해할 수 있도록 프로젝트 루트에서 OpenCode를 실행하세요.
+  </Accordion>
+
+  <Accordion title="적절한 모델 선택">
+    간단한 작업에는 더 빠른 모델(`gpt-5-mini`)을 사용하고, 복잡한 작업에는 더 강력한 모델(`gpt-5.4`, `claude-sonnet-4-6`)을 사용하세요.
+  </Accordion>
+
+  <Accordion title="생성된 코드 검토">
+    프로젝트에 변경 사항을 적용하기 전에 AI가 생성한 코드를 항상 검토하세요.
+  </Accordion>
+</AccordionGroup>

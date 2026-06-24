@@ -1,0 +1,226 @@
+---
+title: "Liệt kê mô hình"
+openapi: "GET /v1/models"
+description: "Liệt kê tất cả model hiện có"
+---
+
+## Phản hồi
+
+<ResponseField name="object" type="string">
+  Luôn là `list`.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Mảng các đối tượng model.
+
+  Mỗi model bao gồm:
+  - `id` (string): Định danh model
+  - `object` (string): `model`
+  - `created` (integer): Dấu thời gian tạo
+  - `owned_by` (string): Nhà cung cấp model
+  - `aisonar.category` (string): Danh mục model công khai
+  - `aisonar.pricing_unit` (string hoặc `null`): Đơn vị giá công khai khi có
+  - `aisonar.capability_flags` (object hoặc `null`): Tóm tắt năng lực công khai
+  - `aisonar.supported_operations` (array hoặc `null`): Các thao tác phi-chat công khai của model
+  - `aisonar.pricing_provenance` (object hoặc `null`): Metadata nguồn giá công khai
+  - `aisonar.public_contract_summary` (object hoặc `null`): Tóm tắt khám phá phi-chat nhẹ, chỉ gồm `public_operations` và `request_endpoint`
+  - `aisonar.agent_preferences` (object): Chỉ trả về khi có `recommended_for`
+</ResponseField>
+
+<Note>
+`GET /v1/models` được tối ưu cho khám phá. Metadata chỉ có ở trang chi tiết như `capability_flags`, `pricing_provenance`, và `public_contract` đầy đủ nằm ở `GET /v1/models/{model}`.
+</Note>
+
+## Tham số Query
+
+<ParamField query="category" type="string">
+  Bộ lọc danh mục công khai tùy chọn. Hỗ trợ `chat`, `image`, `video`, `audio`, `tts`, `stt`, `music`, `3d`, `embedding`, `rerank`, và `translation`.
+</ParamField>
+
+<ParamField query="recommended_for" type="string">
+  Kịch bản khuyến nghị phi-chat tùy chọn. Hỗ trợ `image`, `video`, `music`, `3d`, `tts`, `stt`, `embedding`, `rerank`, và `translation`.
+</ParamField>
+
+<ParamField query="provider" type="string">
+  Bộ lọc nhà cung cấp tùy chọn như `openai`, `anthropic`, `google`, hoặc `deepseek`.
+</ParamField>
+
+<ParamField query="tag" type="string">
+  Bộ lọc tag model tùy chọn như `chat`, `image`, `video`, `embedding`, hoặc `translation`.
+</ParamField>
+
+<Note>
+Khi có `recommended_for`, `/v1/models` sắp xếp model phi-chat theo snapshot tỷ lệ thành công 24 giờ đã cache mới nhất. Model có `status = "insufficient_samples"` vẫn hiển thị nhưng xếp sau các model đã có điểm.
+</Note>
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/models" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+models = client.models.list()
+
+for model in models.data:
+    print(f"{model.id} ({model.owned_by})")
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const models = await client.models.list();
+
+for (const model of models.data) {
+  console.log(`${model.id} (${model.owned_by})`);
+}
+```
+
+```go Go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "net/http"
+)
+
+func main() {
+    req, _ := http.NewRequest("GET", "https://api.aisonar.dev/v1/models", nil)
+    req.Header.Set("Authorization", "Bearer sk-your-api-key")
+
+    resp, _ := http.DefaultClient.Do(req)
+    defer resp.Body.Close()
+
+    var payload struct {
+        Data []struct {
+            ID      string `json:"id"`
+            OwnedBy string `json:"owned_by"`
+        } `json:"data"`
+    }
+
+    json.NewDecoder(resp.Body).Decode(&payload)
+
+    for _, model := range payload.Data {
+        fmt.Printf("%s (%s)\n", model.ID, model.OwnedBy)
+    }
+}
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/models');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer sk-your-api-key'
+    ]
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+foreach ($data['data'] as $model) {
+    echo "{$model['id']} ({$model['owned_by']})\n";
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "gpt-5.4",
+      "object": "model",
+      "created": 1706000000,
+      "owned_by": "openai"
+    },
+    {
+      "id": "claude-sonnet-4-6",
+      "object": "model",
+      "created": 1706000000,
+      "owned_by": "anthropic"
+    },
+    {
+      "id": "gemini-2.5-flash",
+      "object": "model",
+      "created": 1706000000,
+      "owned_by": "google"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## Lọc theo Nhà Cung Cấp
+
+```python
+# Get all OpenAI models
+openai_models = [m for m in models.data if m.owned_by == "openai"]
+
+# Get all Anthropic models
+anthropic_models = [m for m in models.data if m.owned_by == "anthropic"]
+```
+
+## Danh Mục Model
+
+| Nhà cung cấp | Model ví dụ |
+|----------|----------------|
+| `openai` | gpt-5.4, gpt-5.4-mini, gpt-5-mini, gpt-4o, dall-e-3 |
+| `anthropic` | claude-opus-4-6, claude-sonnet-4-6, claude-haiku-4-5 |
+| `google` | gemini-3-pro-preview, gemini-3-flash-preview, gemini-2.5-pro |
+| `deepseek` | deepseek-r1, deepseek-v3-2 |
+| `xai` | grok-4.1 |
+| `moonshot` | kimi-k2.5 |
+| `minimax` | minimax-m2.1 |
+| `meta` | llama-3.3-70b, llama-3.1-405b |
+
+## Ví dụ Khuyến nghị Agent
+
+```json Response
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "gemini-2.5-flash-image",
+      "object": "model",
+      "created": 1706000000,
+      "owned_by": "google",
+      "aisonar": {
+        "category": "image",
+        "pricing_unit": "per_request",
+        "agent_preferences": {
+          "image": {
+            "preferred_rank": 1,
+            "success_rate_24h": 0.98,
+            "sample_count_24h": 423,
+            "status": "ready",
+            "updated_at": "2026-03-28T12:00:00.000Z",
+            "basis": {
+              "score_source": "clickhouse_24h",
+              "channel_id": null,
+              "physical_model": null
+            }
+          }
+        }
+      }
+    }
+  ]
+}
+```

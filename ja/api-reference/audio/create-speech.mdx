@@ -1,0 +1,123 @@
+---
+title: "音声を作成"
+openapi: "POST /v1/audio/speech"
+description: "入力テキストから音声を生成します"
+---
+
+## リクエストボディ
+
+**同期リクエストのタイムアウト:** この非チャットエンドポイントは、ルーティング先モデルの処理完了を待ちます。大きな入力、長い音声、大きなバッチは一般的な 30s のクライアント既定値を超えることがあるため、HTTP クライアントのタイムアウトは少なくとも `120s` に設定してください。
+
+<ParamField body="model" type="string" default="tts-1">
+  TTS model: `tts-1`（標準）または `tts-1-hd`（高品質）。
+</ParamField>
+
+<ParamField body="input" type="string" required>
+  音声を生成する対象のテキストです。最大 4096 文字。
+</ParamField>
+
+<ParamField body="voice" type="string" required>
+  使用する音声: `alloy`、`ash`、`ballad`、`coral`、`echo`、`fable`、`nova`、`onyx`、`sage`、`shimmer`、`verse`。
+</ParamField>
+
+<ParamField body="response_format" type="string" default="mp3">
+  音声形式: `mp3`、`opus`、`aac`、`flac`、`wav`、`pcm`。
+</ParamField>
+
+<ParamField body="speed" type="number" default="1.0">
+  音声の速度（0.25 ～ 4.0）。
+</ParamField>
+
+## レスポンス
+
+要求された形式の音声ファイルを返します。
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/audio/speech" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "tts-1-hd",
+    "voice": "nova",
+    "input": "Hello, welcome to AI Sonar!"
+  }' \
+  --output speech.mp3
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.audio.speech.create(
+    model="tts-1-hd",
+    voice="nova",
+    input="Hello, welcome to AI Sonar!"
+)
+
+response.stream_to_file("speech.mp3")
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+import fs from 'fs';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.audio.speech.create({
+  model: 'tts-1-hd',
+  voice: 'nova',
+  input: 'Hello, welcome to AI Sonar!'
+});
+
+const buffer = Buffer.from(await response.arrayBuffer());
+fs.writeFileSync('speech.mp3', buffer);
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/audio/speech');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Content-Type: application/json',
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => json_encode([
+        'model' => 'tts-1-hd',
+        'voice' => 'nova',
+        'input' => 'Hello, welcome to AI Sonar!'
+    ])
+]);
+
+$audio = curl_exec($ch);
+curl_close($ch);
+
+file_put_contents('speech.mp3', $audio);
+```
+</RequestExample>
+
+## 音声音声サンプル
+
+| Voice | 説明 |
+|-------|-------------|
+| `alloy` | ニュートラルでバランスの取れた音声 |
+| `ash` | 落ち着いた、抑制の効いた音声 |
+| `ballad` | メロディックで表現力豊かな音声 |
+| `coral` | 温かみがあり、親しみやすい音声 |
+| `echo` | 温かみのある、会話的な音声 |
+| `fable` | 表現力があり、物語調の音声 |
+| `nova` | 親しみやすく、明瞭な音声 |
+| `onyx` | 深みがあり、威厳のある音声 |
+| `sage` | 賢明で、思慮深い音声 |
+| `shimmer` | 柔らかく、穏やかな音声 |
+| `verse` | ダイナミックで汎用性の高い音声 |

@@ -1,0 +1,133 @@
+---
+title: "Dify"
+description: "Tích hợp AI Sonar với Dify bằng nhà cung cấp OpenAI và một URL cơ sở tùy chỉnh"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Tổng quan
+
+Dify hoạt động tốt với AI Sonar thông qua luồng nhà cung cấp mô hình tương thích với OpenAI.
+
+Đối với các phiên bản Dify hiện tại, cách an toàn nhất thường là:
+- chọn nhà cung cấp **OpenAI** tích hợp sẵn
+- đặt API key AI Sonar của bạn
+- đặt URL cơ sở tùy chỉnh là `https://api.aisonar.dev/v1`
+
+<Note>
+Một số bản dựng Dify cũ hơn hiển thị tùy chọn này là `OpenAI-API-compatible` thay vì nhà cung cấp `OpenAI` tích hợp sẵn có trường URL cơ sở tùy chỉnh. Nếu giao diện Dify của bạn trông khác, hãy sử dụng luồng nhà cung cấp tùy chỉnh tương thích OpenAI gần nhất có sẵn trong phiên bản đó.
+</Note>
+
+<Note>
+**Loại**: Framework hoặc nền tảng
+
+**Đường chính**: đường trò chuyện tương thích OpenAI
+
+**Mức hỗ trợ**: Được hỗ trợ nhưng có giới hạn
+</Note>
+
+Đây là một đường tích hợp thiên về chat-completions. Không nên hiểu nó như một cam kết rằng Dify sẽ có cùng hành vi Responses hoặc WebSocket như các tích hợp Codex chuyên dụng.
+
+## Điều kiện tiên quyết
+
+- Tài khoản AI Sonar có quyền truy cập API
+- Dify Cloud hoặc Dify tự lưu trữ
+
+## Các bước cấu hình
+
+### Bước 1: Lấy API Key của bạn
+
+1. Đăng nhập vào [AI Sonar Dashboard](https://console.aisonar.dev)
+2. Mở [API Keys](https://console.aisonar.dev/api)
+3. Tạo hoặc sao chép một API key bắt đầu bằng `sk-`
+
+### Bước 2: Cấu hình nhà cung cấp
+
+<Steps>
+  <Step title="Mở Model Providers">
+    Trong Dify, đi đến **Settings** → **Model Providers**
+  </Step>
+  <Step title="Chọn OpenAI">
+    Mở phần cài đặt nhà cung cấp **OpenAI**. Nếu phiên bản Dify của bạn không cung cấp URL cơ sở tùy chỉnh ở đây, hãy sử dụng tùy chọn nhà cung cấp tùy chỉnh tương thích OpenAI được cung cấp trong phiên bản đó.
+  </Step>
+  <Step title="Nhập cài đặt AI Sonar">
+    Sử dụng các giá trị sau:
+
+    | Trường | Giá trị |
+    |-------|-------|
+    | Khóa API | `sk-your-api-key` |
+    | URL cơ sở API / URL cơ sở tùy chỉnh | `https://api.aisonar.dev/v1` |
+  </Step>
+  <Step title="Thêm mô hình">
+    Thêm các mô hình bạn muốn sử dụng, ví dụ:
+    - `gpt-5.4`
+    - `gpt-5-mini`
+    - `gpt-4o`
+    - `claude-sonnet-4-6`
+    - `claude-opus-4-6`
+    - `gemini-2.5-flash`
+    - `gemini-2.5-pro`
+    - `deepseek-r1`
+  </Step>
+</Steps>
+
+### Bước 3: Kiểm tra kết nối
+
+1. Chọn một mô hình như `gpt-5-mini` hoặc `gpt-4o`
+2. Gửi một prompt kiểm tra
+3. Xác nhận rằng Dify nhận được phản hồi hợp lệ
+
+## Embeddings cho Knowledge Base
+
+Đối với RAG và lập chỉ mục knowledge base, hãy thêm một mô hình embedding như:
+- `text-embedding-3-small`
+- `text-embedding-3-large`
+
+Sau đó đặt mô hình đó làm mô hình embedding mặc định trong knowledge base hoặc phần cài đặt ứng dụng tương ứng.
+
+## Vai trò mô hình được khuyến nghị
+
+| Trường hợp sử dụng | Mô hình đề xuất |
+|----------|------------------|
+| Chat mặc định | `gpt-5.4`, `gpt-5-mini`, `gpt-4o` |
+| Suy luận chuyên sâu | `gpt-5.4`, `claude-opus-4-6`, `deepseek-r1` |
+| Nhanh/rẻ | `gpt-5-mini`, `gemini-2.5-flash` |
+| Embeddings | `text-embedding-3-small`, `text-embedding-3-large` |
+
+## Thực tiễn tốt nhất
+
+<AccordionGroup>
+  <Accordion title="Bắt đầu với nhà cung cấp OpenAI tích hợp sẵn">
+    Trong các phiên bản Dify mới hơn, nhà cung cấp OpenAI tích hợp sẵn với URL cơ sở tùy chỉnh thường là cách thiết lập gọn gàng nhất cho AI Sonar.
+  </Accordion>
+
+  <Accordion title="Sử dụng mô hình rẻ hơn để lặp">
+    Sử dụng `gpt-5-mini` hoặc `gemini-2.5-flash` trong khi lặp, sau đó chỉ chuyển các quy trình nặng hơn sang các mô hình mạnh hơn ở những nơi cần thiết.
+  </Accordion>
+
+  <Accordion title="Hãy nhớ rằng Dify thường định hướng theo chat-completions">
+    Hầu hết các luồng Dify sử dụng hành vi chat tương thích OpenAI. Nếu bạn cần Responses hoặc hành vi WebSocket dành riêng cho Codex, hãy sử dụng các tích hợp Codex chuyên dụng thay vì Dify.
+  </Accordion>
+</AccordionGroup>
+
+## Khắc phục sự cố
+
+<AccordionGroup>
+  <Accordion title="Lỗi kết nối">
+    - Xác minh base URL chính xác là `https://api.aisonar.dev/v1`
+    - Xóa dấu gạch chéo ở cuối nếu Dify tự động nhân đôi chúng
+    - Xác nhận máy chủ Dify có thể truy cập AI Sonar qua internet công cộng
+  </Accordion>
+
+  <Accordion title="401 Unauthorized">
+    - Kiểm tra lại API key
+    - Xác nhận key đang hoạt động trong dashboard AI Sonar
+    - Đảm bảo giá trị được dán vào Dify không chứa khoảng trắng hoặc xuống dòng thừa
+  </Accordion>
+
+  <Accordion title="Không tìm thấy mô hình">
+    - Xác minh chính xác tên mô hình
+    - Thêm lại mục mô hình nếu giao diện nhà cung cấp đã cache một giá trị cũ hơn
+    - Kiểm tra khả dụng mô hình hiện tại trong tài liệu hoặc dashboard của AI Sonar
+  </Accordion>
+</AccordionGroup>

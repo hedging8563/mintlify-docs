@@ -1,0 +1,206 @@
+---
+title: "Anthropic SDK"
+description: "Claude-native Messages API 호환성을 위해 Anthropic SDK와 함께 AI Sonar를 사용하세요"
+---
+
+## 개요
+
+AI Sonar는 네이티브 Anthropic **Messages API** 경로를 지원하므로, Claude 모델에 대해 공식 Anthropic SDK를 직접 사용할 수 있습니다.
+
+<Note>
+Anthropic SDK의 경우 base URL로 `https://api.aisonar.dev`를 사용하고, `/v1`를 직접 추가하지 마세요.
+</Note>
+
+<Note>
+**유형**: 네이티브 SDK
+
+**주요 경로**: Anthropic-native
+
+**지원 수준**: 강한 네이티브 경로
+</Note>
+
+문서화된 SDK 경로 가운데서도 Claude-native 기능에 대해 특히 잘 지원되는 AI Sonar 경로 중 하나입니다.
+
+## 설치
+
+<CodeGroup>
+
+```bash Python
+pip install anthropic
+```
+
+```bash JavaScript
+npm install @anthropic-ai/sdk
+```
+
+</CodeGroup>
+
+## Client 구성
+
+<CodeGroup>
+
+```python Python
+from anthropic import Anthropic
+
+client = Anthropic(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev",
+)
+```
+
+```javascript JavaScript
+import Anthropic from '@anthropic-ai/sdk';
+
+const client = new Anthropic({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev',
+});
+```
+
+</CodeGroup>
+
+## 기본 사용법
+
+```python
+message = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    messages=[
+        {"role": "user", "content": "Explain AI Sonar in one sentence."}
+    ]
+)
+
+print(message.content[0].text)
+```
+
+## 스트리밍
+
+```python
+with client.messages.stream(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Write a short poem about coding."}]
+) as stream:
+    for text in stream.text_stream:
+        print(text, end="", flush=True)
+```
+
+## 비전
+
+```python
+import base64
+
+message = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    messages=[{
+        "role": "user",
+        "content": [
+            {"type": "text", "text": "What's in this image?"},
+            {
+                "type": "image",
+                "source": {
+                    "type": "url",
+                    "url": "https://example.com/image.jpg"
+                }
+            }
+        ]
+    }]
+)
+
+with open("image.png", "rb") as f:
+    image_data = base64.b64encode(f.read()).decode()
+
+message = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    messages=[{
+        "role": "user",
+        "content": [
+            {"type": "text", "text": "Describe this image"},
+            {
+                "type": "image",
+                "source": {
+                    "type": "base64",
+                    "media_type": "image/png",
+                    "data": image_data
+                }
+            }
+        ]
+    }]
+)
+```
+
+## Tool 사용
+
+```python
+message = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    tools=[{
+        "name": "get_weather",
+        "description": "Get the weather for a location",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "location": {"type": "string"}
+            },
+            "required": ["location"]
+        }
+    }],
+    messages=[{"role": "user", "content": "What's the weather in Tokyo?"}]
+)
+
+for block in message.content:
+    if block.type == "tool_use":
+        print(block.name)
+        print(block.input)
+```
+
+## 확장된 사고
+
+```python
+message = client.messages.create(
+    model="claude-opus-4-6",
+    max_tokens=16000,
+    thinking={
+        "type": "enabled",
+        "budget_tokens": 10000
+    },
+    messages=[{"role": "user", "content": "Solve this complex problem step by step."}]
+)
+
+for block in message.content:
+    if block.type == "thinking":
+        print(block.thinking)
+    elif block.type == "text":
+        print(block.text)
+```
+
+## 권장 Claude 모델
+
+| 모델 | 가장 적합한 용도 |
+|-------|----------|
+| `claude-opus-4-6` | 심층 추론, 장문 분석 |
+| `claude-sonnet-4-6` | 코딩, 일반적인 assistant 작업 |
+| `claude-haiku-4-5` | 빠르고 가벼운 응답 |
+
+## 문제 해결
+
+<AccordionGroup>
+  <Accordion title="잘못된 Base URL">
+    - `https://api.aisonar.dev`를 사용하세요
+    - Anthropic SDK를 구성할 때 `/v1`를 수동으로 추가하지 마세요
+  </Accordion>
+
+  <Accordion title="인증 실패">
+    - AI Sonar API 키가 `sk-`로 시작하는지 확인하세요
+    - AI Sonar dashboard에서 키가 활성 상태인지 확인하세요
+    - 커스텀 헤더를 수동으로 추가하는 대신 Anthropic SDK가 auth header를 관리하도록 하세요
+  </Accordion>
+
+  <Accordion title="모델을 찾을 수 없음">
+    - Claude 모델 이름이 정확한지 확인하세요
+    - AI Sonar 모델 카탈로그에서 현재 사용 가능 여부를 확인하세요
+  </Accordion>
+</AccordionGroup>

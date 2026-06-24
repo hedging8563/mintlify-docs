@@ -1,0 +1,229 @@
+---
+title: 'Referensi API'
+description: 'Referensi lengkap untuk AI Sonar API'
+---
+
+## Gambaran Umum
+
+AI Sonar adalah **native-first dan kompatibel dengan OpenAI**. Gunakan rute native penyedia seperti `POST /v1/messages` untuk Anthropic dan `/v1beta/models/...:generateContent` untuk Gemini ketika Anda memerlukan perilaku native, dan gunakan endpoint `/v1` yang kompatibel dengan OpenAI ketika Anda memigrasikan SDK atau alat bergaya OpenAI yang sudah ada. `POST /v1/responses` tetap menjadi jalur opsional tingkat lanjut untuk perilaku khusus Responses.
+
+## Base URL
+
+```
+https://api.aisonar.dev
+```
+
+## Autentikasi
+
+Semua endpoint API memerlukan autentikasi menggunakan Bearer token:
+
+```bash
+Authorization: Bearer sk-your-api-key
+```
+
+Dapatkan API key Anda dari [Dashboard](https://console.aisonar.dev).
+
+<Warning>
+**Tentang Interactive Playground**: Playground di situs dokumentasi ini hanya untuk tujuan demonstrasi dan tidak mendukung penginputan API key. Untuk menguji API, silakan gunakan:
+- **cURL** - Salin contoh perintah dan ganti `sk-your-api-key` dengan key asli Anda
+- **Postman** - Impor [OpenAPI spec](/openapi.json) kami
+- **SDK** - Gunakan OpenAI/Anthropic SDK dengan base URL kami
+</Warning>
+
+## Endpoint yang Didukung
+
+### Chat & Pembuatan Teks
+
+| Endpoint | Metode | Deskripsi |
+|----------|--------|-------------|
+| `/v1/chat/completions` | POST | Chat completions yang kompatibel dengan OpenAI |
+| `/v1/messages` | POST | Messages API yang kompatibel dengan Anthropic |
+| `/v1/responses` | POST | OpenAI Responses API |
+
+### Embeddings & Rerank
+
+| Endpoint | Metode | Deskripsi |
+|----------|--------|-------------|
+| `/v1/embeddings` | POST | Buat text embeddings |
+| `/v1/rerank` | POST | Rerank dokumen |
+
+### Gambar
+
+| Endpoint | Metode | Deskripsi |
+|----------|--------|-------------|
+| `/v1/images/generations` | POST | Hasilkan gambar dari teks |
+| `/v1/images/edits` | POST | Edit gambar |
+| `/v1/images/generations/{id}` | GET | Path status tugas gambar untuk respons gambar berbasis tugas |
+
+<Info>
+Beberapa model gambar mungkin mengembalikan hasil secara inline, beberapa mungkin mengembalikan respons berbasis tugas, dan beberapa mungkin berperilaku keduanya tergantung pada jalur provider yang diarahkan. Jika respons pembuatan menyertakan `poll_url`, ikuti URL tersebut sepenuhnya.
+</Info>
+
+### Audio
+
+| Endpoint | Metode | Deskripsi |
+|----------|--------|-------------|
+| `/v1/audio/speech` | POST | Teks-ke-suara (TTS) |
+| `/v1/audio/transcriptions` | POST | Suara-ke-teks (STT) |
+
+### Realtime
+
+| Endpoint | Metode | Deskripsi |
+|----------|--------|-------------|
+| `/v1/realtime?model={model}` | WS | Sesi WebSocket realtime |
+
+<Info>
+Gunakan `/v1/realtime` untuk permintaan upgrade WebSocket. `GET /v1/realtime` biasa mengembalikan metadata endpoint untuk client yang tidak dapat memeriksa route WebSocket secara langsung.
+</Info>
+
+### Video
+
+| Endpoint | Metode | Deskripsi |
+|----------|--------|-------------|
+| `/v1/videos/generations` | POST | Buat tugas pembuatan video |
+| `/v1/tasks/{id}` | GET | Dapatkan status tugas asinkron untuk pekerjaan video |
+| `/v1/videos/generations/{id}` | GET | Path status tugas video yang kompatibel dengan versi lama (legacy) |
+
+<Info>
+Untuk klien baru, lebih disarankan menggunakan `/v1/tasks/{id}` dan ikuti `poll_url` yang dikembalikan oleh respons pembuatan. Gunakan `/v1/videos/generations/{id}` hanya untuk kompatibilitas mundur (backward compatibility).
+</Info>
+
+### Tugas Asinkron (Async Tasks)
+
+| Endpoint | Metode | Deskripsi |
+|----------|--------|-------------|
+| `/v1/tasks/{id}` | GET | Endpoint status tugas asinkron terpadu. Direkomendasikan saat mengikuti `poll_url` yang dikembalikan |
+
+<Info>
+Endpoint ini tidak terbatas pada video, musik, dan 3D. Beberapa tugas gambar mungkin juga menggunakan `/v1/tasks/{id}` sebagai path polling kanonikal.
+</Info>
+
+### Musik
+
+| Endpoint | Metode | Deskripsi |
+|----------|--------|-------------|
+| `/v1/music/generations` | POST | Buat tugas pembuatan musik |
+| `/v1/music/generations/{id}` | GET | Path status khusus musik |
+
+<Info>
+Untuk klien baru, utamakan `poll_url` yang dikembalikan. Jika Anda memerlukan endpoint status tugas yang tetap, gunakan `/v1/tasks/{id}`; simpan `/v1/music/generations/{id}` untuk jalur kompatibilitas khusus musik.
+</Info>
+
+### Pembuatan 3D
+
+| Endpoint | Metode | Deskripsi |
+|----------|--------|-------------|
+| `/v1/3d/generations` | POST | Buat tugas pembuatan model 3D |
+| `/v1/3d/generations/{id}` | GET | Path status khusus 3D |
+
+<Info>
+Untuk klien baru, utamakan `poll_url` yang dikembalikan. Jika Anda memerlukan endpoint status tugas yang tetap, gunakan `/v1/tasks/{id}`; simpan `/v1/3d/generations/{id}` untuk jalur kompatibilitas khusus 3D.
+</Info>
+
+### Model
+
+| Endpoint | Metode | Deskripsi |
+|----------|--------|-------------|
+| `/v1/models` | GET | Daftar semua model yang tersedia |
+| `/v1/models/{model}` | GET | Dapatkan info model tertentu |
+
+### Gemini (v1beta)
+
+Dukungan format native Google Gemini API:
+
+| Endpoint | Metode | Deskripsi |
+|----------|--------|-------------|
+| `/v1beta/models/{model}:generateContent` | POST | Hasilkan konten (format Gemini) |
+| `/v1beta/models/{model}:streamGenerateContent` | POST | Stream hasilkan konten (format Gemini) |
+
+<Note>
+Endpoint Gemini mendukung autentikasi parameter query `?key=` selain Bearer token standar.
+</Note>
+
+## Format Respons
+
+Semua respons mengikuti format yang konsisten:
+
+### Respons Berhasil
+
+```json
+{
+  "id": "chatcmpl-abc123",
+  "object": "chat.completion",
+  "created": 1234567890,
+  "model": "gpt-4o",
+  "choices": [...],
+  "usage": {
+    "prompt_tokens": 10,
+    "completion_tokens": 20,
+    "total_tokens": 30
+  }
+}
+```
+
+### Transparansi Routing
+
+Semua respons menyertakan field `_routing` dengan informasi channel:
+
+```json
+{
+  "id": "chatcmpl-abc123",
+  ...,
+  "_routing": {
+    "channel": {
+      "id": "ch_xxx",
+      "name": "channel-name",
+      "provider": "openai",
+      "channelType": "PLATFORM"
+    },
+    "cached": false,
+    "retryCount": 0
+  }
+}
+```
+
+| Bidang | Deskripsi |
+|-------|-------------|
+| `channel.id` | Identifier channel yang digunakan |
+| `channel.provider` | Provider upstream (openai, anthropic, dll.) |
+| `channel.channelType` | `PLATFORM` (AI Sonar) atau `PRIVATE` (BYOK) |
+| `cached` | Apakah respons dilayani dari cache |
+| `retryCount` | Jumlah upaya percobaan ulang (jika ada) |
+
+### Respons Error
+
+```json
+{
+  "error": {
+    "message": "Invalid API key provided",
+    "type": "invalid_api_key",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+## Rate Limit
+
+Rate limit berbasis role dan dapat dikonfigurasi oleh administrator. Nilai default:
+
+| Role | Permintaan/menit |
+|------|-------------|
+| User | 60 |
+| Partner | 300 |
+| VIP | 1,000 |
+
+<Note>
+Hubungi dukungan untuk rate limit kustom. Nilai tepatnya dapat bervariasi tergantung konfigurasi akun.
+</Note>
+
+Ketika rate limit terlampaui, API mengembalikan kode status `429` dengan header `Retry-After` yang menunjukkan berapa lama harus menunggu.
+
+## Spesifikasi OpenAPI
+
+<Card
+  title="Spesifikasi OpenAPI"
+  icon="file-code"
+  href="/openapi.json"
+>
+  Unduh spesifikasi lengkap OpenAPI 3.0
+</Card>

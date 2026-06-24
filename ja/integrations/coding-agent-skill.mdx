@@ -1,0 +1,261 @@
+---
+title: "✨ AI Sonar API 統合スキル"
+description: "任意のコーディングエージェント向けに共有 AI Sonar API 統合スキルをインストールします。Agent-First のエラーリカバリに対応しています。"
+---
+
+<Note>
+このスキルは、必要なことを説明するだけで、コーディングエージェントに AI Sonar の **数百のAI API** を統合する方法を教えます。これは 1 つの共有 Agent-First スキルとしてパッケージ化されており、スキルまたは rules ファイルをサポートする任意のコーディングエージェントで動作します。
+
+この API は **[Agent-First](/guides/agent-first-api)** です。エージェントがモデル名を誤って推測した場合でも、エラーレスポンスが修正方法を正確に伝えます。
+</Note>
+
+<Note>
+このページは再利用可能なスキルのパッケージ層を説明するものであり、プロトコル互換性の説明ページではありません。エンドポイント、SDK、クライアントの設定が必要な場合は、それぞれの専用統合ページを参照してください。
+</Note>
+
+<Note>
+**種類**: 共有スキル
+
+**主要パス**: 再利用可能な共有スキルを通じた API 利用
+
+**サポートレベル**: ベストエフォート
+</Note>
+
+
+## 仕組み
+
+1. **必要なことを説明します** — 「Python プロジェクトで GPT-4 を使いたい」
+2. **エージェントが API を呼び出します** — モデル名やエンドポイントを推測することがあります
+3. **何か問題が発生した場合** — API は構造化されたヒント（`did_you_mean`, `suggestions`, `retry_after`）を返します
+4. **エージェントが自己修正します** — ヒントを読み取り、正しいパラメータで再試行します
+5. **動作するコードを取得できます** — 通常は 1 回目または 2 回目の試行で完了します
+
+## インストール
+
+<Note>
+標準の非対話インストールコマンドを使用します:
+
+```bash
+npx skills add https://github.com/hedging8563/aisonar-skills --skill aisonar-api-integration -y
+```
+
+これにより、AI Sonar スキルリポジトリから共有 `aisonar-api-integration` スキルがインストールされます。
+
+お使いのツールが installer をサポートしていない場合は、リポジトリ内の `skills/aisonar-api-integration/` フォルダをツールの共有スキルまたは rules ディレクトリにコピーしてください。
+</Note>
+
+### インストールの確認
+
+コーディングエージェントに次のように尋ねてください:
+```
+利用可能な skills は何ですか？
+```
+
+`aisonar-api-integration` が表示されれば、インストールは成功しています。
+
+## API Key の取得
+
+<Steps>
+  <Step title="AI Sonar にアクセス">
+    [aisonar.dev](https://aisonar.dev) に移動します
+  </Step>
+  <Step title="サインイン">
+    アカウントを作成するか、ログインします
+  </Step>
+  <Step title="API Key を取得">
+    [Dashboard → API Keys](https://console.aisonar.dev/api) に移動し、新しい key を作成します
+  </Step>
+  <Step title="Key をコピー">
+    key は `sk-...` で始まります — 安全に保存してください
+  </Step>
+</Steps>
+
+<Tip>
+API Key をプロンプトやソースコードに貼り付ける必要はありません。このスキルは使用する環境変数を確認し、その環境変数から key を読むコードを生成するべきです。
+</Tip>
+
+## 例
+
+### Chat Completion
+
+**入力例:**
+```
+Python プロジェクトで GPT-4 を使いたい
+```
+
+**エージェントが生成する内容:**
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["TOKENLAB_API_KEY"],
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+
+print(response.choices[0].message.content)
+```
+
+実行方法：
+
+```bash
+export TOKENLAB_API_KEY="sk-your-api-key"
+python app.py
+```
+
+エージェントが誤ったモデル名（例: `gpt5`）を推測した場合、API は次を返します:
+```json
+{
+  "error": {
+    "code": "model_not_found",
+    "did_you_mean": "gpt-5.4",
+    "suggestions": [{"id": "gpt-5.4"}, {"id": "gpt-5-mini"}],
+    "hint": "Did you mean 'gpt-5.4'? Use GET https://api.aisonar.dev/v1/models to list all available models."
+  }
+}
+```
+
+エージェントは `did_you_mean` を読み取り、モデル名を修正して再試行します。これらはすべて自動で行われます。
+
+### 画像生成
+
+**入力例:**
+```
+Generate images with Flux in Node.js
+```
+
+エージェントは image API を呼び出し、エラーを処理し、ダウンロードと保存ロジックを含む完全なコードを生成します。
+
+### 音声認識
+
+**入力例:**
+```
+Integrate speech-to-text in my app
+```
+
+エージェントは正しい `/v1/audio/transcriptions` エンドポイントと音声ファイル処理を含むコードを生成します。
+
+## Agent-First エラーリカバリ
+
+すべてのエラーレスポンスには、任意のコーディングエージェントが解析できる構造化されたヒントが含まれます。詳細は [完全な Agent-First API リファレンス](/guides/agent-first-api) を参照してください。
+
+| エラー | API が返す内容 | エージェントが行うこと |
+|-------|---------------------|---------------------|
+| 誤ったモデル名 | `did_you_mean` + `suggestions` | 自動修正して再試行 |
+| 残高不足 | `balance_usd` + より安価な `suggestions` | 手頃なモデルに切り替え |
+| モデル利用不可 | `alternatives` + `retry_after` | 利用可能なモデルに切り替え |
+| レート制限 | `retry_after`（正確な秒数） | 待機して再試行 |
+| コンテキストが長すぎる | より大きな model を含む `suggestions` | より大きなコンテキストの model に切り替え |
+| 非チャットリクエストの契約不一致 | `supported_operations`, `supported_parameters`, `request_endpoint`, `recommended_request` | 公開モデル契約からリクエストを再構築 |
+
+### ネイティブエンドポイント最適化
+
+Claude または Gemini モデルで `/v1/chat/completions` を呼び出すと、API は最適化ヘッダーを返します:
+
+
+
+これらの header は強制的な自動切り替えではなく、ルーティングのヒントとして扱ってください。Claude ネイティブ呼び出しは `/v1/messages` を使います。Gemini ネイティブ呼び出しは the native endpoint hint header が示す endpoint、通常は `/v1beta/gemini` に従います。
+
+### Model Discovery
+
+ドキュメントを検索する必要はありません:
+
+```bash
+# 機械可読 API 概要
+curl https://api.aisonar.dev/llms.txt
+
+# List models by category
+curl "https://api.aisonar.dev/v1/models?category=chat" -H "Authorization: Bearer sk-KEY"
+curl "https://api.aisonar.dev/v1/models?category=image" -H "Authorization: Bearer sk-KEY"
+
+# 非チャット用途の推奨ショートリスト
+curl "https://api.aisonar.dev/v1/models?recommended_for=image" -H "Authorization: Bearer sk-KEY"
+curl "https://api.aisonar.dev/v1/models?recommended_for=translation" -H "Authorization: Bearer sk-KEY"
+
+# 非チャットリクエストを再試行する前に、単一モデルの公開契約を読む
+curl "https://api.aisonar.dev/v1/models/gpt-image-2" -H "Authorization: Bearer sk-KEY"
+
+# 能力でフィルタ
+curl "https://api.aisonar.dev/v1/models?tag=coding" -H "Authorization: Bearer sk-KEY"
+```
+
+## サポートされる機能
+
+| 種類 | 例 |
+|------|----------|
+| チャット | GPT-5.4, Claude, Gemini, DeepSeek |
+| 画像生成 | GPT Image, Flux, Stable Diffusion, Gemini 画像モデル |
+| 音楽生成 | Suno |
+| 3D モデル | Tripo3D |
+| 音声 | テキスト読み上げ、音声認識 |
+| 埋め込み | text-embedding-3 |
+| 再ランキング | bce-reranker, qwen3-rerank |
+
+## ベストプラクティス
+
+<CardGroup cols={2}>
+  <Card title="API Key のセキュリティ" icon="shield">
+    環境変数を使用してください。key を git にコミットしたり、frontend コード内で公開したりしないでください。
+  </Card>
+  <Card title="コスト管理" icon="wallet">
+    [dashboard](https://console.aisonar.dev) で使用制限を設定してください。コストをプログラムで監視するには `error.balance_usd` を確認します。
+  </Card>
+  <Card title="直接的に伝える" icon="bullseye">
+    「AI Sonar には image API がありますか？」ではなく、「Python で画像を生成したい」と伝えてください。
+  </Card>
+  <Card title="シナリオを説明する" icon="message">
+    「GPT-4 を使う」よりも、「GPT-4 で chatbot を構築しています」の方がエージェントに多くのコンテキストを与えられます。
+  </Card>
+</CardGroup>
+
+## FAQ
+
+<AccordionGroup>
+  <Accordion title="スキルが自動的にトリガーされませんか？">
+    リクエスト内で「AI Sonar」または「AI Sonar API」と明示してみてください:
+    ```
+    AI Sonar を使って自分のプロジェクトに GPT-4 を統合したい
+    ```
+  </Accordion>
+
+  <Accordion title="API はどのようにしてエージェントが正しい model を見つけるのを支援しますか？">
+    AI Sonar の [Agent-First API](/guides/agent-first-api) は構造化されたエラーヒントを返します。エージェントが誤った model 名を推測した場合、エラーには正しい名前を含む `did_you_mean` と、代替候補を含む `suggestions` が含まれます。エージェントはこれらを読み取り、次の試行で自動修正します。
+  </Accordion>
+
+  <Accordion title="どのコーディングエージェントがサポートされていますか？">
+    共有 skill または rules ディレクトリをサポートする任意のコーディングエージェントです。installer がサポートされている場合、`npx skills add` は検出された場所に共有 `aisonar-api-integration` スキルを自動的に配置します。
+  </Accordion>
+
+  <Accordion title="スキルを更新するには？">
+    installer を再実行してください:
+    ```bash
+    npx skills add https://github.com/hedging8563/aisonar-skills --skill aisonar-api-integration -y
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## リソース
+
+<CardGroup cols={2}>
+  <Card title="Agent-First API" icon="robot" href="/ja/guides/agent-first-api">
+    構造化されたエラーヒントの完全リファレンス
+  </Card>
+  <Card title="API ドキュメント" icon="book" href="https://docs.aisonar.dev">
+    完全な API リファレンス
+  </Card>
+  <Card title="モデル" icon="sparkles" href="https://aisonar.dev/models">
+    利用可能な数百のモデルを確認
+  </Card>
+  <Card title="llms.txt" icon="file-lines" href="https://api.aisonar.dev/llms.txt">
+    AI エージェント向けの機械可読な API 概要
+  </Card>
+</CardGroup>
+
+<Info>
+**質問がありますか？** [GitHub Issues](https://github.com/hedging8563/aisonar-skills/issues) を確認するか、[support@aisonar.dev](mailto:support@aisonar.dev) までお問い合わせください
+</Info>

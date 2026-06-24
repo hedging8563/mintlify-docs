@@ -1,0 +1,39 @@
+---
+title: "ファイルコンテンツの取得"
+openapi: "GET /v1/files/{file_id}/content"
+description: "アップロード済みファイルの元のコンテンツをダウンロードします。"
+---
+
+## 概要
+
+このエンドポイントは主に、AI Sonar の OpenAI 互換 Batch API のファイル内容取得を対象としています。
+
+リクエストが Anthropic Files 互換モードを選ぶ場合、同じルートはバインドされたワークスペースに保存された元のファイル内容もプロキシできます。
+
+## 注意事項
+
+- バッチ入力ファイルは`purpose=batch`を使用する必要があります。
+- 生成された出力ファイルに絞り込むには `purpose=batch_output` を使用してください。
+- `completion_window`は現在`24h`です。
+- 出力の順序は保証されていません。常に`custom_id`で一致させてください。
+- バッチアイテム内でのストリーミングはサポートされていません。
+
+## 例
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/files/file_abc123/content" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  --output batch-output.jsonl
+```
+</RequestExample>
+
+## リクエスト / レスポンス
+
+正確なスキーマについては、上記のインタラクティブなOpenAPIパネルを使用してください。
+
+## 操作のヒント
+
+- 冪等性のある下流の調整には`custom_id`を使用してください。
+- ワーカーがバッチを最終化した後にのみ`output_file_id`と`error_file_id`を期待してください。
+- バッチの価格は、`isBatchRequest=true`の割引ルールが適用されるため、同期価格とは異なる場合があります。

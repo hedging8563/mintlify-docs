@@ -1,0 +1,201 @@
+---
+title: "OpenCode"
+description: "Configure o OpenCode para usar a API do AI Sonar"
+---
+
+## Visão geral
+
+
+
+<Note>
+**Tipo**: Ferramenta de código
+
+**Caminho principal**: compatível com OpenAI
+
+**Nível de suporte**: Caminho compatível
+</Note>
+
+OpenCode é um assistente de programação com AI de código aberto que roda no seu terminal. Ele oferece suporte a vários provedores de LLM e pode ser configurado para usar a API do AI Sonar para acessar centenas de modelos.
+
+## Instalação
+
+<Tabs>
+  <Tab title="Script de instalação">
+    ```bash
+    curl -fsSL https://opencode.ai/install | bash
+    ```
+  </Tab>
+  <Tab title="Homebrew">
+    ```bash
+    brew install opencode-ai/tap/opencode
+    ```
+
+    Ou use o tap da comunidade (atualizações mais frequentes):
+    ```bash
+    brew install anomalyco/tap/opencode
+    ```
+  </Tab>
+  <Tab title="Go">
+    ```bash
+    go install github.com/opencode-ai/opencode@latest
+    ```
+  </Tab>
+</Tabs>
+
+Verifique a instalação:
+
+```bash
+opencode --version
+```
+
+## Configuração
+
+### Etapa 1: Definir variáveis de ambiente
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+```
+
+Para configuração permanente, adicione a `~/.bashrc` ou `~/.zshrc`:
+
+```bash
+echo 'export OPENAI_API_KEY="sk-your-api-key"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+### Etapa 2: Configurar o OpenCode
+
+A documentação atual do OpenCode recomenda configurar provedores por meio de `opencode.json` ou `opencode.jsonc`. Para o AI Sonar, use um provedor personalizado em vez de sobrescrever o provedor `openai` integrado:
+
+```jsonc
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "aisonar": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "AI Sonar",
+      "options": {
+        "baseURL": "https://api.aisonar.dev/v1",
+        "apiKey": "{env:OPENAI_API_KEY}"
+      },
+      "models": {
+        "gpt-5.4": {
+          "name": "GPT-5.4"
+        },
+        "gpt-5-mini": {
+          "name": "GPT-5 Mini"
+        }
+      }
+    }
+  },
+  "model": "aisonar/gpt-5.4"
+}
+```
+
+<Note>
+Use `@ai-sdk/openai-compatible` para compatibilidade no estilo chat-completions. Se você precisar especificamente de um caminho de provedor baseado em `/v1/responses`, a documentação de provedores do OpenCode recomenda trocar o pacote para `@ai-sdk/openai`.
+</Note>
+
+## Uso básico
+
+**Iniciar o modo interativo:**
+
+```bash
+opencode
+```
+
+**Executar com um prompt:**
+
+```bash
+opencode "Explain this codebase"
+```
+
+**Especificar modelo:**
+
+```bash
+opencode --model aisonar/gpt-5.4 "Fix the bugs in main.py"
+```
+
+## Modelos disponíveis
+
+| Modelo | Melhor para |
+|-------|-------------|
+| `gpt-5.4` | Tarefas complexas, arquitetura de código |
+| `gpt-5-mini` | Correções rápidas, consultas simples |
+| `claude-sonnet-4-6` | Revisão de código, documentação |
+| `claude-opus-4-6` | Raciocínio complexo |
+| `gemini-2.5-flash` | Respostas rápidas |
+| `deepseek-r1` | Design de algoritmos |
+
+## Comandos comuns
+
+**Analisar código:**
+
+```bash
+opencode "What does this function do?" < src/utils.ts
+```
+
+**Gerar código:**
+
+```bash
+opencode "Create a REST API with Express"
+```
+
+**Revisar alterações:**
+
+```bash
+git diff | opencode "Review these changes"
+```
+
+**Corrigir erros:**
+
+```bash
+opencode "Fix the TypeScript errors in this project"
+```
+
+## Comandos interativos
+
+| Command | Descrição |
+|---------|-----------|
+| `/help` | Mostrar comandos disponíveis |
+| `/model <name>` | Alternar para um modelo diferente |
+| `/clear` | Limpar o histórico da conversa |
+| `/exit` | Sair do OpenCode |
+
+## Solução de problemas
+
+<AccordionGroup>
+  <Accordion title="Erro de conexão">
+    - Verifique se `options.baseURL` está definido como `https://api.aisonar.dev/v1`
+    - Verifique a conectividade de rede
+    - Tente `curl https://api.aisonar.dev/v1/models` para testar
+  </Accordion>
+
+  <Accordion title="Falha na autenticação">
+    - Verifique se a variável de ambiente `OPENAI_API_KEY` está definida
+    - Verifique se `options.apiKey` referencia `{env:OPENAI_API_KEY}` ou outra fonte de segredo válida
+    - Verifique se a chave começa com `sk-`
+    - Certifique-se de que a chave está ativa no dashboard do AI Sonar
+  </Accordion>
+
+  <Accordion title="Modelo não encontrado">
+    - Verifique se o nome do modelo na configuração corresponde exatamente
+    - Verifique a disponibilidade do modelo em [aisonar.dev/en/models](https://aisonar.dev/models)
+  </Accordion>
+</AccordionGroup>
+
+## Boas práticas
+
+<AccordionGroup>
+  <Accordion title="Use o contexto do projeto">
+    Execute o OpenCode a partir da raiz do seu projeto para uma melhor compreensão da sua base de código.
+  </Accordion>
+
+  <Accordion title="Escolha modelos apropriados">
+    Use modelos mais rápidos (`gpt-5-mini`) para tarefas simples e modelos mais robustos (`gpt-5.4`, `claude-sonnet-4-6`) para tarefas complexas.
+  </Accordion>
+
+  <Accordion title="Revise o código gerado">
+    Sempre revise o código gerado por AI antes de aplicar alterações ao seu projeto.
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,74 @@
+---
+title: "작업 취소"
+openapi: "DELETE /v1/tasks/{id}"
+description: "공급자와 모델이 지원하는 경우 대기 중인 비동기 작업을 취소합니다"
+---
+
+## 개요
+
+`DELETE /v1/tasks/{id}`를 사용해 아직 실행을 시작하지 않은 비동기 작업을 취소합니다. create 응답의 작업 ID 또는 `poll_url`에 포함된 동일한 ID를 사용하세요.
+
+## 지원 작업
+
+현재 취소는 대기 중인 Volcengine Seedance 동영상 작업에만 지원되며 모델은 `seedance-1.5-pro`, `seedance-2.0`, `seedance-2.0-fast`입니다. 이미 `processing`/running 상태인 작업은 취소할 수 없습니다. 완료, 실패, 만료 또는 미지원 작업은 상태와 과금 정산을 위해 계속 조회 가능하게 유지하며 업스트림 레코드를 삭제하지 않습니다.
+
+## 경로 매개변수
+
+<ParamField path="id" type="string" required>
+  create 요청에서 반환되었거나 `poll_url`에 포함된 비동기 작업 ID입니다.
+</ParamField>
+
+## 응답
+
+<ResponseField name="id" type="string">
+  표준 비동기 작업 식별자입니다.
+</ResponseField>
+
+<ResponseField name="task_id" type="string">
+  비동기 작업 식별자 별칭입니다.
+</ResponseField>
+
+<ResponseField name="poll_url" type="string">
+  작업의 권장 폴링 URL입니다. 취소 후에도 유효합니다.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  작업 상태입니다. 성공적으로 취소된 작업은 기존 상태 값과의 호환성을 위해 `failed`로 반환되고 `cancelled: true`가 포함됩니다.
+</ResponseField>
+
+<ResponseField name="cancelled" type="boolean">
+  작업이 실행 전에 취소되면 `true`입니다.
+</ResponseField>
+
+<ResponseField name="cancellation_status" type="string">
+  취소 마커입니다. 취소 성공 시 값은 `cancelled`입니다.
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  취소 사유 또는 작업 실패 메시지입니다.
+</ResponseField>
+
+## 오류 동작
+
+`400 unsupported_task_cancel`은 작업 유형, 공급자 또는 모델이 취소를 지원하지 않음을 의미합니다. `409 task_not_cancellable`은 작업이 이미 처리 중이거나 종료 상태이거나 더 이상 취소할 수 없음을 의미합니다. `403`은 API key가 해당 작업에 접근할 수 없음을 의미합니다.
+
+## 예시
+
+<RequestExample>
+```bash cURL
+curl -X DELETE "https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+```json Response
+{
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "failed",
+  "cancelled": true,
+  "cancellation_status": "cancelled",
+  "error": "Task cancelled before execution"
+}
+```

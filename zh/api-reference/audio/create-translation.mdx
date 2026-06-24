@@ -1,0 +1,164 @@
+---
+title: "创建翻译"
+openapi: "POST /v1/audio/translations"
+description: "将音频翻译为英文文本"
+---
+
+## 概述
+
+将任何受支持语言的音频翻译为英文文本。与转录不同，此端点无论输入语言是什么，始终输出英文文本。
+
+## 请求体
+
+**同步请求超时：** 这个非聊天端点会等待路由到的模型完成处理。大输入、长音频或大批量请求可能超过常见的 30s 客户端默认超时，因此请将 HTTP 客户端超时设置为至少 `120s`。
+
+<ParamField body="file" type="file" required>
+  要翻译的音频文件。支持的格式：`flac`、`mp3`、`mp4`、`mpeg`、`mpga`、`m4a`、`ogg`、`wav`、`webm`。最大文件大小为 25 MB。
+</ParamField>
+
+<ParamField body="model" type="string" default="whisper-1">
+  要使用的模型。当前仅支持 `whisper-1`。
+</ParamField>
+
+<ParamField body="prompt" type="string">
+  用于引导模型风格或续写上一段内容的可选文本。应使用英文。
+</ParamField>
+
+<ParamField body="response_format" type="string" default="json">
+  输出格式。可选值：`json`、`text`、`srt`、`verbose_json`、`vtt`。
+</ParamField>
+
+<ParamField body="temperature" type="number">
+  采样温度，取值范围在 0 到 1 之间。较高的值（如 0.8）会产生更随机的输出，而较低的值（如 0.2）会使输出更集中且更具确定性。
+</ParamField>
+
+## 响应
+
+<ResponseField name="text" type="string">
+  英文翻译文本。
+</ResponseField>
+
+对于 `verbose_json` 格式，响应还包括：
+
+<ResponseField name="language" type="string">
+  输入音频检测出的语言。
+</ResponseField>
+
+<ResponseField name="duration" type="number">
+  输入音频的时长，单位为秒。
+</ResponseField>
+
+<ResponseField name="segments" type="array">
+  带时间戳的翻译文本分段。
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/audio/translations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F "file=@german_audio.mp3" \
+  -F "model=whisper-1"
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+with open("german_audio.mp3", "rb") as audio_file:
+    response = client.audio.translations.create(
+        model="whisper-1",
+        file=audio_file
+    )
+
+print(response.text)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+import fs from 'fs';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.audio.translations.create({
+  model: 'whisper-1',
+  file: fs.createReadStream('german_audio.mp3')
+});
+
+console.log(response.text);
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/audio/translations');
+
+$file = new CURLFile('german_audio.mp3', 'audio/mpeg', 'german_audio.mp3');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => [
+        'file' => $file,
+        'model' => 'whisper-1'
+    ]
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+echo $data['text'];
+```
+</RequestExample>
+
+<ResponseExample>
+```json json
+{
+  "text": "Hello, my name is Wolfgang and I come from Germany. Where are you from?"
+}
+```
+
+```json verbose_json
+{
+  "task": "translate",
+  "language": "german",
+  "duration": 8.470000267028809,
+  "text": "Hello, my name is Wolfgang and I come from Germany. Where are you from?",
+  "segments": [
+    {
+      "id": 0,
+      "seek": 0,
+      "start": 0.0,
+      "end": 4.0,
+      "text": " Hello, my name is Wolfgang and I come from Germany.",
+      "tokens": [50364, 2425, 11, 452, 1315, 307, 25329, 293, 286, 808, 490, 5765, 13, 50564],
+      "temperature": 0.0,
+      "avg_logprob": -0.45,
+      "compression_ratio": 1.0,
+      "no_speech_prob": 0.0
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## 翻译与转录
+
+| 功能 | 翻译 | 转录 |
+|---------|-------------|---------------|
+| 输出语言 | 始终为英文 | 与输入相同 |
+| 使用场景 | 将外语音频转换为英文 | 保留原始语言 |
+| language 参数 | 不适用 | 可选提示 |
+
+<Note>
+  翻译端点会自动检测源语言并将其翻译为英文。转录中的 `language` 参数会被忽略。
+</Note>

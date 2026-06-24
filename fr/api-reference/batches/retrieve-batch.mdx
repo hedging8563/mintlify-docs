@@ -1,0 +1,35 @@
+---
+title: "Récupérer le lot"
+openapi: "GET /v1/batches/{batch_id}"
+description: "Récupère le statut actuel, les comptes et les fichiers de résultats pour un lot."
+---
+
+## Aperçu
+
+Cet endpoint fait partie de l'API Batch compatible avec OpenAI de AI Sonar. Les travaux de lot utilisent des fichiers JSONL téléchargés, s'exécutent de manière asynchrone et peuvent retourner des fichiers de sortie/d'erreur plus tard.
+
+## Remarques
+
+- Les fichiers d'entrée de lot doivent utiliser `purpose=batch`.
+- `completion_window` est actuellement `24h`.
+- L'ordre de sortie n'est pas garanti ; faites toujours correspondre par `custom_id`.
+- Le streaming n'est pas pris en charge à l'intérieur des éléments de lot.
+
+## Exemple
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/batches/batch_abc123" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+## Demande / Réponse
+
+Utilisez le panneau OpenAPI interactif ci-dessus pour le schéma exact.
+
+## Conseils opérationnels
+
+- Utilisez `custom_id` pour la réconciliation idempotente en aval.
+- Attendez-vous à ce que `output_file_id` et `error_file_id` ne soient disponibles qu'après que le travailleur finalise le lot.
+- La tarification des lots peut différer de la tarification synchrone car les règles de réduction `isBatchRequest=true` s'appliquent.

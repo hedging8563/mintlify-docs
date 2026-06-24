@@ -1,0 +1,53 @@
+---
+title: "上传文件"
+openapi: "POST /v1/files"
+description: "上传一个 JSONL 批量输入文件以便后续批量创建。"
+---
+
+## 概述
+
+此端点是 AI Sonar 的 OpenAI 兼容批量 API 的一部分。批量作业使用上传的 JSONL 文件，异步运行，并可以在稍后返回输出/错误文件。
+
+## 注意事项
+
+- 批量输入文件必须使用 `purpose=batch`。
+- `completion_window` 当前为 `24h`。
+- 输出顺序不保证；始终通过 `custom_id` 匹配。
+- 批量项内不支持流式传输。
+
+## 示例
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/files" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F "purpose=batch" \
+  -F "file=@batch-input.jsonl;type=application/jsonl"
+```
+</RequestExample>
+
+## 请求 / 响应
+
+使用上面的交互式 OpenAPI 面板获取确切的架构。
+
+## 操作提示
+
+- 使用 `custom_id` 进行幂等的下游对账。
+- 仅在工作者完成批处理后，期待 `output_file_id` 和 `error_file_id`。
+- 批量定价可能与同步定价不同，因为适用 `isBatchRequest=true` 的折扣规则。
+## 图像文件输入
+
+同一个 `/v1/files` 路由也可以为 `/v1/images/edits` 上传图像参考文件。
+
+- 使用 `purpose=user_data` 或 `purpose=vision`。
+- 可选传入 `model` 来选择图像编辑模型；默认是 `gpt-image-2`。
+- 返回的 `file_id` 会绑定到选中的上游图像编辑渠道，可在 `images[].file_id` 中复用。
+
+## Anthropic Files API 模式
+
+这个 `/v1/files` 路由也支持 Anthropic Files API 路径。
+
+- 添加 `anthropic-beta: files-api-2025-04-14` 请求头以切换到 Anthropic 模式。
+- 在 Anthropic 模式下，直接上传原始文件，不要传 `purpose=batch`。
+- 返回的 `file_id` 会绑定到同一个官方 Anthropic 渠道/工作区，后续应在 `/v1/messages` 请求中复用。
+- 如果你要在 Anthropic 消息内容中引用该文件，请继续使用 Anthropic 原生请求头（`x-api-key`、`anthropic-version`，以及需要时的 beta header）。

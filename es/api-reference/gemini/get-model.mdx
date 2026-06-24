@@ -1,0 +1,107 @@
+---
+title: "Obtener modelo"
+openapi: "GET /v1beta/models/{model}"
+description: "Obtiene metadatos del modelo usando el formato de Google Gemini API"
+---
+
+Devuelve metadatos de un modelo específico en formato de Google Gemini API.
+
+## Parámetros de ruta
+
+<ParamField path="model" type="string" required>
+  Nombre del modelo (por ejemplo, `gemini-2.5-pro` o `gemini-2.5-flash`). También se aceptan aliases.
+</ParamField>
+
+## Autenticación
+
+La autenticación no es obligatoria para el endpoint público de lectura de metadatos del modelo.
+
+## Respuesta
+
+<ResponseField name="name" type="string">
+  Nombre del recurso del modelo en formato `models/{model}`.
+</ResponseField>
+
+<ResponseField name="displayName" type="string">
+  Nombre del modelo legible por humanos.
+</ResponseField>
+
+<ResponseField name="inputTokenLimit" type="integer">
+  Máximo de tokens de entrada (ventana de contexto).
+</ResponseField>
+
+<ResponseField name="outputTokenLimit" type="integer">
+  Máximo de tokens de salida.
+</ResponseField>
+
+<ResponseField name="supportedGenerationMethods" type="array">
+  Lista de métodos de generación soportados (por ejemplo, `generateContent`, `countTokens`, `embedContent`).
+</ResponseField>
+
+<ResponseField name="version" type="string">
+  Cadena de versión pública cuando está disponible.
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  Descripción legible del modelo cuando está disponible.
+</ResponseField>
+
+<ResponseField name="temperature" type="number">
+  Temperatura predeterminada cuando el upstream la expone.
+</ResponseField>
+
+<ResponseField name="topP" type="number">
+  Valor predeterminado de top-p cuando está disponible.
+</ResponseField>
+
+<ResponseField name="topK" type="integer">
+  Valor predeterminado de top-k cuando está disponible.
+</ResponseField>
+
+<ResponseField name="maxTemperature" type="number">
+  Temperatura máxima soportada cuando está disponible.
+</ResponseField>
+
+## Errores
+
+- Las solicitudes GET inválidas que incluyan por error `:generateContent` o `:streamGenerateContent` devuelven `405 METHOD_NOT_ALLOWED`.
+- Los modelos ausentes devuelven `404 NOT_FOUND`.
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1beta/models/gemini-2.5-pro"
+```
+
+```python Python
+import google.generativeai as genai
+
+genai.configure(
+    api_key="sk-your-api-key",
+    transport="rest",
+    client_options={"api_endpoint": "api.aisonar.dev"}
+)
+
+model = genai.get_model("models/gemini-2.5-pro")
+print(f"Name: {model.name}")
+print(f"Input limit: {model.input_token_limit}")
+print(f"Output limit: {model.output_token_limit}")
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "name": "models/gemini-2.5-pro",
+  "version": "1.0",
+  "displayName": "gemini-2.5-pro",
+  "description": "gemini-2.5-pro model available via AI Sonar",
+  "inputTokenLimit": 1048576,
+  "outputTokenLimit": 65536,
+  "supportedGenerationMethods": ["generateContent", "countTokens"],
+  "temperature": 1.0,
+  "topP": 0.95,
+  "topK": 40,
+  "maxTemperature": 2.0
+}
+```
+</ResponseExample>

@@ -1,0 +1,148 @@
+---
+title: "Streaming"
+description: "Implémenter des réponses en streaming en temps réel"
+---
+
+## Vue d’ensemble
+
+Le streaming vous permet de recevoir une sortie partielle au fur et à mesure de sa génération, ce qui améliore la latence perçue et l’expérience utilisateur.
+
+Pour les nouvelles intégrations de style OpenAI, privilégiez d’abord le **streaming Responses**. Si votre framework utilise encore le streaming Chat Completions, AI Sonar prend également en charge cette voie de compatibilité.
+
+## Recommandé : streaming Responses
+
+<CodeGroup>
+
+```bash cURL
+curl https://api.aisonar.dev/v1/responses \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.4",
+    "input": "Write a short poem.",
+    "stream": true
+  }'
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+stream = client.responses.create(
+    model="gpt-5.4",
+    input="Write a short poem.",
+    stream=True
+)
+
+for event in stream:
+    if event.type == "response.output_text.delta":
+        print(event.delta, end="", flush=True)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const stream = await client.responses.create({
+  model: 'gpt-5.4',
+  input: 'Write a short poem.',
+  stream: true
+});
+
+for await (const event of stream) {
+  if (event.type === 'response.output_text.delta') {
+    process.stdout.write(event.delta);
+  }
+}
+```
+
+</CodeGroup>
+
+## Streaming Chat Completions
+
+Si votre framework attend encore des chunks SSE provenant de `/v1/chat/completions`, cela fonctionne également :
+
+```python
+stream = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Write a short poem"}],
+    stream=True
+)
+
+for chunk in stream:
+    content = chunk.choices[0].delta.content
+    if content:
+        print(content, end="", flush=True)
+```
+
+## Conditions de fin du stream
+
+Conditions de fin typiques :
+- `response.completed` pour les streams de l’API Responses
+- `finish_reason: "stop"` pour les streams Chat Completions
+- `finish_reason: "length"` lorsqu’une limite de token est atteinte
+- événements d’appel d’outil/de fonction lorsque le modèle souhaite utiliser des outils
+
+## Modèle pour application web
+
+```javascript
+async function streamChat(message) {
+  const response = await fetch('https://api.aisonar.dev/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer sk-your-api-key',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o',
+      messages: [{ role: 'user', content: message }],
+      stream: true
+    })
+  });
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    const chunk = decoder.decode(value);
+    const lines = chunk.split('\\n').filter(line => line.startsWith('data: '));
+
+    for (const line of lines) {
+      const data = line.slice(6);
+      if (data === '[DONE]') return;
+      const parsed = JSON.parse(data);
+      const content = parsed.choices?.[0]?.delta?.content;
+      if (content) {
+        document.getElementById('output').textContent += content;
+      }
+    }
+  }
+}
+```
+
+## Bonnes pratiques
+
+<AccordionGroup>
+  <Accordion title="Privilégier le streaming Responses pour les nouvelles implémentations">
+    Utilisez `/v1/responses` si votre SDK ou votre application le prend déjà en charge. Réservez le streaming `/v1/chat/completions` aux intégrations motivées par la compatibilité.
+  </Accordion>
+
+  <Accordion title="Vider la sortie progressivement">
+    Ajoutez les chunks delta à l’interface utilisateur ou au terminal au fur et à mesure de leur arrivée plutôt que d’attendre la réponse complète.
+  </Accordion>
+
+  <Accordion title="Gérer les déconnexions et les nouvelles tentatives">
+    Considérez les coupures réseau et les déconnexions en amont comme des modes de défaillance normaux et reconnectez-vous avec précaution pour les sessions de longue durée.
+  </Accordion>
+</AccordionGroup>

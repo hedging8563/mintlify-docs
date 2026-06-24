@@ -1,0 +1,122 @@
+---
+title: "Pendahuluan"
+description: "Akses ratusan model AI melalui satu API terpadu"
+---
+
+## Apa itu AI Sonar?
+
+AI Sonar adalah platform agregasi API AI yang memberi Anda akses terpadu ke **ratusan model AI** dari penyedia seperti OpenAI, Anthropic, Google, DeepSeek, Moonshot, MiniMax, dan lainnya.
+
+<CardGroup cols={2}>
+  <Card title="Native + kompatibel" icon="plug">
+    Gunakan rute native Anthropic/Gemini saat perilaku penyedia penting, atau rute `/v1` yang kompatibel dengan OpenAI untuk alat bergaya OpenAI yang sudah ada.
+  </Card>
+  <Card title="Format Native" icon="shuffle">
+    Panggil endpoint bergaya OpenAI, Anthropic, Gemini, dan Responses dari satu platform.
+  </Card>
+  <Card title="Bayar Sesuai Pemakaian" icon="coins">
+    Tanpa langganan. Hanya bayar untuk apa yang benar-benar Anda gunakan.
+  </Card>
+  <Card title="Ketersediaan Tinggi" icon="shield-check">
+    Routing cerdas, failover, dan dukungan multi-saluran meningkatkan keandalan.
+  </Card>
+</CardGroup>
+
+## Kemampuan yang Didukung
+
+| Kapabilitas | Deskripsi | Contoh Model |
+|------------|-------------|----------------|
+| **Obrolan & Penalaran** | Pembuatan teks, perencanaan, alat | `gpt-5.4`, `claude-sonnet-4-6`, `deepseek-r1` |
+| **Visi** | Pemahaman gambar dan chat multimodal | `gpt-4o`, `claude-sonnet-4-6`, `gemini-2.5-flash` |
+| **Generasi Gambar** | Teks ke gambar dan penyuntingan gambar | `dall-e-3`, `flux-pro`, `midjourney` |
+| **Audio** | TTS dan transkripsi | `gpt-4o-mini-tts`, `whisper-1`, `gpt-4o-transcribe` |
+| **Embedding** | Vektorisasi teks | `text-embedding-3-small`, `text-embedding-3-large` |
+| **Musik** | Generasi musik AI | `suno` |
+| **3D** | generasi aset 3D | `tripo3d` |
+
+## Pilih Format Permintaan
+
+Mulailah dengan rute yang sesuai dengan perilaku yang Anda butuhkan. Gunakan rute native Anthropic/Gemini untuk fitur native penyedia; gunakan `/v1/chat/completions` yang kompatibel dengan OpenAI saat memigrasikan kode chat bergaya OpenAI yang sudah ada.
+
+<CodeGroup>
+
+```bash cURL
+curl https://api.aisonar.dev/v1/chat/completions \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.4",
+    "messages": [
+      {"role": "user", "content": "Explain what AI Sonar does in one sentence."}
+    ]
+  }'
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "Explain what AI Sonar does in one sentence."}]
+)
+
+print(response.choices[0].message.content)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.chat.completions.create({
+  model: 'gpt-5.4',
+  messages: [{ role: 'user', content: 'Explain what AI Sonar does in one sentence.' }],
+});
+
+console.log(response.choices[0].message.content);
+```
+
+<Note>
+Gunakan `POST /v1/responses` hanya ketika Anda secara eksplisit memerlukan perilaku khusus Responses. Itu bukan jalur kompatibilitas default di semua model.
+</Note>
+
+</CodeGroup>
+
+## Fitur Utama
+
+<CardGroup cols={2}>
+  <Card title="Beberapa Format API" icon="layers" href="/guides/api-formats">
+    Gunakan format OpenAI, Anthropic, Gemini, atau native Responses dengan satu akun.
+  </Card>
+  <Card title="Kesalahan Berorientasi Agen" icon="wand-magic-sparkles" href="/guides/agent-first-api">
+    Petunjuk terstruktur membantu agen pengodean mengoreksi diri lebih cepat.
+  </Card>
+  <Card title="Cakupan Integrasi" icon="toolbox" href="/guides/ide-sdk-compatibility">
+    Hubungkan IDE, SDK, framework, dan aplikasi chat dengan lebih sedikit perubahan spesifik penyedia.
+  </Card>
+</CardGroup>
+
+## Langkah Selanjutnya
+
+<CardGroup cols={2}>
+  <Card title="Mulai Cepat" icon="rocket" href="/quickstart">
+    Jalankan permintaan pertama Anda dalam beberapa menit.
+  </Card>
+  <Card title="Referensi API" icon="book" href="/api-reference/introduction">
+    Jelajahi referensi per-endpoint.
+  </Card>
+  <Card title="Integrasi" icon="puzzle-piece" href="/integrations/openai-sdk">
+    Mulai dengan integrasi SDK, IDE, dan aplikasi.
+  </Card>
+  <Card title="Model" icon="robot" href="https://aisonar.dev/models">
+    Jelajahi ketersediaan model saat ini dan harga.
+  </Card>
+</CardGroup>

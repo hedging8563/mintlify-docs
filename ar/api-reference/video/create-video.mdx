@@ -1,0 +1,432 @@
+---
+title: "إنشاء فيديو"
+openapi: "POST /v1/videos/generations"
+description: "ينشئ مهمة توليد فيديو"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## نظرة عامة
+
+يعمل توليد الفيديو بشكل غير متزامن. ترسل طلبًا، وتتلقى `task_id` و `poll_url`، ثم تتحقق من الحالة بشكل دوري إلى أن تصبح النتيجة النهائية جاهزة.
+
+### سلوك الاستعلام
+
+للحصول على أكثر سلوك موثوق في التحقق من الحالة، استخدم قيمة `poll_url` المعادة من استجابة الإنشاء كما هي تمامًا.
+
+إذا أعادت استجابة الإنشاء `poll_url`، فاستدعِ هذا الرابط نفسه تمامًا. وعندما يشير إلى `/v1/tasks/{id}`، فاعتبره نقطة الحالة الثابتة المعيارية.
+
+### سلوك النموذج والوسائط
+
+يعتمد إخراج الصوت على النموذج. في AI Sonar، تُعامل عائلة Veo 3 على أن الصوت مفعّل افتراضيًا عند حذف `output_audio`. وإذا كان النموذج يدعم التحكم بالصوت، فاستخدم `output_audio` لتفعيله أو تعطيله بشكل صريح. كما يُقبل الاسم البديل camelCase وهو `outputAudio` لأغراض التوافق.
+
+في تكاملات الإنتاج، يُفضّل استخدام روابط `https` عامة للصور والفيديو والصوت. ما تزال النماذج المتوافقة تقبل روابط `data:`، لكن حمولات base64 الكبيرة أصعب في إعادة المحاولة والفحص وتتبع الأعطال.
+
+## جسم الطلب
+
+<ParamField body="model" type="string" default="veo3.1">
+  معرّف نموذج الفيديو. القيمة الافتراضية في API هي `veo3.1`. راجع [دليل توليد الفيديو](/ar/guides/video-generation) للاطلاع على مصفوفة النماذج العامة الحالية والقدرات المدعومة.
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  وصف نصي للفيديو المطلوب توليده. هذا الحقل مطلوب لمعظم نماذج الفيديو العامة.
+</ParamField>
+
+<ParamField body="operation" type="string">
+  عملية الفيديو المطلوب تنفيذها. يدعم العقد العام القيم `text-to-video` و `image-to-video` و `reference-to-video` و `start-end-to-video` و `video-to-video` و `video-extension` و `audio-to-video` و `motion-control`. يمكن لـ AI Sonar استنتاج العملية من المدخلات المرسلة، لكن يُنصح بإرسال `operation` بشكل صريح في بيئات الإنتاج.
+</ParamField>
+
+<ParamField body="image_url" type="string">
+  رابط URL عام للصورة الابتدائية في تدفقات image-to-video. ولأوسع توافق بين النماذج، يُفضّل استخدام `image_url`.
+</ParamField>
+
+<ParamField body="image" type="string">
+  صورة مضمنة بصيغة URL من نوع `data:` (مثل `data:image/jpeg;base64,...`). تدعمها النماذج المتوافقة، لكن `image_url` يكون عادةً أكثر استقرارًا في الإنتاج.
+</ParamField>
+
+<ParamField body="reference_images" type="array">
+  صور مرجعية للتدفقات التي تدعم التكييف المرجعي المخصص. العدد المدعوم يعتمد على النموذج. بالنسبة إلى `seedance-2.0` و `seedance-2.0-fast`، تدعم AI Sonar حاليًا ما يصل إلى 9 صور مرجعية، بالإضافة إلى ما يصل إلى 3 مقاطع فيديو مرجعية و3 ملفات صوت مرجعية. يُفضَّل استخدام روابط `https` العامة، كما تقبل النماذج المتوافقة أيضًا روابط `data:`. بالنسبة إلى `grok-imagine-video`، تقبل reference-to-video حتى 7 مراجع صور ويكون `duration` بحد أقصى 10 ثوانٍ. يدعم `grok-imagine-video-1.5-preview` image-to-video فقط ولا يقبل مراجع الصور.
+</ParamField>
+
+<ParamField body="reference_image_type" type="string">
+  حقل اختياري للنماذج التي تميّز بين المراجع من نوع `asset` و `style`.
+</ParamField>
+
+<ParamField body="kling_elements" type="array">
+  تعريفات مراجع العناصر في Kling 3.0. هذه الميزة مدعومة فقط مع `kling-3.0-video` للطلبات المشروطة بصورة. عرّف 1-3 عناصر؛ يحتوي كل عنصر على `name` و `description` اختياري و `element_input_urls` بعدد 2-4 روابط صور. استخدم `@name` داخل `prompt` للإشارة إلى العنصر. لا تجمع `kling_elements` مع `output_audio=true`؛ احذف `output_audio` أو اجعله `false` عند استخدام مراجع العناصر.
+</ParamField>
+
+<ParamField body="video_url" type="string">
+  رابط URL عام للفيديو المصدر. هذا الحقل مطلوب للتدفقات العامة الحالية من نوع `video-to-video` ولنماذج `motion-control`.
+</ParamField>
+
+<ParamField body="video_urls" type="array">
+  مدخلات إضافية لمقاطع الفيديو المرجعية للنماذج التي تدعم التكييف المرجعي متعدد الوسائط. العدد المدعوم يعتمد على النموذج. بالنسبة إلى `seedance-2.0` و `seedance-2.0-fast`، تدعم AI Sonar حاليًا ما يصل إلى 3 مقاطع فيديو مرجعية.
+</ParamField>
+
+<ParamField body="audio_url" type="string">
+  رابط URL عام للصوت للنماذج التي تدعم `audio-to-video`.
+</ParamField>
+
+<ParamField body="audio_urls" type="array">
+  مدخلات إضافية للصوت المرجعي للنماذج التي تدعم التكييف المرجعي متعدد الوسائط. العدد المدعوم يعتمد على النموذج. بالنسبة إلى `seedance-2.0` و `seedance-2.0-fast`، تدعم AI Sonar حاليًا ما يصل إلى 3 ملفات صوت مرجعية.
+</ParamField>
+
+<ParamField body="task_id" type="string">
+  معرّف مهمة من جهة المزود يُستخدم في بعض تدفقات الاستكمال أو التوسعة أو الاشتقاق.
+</ParamField>
+
+<ParamField body="extend_at" type="integer">
+  إزاحة بداية خاصة بالنموذج لبعض تدفقات `video-extension`.
+</ParamField>
+
+<ParamField body="extend_times" type="string">
+  مضاعف أو عدد تكرارات خاص بالنموذج لبعض تدفقات `video-extension`.
+</ParamField>
+
+<ParamField body="duration" type="integer">
+  مدة فيديو الإخراج الناتج بالثواني. القيم المتاحة تعتمد على النموذج. هذا الحقل يتحكم فقط في طول الإخراج، ولا يمثّل حدًا لمدة فيديو المرجع المُدخل.
+</ParamField>
+
+<ParamField body="aspect_ratio" type="string">
+  نسبة الأبعاد، مثل `16:9` أو `9:16` أو `1:1`.
+</ParamField>
+
+<ParamField body="resolution" type="string">
+  دقة الإخراج، مثل `720p` أو `1080p` أو `4k`. ويعتمد توفرها على النموذج.
+</ParamField>
+
+<ParamField body="output_audio" type="boolean">
+  مفتاح إخراج الصوت يعتمد على النموذج. في AI Sonar، طلبات عائلة Veo 3 تكون `true` افتراضيا عند حذف هذا الحقل. يقبل `kling-3.0-video` هذا المحدد للطلبات التي لا تستخدم مراجع العناصر ويحوّله إلى تحكم الصوت المتوافق upstream؛ وعند الحذف تكون طلبات Kling صامتة افتراضيا. لا تجمع `output_audio=true` مع `kling_elements`. تتبع نماذج الفيديو العامة الأخرى سلوكها الافتراضي المحكوم. يتم قبول الاسم camelCase `outputAudio` للتوافق.
+</ParamField>
+
+<ParamField body="fps" type="integer">
+  عدد الإطارات في الثانية (1-120). لا يكون فعالًا إلا في النماذج التي تكشف التحكم في FPS.
+</ParamField>
+
+<ParamField body="negative_prompt" type="string">
+  العناصر التي ترغب في تجنبها في الفيديو الناتج.
+</ParamField>
+
+<ParamField body="seed" type="integer">
+  قيمة seed عشوائية للحصول على نتائج قابلة لإعادة الإنتاج.
+</ParamField>
+
+<ParamField body="cfg_scale" type="number">
+  شدة الالتزام بالـ prompt (من 0 إلى 20) في النماذج التي تدعم هذا التحكم.
+</ParamField>
+
+<ParamField body="motion_strength" type="number">
+  شدة الحركة (من 0 إلى 1) في النماذج التي تدعم هذا التحكم.
+</ParamField>
+
+<ParamField body="start_image" type="string">
+  رابط الصورة الخاصة بالإطار الأول، أو إدخال صورة متوافق، لعملية `start-end-to-video`.
+</ParamField>
+
+<ParamField body="end_image" type="string">
+  رابط الصورة الخاصة بالإطار الأخير، أو إدخال صورة متوافق، لعملية `start-end-to-video`.
+</ParamField>
+
+<ParamField body="size" type="string">
+  مستوى حجم خاص بالنموذج في بعض نماذج الفيديو المتوافقة مع OpenAI.
+</ParamField>
+
+<ParamField body="watermark" type="boolean">
+  مفتاح العلامة المائية للنماذج التي تكشفه بشكل عام.
+</ParamField>
+
+<ParamField body="effect_type" type="string">
+  محدد تأثير خاص بالنموذج لبعض تدفقات التحرير أو التأثيرات المتخصصة.
+</ParamField>
+
+<ParamField body="user" type="string">
+  معرّف فريد للمستخدم النهائي.
+</ParamField>
+
+## ملاحظات التوافق
+
+- الحقول العامة القياسية تستخدم صيغة snake_case: `reference_images` و `reference_image_type` و `output_audio`.
+- ولأغراض التوافق، يقبل AI Sonar أيضًا الأسماء البديلة camelCase: `referenceImages` و `referenceImageType` و `outputAudio`.
+- إذا لم تُرسل `operation`، فسيقوم AI Sonar باستنتاجها من المدخلات. ومع ذلك، في الإنتاج يُنصح بإرسالها بشكل صريح.
+
+## أفضل الممارسات لمدخلات الوسائط
+
+- بالنسبة إلى `image_url` و `reference_images` و `video_url` و `audio_url`، يُفضّل استخدام روابط `https` عامة.
+- حاول تجنّب خلط base64 المضمن وروابط URL البعيدة داخل الطلب نفسه قدر الإمكان.
+- إذا كنت تستخدم روابط موقعة، فتأكد من أن مدة صلاحيتها تغطي إعادة المحاولة ومرحلة إنشاء المهمة غير المتزامنة.
+
+## الاستجابة
+
+<ResponseField name="id" type="string">
+  المعرّف المعياري للمهمة غير المتزامنة. عندما يظهر كلٌّ من `id` و`task_id`، فاعتبرهما نفس المهمة.
+</ResponseField>
+
+<ResponseField name="task_id" type="string">
+  معرّف المهمة الفريد لاستخدامه في التحقق من الحالة.
+</ResponseField>
+
+<ResponseField name="poll_url" type="string">
+  رابط التحقق من الحالة الموصى به لهذه المهمة. استخدم هذا المسار كما هو عند فحص الحالة.
+</ResponseField>
+
+<ResponseField name="billing_transaction_id" type="string">
+  معرّف معاملة الفوترة في AI Sonar عندما تكون التسوية قد اكتملت بالفعل. هذا هو معرّف المعاملة المستخدم في لوحة التحكم / المطابقة، وهو منفصل عن `id` / `task_id` غير المتزامن.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  الحالة الأولية: `pending`.
+</ResponseField>
+
+<ResponseField name="created" type="integer">
+  الطابع الزمني Unix لإنشاء المهمة.
+</ResponseField>
+
+<ResponseField name="model" type="string">
+  النموذج المستخدم.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/videos/generations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "veo3.1",
+    "prompt": "A cat walking through a garden, cinematic lighting",
+    "operation": "text-to-video",
+    "duration": 4,
+    "aspect_ratio": "16:9"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "pending",
+  "model": "veo3.1",
+  "created": 1706000000
+}
+```
+</ResponseExample>
+
+## من صورة إلى فيديو
+
+```python
+response = requests.post(
+    "https://api.aisonar.dev/v1/videos/generations",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+    json={
+        "model": "hailuo-2.3-standard",
+        "prompt": "The scene begins from the provided image and adds gentle natural motion.",
+        "operation": "image-to-video",
+        "image_url": "https://example.com/image.jpg",
+        "duration": 6,
+        "aspect_ratio": "16:9"
+    }
+)
+```
+
+## Kling 3.0 Elements
+
+استخدم `kling_elements` مع `kling-3.0-video` عندما تحتاج إلى مراجع عناصر. يجب أن يحتوي الطلب على شرط صورة (`image_url` أو `image_urls` أو `start_image` أو `end_image`) وأن تشير إلى كل عنصر في `prompt` باستخدام `@name`. لا تجمع `kling_elements` مع `output_audio=true`؛ احذف `output_audio` أو اجعله `false` عند استخدام مراجع العناصر.
+
+```python
+response = requests.post("https://api.aisonar.dev/v1/videos/generations",
+    headers=headers,
+    json={
+        "model": "kling-3.0-video",
+        "prompt": "Place @hero_bag on a studio turntable with soft product lighting.",
+        "operation": "image-to-video",
+        "image_url": "https://example.com/studio-start.png",
+        "duration": 5,
+        "resolution": "720p",
+        "kling_elements": [
+            {
+                "name": "hero_bag",
+                "description": "black leather handbag",
+                "element_input_urls": [
+                    "https://example.com/bag-front.png",
+                    "https://example.com/bag-side.png"
+                ]
+            }
+        ]
+    }
+)
+```
+
+## من مرجع إلى فيديو
+
+استخدم `operation=reference-to-video` عندما يدعم النموذج تكييفًا مرجعيًا مخصصًا. في العقد العام لـ AI Sonar تستخدم مراجع الصور `reference_images`، بينما تستخدم الفيديوهات والصوتيات المرجعية متعددة الوسائط الحقول `video_urls` و `audio_urls`. بالنسبة إلى `seedance-2.0` و `seedance-2.0-fast`، تدعم AI Sonar حاليًا ما يصل إلى 9 صور مرجعية، بالإضافة إلى ما يصل إلى 3 مقاطع فيديو مرجعية و3 ملفات صوت مرجعية. يتحكم `duration` فقط في طول الإخراج الناتج، ولا يضع حدًا منفصلًا لمدة فيديو المرجع المُدخل. بالنسبة إلى `grok-imagine-video`، تقبل reference-to-video حتى 7 مراجع صور (`reference_images` أو `image_urls`) ويكون `duration` بحد أقصى 10 ثوانٍ. لا تجمع مراجع الصور مع إدخالات الإطار الأول `image_url` / `image`. يدعم `grok-imagine-video-1.5-preview` image-to-video فقط.
+
+```python
+response = requests.post(
+    "https://api.aisonar.dev/v1/videos/generations",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+    json={
+        "model": "veo3.1",
+        "prompt": "Keep the same subject identity, palette, and framing while adding subtle natural motion.",
+        "operation": "reference-to-video",
+        "reference_images": [
+            "https://example.com/ref-a.jpg",
+            "https://example.com/ref-b.jpg"
+        ],
+        "reference_image_type": "asset",
+        "duration": 8,
+        "resolution": "720p",
+        "aspect_ratio": "9:16"
+    }
+)
+```
+
+## التحكم في الإطارين الأول والأخير
+
+استخدم `start_image` و `end_image` للتحكم في الإطار الأول والإطار الأخير.
+
+```python
+response = requests.post(
+    "https://api.aisonar.dev/v1/videos/generations",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+    json={
+        "model": "viduq2-pro",
+        "prompt": "Smooth transition from day to night",
+        "operation": "start-end-to-video",
+        "start_image": "https://example.com/day.jpg",
+        "end_image": "https://example.com/night.jpg",
+        "duration": 5,
+        "resolution": "720p",
+        "aspect_ratio": "16:9"
+    }
+)
+```
+
+## من فيديو إلى فيديو
+
+في video-to-video مع `grok-imagine-video`، أرسل رابط HTTPS عام بصيغة `.mp4` في `video_url`. يحوله AI Sonar إلى جسم REST الخاص بـ xAI بصيغة `video.url`. يمكنك ضبط `resolution` على `480p` أو `720p`؛ ولا يقبل مسار التحرير هذا `duration` أو `aspect_ratio`.
+
+إذا كان النموذج يقبل فيديو موجودًا كمدخل رئيسي، فاستخدم `operation=video-to-video`.
+
+```python
+response = requests.post(
+    "https://api.aisonar.dev/v1/videos/generations",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+    json={
+        "model": "topaz-video-upscale",
+        "operation": "video-to-video",
+        "video_url": "https://example.com/source.mp4",
+        "prompt": "Upscale the clip while preserving the original motion.",
+        "resolution": "1080p"
+    }
+)
+```
+
+## التحكم في الحركة
+
+إذا كان النموذج يحتاج إلى صورة للعنصر وفيديو مرجعي للحركة معًا، فاستخدم `operation=motion-control`. يقوم AI Sonar بتطبيع الشكل العام `image_url` + `video_url` ليتوافق مع عقدة الـ upstream المناسبة.
+
+```python
+response = requests.post(
+    "https://api.aisonar.dev/v1/videos/generations",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+    json={
+        "model": "kling-3.0-motion-control",
+        "operation": "motion-control",
+        "prompt": "Keep the subject stable while following the motion reference.",
+        "image_url": "https://example.com/subject.png",
+        "video_url": "https://example.com/motion.mp4",
+        "resolution": "720p"
+    }
+)
+```
+
+## التوفر الحالي لـ audio-to-video و video-extension
+
+يقبل العقد العام لـ AI Sonar القيمتين `audio-to-video` و `video-extension` لبعض التدفقات الخاصة بالنماذج. لكن قائمة النماذج العامة المفعلة على نطاق واسع في هذا البناء من الوثائق لا تتضمن حاليًا نموذجًا عامًا واسع التفعيل يعلن أيًا من هاتين القدرتين. قبل دمج هذه التدفقات، تحقق من التوفر الحالي عبر [واجهة Models API](/ar/api-reference/models/list-models) أو [صفحة النماذج](https://aisonar.dev/models).
+
+## قائمة نماذج الفيديو العامة المفعّلة حاليًا
+
+هذه القائمة متوافقة مع مخزون نماذج الفيديو العامة المفعلة في هذا البناء من الوثائق. ولأحدث حالة، استخدم [واجهة Models API](/ar/api-reference/models/list-models).
+
+### OpenAI
+
+| النموذج | العمليات العامة |
+|--------|------------------|
+
+### Kuaishou
+
+| النموذج | العمليات العامة |
+|--------|------------------|
+| `kling-3.0-motion-control` | تحكم في الحركة |
+| `kling-3.0-video` | نص إلى فيديو، image-to-video، start-end-to-video، مراجع العناصر |
+| `kling-v2.5-turbo-pro` | نص إلى فيديو، image-to-video، start-end-to-video |
+| `kling-v2.5-turbo-std` | نص إلى فيديو، image-to-video |
+| `kling-v2.6-pro` | نص إلى فيديو، image-to-video، start-end-to-video |
+| `kling-v2.6-std` | نص إلى فيديو، image-to-video |
+| `kling-v3.0-pro` | نص إلى فيديو، image-to-video، start-end-to-video |
+| `kling-v3.0-std` | نص إلى فيديو، image-to-video، start-end-to-video |
+| `kling-video-o1-pro` | نص إلى فيديو، image-to-video، reference-to-video، start-end-to-video، video-to-video |
+| `kling-video-o1-std` | نص إلى فيديو، image-to-video، reference-to-video، start-end-to-video، video-to-video |
+
+### Google
+
+| النموذج | العمليات العامة |
+|--------|------------------|
+| `veo3` | نص إلى فيديو، image-to-video |
+| `veo3-fast` | نص إلى فيديو، image-to-video |
+| `veo3-pro` | نص إلى فيديو، image-to-video |
+| `veo3.1` | نص إلى فيديو، image-to-video، reference-to-video، start-end-to-video |
+| `veo3.1-fast` | نص إلى فيديو، image-to-video، reference-to-video، start-end-to-video |
+| `veo3.1-pro` | نص إلى فيديو، image-to-video، start-end-to-video |
+
+### ByteDance
+
+| النموذج | العمليات العامة |
+|--------|------------------|
+| `seedance-1.5-pro` | نص إلى فيديو، image-to-video |
+
+### MiniMax
+
+| النموذج | العمليات العامة |
+|--------|------------------|
+| `hailuo-2.3-fast` | من صورة إلى فيديو |
+| `hailuo-2.3-pro` | نص إلى فيديو، image-to-video |
+| `hailuo-2.3-standard` | نص إلى فيديو، image-to-video |
+
+### Alibaba
+
+| النموذج | العمليات العامة |
+|--------|------------------|
+| `wan-2.2-plus` | نص إلى فيديو، image-to-video |
+| `wan-2.5` | نص إلى فيديو، image-to-video |
+| `wan-2.6` | نص إلى فيديو، image-to-video، reference-to-video |
+
+### Shengshu
+
+| النموذج | العمليات العامة |
+|--------|------------------|
+| `viduq2` | نص إلى فيديو، reference-to-video |
+| `viduq2-pro` | صورة إلى فيديو، مرجع إلى فيديو، إطار بداية/نهاية إلى فيديو |
+| `viduq2-pro-fast` | صورة إلى فيديو، إطار بداية/نهاية إلى فيديو |
+| `viduq2-turbo` | صورة إلى فيديو، إطار بداية/نهاية إلى فيديو |
+| `viduq3-pro` | نص إلى فيديو، image-to-video، start-end-to-video |
+| `viduq3-turbo` | نص إلى فيديو، image-to-video، start-end-to-video |
+
+### xAI
+
+| النموذج | العمليات العامة |
+|--------|------------------|
+| `grok-imagine-video` | نص إلى فيديو، صورة إلى فيديو، reference-to-video، video-to-video |
+| `grok-imagine-video-1.5-preview` | صورة إلى فيديو |
+| `grok-imagine-image-to-video` | من صورة إلى فيديو |
+| `grok-imagine-text-to-video` | نص إلى فيديو |
+| `grok-imagine-upscale` | من فيديو إلى فيديو |
+
+### أخرى
+
+| النموذج | العمليات العامة |
+|--------|------------------|
+| `topaz-video-upscale` | من فيديو إلى فيديو |

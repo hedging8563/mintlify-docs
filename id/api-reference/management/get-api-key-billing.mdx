@@ -1,0 +1,26 @@
+---
+title: "Lihat billing API Key"
+openapi: "GET /v1/management/api-keys/{keyId}/billing"
+description: "Mengembalikan breakdown billing teragregasi untuk API key pengguna."
+---
+
+## Ikhtisar
+
+Endpoint ini mengembalikan agregat billing berbasis konsumsi untuk API key yang dipilih, termasuk total biaya, total request, usage per unit penagihan, serta breakdown berdasarkan nama model yang dikirim di permintaan (`model`), penyedia, `scene`, `accessChannel`, kelas cache, dan tren biaya harian.
+
+## Catatan
+
+- Top-up, invoice, dan catatan keuangan tingkat organisasi lainnya tidak termasuk.
+
+## Contoh
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/billing?startDate=2026-01-01&endDate=2026-01-31" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## Permintaan / Respons
+
+Gunakan panel OpenAPI interaktif di atas untuk skema yang tepat.

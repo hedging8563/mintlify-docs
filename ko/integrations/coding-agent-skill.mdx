@@ -1,0 +1,261 @@
+---
+title: "✨ AI Sonar API 통합 스킬"
+description: "Agent-First 오류 복구와 함께, 모든 코딩 에이전트용 공유 AI Sonar API 통합 스킬을 설치하세요."
+---
+
+<Note>
+이 스킬은 코딩 에이전트에게 필요한 내용을 설명하는 것만으로 AI Sonar의 **수백 개의 AI API**를 통합하는 방법을 알려줍니다. 하나의 공유 Agent-First 스킬로 패키징되어 있으며, 스킬 또는 rules 파일을 지원하는 모든 코딩 에이전트에서 작동합니다.
+
+이 API는 **[Agent-First](/guides/agent-first-api)** 입니다 — 에이전트가 모델 이름을 잘못 추측하더라도, 오류 응답이 이를 정확히 어떻게 수정해야 하는지 알려줍니다.
+</Note>
+
+<Note>
+이 페이지는 재사용 가능한 스킬 패키징 계층을 설명하는 것이지, 프로토콜 호환 표면을 설명하는 페이지가 아닙니다. 엔드포인트, SDK, 클라이언트 설정이 필요하다면 해당 전용 통합 페이지를 참고하세요.
+</Note>
+
+<Note>
+**유형**: 공유 스킬
+
+**주요 경로**: 재사용 가능한 공유 스킬을 통한 API 사용
+
+**지원 수준**: best-effort
+</Note>
+
+
+## 작동 방식
+
+1. **필요한 것을 설명합니다** — "Python 프로젝트에서 GPT-4를 사용하고 싶어요"
+2. **에이전트가 API를 호출합니다** — 모델 이름이나 엔드포인트를 추측할 수 있습니다
+3. **문제가 발생하면** — API가 구조화된 힌트(`did_you_mean`, `suggestions`, `retry_after`)를 반환합니다
+4. **에이전트가 스스로 수정합니다** — 힌트를 읽고 올바른 parameter로 다시 시도합니다
+5. **동작하는 코드를 얻게 됩니다** — 일반적으로 첫 번째 또는 두 번째 시도에서 해결됩니다
+
+## 설치
+
+<Note>
+정식 비대화형 설치 명령을 사용하세요:
+
+```bash
+npx skills add https://github.com/hedging8563/aisonar-skills --skill aisonar-api-integration -y
+```
+
+이 명령은 AI Sonar 스킬 저장소에서 공유 `aisonar-api-integration` 스킬을 설치합니다.
+
+도구가 installer를 지원하지 않는 경우, 저장소의 `skills/aisonar-api-integration/` 폴더를 도구의 공유 스킬 또는 rules 디렉터리로 복사하세요.
+</Note>
+
+### 설치 확인
+
+코딩 에이전트에게 다음과 같이 물어보세요:
+```
+사용 가능한 skills는 무엇인가요?
+```
+
+`aisonar-api-integration`가 보이면 설치가 성공한 것입니다.
+
+## API Key 받기
+
+<Steps>
+  <Step title="AI Sonar 방문">
+    [aisonar.dev](https://aisonar.dev)로 이동합니다
+  </Step>
+  <Step title="로그인">
+    계정을 생성하거나 로그인합니다
+  </Step>
+  <Step title="API Key 받기">
+    [Dashboard → API Keys](https://console.aisonar.dev/api)로 이동하여 새 key를 생성합니다
+  </Step>
+  <Step title="Key 복사">
+    key는 `sk-...`로 시작합니다 — 안전하게 저장하세요
+  </Step>
+</Steps>
+
+<Tip>
+API key를 프롬프트나 소스 파일에 직접 붙여넣을 필요는 없습니다. 이 스킬은 사용할 환경 변수를 확인한 뒤 그 환경 변수에서 key를 읽는 코드를 생성해야 합니다.
+</Tip>
+
+## 예시
+
+### 채팅 완성
+
+**입력:**
+```
+Python 프로젝트에서 GPT-4를 사용하고 싶어요
+```
+
+**에이전트가 생성하는 내용:**
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["TOKENLAB_API_KEY"],
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+
+print(response.choices[0].message.content)
+```
+
+실행 방법:
+
+```bash
+export TOKENLAB_API_KEY="sk-your-api-key"
+python app.py
+```
+
+에이전트가 잘못된 모델 이름(예: `gpt5`)을 추측하면, API는 다음을 반환합니다:
+```json
+{
+  "error": {
+    "code": "model_not_found",
+    "did_you_mean": "gpt-5.4",
+    "suggestions": [{"id": "gpt-5.4"}, {"id": "gpt-5-mini"}],
+    "hint": "Did you mean 'gpt-5.4'? Use GET https://api.aisonar.dev/v1/models to list all available models."
+  }
+}
+```
+
+에이전트는 `did_you_mean`을 읽고, 모델 이름을 수정한 뒤 자동으로 다시 시도합니다.
+
+### 이미지 생성
+
+**입력:**
+```
+Generate images with Flux in Node.js
+```
+
+에이전트는 image API를 호출하고, 오류를 처리하며, 다운로드 및 저장 로직이 포함된 완전한 코드를 생성합니다.
+
+### 음성 인식
+
+**입력:**
+```
+Integrate speech-to-text in my app
+```
+
+에이전트는 올바른 `/v1/audio/transcriptions` 엔드포인트와 오디오 파일 처리가 포함된 코드를 생성합니다.
+
+## Agent-First 오류 복구
+
+모든 오류 응답에는 어떤 코딩 에이전트든 파싱할 수 있는 구조화된 힌트가 포함됩니다. 자세한 내용은 [전체 Agent-First API reference](/guides/agent-first-api)를 참조하세요.
+
+| 오류 | API가 반환하는 내용 | 에이전트가 수행하는 작업 |
+|-------|---------------------|---------------------|
+| 잘못된 모델 이름 | `did_you_mean` + `suggestions` | 자동 수정 후 재시도 |
+| 잔액 부족 | `balance_usd` + 더 저렴한 `suggestions` | 감당 가능한 모델로 전환 |
+| 모델 사용 불가 | `alternatives` + `retry_after` | 사용 가능한 모델로 전환 |
+| Rate limit 초과 | `retry_after` (정확한 초 단위) | 대기 후 재시도 |
+| Context가 너무 김 | 더 큰 모델이 포함된 `suggestions` | 더 큰 context 모델로 전환 |
+| Non-chat 요청 계약 불일치 | `supported_operations`, `supported_parameters`, `request_endpoint`, `recommended_request` | 공개 모델 계약을 기준으로 요청을 다시 구성 |
+
+### 네이티브 엔드포인트 최적화
+
+Claude 또는 Gemini 모델로 `/v1/chat/completions`를 호출하면, API는 최적화 헤더를 반환합니다:
+
+
+
+이 header들은 강제 자동 전환이 아니라 라우팅 힌트로 취급하세요. Claude 네이티브 호출은 `/v1/messages`를 사용합니다. Gemini 네이티브 호출은 the native endpoint hint header가 알려주는 endpoint를 따라야 하며, 일반적으로 `/v1beta/gemini`입니다.
+
+### 모델 검색
+
+문서를 검색할 필요가 없습니다:
+
+```bash
+# 기계가 읽을 수 있는 API 개요
+curl https://api.aisonar.dev/llms.txt
+
+# List models by category
+curl "https://api.aisonar.dev/v1/models?category=chat" -H "Authorization: Bearer sk-KEY"
+curl "https://api.aisonar.dev/v1/models?category=image" -H "Authorization: Bearer sk-KEY"
+
+# Non-chat 시나리오 추천 목록
+curl "https://api.aisonar.dev/v1/models?recommended_for=image" -H "Authorization: Bearer sk-KEY"
+curl "https://api.aisonar.dev/v1/models?recommended_for=translation" -H "Authorization: Bearer sk-KEY"
+
+# Non-chat 요청을 재시도하기 전에 단일 모델의 공개 계약 확인
+curl "https://api.aisonar.dev/v1/models/gpt-image-2" -H "Authorization: Bearer sk-KEY"
+
+# 기능별 필터링
+curl "https://api.aisonar.dev/v1/models?tag=coding" -H "Authorization: Bearer sk-KEY"
+```
+
+## 지원되는 기능
+
+| 유형 | 예시 |
+|------|----------|
+| 채팅 | GPT-5.4, Claude, Gemini, DeepSeek |
+| 이미지 생성 | GPT Image, Flux, Stable Diffusion, Gemini 이미지 모델 |
+| 음악 생성 | Suno |
+| 3D 모델 | Tripo3D |
+| 오디오 | 텍스트 음성 변환, 음성 텍스트 변환 |
+| 임베딩 | text-embedding-3 |
+| 재정렬 | bce-reranker, qwen3-rerank |
+
+## 모범 사례
+
+<CardGroup cols={2}>
+  <Card title="API Key 보안" icon="shield">
+    환경 변수를 사용하세요. key를 git에 commit하거나 frontend 코드에 노출하지 마세요.
+  </Card>
+  <Card title="비용 관리" icon="wallet">
+    [dashboard](https://console.aisonar.dev)에서 사용량 제한을 설정하세요. `error.balance_usd`를 확인하여 비용을 프로그래밍 방식으로 모니터링하세요.
+  </Card>
+  <Card title="직접적으로 요청하세요" icon="bullseye">
+    "AI Sonar에 image API가 있나요?" 대신 "Python에서 이미지를 생성하고 싶어요"라고 말하세요.
+  </Card>
+  <Card title="시나리오를 설명하세요" icon="message">
+    "GPT-4를 사용해"보다 "GPT-4로 chatbot을 만들고 있어"라고 말하면 에이전트에 더 많은 context를 제공합니다.
+  </Card>
+</CardGroup>
+
+## FAQ
+
+<AccordionGroup>
+  <Accordion title="스킬이 자동으로 트리거되지 않나요?">
+    요청에 "AI Sonar" 또는 "AI Sonar API"를 포함해 보세요:
+    ```
+    AI Sonar를 사용해 내 프로젝트에 GPT-4를 통합하고 싶어요
+    ```
+  </Accordion>
+
+  <Accordion title="API는 에이전트가 올바른 모델을 찾도록 어떻게 도와주나요?">
+    AI Sonar의 [Agent-First API](/guides/agent-first-api)는 구조화된 오류 힌트를 반환합니다. 에이전트가 잘못된 모델 이름을 추측하면, 오류에는 올바른 이름이 담긴 `did_you_mean`과 대안이 담긴 `suggestions`가 포함됩니다. 에이전트는 이를 읽고 다음 시도에서 자동으로 수정합니다.
+  </Accordion>
+
+  <Accordion title="어떤 코딩 에이전트가 지원되나요?">
+    공유 스킬 또는 rules 디렉터리를 지원하는 모든 코딩 에이전트가 가능합니다. installer가 지원되는 경우, `npx skills add`가 감지된 위치에 공유 `aisonar-api-integration` 스킬을 자동으로 배치합니다.
+  </Accordion>
+
+  <Accordion title="Skill은 어떻게 업데이트하나요?">
+    installer를 다시 실행하세요:
+    ```bash
+    npx skills add https://github.com/hedging8563/aisonar-skills --skill aisonar-api-integration -y
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## 리소스
+
+<CardGroup cols={2}>
+  <Card title="Agent-First API" icon="robot" href="/ko/guides/agent-first-api">
+    구조화된 오류 힌트에 대한 전체 reference
+  </Card>
+  <Card title="API 문서" icon="book" href="https://docs.aisonar.dev">
+    전체 API reference
+  </Card>
+  <Card title="모델" icon="sparkles" href="https://aisonar.dev/models">
+    사용 가능한 수백 개의 모델 둘러보기
+  </Card>
+  <Card title="llms.txt" icon="file-lines" href="https://api.aisonar.dev/llms.txt">
+    AI 에이전트를 위한 기계가 읽을 수 있는 API 개요
+  </Card>
+</CardGroup>
+
+<Info>
+**질문이 있으신가요?** [GitHub Issues](https://github.com/hedging8563/aisonar-skills/issues)를 확인하거나 [support@aisonar.dev](mailto:support@aisonar.dev)로 문의하세요
+</Info>

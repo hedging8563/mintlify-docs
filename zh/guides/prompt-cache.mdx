@@ -1,0 +1,150 @@
+---
+title: "✨ 上游 Prompt 缓存"
+description: "了解供应商级别的 Prompt 缓存及其如何降低成本"
+---
+
+## 概览
+
+## 供应商 Prompt 缓存如何工作
+
+供应商 Prompt 缓存会将您 Prompt 前缀的处理后表示形式存储在供应商的服务器上。当您发送具有相同前缀的请求时，供应商可以跳过对这些 Token 的重复处理。
+
+### 关键特性
+
+- **基于前缀**：仅能缓存 Prompt 的开头部分
+- **精确匹配**：需要完全相同的 Token（非语义相似度）
+- **时效限制**：缓存条目会过期（通常为 5-60 分钟）
+- **自动化**：无需特殊配置
+
+```
+请求 1: [系统提示词 + 上下文 A + 问题 1]
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+         此前缀被缓存
+
+请求 2: [系统提示词 + 上下文 A + 问题 2]
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+         缓存命中！仅处理问题 2
+```
+
+## 支持的供应商
+
+| 供应商 | 缓存读取折扣 | 缓存写入成本 | 最小 Token 数 |
+|----------|---------------------|------------------|------------|
+| **Anthropic** | 90% 折扣 | 25% 溢价 | 1024 |
+| **OpenAI** | 50% 折扣 | 与输入相同 | 1024 |
+| **DeepSeek** | 90% 折扣 | 与输入相同 | 64 |
+| **Google** | 75% 折扣 | 25% 溢价 | 32768 |
+
+<Info>
+折扣会自动应用。AI Sonar 会将供应商的缓存定价直接传递给您。
+</Info>
+
+## 识别缓存使用情况
+
+### 在用量日志中
+
+您的用量日志会显示详细的缓存 Token 明细：
+
+| 字段 | 描述 |
+|-------|-------------|
+| `cacheReadTokens` | 从供应商缓存提供的 Token（享有折扣） |
+| `cacheWriteTokens` | 写入缓存的 Token（供未来请求使用） |
+| `nonCachedPromptTokens` | 未经缓存处理的 Token |
+
+### 在交易记录中
+
+当使用上游缓存时，交易记录会显示 **Provider Cache** 标签：
+
+- **Provider Cache** (青色)：上游 Prompt 缓存命中 - 折扣费率
+
+## 成本计算示例
+
+对于向 Claude (Anthropic) 发送 10,000 个输入 Token 的请求：
+
+**无缓存：**
+```
+10,000 tokens × $3.00/1M = $0.030
+```
+
+**使用供应商缓存（8,000 个已缓存 + 2,000 个新 Token）：**
+```
+缓存读取:  8,000 tokens × $0.30/1M = $0.0024  (90% 折扣)
+缓存写入:  2,000 tokens × $3.75/1M = $0.0075  (25% 溢价)
+总计: $0.0099 (节省 67%)
+```
+
+## 最佳实践
+
+<AccordionGroup>
+  <Accordion title="使用一致的系统提示词">
+    将您的系统提示词和静态上下文放在消息的开头。这能最大化缓存命中的可能性。
+  </Accordion>
+
+  <Accordion title="批量处理相似请求">
+    在短时间内发送具有相同前缀的请求，以便在缓存过期前获益。
+  </Accordion>
+
+  <Accordion title="满足最小 Token 要求">
+    确保您的可缓存前缀满足供应商的最小值（例如 Anthropic/OpenAI 为 1024 个 Token）。
+  </Accordion>
+
+  <Accordion title="监控缓存指标">
+    查看仪表盘用量统计，了解缓存命中率和节省金额。
+  </Accordion>
+</AccordionGroup>
+
+## 检查缓存状态
+
+### 响应头
+
+```
+X-Upstream-Cache-Read: 8000   # 供应商缓存读取 tokens
+X-Upstream-Cache-Write: 2000  # 供应商缓存写入 tokens
+```
+
+### 用量 API
+
+用量日志 API 暂未公开。请通过响应头和控制台查看缓存明细：
+
+```text
+GET /v1/usage/logs is currently not a public endpoint.
+Use X-Upstream-Cache-* response headers, plus the dashboard usage page.
+```
+
+响应包含：
+```json
+{
+  "promptTokens": 10000,
+  "cacheReadTokens": 8000,
+  "cacheWriteTokens": 2000,
+  "nonCachedPromptTokens": 0,
+  "completionTokens": 500,
+  "cost": 0.0099
+}
+```
+
+## 常见问题
+
+<AccordionGroup>
+  <Accordion title="我可以禁用供应商缓存吗？">
+    供应商缓存是自动的且无法禁用。然而，它只会对您有利（降低成本），因此没有理由禁用它。
+  </Accordion>
+
+  <Accordion title="为什么我的请求没有命中供应商缓存？">
+    常见原因：
+    - 前缀已更改（即使只有一个 Token 的差异）
+    - 缓存已过期（通常为 5-60 分钟）
+    - 前缀太短（低于最小 Token 数）
+    - 使用了不同的 API 密钥
+  </Accordion>
+
+  <Accordion title="BYOK 是否支持供应商缓存？">
+    是的！当使用您自己的 API 密钥 (BYOK) 时，供应商缓存的工作方式相同。缓存会绑定到您的上游 API 密钥。
+  </Accordion>
+
+  <Accordion title="如何最大化缓存节省？">
+    1. 将静态内容放在 Prompt 的最前面
+    2. 在不同请求之间保持系统提示词的一致性
+    3. 快速连续发送相关请求
+  </Accordion>
+</AccordionGroup>

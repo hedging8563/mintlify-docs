@@ -1,0 +1,154 @@
+---
+title: "Rate Limitleri"
+description: "Rate limitlerini anlama ve yönetme"
+---
+
+## Genel Bakış
+
+AI Sonar, adil kullanım ve platform kararlılığını sağlamak için rate limitleri uygular. Limitler hesap katmanına göre değişir.
+
+## Rate Limit Katmanları
+
+| Katman | İstek/dakika | Açıklama |
+|------|-------------|-------------|
+| **Kullanıcı** | 1,000 | Tüm hesaplar için varsayılan katman |
+| **İş Ortağı** | 3,000 | Entegrasyon iş ortakları için |
+| **VIP** | 10,000 | Yüksek hacimli kullanıcılar için |
+
+<Note>
+  Rate limitleri değişikliğe tabidir. Özel limitler için support@aisonar.dev ile iletişime geçin.
+</Note>
+
+## Rate Limit Yanıtı
+
+Rate limitini aştığınızda, API yeniden denemeden önce ne kadar beklemeniz gerektiğini belirten bir `Retry-After` header'ı ile birlikte `429` durum kodu döndürür.
+
+## Rate Limit Aşıldı
+
+Limiti aştığınızda, bir `429` yanıtı alırsınız:
+
+```json
+{
+  "error": {
+    "message": "Rate limit exceeded. Please retry later.",
+    "type": "rate_limit_exceeded",
+    "code": "rate_limit_exceeded"
+  }
+}
+```
+
+Yanıt, bir `Retry-After` header'ı içerir:
+```
+Retry-After: 60  # Seconds to wait before retrying
+```
+
+## Rate Limitlerini Yönetme
+
+### Üstel geri çekilme
+
+Otomatik yeniden denemeler için exponential backoff uygulayın:
+
+```python
+import time
+from openai import OpenAI, RateLimitError
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+def make_request_with_backoff(messages, max_retries=5):
+    for attempt in range(max_retries):
+        try:
+            return client.chat.completions.create(
+                model="gpt-4o",
+                messages=messages
+            )
+        except RateLimitError as e:
+            if attempt == max_retries - 1:
+                raise
+
+            wait_time = 2 ** attempt  # 1, 2, 4, 8, 16 seconds
+            print(f"Rate limited. Waiting {wait_time}s...")
+            time.sleep(wait_time)
+```
+
+### İstek Kuyruğa Alma
+
+Yüksek hacimli uygulamalar için bir istek kuyruğu uygulayın:
+
+```python
+import asyncio
+from collections import deque
+
+class RateLimitedClient:
+    def __init__(self, requests_per_minute=60):
+        self.rpm = requests_per_minute
+        self.interval = 60 / requests_per_minute
+        self.last_request = 0
+
+    async def request(self, messages):
+        # Wait if needed to respect rate limit
+        now = asyncio.get_event_loop().time()
+        wait_time = max(0, self.last_request + self.interval - now)
+        if wait_time > 0:
+            await asyncio.sleep(wait_time)
+
+        self.last_request = asyncio.get_event_loop().time()
+        return await self.client.chat.completions.create(
+            model="gpt-4o",
+            messages=messages
+        )
+```
+
+### Toplu İşleme
+
+Toplu işlemler için, gecikmelerle birlikte batch'ler halinde işleyin:
+
+```python
+def process_batch(items, batch_size=50, delay=1):
+    results = []
+    for i in range(0, len(items), batch_size):
+        batch = items[i:i + batch_size]
+        for item in batch:
+            result = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[{"role": "user", "content": item}]
+            )
+            results.append(result)
+        time.sleep(delay)  # Pause between batches
+    return results
+```
+
+## En İyi Uygulamalar
+
+<AccordionGroup>
+  <Accordion title="Kullanımınızı izleyin">
+    Limitlerin altında proaktif şekilde kalmak için rate limit header'larını takip edin.
+  </Accordion>
+
+  <Accordion title="Caching uygulayın">
+    API çağrılarını azaltmak için aynı isteklerin yanıtlarını cache'leyin.
+  </Accordion>
+
+  <Accordion title="Uygun modeller kullanın">
+    Daha hızlı modeller (örneğin gpt-5-mini) daha fazla throughput sağlar.
+  </Accordion>
+
+  <Accordion title="Daha yüksek limitler için bizimle iletişime geçin">
+    Daha yüksek limitlere ihtiyacınız varsa support@aisonar.dev ile iletişime geçin.
+  </Accordion>
+</AccordionGroup>
+
+## Katmanınızı Yükseltme
+
+Bir katman yükseltmesi talep etmek için:
+
+1. [Dashboard](https://console.aisonar.dev) hesabınıza giriş yapın
+2. **Settings → Account** bölümüne gidin
+3. Kullanım senaryonuzla birlikte support ekibiyle iletişime geçin
+
+Veya support@aisonar.dev adresine şu bilgilerle e-posta gönderin:
+- Hesap e-posta adresiniz
+- Beklenen istek hacmi
+- Kullanım senaryosu açıklaması

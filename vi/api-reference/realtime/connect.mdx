@@ -1,0 +1,54 @@
+---
+title: "Realtime WebSocket"
+openapi: "GET /v1/realtime"
+description: "Kết nối phiên giọng nói và đa phương thức thời gian thực qua WebSocket"
+---
+
+## Tổng quan
+
+Endpoint này dùng cho nhận dạng giọng nói, tổng hợp giọng nói, dịch giọng nói hoặc mô hình đa phương thức thời gian thực. Yêu cầu `GET` thường trả về metadata; yêu cầu upgrade WebSocket sẽ được proxy tới phiên upstream đã định tuyến.
+
+<Note>Agent nên dùng `/v1/models` để tìm mô hình hỗ trợ realtime trước khi mở socket.</Note>
+
+## Kết nối
+
+<ParamField query="model" type="string" required>
+  ID mô hình realtime. Chọn mô hình có hợp đồng công khai liệt kê hỗ trợ realtime.
+</ParamField>
+
+<ParamField header="Authorization" type="string" required>
+  API key Bearer. Client WebSocket nên gửi `Authorization: Bearer sk-your-api-key` trong yêu cầu upgrade.
+</ParamField>
+
+<RequestExample>
+```javascript JavaScript
+import WebSocket from 'ws';
+
+const socket = new WebSocket('wss://api.aisonar.dev/v1/realtime?model=qwen-tts-realtime', {
+  headers: { Authorization: 'Bearer sk-your-api-key' }
+});
+
+socket.on('open', () => {
+  socket.send(JSON.stringify({ type: 'session.start' }));
+});
+
+socket.on('message', (data) => {
+  console.log('realtime event', data.toString());
+});
+```
+
+```bash cURL
+curl "https://api.aisonar.dev/v1/realtime" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+## Tin nhắn
+
+AI Sonar chuyển tiếp tin nhắn WebSocket giữa client và nhà cung cấp realtime đã định tuyến. Giữ đúng dạng sự kiện chính thức của mô hình đã chọn và truyền `model` trong query string.
+
+## Tính phí và đóng kết nối
+
+Phiên realtime dùng cùng số dư API key. AI Sonar trừ trước một ước tính nhỏ khi socket mở, rồi quyết toán hoặc hoàn tiền khi phiên đóng.
+
+Đóng socket client khi phiên hoàn tất. Nếu upstream đóng trước, AI Sonar sẽ chuyển tiếp close code khi có thể.

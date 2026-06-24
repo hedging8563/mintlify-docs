@@ -1,0 +1,166 @@
+---
+title: "Ứng dụng chat AI"
+description: "Cấu hình các ứng dụng chat AI phổ biến để sử dụng API tương thích OpenAI của AI Sonar"
+---
+
+## Tổng quan
+
+Hầu hết các ứng dụng chat AI phổ thông kết nối với AI Sonar thông qua đường dẫn chat tiêu chuẩn tương thích OpenAI.
+
+Trong thực tế, điều đó có nghĩa là:
+- sử dụng `https://api.aisonar.dev/v1` làm URL cơ sở trừ khi ứng dụng yêu cầu rõ ràng một URL điểm cuối đầy đủ
+- sử dụng API key AI Sonar của bạn làm API key theo kiểu OpenAI
+- chọn các model mà ứng dụng có thể sử dụng trong quy trình chat tiêu chuẩn
+
+<Note>
+Các ứng dụng chat phổ thông thường **định hướng theo chat-completions**, không phải client Codex Responses WebSocket. Với Codex CLI/App, Cursor hoặc các công cụ lập trình khác cần hành vi riêng cho Responses, hãy dùng hướng dẫn tích hợp chuyên biệt tương ứng.
+</Note>
+
+<Note>
+**Loại**: Ứng dụng chat
+
+**Đường chính**: đường chat-completions tương thích OpenAI
+
+**Mức hỗ trợ**: Đường được hỗ trợ
+</Note>
+
+## Ứng dụng được hỗ trợ
+
+| Ứng dụng | Nền tảng | Ghi chú |
+|-------------|----------|-------|
+| Open WebUI | Web, tự lưu trữ | Client tự lưu trữ phổ biến, hỗ trợ kết nối tương thích OpenAI |
+| LibreChat | Web, tự lưu trữ | Giao diện chat đa nhà cung cấp hỗ trợ điểm cuối OpenAI tùy chỉnh |
+| LobeChat | Web, Desktop, tự lưu trữ | Hỗ trợ nhà cung cấp tùy chỉnh mạnh mẽ |
+| Cherry Studio | Windows, macOS, Linux | Quy trình tương thích OpenAI ổn định và thuận tiện |
+| Chatbox | Windows, macOS, Linux | Cấu hình tương thích OpenAI đơn giản |
+| TypingMind | Web, Desktop | Dùng kiểu endpoint tùy chỉnh |
+| NextChat | Web, tự lưu trữ | Client nhẹ kiểu ChatGPT hỗ trợ ghi đè base URL |
+| ChatWise | Windows, macOS | Mẫu nhà cung cấp tùy chỉnh tiêu chuẩn |
+
+## Giá trị kết nối mặc định
+
+| Trường | Giá trị |
+|-------|-------|
+| URL cơ sở | `https://api.aisonar.dev/v1` |
+| Khóa API | `sk-your-api-key` |
+| Loại API | Tương thích OpenAI |
+
+Nếu một ứng dụng yêu cầu **URL điểm cuối đầy đủ** thay vì URL cơ sở, hãy sử dụng:
+- Chat Completions: `https://api.aisonar.dev/v1/chat/completions`
+
+## Ví dụ thiết lập ứng dụng
+
+<Tabs>
+  <Tab title="LobeChat">
+    **LobeChat tự lưu trữ**
+
+    ```bash
+    OPENAI_API_KEY=sk-your-api-key
+    OPENAI_PROXY_URL=https://api.aisonar.dev/v1
+    ```
+
+    **LobeChat Cloud**
+    1. Mở **Settings** → **Nhà cung cấp dịch vụ AI**
+    2. Chọn **OpenAI**
+    3. Nhập API key AI Sonar của bạn
+    4. Đặt điểm cuối tùy chỉnh thành `https://api.aisonar.dev/v1`
+  </Tab>
+
+  <Tab title="Cherry Studio">
+    1. Mở **Settings** → **Nhà cung cấp mô hình**
+    2. Thêm một nhà cung cấp **tương thích OpenAI**
+    3. Nhập:
+       - **Name**: AI Sonar
+       - **API Base URL**: `https://api.aisonar.dev/v1`
+       - **API Key**: `sk-your-api-key`
+    4. Thêm các model bạn muốn sử dụng
+  </Tab>
+
+  <Tab title="Chatbox">
+    1. Mở **Settings** → **AI Model**
+    2. Chọn **OpenAI API Compatible**
+    3. Nhập:
+       - **API Host**: `https://api.aisonar.dev/v1`
+       - **API Key**: `sk-your-api-key`
+       - **Model**: `gpt-5-mini` hoặc `gpt-4o`
+  </Tab>
+
+  <Tab title="TypingMind">
+    1. Mở **Settings**
+    2. Chọn **Điểm cuối tùy chỉnh**
+    3. Nhập:
+       - **URL điểm cuối**: `https://api.aisonar.dev/v1/chat/completions`
+       - **API Key**: `sk-your-api-key`
+    4. Cấu hình các model bạn muốn hiển thị
+  </Tab>
+
+  <Tab title="Open WebUI">
+    1. Mở **Admin Settings** → **Connections**
+    2. Thêm một kết nối **tương thích OpenAI**
+    3. Nhập:
+       - **Base URL**: `https://api.aisonar.dev/v1`
+       - **API Key**: `sk-your-api-key`
+    4. Lưu lại rồi chọn các model bạn muốn hiển thị
+  </Tab>
+
+  <Tab title="LibreChat">
+    Thêm một điểm cuối tương thích OpenAI trong cấu hình nhà cung cấp của LibreChat và trỏ đến:
+
+    ```yaml
+    customEndpoints:
+      - name: AI Sonar
+        apiKey: '${OPENAI_API_KEY}'
+        baseURL: 'https://api.aisonar.dev/v1'
+        models:
+          default: ['gpt-5-mini', 'gpt-5.4', 'claude-sonnet-4-6']
+          fetch: false
+    ```
+  </Tab>
+</Tabs>
+
+## Model mặc định an toàn hơn
+
+| Danh mục | Model đề xuất |
+|----------|------------------|
+| Mặc định chung | `gpt-5.4`, `gpt-5-mini`, `gpt-4o` |
+| Anthropic | `claude-sonnet-4-6`, `claude-opus-4-6` |
+| Google | `gemini-2.5-flash`, `gemini-2.5-pro` |
+| DeepSeek | `deepseek-r1`, `deepseek-v3-2` |
+
+## Mẹo
+
+<AccordionGroup>
+  <Accordion title="Ưu tiên URL cơ sở khi ứng dụng hỗ trợ">
+    Hầu hết các ứng dụng sẽ dễ cấu hình hơn và ít lỗi hơn khi bạn cung cấp `https://api.aisonar.dev/v1` dưới dạng URL cơ sở thay vì URL điểm cuối đầy đủ.
+  </Accordion>
+
+  <Accordion title="Dùng model nhỏ hơn trước">
+    Hãy bắt đầu với `gpt-5-mini` hoặc `gpt-4o` cho các cuộc trò chuyện hằng ngày, sau đó chuyển các tác vụ suy luận nặng hơn sang `gpt-5.4` hoặc `claude-opus-4-6`.
+  </Accordion>
+
+  <Accordion title="Tách riêng các công cụ lập trình">
+    Các ứng dụng chat phổ thông và coding agent thường cần hành vi điểm cuối khác nhau. Hãy giữ các công cụ kiểu Codex/Cursor trong các trang tích hợp chuyên biệt của chúng.
+  </Accordion>
+</AccordionGroup>
+
+## Khắc phục sự cố
+
+<AccordionGroup>
+  <Accordion title="Lỗi kết nối">
+    - Xác minh URL cơ sở chính xác là `https://api.aisonar.dev/v1`
+    - Xóa dấu gạch chéo ở cuối nếu ứng dụng tự động thêm path
+    - Nếu ứng dụng muốn URL điểm cuối đầy đủ, hãy sử dụng `https://api.aisonar.dev/v1/chat/completions`
+  </Accordion>
+
+  <Accordion title="401 Unauthorized">
+    - Kiểm tra lại API key của bạn
+    - Xác nhận key đang hoạt động trong dashboard AI Sonar
+    - Đảm bảo không có khoảng trắng hoặc xuống dòng thừa
+  </Accordion>
+
+  <Accordion title="Model không khả dụng">
+    - Xác minh chính xác tên model
+    - Thử một model mặc định được hỗ trợ rộng rãi như `gpt-5-mini`, `gpt-4o` hoặc `claude-sonnet-4-6`
+    - Kiểm tra tình trạng khả dụng hiện tại trong tài liệu hoặc dashboard của AI Sonar
+  </Accordion>
+</AccordionGroup>

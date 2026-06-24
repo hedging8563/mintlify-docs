@@ -1,0 +1,231 @@
+---
+title: 'Referência da API'
+description: 'Referência completa da API AI Sonar'
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Visão Geral
+
+A AI Sonar é **native-first e compatível com OpenAI**. Use rotas nativas do provedor, como POST /v1/messages para Anthropic e /v1beta/models/...:generateContent para Gemini, quando precisar de comportamento nativo. Use endpoints /v1 compatíveis com OpenAI ao migrar SDKs ou ferramentas no estilo OpenAI. POST /v1/responses continua sendo um caminho avançado opcional para comportamento específico de Responses.
+
+## URL Base
+
+```
+https://api.aisonar.dev
+```
+
+## Autenticação
+
+Todos os endpoints da API exigem autenticação usando um token Bearer:
+
+```bash
+Authorization: Bearer sk-your-api-key
+```
+
+Obtenha sua chave de API a partir do [Dashboard](https://console.aisonar.dev).
+
+<Warning>
+**Sobre o Playground Interativo**: O playground neste site de documentação é apenas para demonstração e não suporta a inserção de chaves de API. Para testar a API, por favor utilize:
+- **cURL** - Copie os comandos de exemplo e substitua `sk-your-api-key` pela sua chave real
+- **Postman** - Importe nossa [OpenAPI spec](/openapi.json)
+- **SDK** - Use o SDK da OpenAI/Anthropic com nossa URL base
+</Warning>
+
+## Endpoints Suportados
+
+### Chat & Geração de Texto
+
+| Endpoint | Método | Descrição |
+|----------|--------|-----------|
+| `/v1/chat/completions` | POST | Chat completions compatível com OpenAI |
+| `/v1/messages` | POST | API de mensagens compatível com Anthropic |
+| `/v1/responses` | POST | OpenAI Responses API |
+
+### Embeddings & Rerank
+
+| Endpoint | Método | Descrição |
+|----------|--------|-----------|
+| `/v1/embeddings` | POST | Criar embeddings de texto |
+| `/v1/rerank` | POST | Reordenar documentos |
+
+### Imagens
+
+| Endpoint | Método | Descrição |
+|----------|--------|-----------|
+| `/v1/images/generations` | POST | Gerar imagens a partir de texto |
+| `/v1/images/edits` | POST | Editar imagens |
+| `/v1/images/generations/{id}` | GET | Caminho de status de tarefa para respostas de imagem baseadas em tarefas |
+
+<Info>
+Alguns modelos de imagem podem retornar resultados inline, outros podem retornar respostas baseadas em tarefas, e alguns podem se comportar de ambas as formas dependendo do provedor roteado. Se a resposta de criação incluir `poll_url`, siga-a exatamente.
+</Info>
+
+### Áudio
+
+| Endpoint | Método | Descrição |
+|----------|--------|-----------|
+| `/v1/audio/speech` | POST | Texto para fala (TTS) |
+| `/v1/audio/transcriptions` | POST | Transcrição de fala para texto (STT) |
+
+### Tempo real
+
+| Endpoint | Método | Descrição |
+|----------|--------|-------------|
+| `/v1/realtime?model={model}` | WS | Sessões WebSocket em tempo real |
+
+<Info>
+Use `/v1/realtime` para solicitações de upgrade WebSocket. Um `GET /v1/realtime` comum retorna metadados do endpoint para clientes que não conseguem inspecionar rotas WebSocket diretamente.
+</Info>
+
+### Vídeo
+
+| Endpoint | Método | Descrição |
+|----------|--------|-----------|
+| `/v1/videos/generations` | POST | Criar tarefa de geração de vídeo |
+| `/v1/tasks/{id}` | GET | Obter status de tarefa assíncrona para jobs de vídeo |
+| `/v1/videos/generations/{id}` | GET | Caminho de status de tarefa compatível com legados para vídeo |
+
+<Info>
+Para novos clientes, prefira `/v1/tasks/{id}` e siga o `poll_url` retornado pelas respostas de criação. Mantenha `/v1/videos/generations/{id}` apenas para compatibilidade retroativa.
+</Info>
+
+### Tarefas Assíncronas
+
+| Endpoint | Método | Descrição |
+|----------|--------|-----------|
+| `/v1/tasks/{id}` | GET | Endpoint unificado de status de tarefa assíncrona. Recomendado ao seguir um `poll_url` retornado |
+
+<Info>
+Este endpoint não se limita a vídeo, música e 3D. Algumas tarefas de imagem também podem usar `/v1/tasks/{id}` como o caminho canônico de polling.
+</Info>
+
+### Música
+
+| Endpoint | Método | Descrição |
+|----------|--------|-----------|
+| `/v1/music/generations` | POST | Criar tarefa de geração de música |
+| `/v1/music/generations/{id}` | GET | Caminho de status específico para música |
+
+<Info>
+Para novos clientes, prefira primeiro o `poll_url` retornado. Se você precisar de um endpoint fixo de status de tarefa, use `/v1/tasks/{id}`; mantenha `/v1/music/generations/{id}` para caminhos de compatibilidade específicos de música.
+</Info>
+
+### Geração 3D
+
+| Endpoint | Método | Descrição |
+|----------|--------|-----------|
+| `/v1/3d/generations` | POST | Criar tarefa de geração de modelo 3D |
+| `/v1/3d/generations/{id}` | GET | Caminho de status específico para 3D |
+
+<Info>
+Para novos clientes, prefira primeiro o `poll_url` retornado. Se você precisar de um endpoint fixo de status de tarefa, use `/v1/tasks/{id}`; mantenha `/v1/3d/generations/{id}` para caminhos de compatibilidade específicos de 3D.
+</Info>
+
+### Modelos
+
+| Endpoint | Método | Descrição |
+|----------|--------|-----------|
+| `/v1/models` | GET | Listar todos os modelos disponíveis |
+| `/v1/models/{model}` | GET | Obter informações de um modelo específico |
+
+### Gemini (v1beta)
+
+Suporte nativo ao formato da API Google Gemini:
+
+| Endpoint | Método | Descrição |
+|----------|--------|-----------|
+| `/v1beta/models/{model}:generateContent` | POST | Gerar conteúdo (formato Gemini) |
+| `/v1beta/models/{model}:streamGenerateContent` | POST | Gerar conteúdo em stream (formato Gemini) |
+
+<Note>
+Os endpoints Gemini suportam autenticação por parâmetro de query `?key=` além do token Bearer padrão.
+</Note>
+
+## Formato de Resposta
+
+Todas as respostas seguem um formato consistente:
+
+### Resposta de Sucesso
+
+```json
+{
+  "id": "chatcmpl-abc123",
+  "object": "chat.completion",
+  "created": 1234567890,
+  "model": "gpt-4o",
+  "choices": [...],
+  "usage": {
+    "prompt_tokens": 10,
+    "completion_tokens": 20,
+    "total_tokens": 30
+  }
+}
+```
+
+### Transparência de Roteamento
+
+Todas as respostas incluem um campo `_routing` com informações do canal:
+
+```json
+{
+  "id": "chatcmpl-abc123",
+  ...,
+  "_routing": {
+    "channel": {
+      "id": "ch_xxx",
+      "name": "channel-name",
+      "provider": "openai",
+      "channelType": "PLATFORM"
+    },
+    "cached": false,
+    "retryCount": 0
+  }
+}
+```
+
+| Campo | Descrição |
+|-------|-----------|
+| `channel.id` | Identificador do canal utilizado |
+| `channel.provider` | Provedor upstream (openai, anthropic, etc.) |
+| `channel.channelType` | `PLATFORM` (AI Sonar) ou `PRIVATE` (BYOK) |
+| `cached` | Se a resposta foi fornecida a partir do cache |
+| `retryCount` | Número de tentativas de repetição (se houver) |
+
+### Resposta de Erro
+
+```json
+{
+  "error": {
+    "message": "Invalid API key provided",
+    "type": "invalid_api_key",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+## Limites de Taxa
+
+Os limites de taxa são baseados em função e configuráveis por administradores. Valores padrão:
+
+| Função | Requisições/min |
+|--------|-----------------|
+| Usuário | 60 |
+| Parceiro | 300 |
+| VIP | 1.000 |
+
+<Note>
+Contate o suporte para limites de taxa personalizados. Valores exatos podem variar conforme a configuração da conta.
+</Note>
+
+Quando os limites de taxa são excedidos, a API retorna um código de status `429` com um cabeçalho `Retry-After` indicando quanto tempo esperar.
+
+## Especificação OpenAPI
+
+<Card
+  title="Especificação OpenAPI"
+  icon="file-code"
+  href="/openapi.json"
+>
+  Baixe a especificação completa OpenAPI 3.0
+</Card>

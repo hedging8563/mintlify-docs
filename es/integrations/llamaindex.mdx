@@ -1,0 +1,133 @@
+---
+title: "LlamaIndex"
+description: "Integra AI Sonar con LlamaIndex usando integraciones compatibles con OpenAI"
+---
+
+## Descripción general
+
+Para AI Sonar, la configuración más robusta de LlamaIndex es usar **integraciones compatibles con OpenAI** en lugar de las clases OpenAI integradas.
+
+La documentación actual de LlamaIndex recomienda explícitamente `OpenAILike` para endpoints de terceros compatibles con OpenAI, porque las clases OpenAI integradas infieren metadatos a partir de nombres de modelos oficiales.
+
+En otras palabras: aquí debes tratar `OpenAILike` como la ruta soportada para AI Sonar, y no las clases OpenAI integradas.
+
+## Instalación
+
+```bash
+pip install llama-index-core \
+  llama-index-readers-file \
+  llama-index-llms-openai-like \
+  llama-index-embeddings-openai-like
+```
+
+## Configuración básica
+
+```python
+from llama_index.core import Settings
+from llama_index.llms.openai_like import OpenAILike
+from llama_index.embeddings.openai_like import OpenAILikeEmbedding
+
+llm = OpenAILike(
+    model="gpt-5.4",
+    api_base="https://api.aisonar.dev/v1",
+    api_key="sk-your-api-key",
+    is_chat_model=True,
+)
+
+embed_model = OpenAILikeEmbedding(
+    model_name="text-embedding-3-small",
+    api_base="https://api.aisonar.dev/v1",
+    api_key="sk-your-api-key",
+)
+
+Settings.llm = llm
+Settings.embed_model = embed_model
+```
+
+## Uso básico
+
+```python
+response = llm.complete("Explain AI Sonar in one sentence.")
+print(response.text)
+```
+
+## Chat
+
+```python
+from llama_index.core.llms import ChatMessage
+
+messages = [
+    ChatMessage(role="system", content="You are a helpful assistant."),
+    ChatMessage(role="user", content="What is the capital of France?")
+]
+
+response = llm.chat(messages)
+print(response.message.content)
+```
+
+## Streaming
+
+```python
+for chunk in llm.stream_complete("Write a short poem about AI."):
+    print(chunk.delta, end="", flush=True)
+```
+
+## Embeddings
+
+```python
+vector = embed_model.get_text_embedding("Hello, world!")
+print(vector[:5])
+```
+
+## RAG con documentos
+
+```python
+from llama_index.core import SimpleDirectoryReader, VectorStoreIndex
+
+documents = SimpleDirectoryReader("./data").load_data()
+index = VectorStoreIndex.from_documents(documents)
+
+query_engine = index.as_query_engine()
+response = query_engine.query("What is in my documents?")
+print(response)
+```
+
+## Motor de chat
+
+```python
+chat_engine = index.as_chat_engine(chat_mode="condense_question")
+
+response = chat_engine.chat("What is AI Sonar?")
+print(response)
+
+response = chat_engine.chat("How many models does it support?")
+print(response)
+```
+
+## Uso asíncrono
+
+```python
+import asyncio
+
+async def main():
+    response = await llm.acomplete("Hello!")
+    print(response.text)
+
+asyncio.run(main())
+```
+
+## Mejores prácticas
+
+<AccordionGroup>
+  <Accordion title="Usa OpenAILike para AI Sonar">
+    Prefiere `llama_index.llms.openai_like.OpenAILike` y `llama_index.embeddings.openai_like.OpenAILikeEmbedding` para AI Sonar y otros gateways de terceros compatibles con OpenAI.
+  </Accordion>
+
+  <Accordion title="Configura api_base explícitamente">
+    Pasa `api_base="https://api.aisonar.dev/v1"` directamente en el código en lugar de depender de nombres antiguos de variables de entorno de OpenAI.
+  </Accordion>
+
+  <Accordion title="Mantén separados los roles de los modelos">
+    Usa modelos de chat/reasoning para la síntesis y `text-embedding-3-small` o `text-embedding-3-large` para la recuperación.
+  </Accordion>
+</AccordionGroup>

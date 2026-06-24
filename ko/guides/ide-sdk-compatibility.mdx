@@ -1,0 +1,359 @@
+---
+title: "IDE 및 SDK 호환성"
+description: "AI 코딩 도구, SDK 및 프레임워크에 대한 근거 기반 호환성 가이드"
+---
+
+## 개요
+
+AI Sonar는 일반적인 코딩 도구, SDK, 프레임워크가 최소한의 연결 코드로 통합할 수 있도록 여러 API 형식을 노출합니다.
+
+이 페이지는 마케팅 매트릭스보다 의도적으로 범위를 좁혔습니다:
+
+- **Supported**는 구체적인 설정 경로를 문서화하고 AI Sonar가 해당 경로가 기대하는 프로토콜 형태를 노출함을 의미합니다.
+- **강력한 네이티브 경로**는 리포지토리에 해당 프로토콜 계열에 대한 직접적인 어댑터 또는 요청 형식의 증거가 있음을 의미합니다.
+- **최선 노력**는 통합이 작동할 수 있으나, 업스트림 클라이언트가 이 커스텀 게이트웨이 워크플로우를 안정적인 계약으로 취급하지 않음을 의미합니다.
+
+<Note>
+  지원되지 않는 필드는 일관되게 처리되지 않습니다. 호환성 경로에서는 일부 필드가 무시되거나 정규화됩니다. `/v1/responses` 경로에서는 요청된 동작을 보장할 수 없을 때 해당 경로가 명시적으로 `400` 또는 `503` 오류를 반환할 수 있습니다.
+</Note>
+
+## 지원되는 API 형식
+
+| 엔드포인트 | 형식 | 사용 사례 |
+|----------|--------|----------|
+| `/v1/chat/completions` | OpenAI Chat | 범용 호환성 |
+| `/v1/responses` | OpenAI Responses | 상태 저장 대화 |
+| `/v1/messages` | Anthropic Messages | Claude 고유 기능 |
+| `/v1beta/models/:model:generateContent` | Google Gemini | Gemini 고유 기능 |
+
+## IDE 및 CLI 호환성
+
+### 문서화된 도구 경로
+
+| 도구 | 지원 수준 | 형식 | 참고 |
+|------|---------------|--------|-------|
+| **Cursor** | 제한적으로 지원 | OpenAI 호환 | BYOK 표준 채팅/편집기 흐름에서는 작동하며, Tab Completion 같은 Cursor가 관리하는 기능을 대체하지는 않습니다 |
+| **Claude Code CLI** | 강력한 네이티브 경로 | Anthropic | thinking 및 `tool_choice`에 대한 어댑터 적용을 포함한 네이티브 `/v1/messages` 경로 |
+| **Codex CLI** | 모델/경로 제한 내 지원 | OpenAI Responses | Codex 전용 워크플로우를 위한 고급 경로로 `/v1/responses`를 취급; 일부 Responses 전용 필드는 모든 모델과 라우팅 경로에서 보장되지 않습니다 |
+| **Gemini CLI** | 최선 노력 / 실험적 | Gemini | Custom AI Sonar base URL 흐름은 안정적인 업스트림 계약이 아닙니다 |
+| **OpenCode** | Supported | OpenAI 호환 | 기본적으로 OpenAI 호환 제공자를 사용하십시오; 명시적으로 필요할 때만 Responses 기반 제공자로 전환하십시오 |
+
+<Note>
+  다른 OpenAI 호환 편집기 및 에이전트 도구들도 동일한 기본 URL 패턴에서 작동하는 경우가 많지만, 이 리포지토리는 현재 Windsurf, Aider, Continue.dev, Cline/Roo Code, GitHub Copilot 등 유사 클라이언트에 대한 도구별 회귀(regression) 테스트 커버리지를 유지하고 있지 않습니다.
+</Note>
+
+### 구성 예시
+
+<Tabs>
+  <Tab title="Cursor">
+    ```
+    Base URL: https://api.aisonar.dev/v1
+    API Key: sk-your-api-key
+    ```
+    Cursor는 내부적으로 Anthropic 스타일의 도구 형식을 사용합니다. AI Sonar는 다음 두 형식을 모두 지원합니다:
+    - OpenAI 형식: `{ type: "function", function: { name, parameters } }`
+    - Anthropic 형식: `{ name, input_schema }` (type 필드 없음)
+  </Tab>
+  <Tab title="Claude Code">
+    ```bash
+    export ANTHROPIC_BASE_URL="https://api.aisonar.dev"
+    export ANTHROPIC_API_KEY="sk-your-api-key"
+    ```
+  </Tab>
+  <Tab title="OpenCode">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export LOCAL_ENDPOINT="https://api.aisonar.dev/v1"
+    ```
+  </Tab>
+  <Tab title="Aider">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export OPENAI_BASE_URL="https://api.aisonar.dev/v1"
+    aider --model gpt-5.4
+    ```
+  </Tab>
+</Tabs>
+
+## SDK 호환성
+
+### 문서화된 SDK & 프레임워크 경로
+
+| SDK / 프레임워크 | 언어 | 지원 수준 | 참고 |
+|-----------------|----------|---------------|-------|
+| **OpenAI SDK** | Python/JS/Go | 지원되는 핵심 경로 | Chat Completions 및 Embeddings가 기본 문서화된 경로입니다; 일부 Responses 전용 필드는 모든 모델과 라우팅 경로에서 보장되지 않습니다 |
+| **Anthropic SDK** | Python/JS | 강력한 네이티브 경로 | 도구, thinking, 프롬프트 캐싱에 대한 직접 증거가 있는 네이티브 Messages 경로 |
+| **Vercel AI SDK** | TypeScript | 권장 통합 패턴 | `@ai-sdk/openai-compatible`를 선호하십시오; Responses-네이티브 동작이 명시적으로 필요할 때만 `@ai-sdk/openai`를 사용하십시오 |
+| **LangChain** | Python/JS | 지원되는 표준 인터페이스 | `ChatOpenAI` 및 `OpenAIEmbeddings`가 의도된 범위입니다; 벤더 네이티브 확장은 범위에서 제외됩니다 |
+| **LlamaIndex** | Python | `OpenAILike`를 통해 지원 | AI Sonar와 같은 서드파티 게이트웨이에는 내장 OpenAI 클래스가 아닌 `OpenAILike`를 사용하십시오 |
+| **Dify** | - | 범위 제한 내 지원 | OpenAI 제공자 및 chat-completions 지향 흐름이 의도된 경로입니다; Codex 전용 Responses 또는 WebSocket 동작에는 적합하지 않습니다 |
+
+## Chat Completions 매개변수
+
+### 핵심 매개변수
+
+| 매개변수 | 유형 | 설명 |
+|-----------|------|-------------|
+| `model` | string | 모델 식별자(필수) |
+| `messages` | array | 대화 메시지(필수) |
+| `max_tokens` | integer | 최대 출력 토큰 수 |
+| `temperature` | 숫자 | 샘플링 온도 (0-2) |
+| `top_p` | number | 누클리어스 샘플링 (0-1) |
+| `stream` | boolean | 스트리밍 활성화 |
+
+### 도구 호출
+
+```json
+{
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_weather",
+        "description": "Get weather for a location",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "location": { "type": "string" }
+          }
+        },
+        "strict": true
+      }
+    }
+  ],
+  "tool_choice": "auto",
+  "parallel_tool_calls": true
+}
+```
+
+### Tool Choice 옵션
+
+| 형식 | 예시 | 설명 |
+|--------|---------|-------------|
+| String | `"auto"`, `"none"`, `"required"` | 단순 선택 |
+| OpenAI Object | `{ "type": "function", "function": { "name": "fn" } }` | 특정 함수 강제 지정 |
+| Anthropic Object | `{ "type": "tool", "name": "fn", "disable_parallel_tool_use": true }` | Anthropic 네이티브 형식 |
+
+### 고급 매개변수
+
+| 매개변수 | 유형 | 설명 |
+|-----------|------|-------------|
+| `stream_options` | object | 토큰 수 집계를 위한 `{ include_usage: true }` |
+| `reasoning_effort` | string | 추론이 활성화된 GPT-5 모델에 대한 `"low"`, `"medium"`, `"high"` |
+| `service_tier` | 문자열 | `"auto"` 또는 `"default"` |
+| `seed` | integer | 결정적 출력 |
+| `logprobs` | boolean | 로그 확률 반환 |
+| `top_logprobs` | integer | 상위 logprobs 개수(0-20) |
+| `logit_bias` | object | 토큰 바이어스 맵(-100 to 100) |
+| `frequency_penalty` | 숫자 | 반복 페널티 (-2 to 2) |
+| `presence_penalty` | 숫자 | 주제 페널티 (-2 to 2) |
+| `stop` | string/array | 중지 시퀀스 |
+| `n` | 정수 | 완료 수 (1-128) |
+| `user` | string | 추적용 사용자 식별자 |
+
+### OpenAI 고급 기능
+
+| 매개변수 | 유형 | 설명 |
+|-----------|------|-------------|
+| `modalities` | 배열 | 멀티모달용 `["text", "audio"]` |
+| `audio` | object | 오디오 출력 구성(음성, 형식) |
+| `prediction` | object | 빠른 완료를 위한 예측된 출력 |
+| `metadata` | object | 추적용 키-값 쌍 |
+| `store` | boolean | 나중에 검색할 수 있도록 저장 |
+
+### 제공자별 옵션
+
+```json
+{
+  "anthropic_options": {
+    "thinking": {
+      "type": "enabled",
+      "budget_tokens": 10000
+    },
+    "prompt_caching": true
+  },
+  "google_options": {
+    "safety_settings": [...],
+    "google_search": true,
+    "code_execution": true
+  }
+}
+```
+
+## Anthropic Messages 매개변수
+
+### 핵심 매개변수
+
+| 매개변수 | 유형 | 설명 |
+|-----------|------|-------------|
+| `model` | string | 모델 식별자 |
+| `messages` | array | 대화 메시지 |
+| `max_tokens` | 정수 | 최대 출력 (128000까지) |
+| `system` | string/array | 시스템 프롬프트 |
+| `stream` | boolean | 스트리밍 활성화 |
+
+### 도구 호출
+
+```json
+{
+  "tools": [
+    {
+      "name": "get_weather",
+      "description": "Get weather",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "location": { "type": "string" }
+        }
+      }
+    }
+  ],
+  "tool_choice": {
+    "type": "auto",
+    "disable_parallel_tool_use": false
+  }
+}
+```
+
+### 확장된 Thinking
+
+```json
+{
+  "model": "claude-opus-4-6",
+  "thinking": {
+    "type": "enabled",
+    "budget_tokens": 10000
+  }
+}
+```
+
+## Responses API 매개변수
+
+### 핵심 매개변수
+
+| 매개변수 | 유형 | 설명 |
+|-----------|------|-------------|
+| `model` | string | 모델 식별자 |
+| `input` | string/array | 입력 콘텐츠 |
+| `instructions` | 문자열 | 시스템 지침 |
+| `max_output_tokens` | integer | 최대 출력 토큰 수 |
+| `previous_response_id` | 문자열 | 대화 계속하기 |
+
+### 고급 매개변수
+
+| 매개변수 | 유형 | 설명 |
+|-----------|------|-------------|
+| `truncation_strategy` | 문자열 | `"auto"` 또는 `"disabled"` |
+| `include` | array | `["reasoning.encrypted_content"]` |
+| `reasoning_effort` | string | 추론 모델용 |
+| `service_tier` | string | 우선순위 티어 |
+
+### 도구 형식
+
+OpenAI 및 Anthropic 도구 형식을 모두 지원합니다:
+
+```json
+// OpenAI format
+{ "type": "function", "name": "fn", "parameters": {...} }
+
+// Anthropic format (Cursor compatibility)
+{ "name": "fn", "input_schema": {...} }
+```
+
+## Gemini API 매개변수
+
+### 핵심 매개변수
+
+| 매개변수 | 유형 | 설명 |
+|-----------|------|-------------|
+| `contents` | array | 대화 내용 |
+| `systemInstruction` | 객체 | 시스템 프롬프트 |
+| `generationConfig` | 객체 | 생성 설정 |
+
+### 도구
+
+```json
+{
+  "tools": [{
+    "functionDeclarations": [{
+      "name": "search",
+      "description": "Search the web",
+      "parameters": {...}
+    }],
+    "codeExecution": {},
+    "googleSearch": {}
+  }],
+  "toolConfig": {
+    "functionCallingConfig": {
+      "mode": "AUTO"
+    }
+  }
+}
+```
+
+### 안전 설정
+
+```json
+{
+  "safetySettings": [
+    {
+      "category": "HARM_CATEGORY_HARASSMENT",
+      "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+    }
+  ]
+}
+```
+
+### 추가 매개변수
+
+| 매개변수 | 유형 | 설명 |
+|-----------|------|-------------|
+| `cachedContent` | string | 캐시된 콘텐츠 참조 |
+| `responseMimeType` | 문자열 | `"text/plain"` 또는 `"application/json"` |
+| `responseSchema` | object | 구조화된 출력을 위한 JSON 스키마 |
+
+## 스트리밍
+
+모든 엔드포인트는 Server-Sent Events (SSE) 스트리밍을 지원합니다:
+
+```bash
+# Chat Completions
+curl https://api.aisonar.dev/v1/chat/completions \
+  -H "Authorization: Bearer sk-xxx" \
+  -d '{"model": "gpt-4o", "messages": [...], "stream": true}'
+
+# With usage tracking
+-d '{"...", "stream_options": {"include_usage": true}}'
+```
+
+## 오류 처리
+
+AI Sonar는 OpenAI 호환 오류 응답을 반환합니다:
+
+```json
+{
+  "error": {
+    "message": "Invalid API key",
+    "type": "invalid_api_key",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+자세한 내용은 [오류 처리 가이드](/guides/error-handling)를 참조하십시오.
+
+## 권장 모범 사례
+
+<AccordionGroup>
+  <Accordion title="알 수 없는 매개변수에 대해서는 passthrough 사용">
+    모든 스키마는 `.passthrough()`를 사용합니다 - 알 수 없는 매개변수는 업스트림 제공자로 전달됩니다.
+  </Accordion>
+
+  <Accordion title="정확한 청구를 위해 stream_options 사용 권장">
+    스트리밍 응답의 정확한 토큰 수를 위해 `stream_options.include_usage`를 활성화하십시오.
+  </Accordion>
+
+  <Accordion title="적절한 tool_choice 형식 사용">
+    SDK가 예상하는 형식에 맞추십시오. AI Sonar는 OpenAI 및 Anthropic 형식 둘 다를 허용합니다.
+  </Accordion>
+</AccordionGroup>

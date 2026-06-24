@@ -1,0 +1,252 @@
+---
+title: "✨ Compétence d'intégration API AI Sonar"
+description: "Installez la compétence partagée d'intégration API AI Sonar pour n'importe quel agent de codage, avec récupération d'erreurs Agent-First."
+---
+
+<Note>
+Cette compétence apprend à votre agent de codage comment intégrer les **centaines d'API IA** de AI Sonar simplement en décrivant ce dont vous avez besoin. Elle est empaquetée sous forme d'une compétence partagée agent-first et fonctionne avec tout agent de codage prenant en charge les fichiers de compétences ou de règles.
+
+L'API est **[Agent-First](/guides/agent-first-api)** — même si l'agent devine mal un nom de modèle, la réponse d'erreur lui indique exactement comment le corriger.
+</Note>
+
+<Note>
+Cette page documente une couche de mise en paquet de compétence réutilisable, et non une surface de compatibilité protocolaire. Si vous cherchez la configuration d’un point de terminaison, d’un SDK ou d’un client, utilisez les pages d’intégration dédiées aux outils concernés.
+</Note>
+
+## Comment cela fonctionne
+
+1. **Vous décrivez ce dont vous avez besoin** — "Je veux utiliser GPT-4 dans mon projet Python"
+2. **L'agent appelle l'API** — il peut deviner un nom de modèle ou un point de terminaison
+3. **Si quelque chose ne va pas** — l'API renvoie des indications structurées (`did_you_mean`, `suggestions`, `retry_after`)
+4. **L'agent s'auto-corrige** — lit les indications et réessaie avec les bons paramètres
+5. **Vous obtenez du code fonctionnel** — généralement dès la première ou la deuxième tentative
+
+## Installation
+
+<Note>
+Utilisez la commande d'installation canonique non interactive :
+
+```bash
+npx skills add https://github.com/hedging8563/aisonar-skills --skill aisonar-api-integration -y
+```
+
+Cela installe la compétence partagée `aisonar-api-integration` depuis le dépôt de compétences AI Sonar.
+
+Si votre outil ne prend pas en charge l'installateur, copiez le dossier `skills/aisonar-api-integration/` du dépôt dans le répertoire partagé de compétences ou de règles de votre outil.
+</Note>
+
+### Vérifier l'installation
+
+Demandez à votre agent de codage :
+```
+Quelles skills sont disponibles ?
+```
+
+Si vous voyez `aisonar-api-integration`, l'installation a réussi.
+
+## Obtenez votre clé API
+
+<Steps>
+  <Step title="Visitez AI Sonar">
+    Rendez-vous sur [aisonar.dev](https://aisonar.dev)
+  </Step>
+  <Step title="Connectez-vous">
+    Créez un compte ou connectez-vous
+  </Step>
+  <Step title="Obtenez une clé API">
+    Accédez à [Dashboard → API Keys](https://console.aisonar.dev/api) et créez une nouvelle clé
+  </Step>
+  <Step title="Copiez la clé">
+    Votre clé commence par `sk-...` — conservez-la en lieu sûr
+  </Step>
+</Steps>
+
+<Tip>
+Vous n'avez pas besoin de coller une clé API dans les prompts ou les fichiers source. La compétence doit demander quelle variable d'environnement utiliser, puis générer du code qui lit la clé depuis cette variable.
+</Tip>
+
+## Exemples
+
+### Complétion de chat
+
+**Vous dites :**
+```
+Je veux utiliser GPT-4 dans mon projet Python
+```
+
+**L'agent génère :**
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["TOKENLAB_API_KEY"],
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+
+print(response.choices[0].message.content)
+```
+
+Exécutez-le avec :
+
+```bash
+export TOKENLAB_API_KEY="sk-your-api-key"
+python app.py
+```
+
+Si l'agent devine un mauvais nom de modèle (par ex. `gpt5`), l'API renvoie :
+```json
+{
+  "error": {
+    "code": "model_not_found",
+    "did_you_mean": "gpt-5.4",
+    "suggestions": [{"id": "gpt-5.4"}, {"id": "gpt-5-mini"}],
+    "hint": "Did you mean 'gpt-5.4'? Use GET https://api.aisonar.dev/v1/models to list all available models."
+  }
+}
+```
+
+L'agent lit `did_you_mean`, corrige le nom du modèle et réessaie — le tout automatiquement.
+
+### Génération d'images
+
+**Vous dites :**
+```
+Generate images with Flux in Node.js
+```
+
+L'agent appelle l'API d'image, gère les erreurs et génère un code complet avec logique de téléchargement et de sauvegarde.
+
+### Reconnaissance vocale
+
+**Vous dites :**
+```
+Integrate speech-to-text in my app
+```
+
+L'agent génère du code avec le bon point de terminaison `/v1/audio/transcriptions` et la gestion des fichiers audio.
+
+## Récupération d'erreurs Agent-First
+
+Chaque réponse d'erreur inclut des indications structurées que tout agent de codage peut analyser. Consultez la [référence complète de l'API Agent-First](/guides/agent-first-api) pour plus de détails.
+
+| Erreur | Ce que l'API renvoie | Ce que fait l'agent |
+|-------|---------------------|---------------------|
+| Mauvais nom de modèle | `did_you_mean` + `suggestions` | Corrige automatiquement et réessaie |
+| Solde insuffisant | `balance_usd` + `suggestions` moins coûteuses | Bascule vers un modèle abordable |
+| Modèle indisponible | `alternatives` + `retry_after` | Bascule vers un modèle disponible |
+| Limitation de débit | `retry_after` (secondes exactes) | Attend et réessaie |
+| Contexte trop long | `suggestions` avec des modèles plus grands | Bascule vers un modèle avec un contexte plus large |
+| Incompatibilité de contrat pour une requête hors chat | `supported_operations`, `supported_parameters`, `request_endpoint`, `recommended_request` | Reconstruit la requête à partir du contrat public du modèle |
+
+### Optimisation des points de terminaison natifs
+
+Lorsque vous appelez `/v1/chat/completions` avec un modèle Claude ou Gemini, l'API renvoie des en-têtes d'optimisation :
+
+
+
+Traitez ces headers comme des indications de routage, pas comme un basculement automatique forcé. Les appels natifs Claude utilisent `/v1/messages`; les appels natifs Gemini doivent suivre l’endpoint annoncé par the native endpoint hint header, généralement `/v1beta/gemini`.
+
+### Découverte des modèles
+
+Pas besoin de rechercher dans la documentation :
+
+```bash
+# Vue d'ensemble de l'API lisible par machine
+curl https://api.aisonar.dev/llms.txt
+
+# List models by category
+curl "https://api.aisonar.dev/v1/models?category=chat" -H "Authorization: Bearer sk-KEY"
+curl "https://api.aisonar.dev/v1/models?category=image" -H "Authorization: Bearer sk-KEY"
+
+# Liste recommandée pour les scénarios hors chat
+curl "https://api.aisonar.dev/v1/models?recommended_for=image" -H "Authorization: Bearer sk-KEY"
+curl "https://api.aisonar.dev/v1/models?recommended_for=translation" -H "Authorization: Bearer sk-KEY"
+
+# Lisez le contrat public d’un modèle avant de retenter une requête hors chat
+curl "https://api.aisonar.dev/v1/models/gpt-image-2" -H "Authorization: Bearer sk-KEY"
+
+# Filtrer par capacité
+curl "https://api.aisonar.dev/v1/models?tag=coding" -H "Authorization: Bearer sk-KEY"
+```
+
+## Capacités prises en charge
+
+| Type | Exemples |
+|------|----------|
+| Discussion | GPT-5.4, Claude, Gemini, DeepSeek |
+| Génération d'images | GPT Image, Flux, Stable Diffusion, modèles d'image Gemini |
+| Génération musicale | Suno |
+| Modèles 3D | Tripo3D |
+| Audio | Synthèse vocale, Reconnaissance vocale |
+| Intégrations vectorielles | text-embedding-3 |
+| Réordonnancement | bce-reranker, qwen3-rerank |
+
+## Bonnes pratiques
+
+<CardGroup cols={2}>
+  <Card title="Sécurité des clés API" icon="shield">
+    Utilisez des variables d'environnement. Ne versionnez jamais des clés dans git et ne les exposez jamais dans le code frontend.
+  </Card>
+  <Card title="Gestion des coûts" icon="wallet">
+    Définissez des limites d'utilisation dans votre [dashboard](https://console.aisonar.dev). Vérifiez `error.balance_usd` pour surveiller les coûts par programmation.
+  </Card>
+  <Card title="Soyez direct" icon="bullseye">
+    Dites "Je veux générer des images en Python" au lieu de "Est-ce que AI Sonar a une API d'image ?"
+  </Card>
+  <Card title="Décrivez votre scénario" icon="message">
+    "Je construis un chatbot avec GPT-4" donne plus de contexte à l'agent que "Utilise GPT-4".
+  </Card>
+</CardGroup>
+
+## FAQ
+
+<AccordionGroup>
+  <Accordion title="La compétence ne se déclenche pas automatiquement ?">
+    Essayez de mentionner "AI Sonar" ou "AI Sonar API" dans votre requête :
+    ```
+    Je veux intégrer GPT-4 à mon projet avec AI Sonar
+    ```
+  </Accordion>
+
+  <Accordion title="Comment l'API aide-t-elle l'agent à trouver le bon modèle ?">
+    L'[API Agent-First](/guides/agent-first-api) de AI Sonar renvoie des indications d'erreur structurées. Si l'agent devine un mauvais nom de modèle, l'erreur inclut `did_you_mean` avec le nom correct et `suggestions` avec des alternatives. L'agent les lit et se corrige automatiquement à la tentative suivante.
+  </Accordion>
+
+  <Accordion title="Quels agents de codage sont pris en charge ?">
+    Tout agent de codage qui prend en charge des répertoires partagés de compétences ou de règles. Lorsque l'installateur est pris en charge, `npx skills add` place automatiquement la compétence partagée `aisonar-api-integration` à l'emplacement détecté.
+  </Accordion>
+
+  <Accordion title="Comment mettre à jour la compétence ?">
+    Réexécutez l'installateur :
+    ```bash
+    npx skills add https://github.com/hedging8563/aisonar-skills --skill aisonar-api-integration -y
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Ressources
+
+<CardGroup cols={2}>
+  <Card title="API Agent-First" icon="robot" href="/fr/guides/agent-first-api">
+    Référence complète des indications d'erreur structurées
+  </Card>
+  <Card title="Documentation API" icon="book" href="https://docs.aisonar.dev">
+    Référence API complète
+  </Card>
+  <Card title="Modèles" icon="sparkles" href="https://aisonar.dev/models">
+    Parcourez des centaines de modèles disponibles
+  </Card>
+  <Card title="llms.txt" icon="file-lines" href="https://api.aisonar.dev/llms.txt">
+    Vue d'ensemble de l'API lisible par machine pour les agents IA
+  </Card>
+</CardGroup>
+
+<Info>
+**Vous avez des questions ?** Consultez nos [GitHub Issues](https://github.com/hedging8563/aisonar-skills/issues) ou contactez [support@aisonar.dev](mailto:support@aisonar.dev)
+</Info>

@@ -1,0 +1,183 @@
+---
+title: "İçerik Oluşturma Akışı (Stream)"
+openapi: "POST /v1beta/models/{model}:streamGenerateContent"
+description: "Google Gemini API formatını kullanarak içerik oluşturma akışı sağlar"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+Gemini generateContent uç noktasının akış (streaming) sürümüdür. Server-Sent Events döndürür.
+
+## Yol Parametreleri
+
+<ParamField path="model" type="string" required>
+  Model adı (örneğin, `gemini-2.5-pro`, `gemini-2.5-flash`).
+</ParamField>
+
+## Sorgu Parametreleri
+
+<ParamField query="key" type="string">
+  API anahtarı (header kimlik doğrulamasına alternatif).
+</ParamField>
+
+## İstek Gövdesi
+
+[İçerik Oluşturma](/api-reference/gemini/generate-content) ile aynıdır.
+
+Streaming isteklerinde `generationConfig.candidateCount` alanını atlayın veya `1` olarak bırakın; daha büyük değerler, ek adayları sessizce düşürmek yerine reddedilir.
+
+## Yanıt
+
+Her biri kısmi bir yanıt içeren bir JSON nesneleri akışı döndürür.
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1beta/models/gemini-2.5-pro:streamGenerateContent?key=sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "contents": [
+      {
+        "parts": [{"text": "Tell me a story"}]
+      }
+    ]
+  }'
+```
+
+```python Python
+import google.generativeai as genai
+
+genai.configure(
+    api_key="sk-your-api-key",
+    transport="rest",
+    client_options={"api_endpoint": "api.aisonar.dev"}
+)
+
+model = genai.GenerativeModel("gemini-2.5-pro")
+response = model.generate_content("Tell me a story", stream=True)
+
+for chunk in response:
+    print(chunk.text, end="")
+```
+
+```javascript JavaScript
+const response = await fetch(
+  'https://api.aisonar.dev/v1beta/models/gemini-2.5-pro:streamGenerateContent?key=sk-your-api-key',
+  {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: 'Tell me a story' }] }]
+    })
+  }
+);
+
+const reader = response.body.getReader();
+const decoder = new TextDecoder();
+
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+  console.log(decoder.decode(value));
+}
+```
+
+```go Go
+package main
+
+import (
+    "bufio"
+    "bytes"
+    "encoding/json"
+    "fmt"
+    "net/http"
+)
+
+func main() {
+    payload := map[string]interface{}{
+        "contents": []map[string]interface{}{
+            {"parts": []map[string]string{{"text": "Tell me a story"}}},
+        },
+    }
+
+    jsonData, _ := json.Marshal(payload)
+    req, _ := http.NewRequest("POST",
+        "https://api.aisonar.dev/v1beta/models/gemini-2.5-pro:streamGenerateContent?key=sk-your-api-key",
+        bytes.NewBuffer(jsonData))
+    req.Header.Set("Content-Type", "application/json")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+
+    scanner := bufio.NewScanner(resp.Body)
+    for scanner.Scan() {
+        fmt.Println(scanner.Text())
+    }
+}
+```
+
+```php PHP
+<?php
+$payload = [
+    'contents' => [
+        ['parts' => [['text' => 'Tell me a story']]]
+    ]
+];
+
+$ch = curl_init('https://api.aisonar.dev/v1beta/models/gemini-2.5-pro:streamGenerateContent?key=sk-your-api-key');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+    CURLOPT_POSTFIELDS => json_encode($payload),
+    CURLOPT_WRITEFUNCTION => function($ch, $data) {
+        echo $data;
+        return strlen($data);
+    }
+]);
+
+curl_exec($ch);
+curl_close($ch);
+```
+## Görsel Girdi Örneği
+
+Akışlı vision istekleri, akış olmayan uç nokta ile aynı `contents[].parts[]` yapısını kullanır.
+
+```json
+{
+  "contents": [
+    {
+      "role": "user",
+      "parts": [
+        { "text": "Please describe this image." },
+        {
+          "inline_data": {
+            "mime_type": "image/jpeg",
+            "data": "/9j/4AAQSkZJRgABAQ..."
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+</RequestExample>
+
+<ResponseExample>
+```json Akış Parçası
+{
+  "candidates": [
+    {
+      "content": {
+        "role": "model",
+        "parts": [
+          {"text": "Once upon a time"}
+        ]
+      }
+    }
+  ]
+}
+```
+</ResponseExample>

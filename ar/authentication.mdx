@@ -1,0 +1,127 @@
+---
+title: "المصادقة"
+description: "أمّن طلبات AI Sonar API الخاصة بك باستخدام مفاتيح API"
+---
+
+## مفاتيح API
+
+تتطلب جميع طلبات AI Sonar API مفتاح API.
+
+بالنسبة إلى نقاط النهاية المتوافقة مع OpenAI، أرسله بالشكل التالي:
+
+```bash
+Authorization: Bearer sk-your-api-key
+```
+
+بالنسبة إلى طلبات `/v1/messages` المتوافقة مع Anthropic، يمكنك أيضًا استخدام:
+
+```bash
+x-api-key: sk-your-api-key
+```
+
+## الحصول على مفتاح API الخاص بك
+
+1. سجّل الدخول إلى [لوحة تحكم AI Sonar](https://console.aisonar.dev)
+2. افتح **API Keys**
+3. أنشئ مفتاحًا جديدًا
+4. امنحه اسمًا وصفيًا
+5. انسخه فورًا لأنه يُعرض مرة واحدة فقط
+
+<Warning>
+- لا تكشف أبدًا عن مفاتيح API في كود جهة العميل
+- لا تقم أبدًا بإيداع مفاتيح API في نظام التحكم بالإصدارات
+- استخدم متغيرات البيئة أو مدير الأسرار
+- قم بتدوير المفاتيح بشكل دوري
+- احذف المفاتيح غير المستخدمة
+</Warning>
+
+## استخدام مفاتيح API
+
+<CodeGroup>
+
+```bash cURL
+curl https://api.aisonar.dev/v1/responses \
+  -H "Authorization: Bearer $TOKENLAB_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.4",
+    "input": "Hello!"
+  }'
+```
+
+```python Python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ.get("TOKENLAB_API_KEY"),
+    base_url="https://api.aisonar.dev/v1"
+)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: process.env.TOKENLAB_API_KEY,
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+```
+
+</CodeGroup>
+
+## ميزات مفتاح API
+
+### حدود الاستخدام
+
+يمكنك تعيين حد استخدام لكل مفتاح API:
+
+| الإعداد | الوصف |
+|---------|-------------|
+| **بدون حد** | يستخدم المفتاح رصيد حسابك دون قيود |
+| **حد ثابت** | يتوقف المفتاح عن العمل بعد الوصول إلى المبلغ المحدد |
+
+### بادئة المفتاح
+
+تبدأ جميع مفاتيح AI Sonar API بـ `sk-`.
+
+## التوافق مع Anthropic
+
+بالنسبة إلى نقطة النهاية `/v1/messages`، يعمل ترويس Anthropic كما هو متوقع:
+
+```bash
+curl https://api.aisonar.dev/v1/messages \
+  -H "x-api-key: sk-your-api-key" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-sonnet-4-6",
+    "max_tokens": 1024,
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'
+```
+
+<Note>
+استخدم `Authorization: Bearer ...` لنقاط النهاية المتوافقة مع OpenAI مثل `/v1/responses` و`/v1/chat/completions` و`/v1/models` ومعظم مسارات AI Sonar الأخرى.
+</Note>
+
+## استجابات الأخطاء
+
+| رمز الحالة | النوع | الرمز | الوصف |
+|-------------|------|------|-------------|
+| 401 | `invalid_api_key` | `invalid_api_key` | مفتاح API مفقود أو غير صالح |
+| 401 | `expired_api_key` | `expired_api_key` | تم إلغاء مفتاح API |
+| 402 | `insufficient_balance` | `insufficient_balance` | رصيد الحساب غير كافٍ |
+| 402 | `quota_exceeded` | `quota_exceeded` | تم الوصول إلى حد استخدام مفتاح API |
+
+مثال:
+
+```json
+{
+  "error": {
+    "message": "Invalid API key provided",
+    "type": "invalid_api_key",
+    "code": "invalid_api_key"
+  }
+}
+```

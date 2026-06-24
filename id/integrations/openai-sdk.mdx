@@ -1,0 +1,252 @@
+---
+title: "OpenAI SDK"
+description: "Gunakan AI Sonar dengan SDK resmi OpenAI dan klien yang kompatibel dengan OpenAI"
+---
+
+## Ringkasan
+
+AI Sonar bekerja dengan SDK resmi OpenAI dengan mengarahkan klien ke `https://api.aisonar.dev/v1`.
+
+Untuk sebagian besar proyek baru, lebih baik menggunakan **Chat Completions** sebagai jalur default yang kompatibel dengan OpenAI. Gunakan **Responses API** hanya ketika Anda secara eksplisit membutuhkan perilaku khusus Responses.
+
+Field khusus Responses tidak dijamin berperilaku identik di setiap model dan jalur yang dirutekan.
+
+<Note>
+Python, JavaScript, dan Go memiliki SDK resmi OpenAI. PHP bekerja dengan baik dengan klien komunitas yang kompatibel dengan OpenAI, namun itu bukan SDK resmi OpenAI.
+</Note>
+
+<Note>
+**Tipe**: Native SDK
+
+**Jalur Utama**: kompatibel OpenAI / Chat Completions
+
+**Tingkat Dukungan**: Jalur inti didukung
+</Note>
+
+## Instalasi
+
+<CodeGroup>
+
+```bash Python
+pip install openai
+```
+
+```bash JavaScript
+npm install openai
+```
+
+```bash Go
+go get github.com/openai/openai-go/v3
+```
+
+</CodeGroup>
+
+<Note>
+Gunakan `POST /v1/responses` hanya ketika Anda secara eksplisit membutuhkan perilaku khusus Responses. Beberapa field yang hanya untuk Responses masih dapat bergantung pada model yang dipilih dan jalur yang dirutekan.
+</Note>
+
+## Konfigurasikan Klien
+
+<CodeGroup>
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1",
+)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1',
+});
+```
+
+```go Go
+package main
+
+import (
+    openai "github.com/openai/openai-go/v3"
+    "github.com/openai/openai-go/v3/option"
+)
+
+func main() {
+    client := openai.NewClient(
+        option.WithAPIKey("sk-your-api-key"),
+        option.WithBaseURL("https://api.aisonar.dev/v1"),
+    )
+
+    _ = client
+}
+```
+
+</CodeGroup>
+
+## Rekomendasi: Chat Completions
+
+<CodeGroup>
+
+```python Python
+response = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "Explain what AI Sonar does in one sentence."}]
+)
+
+print(response.choices[0].message.content)
+```
+
+```javascript JavaScript
+const response = await client.chat.completions.create({
+  model: 'gpt-5.4',
+  messages: [{ role: 'user', content: 'Explain what AI Sonar does in one sentence.' }],
+});
+
+console.log(response.choices[0].message.content);
+```
+
+```bash cURL
+curl https://api.aisonar.dev/v1/chat/completions \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.4",
+    "messages": [
+      {"role": "user", "content": "Explain what AI Sonar does in one sentence."}
+    ]
+  }'
+```
+
+</CodeGroup>
+
+## Lanjutan: Responses API
+
+Gunakan jalur ini hanya ketika alat atau alur kerja Anda secara eksplisit bergantung pada semantik OpenAI Responses.
+
+### Streaming dengan Responses
+
+<CodeGroup>
+
+```python Python
+stream = client.responses.create(
+    model="gpt-5.4",
+    input="Write a short poem about coding.",
+    stream=True,
+)
+
+for event in stream:
+    if event.type == "response.output_text.delta":
+        print(event.delta, end="")
+```
+
+```javascript JavaScript
+const stream = await client.responses.create({
+  model: 'gpt-5.4',
+  input: 'Write a short poem about coding.',
+  stream: true,
+});
+
+for await (const event of stream) {
+  if (event.type === 'response.output_text.delta') {
+    process.stdout.write(event.delta);
+  }
+}
+```
+
+</CodeGroup>
+
+## Alat / Pemanggilan fungsi
+
+```python
+response = client.responses.create(
+    model="gpt-5.4",
+    input="What's the weather in Tokyo?",
+    tools=[{
+        "type": "function",
+        "name": "get_weather",
+        "description": "Get weather for a location",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "location": {"type": "string"}
+            },
+            "required": ["location"]
+        }
+    }]
+)
+
+for item in response.output:
+    if item.type == "function_call":
+        print(item.name)
+        print(item.arguments)
+```
+
+## Vision dengan Responses
+
+```python
+response = client.responses.create(
+    model="gpt-4o",
+    input=[{
+        "role": "user",
+        "content": [
+            {"type": "input_text", "text": "What's in this image?"},
+            {"type": "input_image", "image_url": "https://example.com/image.jpg"}
+        ]
+    }]
+)
+
+print(response.output_text)
+```
+
+## Embeddings
+
+```python
+response = client.embeddings.create(
+    model="text-embedding-3-small",
+    input="Hello world"
+)
+
+print(response.data[0].embedding[:5])
+```
+
+## Chat Completions
+
+Chat Completions adalah jalur default yang kompatibel dengan OpenAI untuk AI Sonar:
+
+```python
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "Hello!"}
+    ]
+)
+
+print(response.choices[0].message.content)
+```
+
+## Pemecahan Masalah
+
+<AccordionGroup>
+  <Accordion title="Kesalahan Koneksi">
+    - Pastikan base URL persis `https://api.aisonar.dev/v1`
+    - Periksa gangguan proxy atau penggantian klien HTTP kustom
+    - Pastikan versi SDK Anda terbaru sebelum men-debug perilaku provider
+  </Accordion>
+
+  <Accordion title="Autentikasi Gagal">
+    - Periksa bahwa API key Anda diawali dengan `sk-`
+    - Verifikasi bahwa kunci aktif di dashboard AI Sonar
+    - Konfirmasi SDK mengirim `Authorization: Bearer ...`
+  </Accordion>
+
+  <Accordion title="Jalur API Salah">
+    - `responses.create(...)` mengirim permintaan ke `/v1/responses`
+    - `chat.completions.create(...)` mengirim permintaan ke `/v1/chat/completions`
+    - Gunakan Chat Completions secara default kecuali Anda secara eksplisit membutuhkan perilaku khusus Responses
+  </Accordion>
+</AccordionGroup>

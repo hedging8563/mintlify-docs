@@ -1,0 +1,140 @@
+---
+title: "API Manajemen"
+description: "Kelola saldo organisasi, API key, serta usage dan billing per key dengan management token."
+---
+
+## Ikhtisar
+
+Management API memungkinkan Anda mengambil total saldo organisasi, mengelola API key organisasi, serta mengambil usage dan billing untuk key tertentu tanpa memakai inference API key biasa.
+
+Gunakan management token dari halaman **Settings** di Dashboard:
+
+```bash
+Authorization: Bearer mt-your-management-token
+```
+
+<Warning>
+Management token berbeda dari inference API key. Gunakan `mt-...` untuk `/v1/management/*`, dan gunakan `sk-...` untuk endpoint inferensi seperti `/v1/responses`.
+</Warning>
+
+## Endpoint Tersedia
+
+| Endpoint | Method | Deskripsi |
+|----------|--------|-----------|
+| `/v1/management/balance` | GET | Ambil total saldo organisasi saat ini |
+| `/v1/management/api-keys` | GET | Daftar API key yang dikelola user di organisasi saat ini |
+| `/v1/management/api-keys` | POST | Buat API key user baru |
+| `/v1/management/api-keys/{keyId}` | PATCH | Perbarui nama, batas penggunaan, model yang diizinkan, masa berlaku, atau status |
+| `/v1/management/api-keys/{keyId}/usage` | GET | Ambil detail usage berpaginasi untuk key tertentu |
+| `/v1/management/api-keys/{keyId}/billing` | GET | Ambil breakdown billing teragregasi untuk key tertentu |
+
+## Kontrak Filter Usage
+
+`GET /v1/management/api-keys/{keyId}/usage` mendukung parameter query berikut:
+
+| Parameter | Tipe | Default / Batas | Catatan |
+|-----------|------|-----------------|---------|
+| `page` | integer | default `1`, min `1` | Nomor halaman mulai dari 1 |
+| `limit` | integer | default `50`, min `1`, max `100` | Ukuran halaman |
+| `logicalModel` | string | panjang maks `100` | Nama model logis yang diminta |
+| `modelVendor` | string | panjang maks `100` | Vendor model publik |
+| `scene` | enum | - | `chat`, `image`, `audio`, `video`, `embedding`, `rerank`, `translation`, `music`, `3d` |
+| `accessChannel` | enum | - | `platform` atau `byok` |
+| `startDate` | string | - | Batas bawah inklusif; menerima RFC3339 dengan timezone atau `YYYY-MM-DD` |
+| `endDate` | string | - | Batas atas inklusif; menerima RFC3339 dengan timezone atau `YYYY-MM-DD` |
+
+Jika `startDate` dan `endDate` sama-sama ada, `startDate` harus lebih kecil dari atau sama dengan `endDate`.
+
+## Kontrak Body API Key
+
+### POST /v1/management/api-keys
+
+| Bidang | Tipe | Default / Batas | Catatan |
+|-------|------|-----------------|---------|
+| `name` | string | wajib, default `Default Key`, panjang `1-50` | Nama tampilan, dipangkas di sisi server |
+| `limitAmount` | number \| null | min `0`, max input `1000000` | `null` atau dihilangkan = tidak terbatas, `0` = kuota nol. Nilai positif dinormalisasi menjadi batas simpan yang tidak melebihi setara `100000` USD |
+| `limitCurrency` | enum | default `USD` | Hanya USD. Mengirim `CNY` menghasilkan `400 currency_retired`. |
+| `models` | string[] | default `[]` | Daftar izin model logis opsional |
+| `expiresAt` | string \| null | datetime RFC3339 | `null` berarti tidak kedaluwarsa |
+
+### PATCH /v1/management/api-keys/{keyId}
+
+| Bidang | Tipe | Default / Batas | Catatan |
+|-------|------|-----------------|---------|
+| `status` | enum | - | `active`, `inactive`, `suspended`, `revoked` |
+| `name` | string | panjang `1-50` | Nama tampilan yang diperbarui |
+| `limitAmount` | number \| null | min `0`, max input `1000000` | `null` = tidak terbatas, `0` = kuota nol. Nilai positif dinormalisasi menjadi batas simpan yang tidak melebihi setara `100000` USD |
+| `limitCurrency` | enum | default `USD` | Hanya USD. Mengirim `CNY` menghasilkan `400 currency_retired`. |
+| `models` | string[] | - | Daftar izin model logis yang diperbarui |
+| `expiresAt` | string \| null | datetime RFC3339 | `null` menghapus masa kedaluwarsa |
+
+Setidaknya satu field PATCH harus diberikan.
+
+## Kontrak Moneter
+
+
+## Semantik Pelaporan
+
+- `logicalModel` merujuk ke model logis publik yang diminta caller.
+- `modelVendor` merujuk ke vendor model publik, bukan rute fisik tersembunyi.
+- `scene` adalah scene request publik yang diturunkan dari endpoint atau jenis tugas.
+- `accessChannel=platform` berarti request ditagihkan lewat channel platform AI Sonar.
+- `accessChannel=byok` berarti request memakai kunci upstream provider milik Anda sendiri.
+
+Respons hanya menampilkan field billing dan reporting publik. Detail routing internal dan metadata provider fisik tetap tersembunyi.
+- Item `/usage` dapat menyertakan `billing_transaction_id` setelah request dasar mencapai status billing yang telah diselesaikan. Gunakan `request_id` + `billing_transaction_id` untuk rekonsiliasi level request.
+
+## Catatan Paginasi Billing
+
+`/usage` dipaginasi. `/billing` saat ini adalah endpoint breakdown teragregasi dan tidak mengembalikan metadata paginasi seperti `page` / `limit`. Jika Anda butuh record level baris, gunakan `/usage`.
+
+## Contoh Singkat
+
+Mulailah dengan memeriksa saldo organisasi menggunakan management token saat ini:
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/management/balance" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+Lalu tampilkan API key yang tersedia untuk management token yang sama:
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/management/api-keys" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response (200)
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "key_abc123def456",
+      "name": "Backend Worker",
+      "key_prefix": "sk-abc123...",
+      "status": "active",
+      "limit_amount": 500.0,
+      "used_amount": 148.25,
+      "models": ["gpt-4o-mini", "claude-3-7-sonnet"],
+      "expires_at": "2026-04-30T00:00:00.000Z",
+      "last_used_at": "2026-03-27T08:12:45.000Z",
+      "created_at": "2026-03-01T10:00:00.000Z"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## Langkah Berikutnya
+
+- [Lihat saldo organisasi](/id/api-reference/management/get-balance)
+- [Daftar API Key](/id/api-reference/management/list-api-keys)
+- [Buat API Key](/id/api-reference/management/create-api-key)
+- [Perbarui API Key](/id/api-reference/management/update-api-key)
+- [Ambil Usage API Key](/id/api-reference/management/get-api-key-usage)
+- [Ambil Billing API Key](/id/api-reference/management/get-api-key-billing)

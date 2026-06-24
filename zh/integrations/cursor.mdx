@@ -1,0 +1,100 @@
+---
+title: "Cursor"
+description: "在 Cursor AI 代码编辑器中使用 AI Sonar"
+---
+
+## 概述
+
+
+
+<Note>
+**类型**: 编码工具
+
+**主要路径**: OpenAI 兼容
+
+**支持级别**: 支持，但有边界
+</Note>
+
+[Cursor](https://cursor.sh) 支持自带密钥（BYOK）提供方，但自定义 API key 仅适用于标准聊天模型。在这里将 AI Sonar 用作与 OpenAI 兼容的端点，用于聊天式编辑器工作流，而不是完全替代 Cursor 的每一项模型功能。
+
+## 配置
+
+1. 打开 Cursor 设置（`Cmd/Ctrl + ,`）
+2. 在左侧边栏中导航到 **Models**
+3. 向下滚动到 **OpenAI API Key** 部分
+4. 输入你的 AI Sonar API key
+5. 启用 **Override OpenAI Base URL**
+6. 将 Base URL 设置为：
+
+```
+https://api.aisonar.dev/v1
+```
+
+<Warning>
+Cursor 自定义 API key 仅适用于标准聊天模型。Tab Completion 和其他由 Cursor 管理的专用功能将继续使用 Cursor 的内置提供商。
+</Warning>
+
+<Warning>
+Cursor 的自定义 API key 流程仅适用于标准聊天模型。需要 Cursor 管理的专用模型的功能，例如 Tab Completion 和某些特定于推理的流程，将继续使用 Cursor 的内置提供商。Cursor 还指出，请求仍会经过其后端以进行最终的 prompt 组装。
+</Warning>
+
+## 模型选择
+
+完成配置后，优先选择通过 AI Sonar 提供的标准聊天模型：
+
+### 推荐用于编码的模型
+
+| 模型 | 最适合 |
+|-------|----------|
+| `gpt-5.4` | 通用编码、调试、聊天 |
+| `gpt-5-mini` | 快速编辑和轻量级 prompt |
+
+## 最适用的场景
+
+### 聊天和编辑器流程
+
+通过 Cursor 使用 AI Sonar 可用于：
+
+- 代码解释
+- Bug 修复
+- 重构建议
+- 文档生成
+
+### 仍由 Cursor 管理模型处理的功能
+
+这些功能无法可靠地切换到你的 AI Sonar 端点：
+
+- Tab 补全
+- 专用的非标准聊天模型
+- Cursor 仅在内置模型上启用的提供商特定功能
+
+## 故障排查
+
+<AccordionGroup>
+  <Accordion title="模型未显示">
+    Cursor 会缓存模型和提供商状态。配置 API key 和 base URL 后，请重启 Cursor。
+  </Accordion>
+
+  <Accordion title="BYOK 模式下不支持该模型">
+    自定义 API key 仅适用于标准聊天模型。如果某个模型使用了 Cursor 的专用基础设施，请切换到标准聊天模型，例如 `gpt-5.4`。
+  </Accordion>
+
+  <Accordion title="身份验证错误">
+    请验证你的 API key 是否正确且余额充足。
+  </Accordion>
+
+  <Accordion title="启用 AI Sonar 后另一个提供商停止工作">
+    Cursor 的 BYOK 配置可能会影响其他提供商流程。如果启用 OpenAI base URL override 后另一个模型路径失效，请禁用该 override 并重启 Cursor。
+  </Accordion>
+</AccordionGroup>
+
+## 提示
+
+<CardGroup cols={2}>
+  <Card title="使用合适的模型" icon="gauge-high">
+    对于快速的聊天式任务，请使用 `gpt-5-mini`；对于较重的编码工作，请使用 `gpt-5.4`。
+  </Card>
+  <Card title="检查你的余额" icon="wallet">
+    在你的 AI Sonar 仪表板中监控使用情况。
+  </Card>
+</CardGroup>

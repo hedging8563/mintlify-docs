@@ -1,0 +1,134 @@
+---
+title: "Obtener precios"
+openapi: "GET /v1/pricing"
+description: "Obtiene información de precios para los modelos"
+---
+
+## Resumen
+
+Usa este endpoint para listar la superficie pública de precios actual de los modelos activos.
+
+Para ver el detalle completo de precios de un modelo, incluyendo precios estructurados y procedencia, prefiere [Obtener precio del modelo](/api-reference/models/get-model).
+
+## Parámetros de consulta
+
+<ParamField query="provider" type="string">
+  Filtro opcional por proveedor, por ejemplo `openai`, `anthropic` o `google`.
+</ParamField>
+
+<ParamField query="tag" type="string">
+  Filtro opcional por etiqueta de modelo, por ejemplo `chat`, `image`, `video`, `embedding` o `translation`.
+</ParamField>
+
+## Respuesta
+
+<ResponseField name="object" type="string">
+  Siempre `pricing`.
+</ResponseField>
+
+<ResponseField name="updated_at" type="string">
+  Marca temporal ISO de la entrada de precios más reciente incluida en la respuesta.
+</ResponseField>
+
+<ResponseField name="currency" type="string">
+  Siempre `USD`.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Array de entradas de precios. Cada elemento incluye `model`, `provider`, `is_lock_price`, `capabilities`, `aliases` y los campos públicos de resumen de precios, ya sean escalares o estructurados, devueltos por el esquema interactivo anterior.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/pricing?provider=openai&tag=chat" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+```python Python
+import requests
+
+response = requests.get(
+    "https://api.aisonar.dev/v1/pricing",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+    params={"provider": "openai", "tag": "chat"}
+)
+
+print(response.json())
+```
+
+```javascript JavaScript
+const response = await fetch(
+  'https://api.aisonar.dev/v1/pricing?provider=openai&tag=chat',
+  {
+    headers: { 'Authorization': 'Bearer sk-your-api-key' }
+  }
+);
+
+const data = await response.json();
+console.log(data);
+```
+
+```go Go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "net/http"
+)
+
+func main() {
+    req, _ := http.NewRequest("GET", "https://api.aisonar.dev/v1/pricing?provider=openai&tag=chat", nil)
+    req.Header.Set("Authorization", "Bearer sk-your-api-key")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+
+    var result map[string]interface{}
+    json.NewDecoder(resp.Body).Decode(&result)
+    fmt.Println(result)
+}
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/pricing?provider=openai&tag=chat');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer sk-your-api-key'
+    ]
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+print_r($data);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "object": "list",
+  "data": [
+    {
+      "model": "gpt-4o",
+      "provider": "openai",
+      "is_lock_price": false,
+      "input_per_1m_tokens": "2.50",
+      "output_per_1m_tokens": "10.00",
+      "capabilities": ["chat"],
+      "aliases": ["gpt-4o-latest"]
+    }
+  ]
+}
+```
+</ResponseExample>
+
+<Note>
+Usa el panel OpenAPI interactivo de arriba para ver el esquema exacto de respuesta. Las entradas públicas de precios también pueden exponer `lock_price_per_request`, `has_complex_pricing`, `supported_operations`, `pricing_summary` y `pricing_provenance`.
+</Note>

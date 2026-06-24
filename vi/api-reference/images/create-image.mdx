@@ -1,0 +1,313 @@
+---
+title: "Tạo Hình Ảnh"
+openapi: "POST /v1/images/generations"
+description: "Tạo một hình ảnh từ prompt"
+---
+
+## Tổng quan
+
+Dành cho coding agents, hãy khám phá shortlist hình ảnh được khuyến nghị hiện tại trước bằng `GET /v1/models?recommended_for=image`, rồi gửi rõ `model` đã chọn đến endpoint này.
+
+`gpt-image-2` là model GPT Image tính phí theo token. AI Sonar bám theo chi tiết `usage` chính thức của OpenAI để tính token đầu vào văn bản, đầu vào hình ảnh, đầu vào cache khi được báo cáo, và token đầu ra hình ảnh; model này không được tính như giá cố định cho mỗi ảnh.
+
+Với tạo ảnh bằng `gpt-image-2`, các tham số public được hỗ trợ gồm `prompt`, `n`, `size`, `quality`, `response_format`, `async`, `background`, `output_format`, `output_compression` hoặc `compression`, `moderation`, `partial_images`, và `user`. Nếu bỏ qua `size` hoặc `quality`, AI Sonar dùng `auto`; giá trị `size` tùy chỉnh phải theo hợp đồng linh hoạt `WIDTHxHEIGHT` được mô tả bên dưới.
+
+Ghi chu tuong thich: neu yeu cau `gpt-image-2` gui `input_fidelity`, AI Sonar se xoa truong nay truoc khi chuyen tiep vi GPT Image 2 tu dong xu ly dau vao hinh anh voi do trung thuc cao.
+
+### Ghi chú hành vi mô hình
+
+Google Gemini không dùng cùng một hợp đồng selector:
+
+- `gemini-3.1-flash-image-preview`, `gemini-3-pro-image-preview`, và `nano-banana-pro` hỗ trợ `aspect_ratio` cùng `resolution` (`1k`, `2k`, `4k`) cho các operation text-to-image và image-edit/image-to-image công khai.
+- `nano-banana-2` chỉ hỗ trợ `aspect_ratio` cùng `resolution` (`1k`, `2k`, `4k`) cho text-to-image trong contract AI Sonar hiện tại.
+- `gemini-2.5-flash-image`, `nano-banana`, và `nano-banana-edit` hỗ trợ `aspect_ratio` nhưng không công khai `resolution`.
+- `gemini-2.0-flash-preview-image-generation` được tài liệu hoá ở đây như một mô hình text-to-image chỉ dùng prompt.
+- Với request Nano Banana dùng ảnh tham chiếu, hãy dùng `nano-banana-edit` hoặc `nano-banana-pro` trên endpoint này (`/v1/images/generations`) với `operation: "image-to-image"` và `image_urls`. Đừng gửi request ảnh tham chiếu Nano Banana tới `/v1/images/edits`.
+- Với request Nano Banana image-to-image, `nano-banana-pro` có thể gửi `resolution` (`1k`, `2k`, `4k`); `nano-banana-edit` phải bỏ qua trường này. `nano-banana` và `nano-banana-2` là model text-to-image trong contract công khai hiện tại.
+- Ảnh tham chiếu trên endpoint này có thể gửi bằng JSON `image_url` / `image_urls`, hoặc file multipart `image`. `/v1/images/generations` không nhận `images[]` hay `file_id`; tham chiếu `/v1/files` chỉ dùng cho model `/v1/images/edits` có tài liệu rõ `images[].file_id`.
+
+Với các model hình ảnh của Google, hãy ưu tiên `aspect_ratio` và chỉ gửi `resolution` khi model đó hỗ trợ rõ ràng.
+
+Các model hình ảnh xAI Grok Imagine (`grok-imagine-image`, `grok-imagine-image-quality`, và legacy `grok-imagine-image-pro`) hỗ trợ `aspect_ratio` cùng `resolution` (`1k`, `2k`). `grok-imagine-image-pro` được giữ làm ID tương thích và route upstream tới `grok-imagine-image-quality`.
+
+## Thân Yêu Cầu
+
+**Timeout cho yêu cầu đồng bộ:** một số nhà cung cấp hình ảnh được định tuyến sẽ trả ảnh cuối cùng inline và chờ quá trình tạo hoàn tất. Yêu cầu độ phân giải cao hoặc chất lượng cao có thể mất gần một phút hoặc lâu hơn, vì vậy hãy đặt timeout của HTTP client ít nhất là `120s`. Nếu phản hồi tạo có `status: "pending"`, `task_id`, hoặc `poll_url`, hãy theo `poll_url` được trả về để polling.
+
+<ParamField body="model" type="string" default="dall-e-3">
+  Model cần dùng (ví dụ: `gpt-image-2`, `dall-e-3`, `flux-pro`, `midjourney`).
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  Mô tả bằng văn bản cho hình ảnh mong muốn.
+</ParamField>
+
+<ParamField body="image_url" type="string">
+  URL HTTPS công khai của ảnh tham chiếu cho image-to-image. Với request Nano Banana dùng ảnh tham chiếu, đặt `operation` là `image-to-image`; `nano-banana-pro` có thể gửi `resolution`, còn `nano-banana-edit` nên bỏ qua trường này.
+</ParamField>
+
+<ParamField body="image_urls" type="string[]">
+  Danh sách URL HTTPS công khai của ảnh tham chiếu. Dùng khi request JSON cần một hoặc nhiều ảnh tham chiếu. Endpoint này không hỗ trợ `file_id` và `images[]`.
+</ParamField>
+
+<ParamField body="reference_image_urls" type="string[]">
+  URL ảnh tham chiếu bổ sung theo từng model, dành cho provider phân biệt ảnh đầu vào chính và ảnh tham chiếu.
+</ParamField>
+
+<ParamField body="image" type="file">
+  File ảnh tham chiếu multipart cho image-to-image. Dùng khi ảnh nguồn là riêng tư hoặc cần header xác thực. Trường này khác với `file_id` của /v1/files; endpoint này không nhận `file_id`.
+</ParamField>
+
+<ParamField body="n" type="integer" default="1">
+  Số lượng hình ảnh cần tạo (1-10, tùy theo model).
+</ParamField>
+
+<ParamField body="size" type="string" default="1024x1024">
+  Kích thước ảnh. Dùng cho các dòng ảnh kiểu OpenAI và các model khác chấp nhận kích thước pixel chính xác.
+
+  Với `gpt-image-2`, `size` chấp nhận `auto` hoặc `WIDTHxHEIGHT`. Kích thước tùy chỉnh phải có cả hai cạnh là bội số của 16, cạnh dài nhất không quá `3840px`, tỷ lệ cạnh dài/cạnh ngắn không quá `3:1`, và tổng số pixel nằm trong khoảng `655,360` đến `8,294,400`. `aspect_ratio` và `resolution` hiện không thuộc hợp đồng công khai của AI Sonar cho `gpt-image-2`.
+
+  Với các dòng ảnh Google Gemini, `size` được xem là alias tương thích ánh xạ sang hợp đồng công khai `aspect_ratio` của model và, khi được hỗ trợ, `resolution`. Với các model này, nên gửi trực tiếp `aspect_ratio`.
+</ParamField>
+
+<ParamField body="aspect_ratio" type="string">
+  Bộ chọn tỷ lệ khung hình theo từng model.
+
+  Các giá trị phổ biến của nhóm model hình ảnh Google gồm `1:1`, `16:9`, `9:16`, `3:2`, và `2:3`.
+</ParamField>
+
+<ParamField body="resolution" type="string">
+  Bộ chọn độ phân giải đầu ra theo từng model.
+
+  Được hỗ trợ trên `gemini-3.1-flash-image-preview` và `gemini-3-pro-image-preview` cho text-to-image và image-edit, trên `nano-banana-pro` cho text-to-image và image-to-image, và trên `nano-banana-2` chỉ cho text-to-image. Giá trị thường dùng là `1k`, `2k`, và `4k`. Không gửi tham số này cho các model Gemini hình ảnh chỉ nhận tỷ lệ khung hình trừ khi tài liệu của model đó nói rõ. Với model hình ảnh xAI Grok Imagine, dùng `1k` hoặc `2k`.
+</ParamField>
+
+<ParamField body="quality" type="string" default="standard">
+  Chất lượng ảnh. Model DALL-E dùng `standard` hoặc `hd`; các model GPT Image như `gpt-image-2` dùng `auto`, `low`, `medium` hoặc `high`.
+</ParamField>
+
+<ParamField body="response_format" type="string" default="url">
+  Định dạng response: `url` hoặc `b64_json`. Mặc định là `url`.
+
+  Với các tuyến `gpt-image-2` Azure Official hoặc tương thích Azure, AI Sonar không chuyển `response_format` lên upstream. Gateway luôn nhận dữ liệu ảnh upstream dưới dạng `b64_json`; với request `url`, gateway tải từng ảnh lên CDN rồi trả về `data[].url`. Nếu CDN storage không khả dụng hoặc upload thất bại, request sẽ fail thay vì fallback về Base64. Với `b64_json`, Base64 gốc được trả về.
+</ParamField>
+
+<ParamField body="async" type="boolean" default="false">
+  Đặt `true` với `gpt-image-2` hoặc các model hình ảnh FLUX/BFL chính thức để tạo task trước. Task ảnh async hoàn tất trả về URL bất kể `response_format` được yêu cầu; dùng request đồng bộ nếu cần `b64_json`.
+</ParamField>
+
+<ParamField body="style" type="string" default="vivid">
+  Phong cách cho DALL-E 3: `vivid` hoặc `natural`.
+</ParamField>
+
+<ParamField body="user" type="string">
+  Một định danh duy nhất cho end-user.
+</ParamField>
+
+## Phản Hồi
+
+### Phản Hồi Đồng Bộ
+
+<ResponseField name="created" type="integer">
+  Unix timestamp của thời điểm tạo.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Mảng các hình ảnh được tạo.
+
+  Mỗi object chứa:
+  - `url` (string): URL của hình ảnh được tạo
+  - `b64_json` (string): Hình ảnh mã hoá Base64 (nếu được yêu cầu)
+  - `revised_prompt` (string): Prompt đã được dùng (DALL-E 3)
+</ResponseField>
+
+### Phản hồi task async
+
+Đặt `async: true` với `gpt-image-2` hoặc các model hình ảnh FLUX/BFL chính thức để tạo task thay vì chờ ảnh cuối trong request tạo ảnh. Phản hồi gồm `status: "pending"`, `task_id` và `poll_url`. Hãy poll `/v1/tasks/{task_id}` cho đến khi task chuyển sang `completed` hoặc `failed`.
+
+Task ảnh async chỉ trả về URL của ảnh cuối. Nếu cần dữ liệu ảnh thô `b64_json`, hãy dùng request đồng bộ.
+
+Khi tạo task, hệ thống có thể giữ trước chi phí ước tính. Task hoàn tất được tính theo mức dùng thực tế; task thất bại hoặc timeout sẽ giải phóng hoặc hoàn lại khoản giữ trước.
+
+<ResponseField name="created" type="integer">
+  Dấu thời gian Unix khi tạo.
+</ResponseField>
+
+<ResponseField name="task_id" type="string">
+  Mã định danh tác vụ duy nhất để thăm dò.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Trạng thái ban đầu: `pending`.
+</ResponseField>
+
+<ResponseField name="poll_url" type="string">
+  URL tương đối để thăm dò kết quả, ví dụ `/v1/tasks/{id}`.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Trống trong khi tác vụ đang chờ xử lý. Các tác vụ hình ảnh đã hoàn tất trả về các URL hình ảnh được tạo trong `data[].url`.
+</ResponseField>
+
+Khi bạn nhận được `status: "pending"`, hãy dùng `poll_url` hoặc `GET /v1/tasks/{task_id}` để truy xuất kết quả.
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/images/generations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gemini-3-pro-image-preview",
+    "prompt": "A cinematic portrait of a white cat sitting on a rainy windowsill",
+    "aspect_ratio": "16:9",
+    "resolution": "2k",
+    "n": 1
+  }'
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.images.generate(
+    model="gemini-3-pro-image-preview",
+    prompt="A cinematic portrait of a white cat sitting on a rainy windowsill",
+    aspect_ratio="16:9",
+    resolution="2k",
+    n=1
+)
+
+print(response.data[0].url)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.images.generate({
+  model: 'gemini-3-pro-image-preview',
+  prompt: 'A cinematic portrait of a white cat sitting on a rainy windowsill',
+  aspect_ratio: '16:9',
+  resolution: '2k',
+  n: 1
+});
+
+console.log(response.data[0].url);
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/images/generations');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Content-Type: application/json',
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => json_encode([
+        'model' => 'gemini-3-pro-image-preview',
+        'prompt' => 'A cinematic portrait of a white cat sitting on a rainy windowsill',
+        'aspect_ratio' => '16:9',
+        'resolution' => '2k',
+        'n' => 1
+    ])
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+echo $data['data'][0]['url'];
+```
+
+Ví dụ cho dòng hình ảnh chỉ nhận tỷ lệ khung hình: với `gemini-2.5-flash-image`, `nano-banana`, hoặc `nano-banana-edit`, hãy gửi `aspect_ratio` nhưng bỏ qua `resolution`:
+
+```json
+{
+  "model": "gemini-2.5-flash-image",
+  "prompt": "A clean editorial product shot of a citrus soda can",
+  "aspect_ratio": "16:9"
+}
+```
+
+Ví dụ Nano Banana Pro dùng ảnh tham chiếu: gửi request tới `/v1/images/generations`, không gửi tới `/v1/images/edits`. `resolution` là tùy chọn và có thể đặt là `1k`, `2k`, hoặc `4k`:
+
+```json
+{
+  "model": "nano-banana-pro",
+  "prompt": "Create a clean cinematic character image based on the reference images",
+  "operation": "image-to-image",
+  "image_urls": ["https://example.com/reference-1.png"],
+  "aspect_ratio": "1:1",
+  "resolution": "2k"
+}
+```
+
+
+Với ảnh nguồn riêng tư hoặc trên máy local, hãy upload trực tiếp bằng multipart. Đừng gửi `file_id` tới `/v1/images/generations`:
+
+```bash
+curl -X POST "https://api.aisonar.dev/v1/images/generations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F "model=nano-banana-pro" \
+  -F "prompt=Create a clean cinematic character image based on this reference" \
+  -F "operation=image-to-image" \
+  -F "image=@reference.png" \
+  -F "aspect_ratio=1:1" \
+  -F "resolution=2k"
+```
+
+</RequestExample>
+
+<ResponseExample>
+```json Phản Hồi Đồng Bộ
+{
+  "created": 1706000000,
+  "data": [
+    {
+      "url": "https://...",
+      "revised_prompt": "A fluffy white cat with bright eyes sitting peacefully on a wooden windowsill, watching raindrops stream down the glass window..."
+    }
+  ]
+}
+```
+
+```json Phản Hồi Bất Đồng Bộ
+{
+  "created": 1706000000,
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "pending",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "data": []
+}
+```
+</ResponseExample>
+
+## Model Khả Dụng
+
+| Mô hình | Loại | Tính năng |
+|-------|------|----------|
+| `dall-e-3` | Thường là inline | Chất lượng tốt nhất, cải thiện prompt |
+| `dall-e-2` | Thường là inline | Nhanh hơn, chi phí thấp hơn |
+| `flux-pro` | Thường là task | Photorealistic, chất lượng cao |
+| `flux-schnell` | Thường là inline | Rất nhanh |
+| `midjourney` | Thường là task | Phong cách nghệ thuật |
+| `ideogram-v3` | Thường là task | Xử lý chữ tốt nhất |
+| `stable-diffusion-3` | Thường là inline | Mã nguồn mở, tuỳ biến cao |
+
+Đừng hard-code một model là luôn đồng bộ hay luôn bất đồng bộ. Nếu response tạo ra trả về `status: "pending"`, hãy theo `poll_url` và polling đến khi hoàn tất.
+
+## Xử Lý Phản Hồi Dựa Trên Task
+
+Với các model hình ảnh, luôn kiểm tra xem response có chứa `status: "pending"` hay không:

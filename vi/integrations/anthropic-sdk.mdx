@@ -1,0 +1,206 @@
+---
+title: "Anthropic SDK"
+description: "Sử dụng AI Sonar với Anthropic SDK để tương thích với Messages API gốc của Claude"
+---
+
+## Tổng quan
+
+AI Sonar hỗ trợ đường dẫn **Messages API** gốc của Anthropic, vì vậy bạn có thể sử dụng trực tiếp Anthropic SDK chính thức cho các model Claude.
+
+<Note>
+Đối với Anthropic SDK, hãy sử dụng `https://api.aisonar.dev` làm base URL, không tự thêm `/v1`.
+</Note>
+
+<Note>
+**Loại**: SDK native
+
+**Đường chính**: Anthropic-native
+
+**Mức hỗ trợ**: Đường native mạnh
+</Note>
+
+Trong số các tuyến SDK được tài liệu hóa, đây là một trong những đường dẫn AI Sonar được hỗ trợ mạnh nhất cho các tính năng gốc của Claude.
+
+## Cài đặt
+
+<CodeGroup>
+
+```bash Python
+pip install anthropic
+```
+
+```bash JavaScript
+npm install @anthropic-ai/sdk
+```
+
+</CodeGroup>
+
+## Cấu hình Client
+
+<CodeGroup>
+
+```python Python
+from anthropic import Anthropic
+
+client = Anthropic(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev",
+)
+```
+
+```javascript JavaScript
+import Anthropic from '@anthropic-ai/sdk';
+
+const client = new Anthropic({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev',
+});
+```
+
+</CodeGroup>
+
+## Cách sử dụng cơ bản
+
+```python
+message = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    messages=[
+        {"role": "user", "content": "Explain AI Sonar in one sentence."}
+    ]
+)
+
+print(message.content[0].text)
+```
+
+## Phát trực tuyến
+
+```python
+with client.messages.stream(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Write a short poem about coding."}]
+) as stream:
+    for text in stream.text_stream:
+        print(text, end="", flush=True)
+```
+
+## Thị giác
+
+```python
+import base64
+
+message = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    messages=[{
+        "role": "user",
+        "content": [
+            {"type": "text", "text": "What's in this image?"},
+            {
+                "type": "image",
+                "source": {
+                    "type": "url",
+                    "url": "https://example.com/image.jpg"
+                }
+            }
+        ]
+    }]
+)
+
+with open("image.png", "rb") as f:
+    image_data = base64.b64encode(f.read()).decode()
+
+message = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    messages=[{
+        "role": "user",
+        "content": [
+            {"type": "text", "text": "Describe this image"},
+            {
+                "type": "image",
+                "source": {
+                    "type": "base64",
+                    "media_type": "image/png",
+                    "data": image_data
+                }
+            }
+        ]
+    }]
+)
+```
+
+## Sử dụng Tool
+
+```python
+message = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    tools=[{
+        "name": "get_weather",
+        "description": "Get the weather for a location",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "location": {"type": "string"}
+            },
+            "required": ["location"]
+        }
+    }],
+    messages=[{"role": "user", "content": "What's the weather in Tokyo?"}]
+)
+
+for block in message.content:
+    if block.type == "tool_use":
+        print(block.name)
+        print(block.input)
+```
+
+## Suy nghĩ mở rộng
+
+```python
+message = client.messages.create(
+    model="claude-opus-4-6",
+    max_tokens=16000,
+    thinking={
+        "type": "enabled",
+        "budget_tokens": 10000
+    },
+    messages=[{"role": "user", "content": "Solve this complex problem step by step."}]
+)
+
+for block in message.content:
+    if block.type == "thinking":
+        print(block.thinking)
+    elif block.type == "text":
+        print(block.text)
+```
+
+## Các Model Claude được khuyến nghị
+
+| Mô hình | Phù hợp nhất cho |
+|-------|----------|
+| `claude-opus-4-6` | Suy luận chuyên sâu, phân tích dạng dài |
+| `claude-sonnet-4-6` | Lập trình, các tác vụ trợ lý tổng quát |
+| `claude-haiku-4-5` | Phản hồi nhanh, gọn nhẹ |
+
+## Khắc phục sự cố
+
+<AccordionGroup>
+  <Accordion title="Base URL không đúng">
+    - Sử dụng `https://api.aisonar.dev`
+    - Không tự thêm `/v1` khi cấu hình Anthropic SDK
+  </Accordion>
+
+  <Accordion title="Xác thực thất bại">
+    - Kiểm tra rằng API key AI Sonar của bạn bắt đầu bằng `sk-`
+    - Xác nhận key đang hoạt động trong dashboard AI Sonar
+    - Hãy để Anthropic SDK quản lý auth header thay vì tự thêm custom header theo cách thủ công
+  </Accordion>
+
+  <Accordion title="Không tìm thấy Model">
+    - Xác minh chính xác tên model Claude
+    - Kiểm tra tính khả dụng hiện tại trong danh mục model của AI Sonar
+  </Accordion>
+</AccordionGroup>

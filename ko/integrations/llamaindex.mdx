@@ -1,0 +1,145 @@
+---
+title: "LlamaIndex"
+description: "OpenAI 호환 통합을 사용하여 AI Sonar를 LlamaIndex와 통합합니다"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## 개요
+
+
+
+<Note>
+**유형**: 프레임워크 / 플랫폼
+
+**주요 경로**: OpenAILike를 통한 OpenAI 호환
+
+**지원 수준**: OpenAILike 경유 지원
+</Note>
+
+AI Sonar의 경우, 더 안정적인 LlamaIndex 설정은 기본 제공 OpenAI 클래스 대신 **OpenAI 호환 통합**을 사용하는 것입니다.
+
+현재 LlamaIndex 문서에서는 기본 제공 OpenAI 클래스가 공식 모델 이름에서 메타데이터를 추론하기 때문에, 서드파티 OpenAI 호환 엔드포인트에는 `OpenAILike` 사용을 명시적으로 권장합니다.
+
+즉, 여기서는 `OpenAILike` 를 AI Sonar의 지원 경로로 보고, 내장 OpenAI 클래스를 같은 수준으로 간주하지 마세요.
+
+## 설치
+
+```bash
+pip install llama-index-core \
+  llama-index-readers-file \
+  llama-index-llms-openai-like \
+  llama-index-embeddings-openai-like
+```
+
+## 기본 구성
+
+```python
+from llama_index.core import Settings
+from llama_index.llms.openai_like import OpenAILike
+from llama_index.embeddings.openai_like import OpenAILikeEmbedding
+
+llm = OpenAILike(
+    model="gpt-5.4",
+    api_base="https://api.aisonar.dev/v1",
+    api_key="sk-your-api-key",
+    is_chat_model=True,
+)
+
+embed_model = OpenAILikeEmbedding(
+    model_name="text-embedding-3-small",
+    api_base="https://api.aisonar.dev/v1",
+    api_key="sk-your-api-key",
+)
+
+Settings.llm = llm
+Settings.embed_model = embed_model
+```
+
+## 기본 사용법
+
+```python
+response = llm.complete("Explain AI Sonar in one sentence.")
+print(response.text)
+```
+
+## 채팅
+
+```python
+from llama_index.core.llms import ChatMessage
+
+messages = [
+    ChatMessage(role="system", content="You are a helpful assistant."),
+    ChatMessage(role="user", content="What is the capital of France?")
+]
+
+response = llm.chat(messages)
+print(response.message.content)
+```
+
+## 스트리밍
+
+```python
+for chunk in llm.stream_complete("Write a short poem about AI."):
+    print(chunk.delta, end="", flush=True)
+```
+
+## 임베딩
+
+```python
+vector = embed_model.get_text_embedding("Hello, world!")
+print(vector[:5])
+```
+
+## 문서를 사용한 RAG
+
+```python
+from llama_index.core import SimpleDirectoryReader, VectorStoreIndex
+
+documents = SimpleDirectoryReader("./data").load_data()
+index = VectorStoreIndex.from_documents(documents)
+
+query_engine = index.as_query_engine()
+response = query_engine.query("What is in my documents?")
+print(response)
+```
+
+## 채팅 엔진
+
+```python
+chat_engine = index.as_chat_engine(chat_mode="condense_question")
+
+response = chat_engine.chat("What is AI Sonar?")
+print(response)
+
+response = chat_engine.chat("How many models does it support?")
+print(response)
+```
+
+## 비동기 사용
+
+```python
+import asyncio
+
+async def main():
+    response = await llm.acomplete("Hello!")
+    print(response.text)
+
+asyncio.run(main())
+```
+
+## 모범 사례
+
+<AccordionGroup>
+  <Accordion title="AI Sonar에는 OpenAILike를 사용하세요">
+    AI Sonar 및 기타 서드파티 OpenAI 호환 게이트웨이에는 `llama_index.llms.openai_like.OpenAILike`와 `llama_index.embeddings.openai_like.OpenAILikeEmbedding`를 사용하는 것이 좋습니다.
+  </Accordion>
+
+  <Accordion title="api_base를 명시적으로 설정하세요">
+    이전 OpenAI 환경 변수 이름에 의존하지 말고, 코드에서 직접 `api_base="https://api.aisonar.dev/v1"`를 전달하세요.
+  </Accordion>
+
+  <Accordion title="모델 역할을 분리해서 유지하세요">
+    합성에는 chat/reasoning 모델을 사용하고, 검색에는 `text-embedding-3-small` 또는 `text-embedding-3-large`를 사용하세요.
+  </Accordion>
+</AccordionGroup>

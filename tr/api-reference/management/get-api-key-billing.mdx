@@ -1,0 +1,26 @@
+---
+title: "API Anahtarı Faturalandırmasını Getir"
+openapi: "GET /v1/management/api-keys/{keyId}/billing"
+description: "Bir kullanıcı API anahtarı için toplu faturalandırma kırılımlarını döndürür."
+---
+
+## Genel Bakış
+
+Bu uç nokta, seçilen API anahtarı için tüketime dayalı faturalandırma toplamlarını döndürür. Buna toplam maliyet, toplam istek sayısı, faturalandırma birimine göre kullanım ile istekte gönderdiğiniz model adı (`model`), sağlayıcı, `scene`, `accessChannel`, cache sınıfı ve günlük maliyet eğilimine göre kırılımlar dahildir.
+
+## Notlar
+
+- Yükleme, fatura ve kuruluş düzeyindeki diğer finansal kayıtlar dahil değildir.
+
+## Örnek
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/billing?startDate=2026-01-01&endDate=2026-01-31" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## İstek / Yanıt
+
+Kesin şema için yukarıdaki etkileşimli OpenAPI panelini kullanın.

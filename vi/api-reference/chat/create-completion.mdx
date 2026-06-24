@@ -1,0 +1,279 @@
+---
+title: "Tạo Hoàn Thiện Cuộc Trò Chuyện"
+openapi: "POST /v1/chat/completions"
+description: "Tạo một kết quả hoàn chỉnh cho tin nhắn chat"
+---
+
+## Thân yêu cầu
+
+<ParamField body="model" type="string" required>
+  ID của mô hình để sử dụng. Xem [Models](https://aisonar.dev/models) để biết các tùy chọn có sẵn.
+</ParamField>
+
+<ParamField body="messages" type="array" required>
+  Danh sách các tin nhắn tạo thành cuộc trò chuyện.
+
+  Mỗi đối tượng tin nhắn chứa:
+  - `role` (string): `system`, `user`, hoặc `assistant`
+  - `content` (string | array): Nội dung tin nhắn
+
+  Khi `content` là một mảng, AI Sonar hỗ trợ các khối đa phương tiện có cấu trúc cho các mô hình tương thích:
+  - text: `{ "type": "text", "text": "..." }`
+  - hình ảnh: `{ "type": "image_url", "image_url": { "url": "https://..." } }`
+  - video: `{ "type": "video_url", "video_url": { "url": "https://..." } }`
+  - âm thanh: `{ "type": "audio_url", "audio_url": { "url": "https://..." } }`
+
+  Đối với lưu lượng sản xuất đa phương tiện, ưu tiên các URL công khai `https`. AI Sonar sẽ chuyển đổi các khối media này thành dạng yêu cầu cụ thể của nhà cung cấp cần thiết cho mô hình vật lý được chuyển hướng.
+</ParamField>
+
+<ParamField body="temperature" type="number" default="1">
+  Tham số nhiệt độ sampling trong khoảng 0 đến 2. Giá trị cao hơn làm đầu ra ngẫu nhiên hơn.
+</ParamField>
+
+<ParamField body="max_tokens" type="integer">
+  Số token tối đa được sinh.
+</ParamField>
+
+<ParamField body="stream" type="boolean" default="false">
+  Nếu true, các delta tin nhắn từng phần sẽ được gửi dưới dạng sự kiện SSE.
+</ParamField>
+
+<ParamField body="stream_options" type="object">
+  Các tùy chọn cho streaming. Đặt `include_usage: true` để nhận thông tin sử dụng token trong các đoạn stream.
+</ParamField>
+
+<ParamField body="top_p" type="number" default="1">
+  Tham số Nucleus sampling. Chúng tôi khuyến nghị điều chỉnh tham số này hoặc temperature, không cả hai.
+</ParamField>
+
+<ParamField body="frequency_penalty" type="number" default="0">
+  Số trong khoảng -2.0 đến 2.0. Giá trị dương phạt các token lặp lại.
+</ParamField>
+
+<ParamField body="presence_penalty" type="number" default="0">
+  Số trong khoảng -2.0 đến 2.0. Giá trị dương phạt các token đã xuất hiện trong văn bản.
+</ParamField>
+
+<ParamField body="stop" type="string | array">
+  Tối đa 4 chuỗi mà tại đó API sẽ ngừng sinh token.
+</ParamField>
+
+<ParamField body="tools" type="array">
+  Danh sách các công cụ mà mô hình có thể gọi (gọi hàm).
+</ParamField>
+
+<ParamField body="tool_choice" type="string | object">
+  Điều khiển cách mô hình sử dụng công cụ. Tùy chọn: `auto`, `none`, `required`, hoặc một đối tượng công cụ cụ thể.
+</ParamField>
+
+<ParamField body="parallel_tool_calls" type="boolean" default="true">
+  Có bật gọi hàm song song hay không. Đặt thành false để gọi hàm tuần tự.
+</ParamField>
+
+<ParamField body="max_completion_tokens" type="integer">
+  Số token tối đa cho phần completion. Thay thế cho `max_tokens`, hữu ích cho các họ mô hình mới hỗ trợ reasoning.
+</ParamField>
+
+<ParamField body="reasoning_effort" type="string">
+  Mức độ nỗ lực suy luận cho các mô hình hỗ trợ reasoning. Tùy chọn: `low`, `medium`, `high`.
+</ParamField>
+
+<ParamField body="seed" type="integer">
+  Giá trị seed ngẫu nhiên cho sampling mang tính xác định.
+</ParamField>
+
+<ParamField body="n" type="integer" default="1">
+  Số completions cần sinh (1-128).
+</ParamField>
+
+<ParamField body="logprobs" type="boolean">
+  Có trả về log probabilities hay không.
+</ParamField>
+
+<ParamField body="top_logprobs" type="integer">
+  Số log probabilities hàng đầu cần trả về (0-20). Yêu cầu `logprobs: true`.
+</ParamField>
+
+<ParamField body="top_k" type="integer">
+  Tham số lấy mẫu Top-K (dành cho mô hình Anthropic/Gemini).
+</ParamField>
+
+<ParamField body="response_format" type="object">
+  Đặc tả định dạng phản hồi. Sử dụng `{"type": "json_object"}` cho chế độ JSON. Xem `{"type": "json_schema", "json_schema": {...}}` như một cách tiếp cận cố gắng tốt nhất phụ thuộc vào mô hình được chọn và hành vi chuyển hướng.
+</ParamField>
+
+<ParamField body="logit_bias" type="object">
+  Thay đổi khả năng xuất hiện của các token được chỉ định. Map token IDs (dưới dạng chuỗi) tới giá trị bias từ -100 đến 100.
+</ParamField>
+
+<ParamField body="user" type="string">
+  Một định danh duy nhất đại diện cho người dùng cuối của bạn để giám sát lạm dụng.
+</ParamField>
+
+
+## Phản hồi
+
+<ResponseField name="id" type="string">
+  Định danh duy nhất cho kết quả hoàn thiện.
+</ResponseField>
+
+<ResponseField name="object" type="string">
+  Luôn là `chat.completion`.
+</ResponseField>
+
+<ResponseField name="created" type="integer">
+  Unix timestamp khi kết quả hoàn thiện được tạo.
+</ResponseField>
+
+<ResponseField name="model" type="string">
+  Mô hình được sử dụng cho completion.
+</ResponseField>
+
+<ResponseField name="choices" type="array">
+  Danh sách các lựa chọn completion.
+
+  Mỗi lựa chọn chứa:
+  - `index` (integer): Chỉ số của lựa chọn
+  - `message` (object): Tin nhắn được sinh ra
+  - `finish_reason` (string): Lý do mô hình dừng (`stop`, `length`, `tool_calls`)
+</ResponseField>
+
+<ResponseField name="usage" type="object">
+  Thống kê sử dụng token.
+
+  - `prompt_tokens` (integer): Số token trong prompt
+  - `completion_tokens` (integer): Số token trong completion
+  - `total_tokens` (integer): Tổng số token đã sử dụng
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/chat/completions" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o",
+    "messages": [
+      {"role": "system", "content": "You are a helpful assistant."},
+      {"role": "user", "content": "Hello!"}
+    ],
+    "temperature": 0.7,
+    "max_tokens": 1000
+  }'
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "Hello!"}
+    ],
+    temperature=0.7,
+    max_tokens=1000
+)
+
+print(response.choices[0].message.content)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.chat.completions.create({
+  model: 'gpt-4o',
+  messages: [
+    { role: 'system', content: 'You are a helpful assistant.' },
+    { role: 'user', content: 'Hello!' }
+  ],
+  temperature: 0.7,
+  max_tokens: 1000
+});
+
+console.log(response.choices[0].message.content);
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/chat/completions');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Content-Type: application/json',
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => json_encode([
+        'model' => 'gpt-4o',
+        'messages' => [
+            ['role' => 'system', 'content' => 'You are a helpful assistant.'],
+            ['role' => 'user', 'content' => 'Hello!']
+        ],
+        'temperature' => 0.7,
+        'max_tokens' => 1000
+    ])
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+echo $data['choices'][0]['message']['content'];
+```
+</RequestExample>
+
+## Ví dụ đa phương tiện
+
+```json
+{
+  "model": "gemini-2.5-pro",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        { "type": "text", "text": "Describe this video briefly." },
+        { "type": "video_url", "video_url": { "url": "https://example.com/demo.mp4" } }
+      ]
+    }
+  ],
+  "max_tokens": 64
+}
+```
+
+<ResponseExample>
+```json Response
+{
+  "id": "chatcmpl-abc123",
+  "object": "chat.completion",
+  "created": 1706000000,
+  "model": "gpt-4o",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "Hello! How can I help you today?"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 20,
+    "completion_tokens": 9,
+    "total_tokens": 29
+  }
+}
+```
+</ResponseExample>

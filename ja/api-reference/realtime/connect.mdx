@@ -1,0 +1,54 @@
+---
+title: "Realtime WebSocket"
+openapi: "GET /v1/realtime"
+description: "WebSocket でリアルタイム音声およびマルチモーダルセッションに接続します"
+---
+
+## 概要
+
+このエンドポイントは、リアルタイム音声認識、音声合成、音声翻訳、リアルタイムマルチモーダルモデルのセッションに使用します。通常の `GET` はメタデータを返し、WebSocket アップグレードは選択された上流セッションへプロキシされます。
+
+<Note>エージェントは `/v1/models` で realtime 対応モデルを確認してから socket を開いてください。</Note>
+
+## 接続
+
+<ParamField query="model" type="string" required>
+  リアルタイムモデル ID。公開契約で realtime をサポートするモデルを使用してください。
+</ParamField>
+
+<ParamField header="Authorization" type="string" required>
+  Bearer API キー。WebSocket クライアントはアップグレード要求で `Authorization: Bearer sk-your-api-key` を送信します。
+</ParamField>
+
+<RequestExample>
+```javascript JavaScript
+import WebSocket from 'ws';
+
+const socket = new WebSocket('wss://api.aisonar.dev/v1/realtime?model=qwen-tts-realtime', {
+  headers: { Authorization: 'Bearer sk-your-api-key' }
+});
+
+socket.on('open', () => {
+  socket.send(JSON.stringify({ type: 'session.start' }));
+});
+
+socket.on('message', (data) => {
+  console.log('realtime event', data.toString());
+});
+```
+
+```bash cURL
+curl "https://api.aisonar.dev/v1/realtime" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+## メッセージ
+
+AI Sonar はクライアントとルーティングされたリアルタイムプロバイダーの間で WebSocket メッセージを転送します。選択したモデルの公式イベント形式を使い、`model` はクエリ文字列で指定します。
+
+## 課金と終了
+
+リアルタイムセッションは同じ API キー残高を使用します。AI Sonar は接続時に少額を事前控除し、終了時に精算または返金します。
+
+セッション完了後はクライアント socket を閉じてください。上流が先に閉じた場合、AI Sonar は可能な限り close code を転送します。

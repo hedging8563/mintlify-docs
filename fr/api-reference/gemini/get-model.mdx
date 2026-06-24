@@ -1,0 +1,133 @@
+---
+title: "Obtenir le modèle"
+openapi: "GET /v1beta/models/{model}"
+description: "Obtenir les métadonnées du modèle en utilisant le format de l'API Google Gemini"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+Renvoie les métadonnées d’un modèle spécifique au format de l’API Google Gemini.
+
+## Paramètres de chemin
+
+<ParamField path="model" type="string" required>
+  Nom du modèle (par exemple, `gemini-2.5-pro`, `gemini-2.5-flash`). Les alias sont également acceptés.
+</ParamField>
+
+## Authentification
+
+L’authentification n’est pas requise pour le point de lecture public des métadonnées de modèle.
+
+## Réponse
+
+<ResponseField name="name" type="string">
+  Nom de la ressource du modèle au format `models/{model}`.
+</ResponseField>
+
+<ResponseField name="displayName" type="string">
+  Nom du modèle lisible par l'homme.
+</ResponseField>
+
+<ResponseField name="inputTokenLimit" type="integer">
+  Nombre maximal de jetons d'entrée (fenêtre de contexte).
+</ResponseField>
+
+<ResponseField name="outputTokenLimit" type="integer">
+  Nombre maximal de jetons de sortie.
+</ResponseField>
+
+<ResponseField name="supportedGenerationMethods" type="array">
+  Liste des méthodes de génération prises en charge (par exemple, `generateContent`, `countTokens`, `embedContent`).
+</ResponseField>
+
+<ResponseField name="version" type="string">
+  Chaîne de version publique lorsqu’elle est disponible.
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  Description lisible par l’homme du modèle lorsqu’elle est disponible.
+</ResponseField>
+
+<ResponseField name="temperature" type="number">
+  Température par défaut lorsque la source amont l’expose.
+</ResponseField>
+
+<ResponseField name="topP" type="number">
+  Valeur top-p par défaut lorsqu’elle est disponible.
+</ResponseField>
+
+<ResponseField name="topK" type="integer">
+  Valeur top-k par défaut lorsqu’elle est disponible.
+</ResponseField>
+
+<ResponseField name="maxTemperature" type="number">
+  Température maximale prise en charge lorsqu’elle est disponible.
+</ResponseField>
+
+## Erreurs
+
+- Les GET invalides qui incluent par erreur `:generateContent` ou `:streamGenerateContent` renvoient `405 METHOD_NOT_ALLOWED`.
+- Les modèles manquants renvoient `404 NOT_FOUND`.
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1beta/models/gemini-2.5-pro"
+```
+
+```python Python
+import google.generativeai as genai
+
+genai.configure(
+    api_key="sk-your-api-key",
+    transport="rest",
+    client_options={"api_endpoint": "api.aisonar.dev"}
+)
+
+model = genai.get_model("models/gemini-2.5-pro")
+print(f"Name: {model.name}")
+print(f"Input limit: {model.input_token_limit}")
+print(f"Output limit: {model.output_token_limit}")
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "name": "models/gemini-2.5-pro",
+  "version": "1.0",
+  "displayName": "gemini-2.5-pro",
+  "description": "gemini-2.5-pro model available via AI Sonar",
+  "inputTokenLimit": 1048576,
+  "outputTokenLimit": 65536,
+  "supportedGenerationMethods": ["generateContent", "countTokens"],
+  "temperature": 1.0,
+  "topP": 0.95,
+  "topK": 40,
+  "maxTemperature": 2.0
+}
+```
+</ResponseExample>
+
+## Métadonnées de recommandation non-chat
+
+Pour les modèles non-chat, la route de détail renvoie aussi `aisonar.agent_preferences.<scene>`.
+
+Elle permet d’inspecter :
+
+- `preferred_rank`
+- `success_rate_24h`
+- `sample_count_24h`
+- `status`
+- `updated_at`
+
+La réponse publique garde volontairement `basis.channel_id` et `basis.physical_model` à `null` afin que les agents puissent consommer le signal de recommandation sans apprendre les identifiants de routage internes.
+
+## Métadonnées publiques de détail
+
+Par rapport à `GET /v1/models`, la route de détail peut également renvoyer :
+
+- `aisonar.capability_flags`
+- `aisonar.supported_operations`
+- `aisonar.pricing_provenance`
+- `aisonar.public_contract_summary`
+- `aisonar.public_contract`

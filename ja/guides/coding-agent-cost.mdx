@@ -1,0 +1,140 @@
+---
+title: "コーディングエージェントのコスト最適化"
+description: "コーディングエージェントのAPIコストを60〜90%削減する実践的な戦略"
+---
+
+## コスト問題
+
+典型的なコーディングエージェントセッションはトークンを急速に消費します：
+
+| アクティビティ | 1回あたりのトークン | 1時間あたりの呼び出し | 1時間あたりのトークン |
+|-------------|-----------------|-------------------|-------------------|
+| コード生成 | 5,000〜50,000 | 10〜30 | 150K〜1.5M |
+| コードベース検索 | 2,000〜20,000 | 20〜50 | 100K〜1M |
+| コードレビュー | 10,000〜80,000 | 5〜10 | 100K〜800K |
+| オートコンプリート | 500〜3,000 | 50〜200 | 50K〜600K |
+| **合計** | | | **400K〜4M+** |
+
+プレミアムモデルの料金では、開発者1人あたり1時間$3〜30。10人のチームで月$500〜5,000。
+
+## スマートモデル選択
+
+すべてのコーディングタスクに最も高価なモデルが必要なわけではありません：
+
+| タスク | 推奨 | コスト帯 | 理由 |
+|-------|------|---------|------|
+| アーキテクチャ設計 | `claude-opus-4-6`, `gpt-5.4` | $$$$ プレミアム | 複雑な推論が必要 |
+| コード生成 | `claude-sonnet-4-6`, `gemini-3-pro-preview` | $$$ スタンダード | 品質/コストの最適バランス |
+| コードレビュー | `claude-sonnet-4-6`, `deepseek-r1` | $$〜$$$ | パターンマッチング |
+| バグ修正 | `claude-sonnet-4-6`, `gpt-5-mini` | $$〜$$$ | 焦点の定まったタスク |
+| タブ補完 | `gpt-5-mini`, `gemini-3-flash-preview` | $$ バジェット | 速度が深さより重要 |
+| ボイラープレート | `deepseek-v3.2`, `gpt-5-mini` | $ エコノミー | シンプルな繰り返しパターン |
+
+<Tip>
+詳細なモデル比較とツールごとの設定は[モデル選択ガイド](/ja/guides/coding-agent-models)をご覧ください。
+</Tip>
+
+## キャッシュ戦略
+
+コーディングエージェントは類似パターンを常に繰り返すため、キャッシュに最適です。
+
+### Prompt Cache（プロバイダーレベル）
+
+[上流Prompt Cache](/ja/guides/prompt-cache)はAI Sonarを通じて自動的に機能します。長いシステムプロンプト——コーディングエージェントは常に含む——がプロバイダーレベルでキャッシュされます：
+
+| プロバイダー | キャッシュ割引 | 最小トークン |
+|------------|-------------|------------|
+| Anthropic | 読み取り90%オフ | 1,024 |
+| OpenAI | 読み取り50%オフ | 1,024 |
+| DeepSeek | 読み取り90%オフ | 64 |
+
+コーディングエージェントは毎回同じシステムプロンプト+プロジェクトコンテキストを送信するため、Prompt Cacheヒット率は通常**70〜90%**です。
+
+### 組み合わせ節約例
+
+50,000入力トークンのリクエスト（典型的なコーディングエージェント呼び出し）：
+
+```
+直接API（キャッシュなし）：
+  50,000 tokens × $3.00/1M = $0.150
+
+Prompt Cache使用（40,000キャッシュ + 10,000新規）：
+  キャッシュ：40,000 × $0.30/1M = $0.012
+  新規：    10,000 × $3.00/1M = $0.030
+  合計：$0.042（72%節約）
+```
+
+## 実際のコスト比較
+
+典型的な1時間コーディングセッション（約3Mトークン）の推定コスト：
+
+| セットアップ | 時間あたりコスト | 月額（160h） |
+|------------|---------------|-------------|
+| 直接API（プレミアムモデル） | 〜$15〜25 | 〜$2,400〜4,000 |
+| AI Sonar（スマートルーティング） | 〜$10〜18 | 〜$1,600〜2,900 |
+| AI Sonar + Prompt Cache | 〜$4〜8 | 〜$640〜1,280 |
+| AI Sonar + 両方のキャッシュ | 〜$2〜5 | 〜$320〜800 |
+
+<Warning>
+これらは概算です。実際のコストはモデル選択、使用パターン、キャッシュヒット率によって異なります。[リアルタイム料金](/ja/api-reference/pricing/get-pricing)で現在のレートをご確認ください。
+</Warning>
+
+## トークン管理のヒント
+
+### max_tokensを設定
+
+暴走生成を防止：
+
+```json
+{
+  "model": "claude-sonnet-4-6",
+  "max_tokens": 4096,
+  "messages": [...]
+}
+```
+
+### Auto-Compactを使用
+
+- **Claude Code**：組み込みauto-compactがコンテキスト制限時に自動トリガー
+- **Cursor**：自動コンテキスト管理
+- **Codex CLI**：`--max-context`フラグを使用
+
+### コンテキスト膨張を避ける
+
+- 関数だけで十分な場合にファイル全体を貼り付けない
+- `.gitignore`スタイルのパターンで無関係なファイルを除外
+- タスク切り替え時に会話履歴をクリア
+
+## クイック設定
+
+<AccordionGroup>
+  <Accordion title="Claude Code">
+    ```bash
+    export ANTHROPIC_API_KEY="sk-your-api-key"
+    export ANTHROPIC_BASE_URL="https://api.aisonar.dev"
+    ```
+    [完全ガイド →](/ja/integrations/claude-code)
+  </Accordion>
+
+  <Accordion title="Cursor">
+    Settings → Models → OpenAI API Key: `sk-your-key`、Base URL: `https://api.aisonar.dev/v1`
+
+    [完全ガイド →](/ja/integrations/cursor)
+  </Accordion>
+
+  <Accordion title="Codex CLI">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export OPENAI_BASE_URL="https://api.aisonar.dev/v1"
+    ```
+    [完全ガイド →](/ja/integrations/codex-cli)
+  </Accordion>
+
+  <Accordion title="Gemini CLI">
+    ```bash
+    export GEMINI_API_KEY="sk-your-api-key"
+    export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"
+    ```
+    [完全ガイド →](/ja/integrations/gemini-cli)
+  </Accordion>
+</AccordionGroup>

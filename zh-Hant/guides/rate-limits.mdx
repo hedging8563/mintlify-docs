@@ -1,0 +1,154 @@
+---
+title: "速率限制"
+description: "了解並處理速率限制"
+---
+
+## 概覽
+
+AI Sonar 實施速率限制，以確保公平使用與平台穩定性。限制會依帳戶層級而有所不同。
+
+## 速率限制層級
+
+| 層級 | 請求數/分鐘 | 說明 |
+|------|-------------|-------------|
+| **User** | 1,000 | 所有帳戶的預設層級 |
+| **Partner** | 3,000 | 適用於整合合作夥伴 |
+| **VIP** | 10,000 | 高流量使用者 |
+
+<Note>
+  速率限制可能會有所變更。如需自訂限制，請聯絡 support@aisonar.dev。
+</Note>
+
+## 速率限制回應
+
+當你超過速率限制時，API 會返回 `429` 狀態碼，並附帶 `Retry-After` header，指出在重試之前需要等待多久。
+
+## 超出速率限制
+
+當你超出限制時，你會收到一個 `429` 回應：
+
+```json
+{
+  "error": {
+    "message": "Rate limit exceeded. Please retry later.",
+    "type": "rate_limit_exceeded",
+    "code": "rate_limit_exceeded"
+  }
+}
+```
+
+回應會包含一個 `Retry-After` header：
+```
+Retry-After: 60  # Seconds to wait before retrying
+```
+
+## 處理速率限制
+
+### 指數退避
+
+為自動重試實作指數退避：
+
+```python
+import time
+from openai import OpenAI, RateLimitError
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+def make_request_with_backoff(messages, max_retries=5):
+    for attempt in range(max_retries):
+        try:
+            return client.chat.completions.create(
+                model="gpt-4o",
+                messages=messages
+            )
+        except RateLimitError as e:
+            if attempt == max_retries - 1:
+                raise
+
+            wait_time = 2 ** attempt  # 1, 2, 4, 8, 16 seconds
+            print(f"Rate limited. Waiting {wait_time}s...")
+            time.sleep(wait_time)
+```
+
+### 請求佇列
+
+對於高流量應用程式，請實作請求佇列：
+
+```python
+import asyncio
+from collections import deque
+
+class RateLimitedClient:
+    def __init__(self, requests_per_minute=60):
+        self.rpm = requests_per_minute
+        self.interval = 60 / requests_per_minute
+        self.last_request = 0
+
+    async def request(self, messages):
+        # Wait if needed to respect rate limit
+        now = asyncio.get_event_loop().time()
+        wait_time = max(0, self.last_request + self.interval - now)
+        if wait_time > 0:
+            await asyncio.sleep(wait_time)
+
+        self.last_request = asyncio.get_event_loop().time()
+        return await self.client.chat.completions.create(
+            model="gpt-4o",
+            messages=messages
+        )
+```
+
+### 批次處理
+
+對於大量操作，請以批次方式處理並加入延遲：
+
+```python
+def process_batch(items, batch_size=50, delay=1):
+    results = []
+    for i in range(0, len(items), batch_size):
+        batch = items[i:i + batch_size]
+        for item in batch:
+            result = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[{"role": "user", "content": item}]
+            )
+            results.append(result)
+        time.sleep(delay)  # Pause between batches
+    return results
+```
+
+## 最佳實務
+
+<AccordionGroup>
+  <Accordion title="監控你的使用情況">
+    追蹤速率限制 header，以主動將使用量維持在限制之下。
+  </Accordion>
+
+  <Accordion title="實作快取">
+    對相同請求的回應進行快取，以減少 API 呼叫。
+  </Accordion>
+
+  <Accordion title="使用適當的模型">
+    較快的模型（例如 gpt-5-mini）可提供更高的吞吐量。
+  </Accordion>
+
+  <Accordion title="聯絡我們以取得更高限制">
+    如果你需要更高的限制，請聯絡 support@aisonar.dev。
+  </Accordion>
+</AccordionGroup>
+
+## 升級你的層級
+
+若要申請層級升級：
+
+1. 登入你的 [Dashboard](https://console.aisonar.dev)
+2. 前往 **Settings → Account**
+3. 聯絡支援團隊並提供你的使用案例
+
+或寄送電子郵件至 support@aisonar.dev，並附上：
+- 你的帳戶電子郵件
+- 預期的請求量
+- 使用案例說明

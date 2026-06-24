@@ -1,0 +1,133 @@
+---
+title: "Dify"
+description: "دمج AI Sonar مع Dify باستخدام مزوّد OpenAI وعنوان URL أساسي مخصص"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## نظرة عامة
+
+يعمل Dify بشكل جيد مع AI Sonar من خلال مسار مزوّد النماذج المتوافق مع OpenAI.
+
+بالنسبة إلى الإصدارات الحالية من Dify، يكون المسار الأكثر أمانًا عادةً هو:
+- اختيار مزوّد **OpenAI** المدمج
+- تعيين مفتاح AI Sonar API الخاص بك
+- تعيين عنوان URL أساسي مخصص إلى `https://api.aisonar.dev/v1`
+
+<Note>
+تعرض بعض إصدارات Dify الأقدم هذا كـ `OpenAI-API-compatible` بدلًا من مزوّد `OpenAI` المدمج مع حقل عنوان URL أساسي مخصص. إذا كانت واجهة Dify لديك تبدو مختلفة، فاستخدم أقرب مسار مزوّد مخصص متوافق مع OpenAI متاح في ذلك الإصدار.
+</Note>
+
+<Note>
+**النوع**: إطار أو منصة
+
+**المسار الرئيسي**: مسار دردشة متوافق مع OpenAI
+
+**مستوى الدعم**: مدعوم مع حدود
+</Note>
+
+هذا مسار تكامل موجّه إلى chat-completions. ولا ينبغي فهمه على أنه ضمان بأن Dify يوفّر نفس سلوك Responses أو WebSocket الموجود في تكاملات Codex المخصصة.
+
+## المتطلبات المسبقة
+
+- حساب AI Sonar مع إمكانية الوصول إلى API
+- Dify Cloud أو Dify مستضاف ذاتيًا
+
+## خطوات الإعداد
+
+### الخطوة 1: احصل على مفتاح API الخاص بك
+
+1. سجّل الدخول إلى [AI Sonar Dashboard](https://console.aisonar.dev)
+2. افتح [API Keys](https://console.aisonar.dev/api)
+3. أنشئ أو انسخ مفتاح API يبدأ بـ `sk-`
+
+### الخطوة 2: تكوين المزوّد
+
+<Steps>
+  <Step title="فتح مزوّدي النماذج">
+    في Dify، انتقل إلى **Settings** → **Model Providers**
+  </Step>
+  <Step title="تحديد OpenAI">
+    افتح إعدادات مزوّد **OpenAI**. إذا كان إصدار Dify لديك لا يوفّر عنوان URL أساسي مخصص هنا، فاستخدم بدلًا من ذلك خيار المزوّد المخصص المتوافق مع OpenAI الذي يتيحه ذلك الإصدار.
+  </Step>
+  <Step title="إدخال إعدادات AI Sonar">
+    استخدم هذه القيم:
+
+    | الحقل | القيمة |
+    |-------|-------|
+    | مفتاح API | `sk-your-api-key` |
+    | عنوان URL الأساسي لواجهة API / عنوان URL الأساسي المخصص | `https://api.aisonar.dev/v1` |
+  </Step>
+  <Step title="إضافة النماذج">
+    أضف النماذج التي تريد استخدامها، على سبيل المثال:
+    - `gpt-5.4`
+    - `gpt-5-mini`
+    - `gpt-4o`
+    - `claude-sonnet-4-6`
+    - `claude-opus-4-6`
+    - `gemini-2.5-flash`
+    - `gemini-2.5-pro`
+    - `deepseek-r1`
+  </Step>
+</Steps>
+
+### الخطوة 3: اختبار الاتصال
+
+1. اختر نموذجًا واحدًا مثل `gpt-5-mini` أو `gpt-4o`
+2. أرسل prompt اختباريًا
+3. أكّد أن Dify يتلقى استجابة صالحة
+
+## Embeddings لقواعد المعرفة
+
+بالنسبة إلى RAG وفهرسة قاعدة المعرفة، أضف نموذج embedding مثل:
+- `text-embedding-3-small`
+- `text-embedding-3-large`
+
+ثم عيّنه كنموذج embedding افتراضي في إعدادات قاعدة المعرفة أو التطبيق ذات الصلة.
+
+## أدوار النماذج الموصى بها
+
+| حالة الاستخدام | النماذج المقترحة |
+|----------|------------------|
+| الدردشة الافتراضية | `gpt-5.4`, `gpt-5-mini`, `gpt-4o` |
+| الاستدلال العميق | `gpt-5.4`, `claude-opus-4-6`, `deepseek-r1` |
+| سريع/منخفض التكلفة | `gpt-5-mini`, `gemini-2.5-flash` |
+| Embeddings | `text-embedding-3-small`, `text-embedding-3-large` |
+
+## أفضل الممارسات
+
+<AccordionGroup>
+  <Accordion title="ابدأ باستخدام موفّر OpenAI المدمج">
+    في الإصدارات الأحدث من Dify، يكون موفّر OpenAI المدمج مع عنوان URL أساسي مخصص عادةً هو الإعداد الأنظف لـ AI Sonar.
+  </Accordion>
+
+  <Accordion title="استخدم نماذج أقل تكلفة للتكرار">
+    استخدم `gpt-5-mini` أو `gemini-2.5-flash` أثناء التكرار، ثم حوّل تدفقات العمل الأثقل إلى نماذج أقوى فقط عند الحاجة.
+  </Accordion>
+
+  <Accordion title="تذكّر أن Dify موجّه عادةً نحو chat-completions">
+    تستخدم معظم تدفقات Dify سلوك chat المتوافق مع OpenAI. إذا كنت تحتاج إلى Responses خاصة بـ Codex أو سلوك WebSocket، فاستخدم تكاملات Codex المخصصة بدلًا من Dify.
+  </Accordion>
+</AccordionGroup>
+
+## استكشاف الأخطاء وإصلاحها
+
+<AccordionGroup>
+  <Accordion title="خطأ في الاتصال">
+    - تحقّق من أن عنوان URL الأساسي هو بالضبط `https://api.aisonar.dev/v1`
+    - أزل الشرطات المائلة اللاحقة إذا كان Dify يكررها
+    - أكّد أن خادم Dify يمكنه الوصول إلى AI Sonar عبر الإنترنت العام
+  </Accordion>
+
+  <Accordion title="401 Unauthorized">
+    - تحقّق مرة أخرى من مفتاح API
+    - أكّد أن المفتاح نشط في لوحة تحكم AI Sonar
+    - تأكد من أن القيمة التي تم لصقها في Dify لا تحتوي على مسافات إضافية أو فواصل أسطر
+  </Accordion>
+
+  <Accordion title="النموذج غير موجود">
+    - تحقّق من اسم النموذج بدقة
+    - أعد إضافة إدخال النموذج إذا كانت واجهة الموفّر قد خزّنت قيمة أقدم
+    - تحقّق من توفر النموذج الحالي في وثائق AI Sonar أو لوحة التحكم
+  </Accordion>
+</AccordionGroup>

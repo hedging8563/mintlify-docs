@@ -1,0 +1,355 @@
+---
+title: "Nachricht erstellen"
+openapi: "POST /v1/messages"
+description: "Erstellt eine Nachricht im Anthropic Messages API-Format"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Überblick
+
+Dieser Endpoint bietet native Kompatibilität mit der Anthropic Messages API. Verwenden Sie ihn für Claude-Modelle mit Funktionen wie Extended Thinking.
+
+
+Dieser Endpunkt behält den nativen Anthropic-Vertrag bei. `messages` muss ein Array aus `user`- / `assistant`-Nachrichten sein, `system` gehört in das Top-Level-Feld `system`, und `max_tokens` ist erforderlich. Wenn dein Payload OpenAI-Rollen wie `system`, `developer` oder `tool` innerhalb von `messages` verwendet, sende ihn stattdessen an `/v1/chat/completions`.
+<Note>
+Base URL für Anthropic SDK: `https://api.aisonar.dev` (ohne `/v1`-Suffix)
+</Note>
+
+## Request-Header
+
+<ParamField header="x-api-key" type="string" required>
+  Ihr AI Sonar API-Schlüssel. Alternative zum Bearer-Token.
+</ParamField>
+
+<ParamField header="anthropic-version" type="string" required>
+  Anthropic API-Version. Verwenden Sie `2023-06-01`.
+</ParamField>
+
+## Request-Body
+
+<ParamField body="model" type="string" required>
+  Claude-Modell-ID (z. B. `claude-sonnet-4-6` oder `claude-opus-4-6`).
+</ParamField>
+
+<ParamField body="messages" type="array" required>
+  Array von Nachrichtenobjekten mit `role` und `content`.
+</ParamField>
+
+<ParamField body="max_tokens" type="integer" required>
+  Maximale Anzahl zu generierender Tokens.
+</ParamField>
+
+<ParamField body="system" type="string">
+  System-Prompt (separat vom `messages`-Array).
+</ParamField>
+
+<ParamField body="temperature" type="number" default="1">
+  Sampling-Temperatur (0-1).
+</ParamField>
+
+<ParamField body="stream" type="boolean" default="false">
+  Streaming-Antworten aktivieren.
+</ParamField>
+
+<ParamField body="thinking" type="object">
+  Extended-Thinking-Konfiguration (Claude Opus 4.5).
+
+  - `type` (string): `"enabled"` zum Aktivieren
+  - `budget_tokens` (integer): Token-Budget für das Denken
+</ParamField>
+
+<ParamField body="tools" type="array">
+  Verfügbare Tools für das Modell.
+</ParamField>
+
+<ParamField body="tool_choice" type="object">
+  Wie das Modell Tools verwenden soll. Optionen: `auto`, `any`, `tool` (spezifisches Tool).
+</ParamField>
+
+<ParamField body="top_p" type="number">
+  Nucleus-Sampling-Parameter. Verwenden Sie entweder temperature oder top_p, nicht beides.
+</ParamField>
+
+<ParamField body="top_k" type="integer">
+  Für jedes Token nur aus den obersten K-Optionen sampeln.
+</ParamField>
+
+<ParamField body="stop_sequences" type="array">
+  Benutzerdefinierte Stop-Sequenzen, die dazu führen, dass das Modell die Generierung beendet.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Metadaten, die zur Nachverfolgung an die Anfrage angehängt werden.
+</ParamField>
+
+## Antwort
+
+<ResponseField name="id" type="string">
+  Eindeutige Nachrichtenkennung.
+</ResponseField>
+
+<ResponseField name="type" type="string">
+  Immer `message`.
+</ResponseField>
+
+<ResponseField name="role" type="string">
+  Immer `assistant`.
+</ResponseField>
+
+<ResponseField name="content" type="array">
+  Array von Content-Blöcken (text, thinking, tool_use).
+</ResponseField>
+
+<ResponseField name="model" type="string">
+  Verwendetes Modell.
+</ResponseField>
+
+<ResponseField name="stop_reason" type="string">
+  Warum die Generierung gestoppt wurde (`end_turn`, `max_tokens`, `tool_use`).
+</ResponseField>
+
+<ResponseField name="usage" type="object">
+  Token-Nutzung mit `input_tokens` und `output_tokens`.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/messages" \
+  -H "x-api-key: sk-your-api-key" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-sonnet-4-6",
+    "max_tokens": 1024,
+    "system": "You are a helpful assistant.",
+    "messages": [
+      {"role": "user", "content": "Hello, Claude!"}
+    ]
+  }'
+```
+
+```python Python
+from anthropic import Anthropic
+
+client = Anthropic(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev"
+)
+
+message = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    system="You are a helpful assistant.",
+    messages=[
+        {"role": "user", "content": "Hello, Claude!"}
+    ]
+)
+
+print(message.content[0].text)
+```
+
+```javascript JavaScript
+import Anthropic from '@anthropic-ai/sdk';
+
+const client = new Anthropic({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev'
+});
+
+const message = await client.messages.create({
+  model: 'claude-sonnet-4-6',
+  max_tokens: 1024,
+  system: 'You are a helpful assistant.',
+  messages: [
+    { role: 'user', content: 'Hello, Claude!' }
+  ]
+});
+
+console.log(message.content[0].text);
+```
+
+```go Go
+package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "fmt"
+    "io"
+    "net/http"
+)
+
+func main() {
+    payload := map[string]interface{}{
+        "model":      "claude-sonnet-4-6",
+        "max_tokens": 1024,
+        "system":     "You are a helpful assistant.",
+        "messages": []map[string]string{
+            {"role": "user", "content": "Hello, Claude!"},
+        },
+    }
+
+    jsonData, _ := json.Marshal(payload)
+    req, _ := http.NewRequest("POST", "https://api.aisonar.dev/v1/messages", bytes.NewBuffer(jsonData))
+    req.Header.Set("x-api-key", "sk-your-api-key")
+    req.Header.Set("anthropic-version", "2023-06-01")
+    req.Header.Set("Content-Type", "application/json")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+
+    body, _ := io.ReadAll(resp.Body)
+    fmt.Println(string(body))
+}
+```
+
+```php PHP
+<?php
+$payload = [
+    'model' => 'claude-sonnet-4-6',
+    'max_tokens' => 1024,
+    'system' => 'You are a helpful assistant.',
+    'messages' => [
+        ['role' => 'user', 'content' => 'Hello, Claude!']
+    ]
+];
+
+$ch = curl_init('https://api.aisonar.dev/v1/messages');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'x-api-key: sk-your-api-key',
+        'anthropic-version: 2023-06-01',
+        'Content-Type: application/json'
+    ],
+    CURLOPT_POSTFIELDS => json_encode($payload)
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+echo $data['content'][0]['text'];
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "id": "msg_abc123",
+  "type": "message",
+  "role": "assistant",
+  "content": [
+    {
+      "type": "text",
+      "text": "Hello! How can I help you today?"
+    }
+  ],
+  "model": "claude-sonnet-4-6",
+  "stop_reason": "end_turn",
+  "usage": {
+    "input_tokens": 15,
+    "output_tokens": 10
+  }
+}
+```
+</ResponseExample>
+
+## Vision-Eingabebeispiel
+
+Bei Claude-Modellen mit Vision-Unterstützung platzieren Sie Bilder in `messages[].content` als strukturierte Bildblöcke.
+
+```json
+{
+  "model": "claude-sonnet-4-6",
+  "max_tokens": 1024,
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "Please describe this image."
+        },
+        {
+          "type": "image",
+          "source": {
+            "type": "url",
+            "url": "https://example.com/demo.jpg"
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+```json
+{
+  "model": "claude-sonnet-4-6",
+  "max_tokens": 1024,
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "Please describe this image."
+        },
+        {
+          "type": "image",
+          "source": {
+            "type": "base64",
+            "media_type": "image/jpeg",
+            "data": "/9j/4AAQSkZJRgABAQ..."
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+
+## Beispiel für Extended Thinking
+
+```python
+message = client.messages.create(
+    model="claude-opus-4-6",
+    max_tokens=16000,
+    thinking={
+        "type": "enabled",
+        "budget_tokens": 10000
+    },
+    messages=[{"role": "user", "content": "Solve this math problem..."}]
+)
+
+for block in message.content:
+    if block.type == "thinking":
+        print(f"Thinking: {block.thinking}")
+    elif block.type == "text":
+        print(f"Response: {block.text}")
+```
+
+## Anthropic Message-Batches
+
+AI Sonar stellt jetzt zusätzlich zu `/v1/messages` auch den nativen Anthropic-Message-Batches-Flow bereit.
+
+Verfügbare Routen:
+
+- `POST /v1/messages/batches`
+- `GET /v1/messages/batches`
+- `GET /v1/messages/batches/:message_batch_id`
+- `GET /v1/messages/batches/:message_batch_id/results`
+- `POST /v1/messages/batches/:message_batch_id/cancel`
+- `DELETE /v1/messages/batches/:message_batch_id`
+
+Hinweise für den Betrieb:
+
+- Verwende denselben AI Sonar-API-Key zusammen mit den nativen Anthropic-Headern.
+- Wenn Batch-Items auf `file_id` verweisen, füge zusätzlich `anthropic-beta: files-api-2025-04-14` hinzu.
+- Batch-Jobs behalten die nativen Anthropic-Request/Response-Formate bei, während AI Sonar den internen Abrechnungs-Lifecycle nachverfolgt.

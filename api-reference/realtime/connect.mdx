@@ -1,0 +1,54 @@
+---
+title: "Realtime WebSocket"
+openapi: "GET /v1/realtime"
+description: "Connect to realtime speech and multimodal sessions over WebSocket"
+---
+
+## Overview
+
+Use this endpoint for realtime sessions such as streaming speech recognition, speech synthesis, speech translation, or realtime multimodal models. Non-WebSocket `GET` requests return endpoint metadata; WebSocket upgrade requests proxy the realtime upstream session.
+
+<Note>For agents, discover realtime-capable models with `/v1/models` and choose a model whose supported endpoints include realtime before opening the socket.</Note>
+
+## Connection
+
+<ParamField query="model" type="string" required>
+  Realtime model ID. Use a model whose public contract lists realtime support.
+</ParamField>
+
+<ParamField header="Authorization" type="string" required>
+  Bearer API key. WebSocket clients should send `Authorization: Bearer sk-your-api-key` during the upgrade request.
+</ParamField>
+
+<RequestExample>
+```javascript JavaScript
+import WebSocket from 'ws';
+
+const socket = new WebSocket('wss://api.aisonar.dev/v1/realtime?model=qwen-tts-realtime', {
+  headers: { Authorization: 'Bearer sk-your-api-key' }
+});
+
+socket.on('open', () => {
+  socket.send(JSON.stringify({ type: 'session.start' }));
+});
+
+socket.on('message', (data) => {
+  console.log('realtime event', data.toString());
+});
+```
+
+```bash cURL
+curl "https://api.aisonar.dev/v1/realtime" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+## Messages
+
+AI Sonar forwards WebSocket messages between your client and the routed realtime provider. Keep provider-specific event shapes for the selected realtime model, and include `model` in the query string rather than in each event.
+
+## Billing and closing
+
+Realtime sessions use the same API key balance as other endpoints. AI Sonar pre-deducts a small estimate when the socket opens, then settles or refunds when the session closes.
+
+Close the client socket when the session is complete. If the upstream closes first, AI Sonar relays that close code to your client when possible.

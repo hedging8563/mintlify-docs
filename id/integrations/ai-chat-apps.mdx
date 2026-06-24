@@ -1,0 +1,166 @@
+---
+title: "Aplikasi Chat AI"
+description: "Konfigurasikan aplikasi chat AI populer untuk menggunakan API kompatibel OpenAI milik AI Sonar"
+---
+
+## Ringkasan
+
+Sebagian besar aplikasi chat AI umum terhubung ke AI Sonar melalui jalur chat standar yang kompatibel dengan OpenAI.
+
+Dalam praktiknya itu berarti:
+- gunakan `https://api.aisonar.dev/v1` sebagai URL dasar kecuali aplikasi secara eksplisit meminta URL titik akhir penuh
+- gunakan API key AI Sonar Anda sebagai API key bergaya OpenAI
+- pilih model yang dapat digunakan aplikasi dalam alur kerja chat standar
+
+<Note>
+Aplikasi chat umum biasanya berorientasi pada **chat-completions**, bukan klien WebSocket Codex Responses. Untuk Codex CLI/App, Cursor, atau alat coding lain yang memerlukan perilaku khusus Responses, gunakan panduan integrasi khusus sebagai gantinya.
+</Note>
+
+## Aplikasi yang Didukung
+
+| Aplikasi | Platform | Catatan |
+|-------------|----------|-------|
+| Open WebUI | Web, host mandiri | Klien host mandiri populer dengan koneksi yang kompatibel dengan OpenAI |
+| LibreChat | Web, host mandiri | Antarmuka chat multi-penyedia dengan dukungan titik akhir OpenAI kustom |
+| LobeChat | Web, Desktop, host mandiri | Dukungan penyedia kustom yang kuat |
+| Cherry Studio | Windows, macOS, Linux | Alur penyedia kompatibel OpenAI yang baik |
+| Chatbox | Windows, macOS, Linux | Pengaturan kompatibel OpenAI yang sederhana |
+| TypingMind | Web, Desktop | Menggunakan gaya titik akhir kustom |
+| NextChat | Web, host mandiri | Klien ringan bergaya ChatGPT dengan dukungan override base URL |
+| ChatWise | Windows, macOS | Pola penyedia kustom standar |
+
+## Nilai Koneksi Default
+
+| Kolom | Nilai |
+|-------|-------|
+| URL dasar | `https://api.aisonar.dev/v1` |
+| Kunci API | `sk-your-api-key` |
+| Tipe API | Kompatibel OpenAI |
+
+Jika aplikasi meminta **URL titik akhir penuh** alih-alih URL dasar, gunakan:
+- Chat Completions: `https://api.aisonar.dev/v1/chat/completions`
+
+<Note>
+**Jenis**: Aplikasi chat
+
+**Jalur utama**: Jalur chat-completions yang kompatibel dengan OpenAI
+
+**Tingkat dukungan**: Jalur yang didukung
+</Note>
+
+## Contoh Pengaturan Aplikasi
+
+<Tabs>
+  <Tab title="LobeChat">
+    **LobeChat Host Mandiri**
+
+    ```bash
+    OPENAI_API_KEY=sk-your-api-key
+    OPENAI_PROXY_URL=https://api.aisonar.dev/v1
+    ```
+
+    **LobeChat Cloud**
+    1. Buka **Settings** → **Penyedia Layanan AI**
+    2. Pilih **OpenAI**
+    3. Masukkan API key AI Sonar Anda
+    4. Atur titik akhir kustom ke `https://api.aisonar.dev/v1`
+  </Tab>
+
+  <Tab title="Cherry Studio">
+    1. Buka **Settings** → **Penyedia Model**
+    2. Tambahkan penyedia **kompatibel OpenAI**
+    3. Masukkan:
+       - **Name**: AI Sonar
+       - **API Base URL**: `https://api.aisonar.dev/v1`
+       - **API Key**: `sk-your-api-key`
+    4. Tambahkan model yang ingin Anda gunakan
+  </Tab>
+
+  <Tab title="Chatbox">
+    1. Buka **Settings** → **AI Model**
+    2. Pilih **OpenAI API Compatible**
+    3. Masukkan:
+       - **API Host**: `https://api.aisonar.dev/v1`
+       - **API Key**: `sk-your-api-key`
+       - **Model**: `gpt-5-mini` atau `gpt-4o`
+  </Tab>
+
+  <Tab title="TypingMind">
+    1. Buka **Settings**
+    2. Pilih **Titik Akhir Kustom**
+    3. Masukkan:
+       - **URL Titik Akhir**: `https://api.aisonar.dev/v1/chat/completions`
+       - **API Key**: `sk-your-api-key`
+    4. Konfigurasikan model yang ingin Anda tampilkan
+  </Tab>
+
+  <Tab title="Open WebUI">
+    1. Buka **Admin Settings** → **Connections**
+    2. Tambahkan koneksi **Kompatibel OpenAI**
+    3. Masukkan:
+       - **Base URL**: `https://api.aisonar.dev/v1`
+       - **API Key**: `sk-your-api-key`
+    4. Simpan lalu pilih model yang ingin Anda tampilkan
+  </Tab>
+
+  <Tab title="LibreChat">
+    Tambahkan titik akhir yang kompatibel dengan OpenAI pada konfigurasi penyedia LibreChat dan arahkan ke:
+
+    ```yaml
+    customEndpoints:
+      - name: AI Sonar
+        apiKey: '${OPENAI_API_KEY}'
+        baseURL: 'https://api.aisonar.dev/v1'
+        models:
+          default: ['gpt-5-mini', 'gpt-5.4', 'claude-sonnet-4-6']
+          fetch: false
+    ```
+  </Tab>
+</Tabs>
+
+## Default Model yang Lebih Aman
+
+| Kategori | Model yang disarankan |
+|----------|------------------|
+| Default umum | `gpt-5.4`, `gpt-5-mini`, `gpt-4o` |
+| Anthropic | `claude-sonnet-4-6`, `claude-opus-4-6` |
+| Google | `gemini-2.5-flash`, `gemini-2.5-pro` |
+| DeepSeek | `deepseek-r1`, `deepseek-v3-2` |
+
+## Tips
+
+<AccordionGroup>
+  <Accordion title="Utamakan URL dasar ketika aplikasi mendukungnya">
+    Sebagian besar aplikasi lebih mudah dikonfigurasi dan tidak mudah bermasalah ketika Anda memberikan `https://api.aisonar.dev/v1` sebagai URL dasar alih-alih URL titik akhir penuh.
+  </Accordion>
+
+  <Accordion title="Gunakan model yang lebih kecil terlebih dahulu">
+    Mulailah dengan `gpt-5-mini` atau `gpt-4o` untuk chat sehari-hari, lalu pindahkan tugas penalaran yang lebih berat ke `gpt-5.4` atau `claude-opus-4-6`.
+  </Accordion>
+
+  <Accordion title="Pisahkan alat coding">
+    Aplikasi chat umum dan coding agent sering kali memerlukan perilaku titik akhir yang berbeda. Simpan alat bergaya Codex/Cursor pada halaman integrasi khusus mereka.
+  </Accordion>
+</AccordionGroup>
+
+## Pemecahan Masalah
+
+<AccordionGroup>
+  <Accordion title="Kesalahan Koneksi">
+    - Verifikasi bahwa URL dasar tepat `https://api.aisonar.dev/v1`
+    - Hapus trailing slash jika aplikasi menambahkan path secara otomatis
+    - Jika aplikasi menginginkan URL titik akhir penuh, gunakan `https://api.aisonar.dev/v1/chat/completions`
+  </Accordion>
+
+  <Accordion title="401 Unauthorized">
+    - Periksa kembali API key Anda
+    - Konfirmasikan bahwa key tersebut aktif di dashboard AI Sonar
+    - Pastikan tidak ada spasi tambahan atau baris baru
+  </Accordion>
+
+  <Accordion title="Model Tidak Tersedia">
+    - Verifikasi nama model secara tepat
+    - Coba default yang didukung luas seperti `gpt-5-mini`, `gpt-4o`, atau `claude-sonnet-4-6`
+    - Periksa ketersediaan saat ini di docs atau dashboard AI Sonar
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,123 @@
+---
+title: "建立語音"
+openapi: "POST /v1/audio/speech"
+description: "根據輸入文字產生音訊"
+---
+
+## 請求本文
+
+**同步請求逾時：** 這個非聊天端點會等待路由到的模型完成處理。大型輸入、長音訊或大量批次可能超過常見的 30s 用戶端預設逾時，因此請將 HTTP 用戶端逾時設定為至少 `120s`。
+
+<ParamField body="model" type="string" default="tts-1">
+  TTS 模型：`tts-1`（標準）或 `tts-1-hd`（更高品質）。
+</ParamField>
+
+<ParamField body="input" type="string" required>
+  要用來產生音訊的文字。最多 4096 個字元。
+</ParamField>
+
+<ParamField body="voice" type="string" required>
+  要使用的語音：`alloy`、`ash`、`ballad`、`coral`、`echo`、`fable`、`nova`、`onyx`、`sage`、`shimmer`、`verse`。
+</ParamField>
+
+<ParamField body="response_format" type="string" default="mp3">
+  音訊格式：`mp3`、`opus`、`aac`、`flac`、`wav`、`pcm`。
+</ParamField>
+
+<ParamField body="speed" type="number" default="1.0">
+  音訊速度（0.25 到 4.0）。
+</ParamField>
+
+## 回應
+
+以請求的格式回傳音訊檔案。
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/audio/speech" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "tts-1-hd",
+    "voice": "nova",
+    "input": "Hello, welcome to AI Sonar!"
+  }' \
+  --output speech.mp3
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.audio.speech.create(
+    model="tts-1-hd",
+    voice="nova",
+    input="Hello, welcome to AI Sonar!"
+)
+
+response.stream_to_file("speech.mp3")
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+import fs from 'fs';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.audio.speech.create({
+  model: 'tts-1-hd',
+  voice: 'nova',
+  input: 'Hello, welcome to AI Sonar!'
+});
+
+const buffer = Buffer.from(await response.arrayBuffer());
+fs.writeFileSync('speech.mp3', buffer);
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/audio/speech');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Content-Type: application/json',
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => json_encode([
+        'model' => 'tts-1-hd',
+        'voice' => 'nova',
+        'input' => 'Hello, welcome to AI Sonar!'
+    ])
+]);
+
+$audio = curl_exec($ch);
+curl_close($ch);
+
+file_put_contents('speech.mp3', $audio);
+```
+</RequestExample>
+
+## 語音範例
+
+| 語音 | 描述 |
+|-------|-------------|
+| `alloy` | 中性、均衡 |
+| `ash` | 平靜、沉穩 |
+| `ballad` | 富有旋律感、表現力強 |
+| `coral` | 溫暖、親切 |
+| `echo` | 溫暖、適合對話 |
+| `fable` | 表現力強、敘事感佳 |
+| `nova` | 友善、清晰 |
+| `onyx` | 低沉、具權威感 |
+| `sage` | 睿智、深思熟慮 |
+| `shimmer` | 柔和、溫柔 |
+| `verse` | 動態感強、用途多元 |

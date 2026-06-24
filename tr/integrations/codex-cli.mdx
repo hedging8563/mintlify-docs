@@ -1,0 +1,224 @@
+---
+title: "Codex CLI"
+description: "OpenAI Codex CLI'yi AI Sonar API ile kullanmak için yapılandırın"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Genel Bakış
+
+
+
+<Note>
+**Tür**: Kodlama Aracı
+
+**Birincil Yol**: OpenAI Responses (gelişmiş isteğe bağlı yol)
+
+**Destek Güveni**: Model/yol sınırlamalarıyla destekleniyor
+</Note>
+
+OpenAI Codex, terminalde kod okuyabilen, değiştirebilen ve çalıştırabilen hafif bir kodlama ajanı olarak hizmet veren açık kaynaklı bir komut satırı aracıdır (CLI). GPT modelleri üzerine inşa edilmiştir ve kod üretimi için optimize edilmiştir.
+
+AI Sonar için, Codex CLI `/v1/responses` kullanabilir, ancak bunu gelişmiş bir uyumluluk yolu olarak ele almalısınız. Sadece Responses özelliklerinin her model ve yönlendirilen yol boyunca garantili olmadığı durumlar vardır.
+
+Codex CLI uzaktan sıkıştırma `POST /v1/responses/compact` üzerinde desteklenir. Codex, `/compact` ve otomatik sıkıştırma için geçerli oturumun `model` değerini `body.model` içinde gönderir, bu nedenle sıkıştırmada kullanmak istediğiniz model Responses yolunda kullanılabilir olmalıdır. `/v1/compact` yapılandırmayın.
+
+## Sistem Gereksinimleri
+
+- **OS**: macOS, Linux (resmi destek), WSL üzerinden Windows
+- **Node.js**: Sürüm 18+
+- **npm**: Sürüm 10.x.x veya daha yüksek
+
+## Kurulum
+
+```bash
+npm install -g @openai/codex
+```
+
+Kurulumu doğrulayın:
+
+```bash
+codex --version
+```
+
+## Yapılandırma
+
+### Adım 1: API Anahtarını Ayarlayın
+
+**Geçici (mevcut oturum):**
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+```
+
+**Kalıcı yapılandırma:**
+
+Şunlara ekleyin: `~/.bashrc`, `~/.zshrc` veya `~/.bash_profile`:
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+```
+
+Sonra yeniden yükleyin:
+
+```bash
+source ~/.zshrc  # or source ~/.bashrc
+```
+
+### Adım 2: config.toml'u Yapılandırma
+
+Edit `~/.codex/config.toml`:
+
+```toml
+model_provider = "aisonar"
+model = "gpt-5.4"
+model_reasoning_effort = "xhigh"
+plan_mode_reasoning_effort = "xhigh"
+fast_mode = true
+model_context_window = 1000000
+model_auto_compact_token_limit = 900000
+sandbox_mode = "danger-full-access"
+approval_policy = "never"
+
+disable_response_storage = false
+personality = "friendly"
+service_tier = "fast"
+
+[model_providers.aisonar]
+env_key = "OPENAI_API_KEY"
+name = "AI Sonar"
+base_url = "https://api.aisonar.dev/v1"
+wire_api = "responses"
+supports_websockets = true
+websocket_connect_timeout_ms = 15000
+
+[features]
+responses_websockets = true
+responses_websockets_v2 = true
+```
+
+Bu WebSocket modu, Codex istemcileri için bir Responses-over-WebSocket köprüsüdür. `response.create` ve `response.cancel` kabul eder; OpenAI Realtime API değildir ve `session.update`, `conversation.item.*`, `input_audio_buffer.*`, ikili ses veya iç içe Realtime `response.create.response` zarflarını kabul etmez.
+
+<Note>
+Eğer yapılandırma dosyası mevcut değilse, dosyayı oluşturmak için bir kez `codex` çalıştırın, ardından dosyayı düzenleyin. `config.toml` değiştirildikten sonra yeni sağlayıcı ayarlarının yeniden yüklenmesi için Codex'i tamamen yeniden başlatın.
+</Note>
+
+<Warning>
+Codex, özel sağlayıcılar için `chat/completions` desteğini kullanımdan kaldırıyor. AI Sonar için `wire_api = "responses"` tutun, eğer kasıtlı olarak daha eski bir uyumluluk yolunu kullanmıyorsanız.
+</Warning>
+
+<Note>
+Eğer bir istek seçilen model veya rota üzerinde desteklenmeyen Responses-özel alanlar kullanıyorsa, AI Sonar isteği sessizce düşürmek yerine açık bir hata döner.
+</Note>
+
+## Temel Kullanım
+
+**Etkileşimli modu başlatın:**
+
+```bash
+codex
+```
+
+**Doğrudan komut:**
+
+```bash
+codex "Fix the bug in main.py line 42"
+```
+
+**Model belirtin:**
+
+```bash
+codex -m gpt-5.4 "Build a REST API server"
+```
+
+## Önerilen Modeller
+
+| Model | En Uygun |
+|-------|----------|
+| `gpt-5.4` | Kodlama ve muhakeme için en iyi varsayılan seçenek |
+| `gpt-5-mini` | Kodlama iş akışları için daha hızlı, daha ucuz yedek |
+| `claude-sonnet-4-6` | Kod incelemesi, dokümantasyon |
+| `deepseek-r1` | Algoritma tasarımı, muhakeme |
+
+## Etkileşimli Komutlar
+
+| Komut | Açıklama |
+|---------|-------------|
+| `/help` | Yardımı görüntüle |
+| `/exit` or `Ctrl+C` | Çıkış |
+| `/clear` | Konuşmayı temizle |
+| `/config` | Yapılandırmayı görüntüle |
+| `/model <name>` | Modeli değiştir |
+| `/tokens` | Token kullanımını görüntüle |
+
+## Yapılandırmayı Doğrulayın
+
+```bash
+# Check environment variable
+echo $OPENAI_API_KEY
+
+# Test API connection
+codex "Hello, Codex!"
+
+# View configuration
+cat ~/.codex/config.toml
+```
+
+## Yaygın Kullanım Durumları
+
+**Kod incelemesi:**
+
+```bash
+git diff | codex "Review these code changes"
+```
+
+**Commit mesajı oluşturma:**
+
+```bash
+git diff --staged | codex "Generate a commit message for these changes"
+```
+
+**Hataları düzeltme:**
+
+```bash
+codex "Fix the TypeScript errors in src/components/"
+```
+
+**Kodu açıklama:**
+
+```bash
+cat main.py | codex "Explain what this code does"
+```
+
+## Sorun Giderme
+
+<AccordionGroup>
+  <Accordion title="Bağlantı Hatası">
+    - `config.toml` içindeki `base_url`'un tam olarak `https://api.aisonar.dev/v1` olduğundan emin olun
+    - Ağ bağlantısını kontrol edin
+    - Proxy müdahalesi olmadığından emin olun
+  </Accordion>
+
+  <Accordion title="Kimlik Doğrulama Başarısız">
+    - `~/.codex/config.toml` içinde `env_key = "OPENAI_API_KEY"` satırının bulunduğunu doğrulayın
+    - `OPENAI_API_KEY` ortam değişkeninin ayarlı olduğundan emin olun
+    - Anahtarın `sk-` ile başladığını kontrol edin
+    - Anahtarın AI Sonar kontrol panelinde aktif olduğundan emin olun
+  </Accordion>
+
+  <Accordion title="Model Bulunamadı">
+    - Model adının tam olarak eşleştiğini kontrol edin
+    - Model kullanılabilirliğini şu adreste doğrulayın: [aisonar.dev/en/models](https://aisonar.dev/models)
+  </Accordion>
+
+  <Accordion title="Responses-yerel alan reddedildi">
+    - Bazı alanlar yalnızca AI Sonar seçili model ve yol için bu davranışı garanti edebildiğinde `/v1/responses` üzerinde kullanılabilir
+    - Eğer `unsupported_request_field` görürseniz, o alanı kaldırın veya buna bağlı olmayan bir iş akışına geçin
+  </Accordion>
+
+  <Accordion title="/compact veya otomatik sıkıştırma başarısız">
+    - Codex CLI `/v1/compact` değil, `POST /v1/responses/compact` çağırır
+    - Sıkıştırma isteği geçerli oturumun `model` değerini kullanır, bu yüzden bu model Responses yolunda kullanılabilir olmalıdır
+    - `wire_api = "responses"` ve `base_url = "https://api.aisonar.dev/v1"` ayarlarını koruyun
+  </Accordion>
+</AccordionGroup>

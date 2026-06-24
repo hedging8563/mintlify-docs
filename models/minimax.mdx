@@ -1,0 +1,60 @@
+---
+title: "MiniMax"
+description: "Hailuo video, MiniMax chat, Speech TTS"
+---
+
+## Overview
+
+AI Sonar provides access to MiniMax models. Total: **16 models** available.
+
+## Chat Models
+
+| Model ID | Pricing |
+|----------|--------|
+| `minimax-m2` | $0.3/1M in |
+| `minimax-m2.1` | $0.3/1M in |
+| `minimax-m2.1-highspeed` | $0.6/1M in |
+| `minimax-m2.5` | $0.30882353/1M in |
+| `minimax-m2.5-highspeed` | $0.6/1M in |
+| `minimax-m2.7` | $0.3/1M in |
+| `minimax-m2.7-highspeed` | $0.6/1M in |
+| `minimax-m3` | $0.3/1M in |
+
+## Video Generation
+
+| Model ID | Pricing |
+|----------|--------|
+| `hailuo-2.3` | See dashboard |
+| `hailuo-2.3-fast` | See dashboard |
+| `hailuo-2.3-pro` | See dashboard |
+| `hailuo-2.3-standard` | See dashboard |
+
+## Text-to-Speech
+
+| Model ID | Pricing |
+|----------|--------|
+| `speech-02-hd` | $100/character |
+| `speech-02-turbo` | $60/character |
+| `speech-2.6-hd` | $100/character |
+| `speech-2.6-turbo` | $60/character |
+
+
+## Usage
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="hailuo-2.3",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+```
+
+<Note>
+Prices shown are platform prices (~70% of official rates).
+</Note>

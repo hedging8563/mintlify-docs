@@ -1,0 +1,60 @@
+---
+title: "Google"
+description: "Gemini, Imagen, Veo video models"
+---
+
+## Overview
+
+AI Sonar provides access to Google models. Total: **16 models** available.
+
+## Chat Models
+
+| Model ID | Pricing |
+|----------|--------|
+| `gemini-2.5-pro` | $0.625/1M in |
+| `gemini-3-flash` | $0.25/1M in |
+| `gemini-3.1-flash-lite` | $0.125/1M in |
+| `gemini-3.1-pro-preview` | $1/1M in |
+| `gemini-3.5-flash` | $0.75/1M in |
+
+## Image Generation
+
+| Model ID | Pricing |
+|----------|--------|
+| `gemini-2.5-flash-image` | $0.15/1M in |
+| `gemini-3-pro-image` | $1/1M in |
+| `gemini-3.1-flash-image` | $0.25/1M in |
+| `nano-banana` | See dashboard |
+| `nano-banana-2` | See dashboard |
+| `nano-banana-edit` | See dashboard |
+| `nano-banana-pro` | See dashboard |
+
+## Video Generation
+
+| Model ID | Pricing |
+|----------|--------|
+| `veo3` | See dashboard |
+| `veo3-fast` | See dashboard |
+| `veo3.1` | See dashboard |
+| `veo3.1-fast` | See dashboard |
+
+
+## Usage
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="gemini-3.5-flash",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+```
+
+<Note>
+Prices shown are platform prices (~70% of official rates).
+</Note>

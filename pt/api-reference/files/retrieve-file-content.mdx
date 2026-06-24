@@ -1,0 +1,38 @@
+---
+title: "Recuperar conteúdo do arquivo"
+openapi: "GET /v1/files/{file_id}/content"
+description: "Baixa o conteúdo original de um arquivo enviado."
+---
+
+## Visão geral
+
+Este endpoint serve principalmente à recuperação de conteúdo de arquivos da API de Batch compatível com OpenAI da AI Sonar.
+
+Quando a requisição entra no modo de compatibilidade com Anthropic Files, a mesma rota também pode fazer proxy do conteúdo original armazenado do arquivo para o workspace vinculado.
+
+## Notas
+
+- Arquivos de entrada do lote devem usar `purpose=batch`.
+- `completion_window` é atualmente `24h`.
+- A ordenação da saída não é garantida; sempre combine pelo `custom_id`.
+- Streaming não é suportado dentro de itens de lote.
+
+## Exemplo
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/files/file_abc123/content" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  --output batch-output.jsonl
+```
+</RequestExample>
+
+## Solicitação / Resposta
+
+Use o painel OpenAPI interativo acima para ver o esquema exato.
+
+## Dicas operacionais
+
+- Use `custom_id` para reconciliação downstream idempotente.
+- Espere `output_file_id` e `error_file_id` apenas depois que o worker finalizar o lote.
+- A precificação do lote pode ser diferente da precificação síncrona porque as regras de desconto `isBatchRequest=true` se aplicam.

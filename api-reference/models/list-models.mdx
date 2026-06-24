@@ -1,0 +1,231 @@
+---
+title: "List Models"
+openapi: "GET /v1/models"
+description: "Lists all available models"
+---
+
+## Response
+
+<ResponseField name="object" type="string">
+  Always `list`.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Array of model objects.
+
+  Each model contains:
+  - `id` (string): Model identifier
+  - `object` (string): `model`
+  - `created` (integer): Creation timestamp
+  - `owned_by` (string): Model provider
+  - `aisonar.category` (string): Public model category
+  - `aisonar.pricing_unit` (string or `null`): Public pricing unit when available
+  - `aisonar.capability_flags` (object or `null`): Public capability summary
+  - `aisonar.supported_operations` (array or `null`): Public non-chat operations for the model
+  - `aisonar.pricing_provenance` (object or `null`): Public pricing source metadata
+  - `aisonar.public_contract_summary` (object or `null`): Lightweight non-chat discovery summary with only `public_operations` and `request_endpoint`
+  - `aisonar.agent_preferences` (object): Only returned when `recommended_for` is present
+</ResponseField>
+
+<Note>
+`GET /v1/models` is optimized for discovery. Detail-only metadata such as `capability_flags`, `pricing_provenance`, and the full `public_contract` live on `GET /v1/models/{model}`.
+</Note>
+
+## Query Parameters
+
+<ParamField query="category" type="string">
+  Optional public category filter. Supports `chat`, `image`, `video`, `audio`, `tts`, `stt`, `music`, `3d`, `embedding`, `rerank`, and `translation`.
+</ParamField>
+
+<ParamField query="recommended_for" type="string">
+  Optional non-chat recommendation scene. Supports `image`, `video`, `music`, `3d`, `tts`, `stt`, `embedding`, `rerank`, and `translation`.
+</ParamField>
+
+<ParamField query="provider" type="string">
+  Optional provider filter such as `openai`, `anthropic`, `google`, or `deepseek`.
+</ParamField>
+
+<ParamField query="tag" type="string">
+  Optional model tag filter such as `chat`, `image`, `video`, `embedding`, or `translation`.
+</ParamField>
+
+<Note>
+When `recommended_for` is present, `/v1/models` sorts non-chat models by the latest cached 24-hour success-rate snapshot. Models with `status = "insufficient_samples"` remain visible but sort after scored models.
+</Note>
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/models" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+```bash cURL
+curl "https://api.aisonar.dev/v1/models?recommended_for=image" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+models = client.models.list()
+
+for model in models.data:
+    print(f"{model.id} ({model.owned_by})")
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const models = await client.models.list();
+
+for (const model of models.data) {
+  console.log(`${model.id} (${model.owned_by})`);
+}
+```
+
+```go Go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "net/http"
+)
+
+func main() {
+    req, _ := http.NewRequest("GET", "https://api.aisonar.dev/v1/models", nil)
+    req.Header.Set("Authorization", "Bearer sk-your-api-key")
+
+    resp, _ := http.DefaultClient.Do(req)
+    defer resp.Body.Close()
+
+    var payload struct {
+        Data []struct {
+            ID      string `json:"id"`
+            OwnedBy string `json:"owned_by"`
+        } `json:"data"`
+    }
+
+    json.NewDecoder(resp.Body).Decode(&payload)
+
+    for _, model := range payload.Data {
+        fmt.Printf("%s (%s)\n", model.ID, model.OwnedBy)
+    }
+}
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/models');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer sk-your-api-key'
+    ]
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+foreach ($data['data'] as $model) {
+    echo "{$model['id']} ({$model['owned_by']})\n";
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "gpt-5.4",
+      "object": "model",
+      "created": 1706000000,
+      "owned_by": "openai"
+    },
+    {
+      "id": "claude-sonnet-4-6",
+      "object": "model",
+      "created": 1706000000,
+      "owned_by": "anthropic"
+    },
+    {
+      "id": "gemini-2.5-flash",
+      "object": "model",
+      "created": 1706000000,
+      "owned_by": "google"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## Filtering by Provider
+
+```python
+# Get all OpenAI models
+openai_models = [m for m in models.data if m.owned_by == "openai"]
+
+# Get all Anthropic models
+anthropic_models = [m for m in models.data if m.owned_by == "anthropic"]
+```
+
+## Model Categories
+
+| Provider | Example Models |
+|----------|----------------|
+| `openai` | gpt-5.4, gpt-5.4-mini, gpt-5-mini, gpt-4o, dall-e-3 |
+| `anthropic` | claude-opus-4-6, claude-sonnet-4-6, claude-haiku-4-5 |
+| `google` | gemini-3-pro-preview, gemini-3-flash-preview, gemini-2.5-pro |
+| `deepseek` | deepseek-r1, deepseek-v3-2 |
+| `xai` | grok-4.1 |
+| `moonshot` | kimi-k2.5 |
+| `minimax` | minimax-m2.1 |
+| `meta` | llama-3.3-70b, llama-3.1-405b |
+
+## Agent Recommendation Example
+
+```json Response
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "gemini-2.5-flash-image",
+      "object": "model",
+      "created": 1706000000,
+      "owned_by": "google",
+      "aisonar": {
+        "category": "image",
+        "pricing_unit": "per_request",
+        "agent_preferences": {
+          "image": {
+            "preferred_rank": 1,
+            "success_rate_24h": 0.98,
+            "sample_count_24h": 423,
+            "status": "ready",
+            "updated_at": "2026-03-28T12:00:00.000Z",
+            "basis": {
+              "score_source": "clickhouse_24h",
+              "channel_id": null,
+              "physical_model": null
+            }
+          }
+        }
+      }
+    }
+  ]
+}
+```

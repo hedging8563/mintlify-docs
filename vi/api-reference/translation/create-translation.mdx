@@ -1,0 +1,120 @@
+---
+title: "Tạo Bản Dịch"
+openapi: "POST /v1/translations"
+description: "Dịch văn bản sang ngôn ngữ đích"
+---
+
+## Tổng Quan
+
+Sử dụng `/v1/translations` cho **dịch văn bản sang văn bản**.
+
+<Note>
+Endpoint này khác với [Dịch Âm Thanh](/vi/api-reference/audio/create-translation), endpoint này nhận một tệp âm thanh và luôn xuất ra văn bản tiếng Anh.
+</Note>
+
+Với các luồng agent, trước tiên hãy khám phá các model dịch được khuyến nghị hiện tại:
+
+```bash
+curl "https://api.aisonar.dev/v1/models?recommended_for=translation" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+Sau đó gửi rõ model đã chọn đến `/v1/translations`.
+
+<Note>
+`recommended_for=translation` chỉ áp dụng cho **dịch văn bản** (`POST /v1/translations`). Nó không áp dụng cho [dịch âm thanh](/vi/api-reference/audio/create-translation).
+</Note>
+
+## Thân Yêu Cầu
+
+<ParamField body="model" type="string" required>
+  ID model dịch được trả về từ `/v1/models?recommended_for=translation`.
+</ParamField>
+
+<ParamField body="text" type="string" required>
+  Văn bản nguồn cần dịch.
+</ParamField>
+
+<ParamField body="target_language" type="string" required>
+  Mã ngôn ngữ đích hoặc tên ngôn ngữ, tùy theo hỗ trợ của model.
+</ParamField>
+
+<ParamField body="source_language" type="string">
+  Gợi ý ngôn ngữ nguồn tùy chọn.
+</ParamField>
+
+<ParamField body="mime_type" type="string" default="text/plain">
+  Định dạng văn bản nguồn. Giá trị hỗ trợ: `text/plain`, `text/html`.
+</ParamField>
+
+<ParamField body="user" type="string">
+  Định danh người dùng cuối tùy chọn để giám sát lạm dụng và theo dõi request.
+</ParamField>
+
+## Phản Hồi
+
+<ResponseField name="text" type="string">
+  Văn bản đã được dịch.
+</ResponseField>
+
+<ResponseField name="model" type="string">
+  Model đã tạo bản dịch.
+</ResponseField>
+
+<ResponseField name="source_language" type="string | null">
+  Ngôn ngữ nguồn được model phát hiện hoặc chấp nhận.
+</ResponseField>
+
+<ResponseField name="target_language" type="string">
+  Ngôn ngữ đích được dùng cho request.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/translations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gemini-translation-pro",
+    "text": "你好，欢迎使用 AI Sonar。",
+    "target_language": "en"
+  }'
+```
+
+```python Python
+from openai import OpenAI
+import requests
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = requests.post(
+    "https://api.aisonar.dev/v1/translations",
+    headers={
+        "Authorization": "Bearer sk-your-api-key",
+        "Content-Type": "application/json",
+    },
+    json={
+        "model": "gemini-translation-pro",
+        "text": "你好，欢迎使用 AI Sonar。",
+        "target_language": "en",
+    },
+    timeout=30,
+)
+
+print(response.json()["text"])
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "text": "Hello, welcome to AI Sonar.",
+  "model": "gemini-translation-pro",
+  "source_language": "zh",
+  "target_language": "en"
+}
+```
+</ResponseExample>

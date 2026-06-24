@@ -1,0 +1,37 @@
+---
+title: "Pi Coding Agent"
+description: "Pi と AI Sonar を組み合わせて使います。Pi は OpenAI・Anthropic・Google 風の設定を扱える最小限のターミナル向けコーディングツールです"
+---
+
+## 概要
+
+<Note>
+**種類**: コーディングツール
+
+**主要パス**: OpenAI互換
+
+**サポートレベル**: サポート済みパス
+</Note>
+
+[Pi](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent) は最小限のターミナル向けコーディングツールです。AI Sonar の IA では **コーディングツール** に置くのが適切で、native SDK ではありません。
+
+Pi は次の中間にある存在です。
+
+- 対話型のターミナル作業フロー
+- プロセス統合向けの JSON / RPC モード
+- 自分のアプリへ埋め込める SDK 風の実行環境
+
+AI Sonar では、特別な理由がない限り **OpenAI 互換** の経路から始めるのが一番扱いやすいです。
+
+## 推奨パス
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+export OPENAI_BASE_URL="https://api.aisonar.dev/v1"
+```
+
+その上で、Pi のプロバイダー設定または custom model 設定を AI Sonar に向けてください。
+
+<Note>
+Claude-native や Gemini-native の挙動が必要なら、それは OpenAI 互換 共通設定ではなく、Pi ごとの専用設定として扱うべきです。
+</Note>

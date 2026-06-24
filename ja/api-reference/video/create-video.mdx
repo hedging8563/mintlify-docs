@@ -1,0 +1,430 @@
+---
+title: "動画を作成"
+openapi: "POST /v1/videos/generations"
+description: "動画生成タスクを作成します"
+---
+
+## 概要
+
+動画生成は非同期です。リクエストを送信すると、`task_id` と `poll_url` が返り、その後はポーリングで最終結果を取得します。
+
+### ポーリング動作
+
+最も安定したポーリングのため、作成レスポンスで返された `poll_url` をそのまま使用してください。
+
+作成レスポンスで `poll_url` が返る場合は、その URL をそのまま使ってください。`/v1/tasks/{id}` を指す場合は、それを固定の正規ステータスエンドポイントとして扱ってください。
+
+### モデルとメディアの動作
+
+音声出力はモデル依存です。AI Sonar では Veo 3 系列は `output_audio` を省略すると既定で音声オンとして扱われます。モデルが音声制御に対応している場合は、`output_audio` で明示的に切り替えてください。camelCase の別名 `outputAudio` も互換性のため受け付けます。
+
+本番環境では、画像・動画・音声入力には公開アクセス可能な `https` URL を優先してください。互換モデルでは `data:` URL も利用できますが、大きな base64 は retry・観測・デバッグを難しくします。
+
+## リクエストボディ
+
+<ParamField body="model" type="string" default="veo3.1">
+  動画モデル ID。API の既定値は `veo3.1` です。現在の公開動画モデル一覧と対応機能は [動画生成ガイド](/ja/guides/video-generation) を参照してください。
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  生成したい動画のテキスト説明です。大半の公開動画モデルで必須です。
+</ParamField>
+
+<ParamField body="operation" type="string">
+  実行する動画操作です。公開契約では `text-to-video`、`image-to-video`、`reference-to-video`、`start-end-to-video`、`video-to-video`、`video-extension`、`audio-to-video`、`motion-control` を受け付けます。入力から自動推定もできますが、本番では明示指定を推奨します。
+</ParamField>
+
+<ParamField body="image_url" type="string">
+  画像から動画生成に使う開始画像 URL です。最も広い互換性を得るには `image_url` を優先してください。
+</ParamField>
+
+<ParamField body="image" type="string">
+  `data:image/...;base64,...` 形式のインライン画像です。互換モデルでは利用できますが、`image_url` の方が一般に扱いやすく安定します。
+</ParamField>
+
+<ParamField body="reference_images" type="array">
+  reference-to-video フローで使う参照画像入力です。許容数はモデルごとに異なります。`seedance-2.0` と `seedance-2.0-fast` では、AI Sonar は現在最大 9 枚の参照画像に加えて、最大 3 本の参照動画と 3 本の参照音声をサポートします。公開 `https` URL を推奨し、互換モデルでは `data:` URL も利用できます。 `grok-imagine-video` の reference-to-video は最大 7 件の画像参照を受け付け、`duration` は最大 10 秒です。`grok-imagine-video-1.5-preview` は image-to-video のみで、参照画像は受け付けません。
+</ParamField>
+
+<ParamField body="reference_image_type" type="string">
+  `asset` と `style` を区別するモデル向けの任意フィールドです。
+</ParamField>
+
+<ParamField body="kling_elements" type="array">
+  `kling-3.0-video` の要素参照定義です。画像条件付きリクエストでのみ利用できます。1-3 個の要素を定義でき、各要素には `name`、任意の `description`、2-4 個の画像 URL を含む `element_input_urls` を指定します。`prompt` では `@name` で参照します。`kling_elements` と `output_audio=true` は併用できません。要素参照を使う場合は `output_audio` を省略するか `false` にしてください。
+</ParamField>
+
+<ParamField body="video_url" type="string">
+  元動画の公開 URL です。現在の公開 `video-to-video` フローおよび `motion-control` モデルで必要です。
+</ParamField>
+
+<ParamField body="video_urls" type="array">
+  マルチモーダル参照条件付けに対応したモデル向けの追加参照動画入力です。許容数はモデルごとに異なります。`seedance-2.0` と `seedance-2.0-fast` では、AI Sonar は現在最大 3 本の参照動画をサポートします。
+</ParamField>
+
+<ParamField body="audio_url" type="string">
+  `audio-to-video` 系モデルで使う公開音声 URL です。
+</ParamField>
+
+<ParamField body="audio_urls" type="array">
+  マルチモーダル参照条件付けに対応したモデル向けの追加参照音声入力です。許容数はモデルごとに異なります。`seedance-2.0` と `seedance-2.0-fast` では、AI Sonar は現在最大 3 本の参照音声をサポートします。
+</ParamField>
+
+<ParamField body="task_id" type="string">
+  一部の継続・延長・派生フローで使う プロバイダー 側の task ID です。
+</ParamField>
+
+<ParamField body="extend_at" type="integer">
+  一部の `video-extension` フローで使うモデル固有の延長開始オフセットです。
+</ParamField>
+
+<ParamField body="extend_times" type="string">
+  一部の `video-extension` フローで使うモデル固有の延長回数・倍率です。
+</ParamField>
+
+<ParamField body="duration" type="integer">
+  生成される出力動画の長さ（秒）です。利用できる値はモデルごとに異なります。この項目は出力長のみを制御し、参照動画入力の長さ制限を表すものではありません。
+</ParamField>
+
+<ParamField body="aspect_ratio" type="string">
+  アスペクト比です。例：`16:9`、`9:16`、`1:1`。
+</ParamField>
+
+<ParamField body="resolution" type="string">
+  出力解像度です。例：`720p`、`1080p`、`4k`。対応可否はモデル依存です。
+</ParamField>
+
+<ParamField body="output_audio" type="boolean">
+  モデル依存の音声出力トグルです。AI Sonar では Veo 3 系列は省略時に `true` として扱われます。`kling-3.0-video` は要素参照を使わないリクエストでこの selector を受け付け、互換性のある upstream の sound 制御へマッピングします。Kling リクエストで省略した場合は無音が既定です。`output_audio=true` と `kling_elements` は併用できません。他の公開動画モデルはそれぞれのガバナンス済み既定動作に従います。camelCase の別名 `outputAudio` も受け付けます。
+</ParamField>
+
+<ParamField body="fps" type="integer">
+  フレームレート（1〜120）。FPS を公開しているモデルのみ有効です。
+</ParamField>
+
+<ParamField body="negative_prompt" type="string">
+  生成で避けたい内容です。
+</ParamField>
+
+<ParamField body="seed" type="integer">
+  再現性のための乱数 seed です。
+</ParamField>
+
+<ParamField body="cfg_scale" type="number">
+  プロンプト追従強度（0〜20）。対応モデルのみ有効です。
+</ParamField>
+
+<ParamField body="motion_strength" type="number">
+  動きの強さ（0〜1）。対応モデルのみ有効です。
+</ParamField>
+
+<ParamField body="start_image" type="string">
+  `start-end-to-video` で使う開始フレーム画像 URL または互換画像入力です。
+</ParamField>
+
+<ParamField body="end_image" type="string">
+  `start-end-to-video` で使う終了フレーム画像 URL または互換画像入力です。
+</ParamField>
+
+<ParamField body="size" type="string">
+  一部の OpenAI 互換動画モデルで使うサイズティアです。
+</ParamField>
+
+<ParamField body="watermark" type="boolean">
+  一部モデルが公開しているウォーターマーク切り替えです。
+</ParamField>
+
+<ParamField body="effect_type" type="string">
+  一部の編集・エフェクト系フローで使うモデル固有のエフェクト指定です。
+</ParamField>
+
+<ParamField body="user" type="string">
+  エンドユーザーを識別する一意な ID です。
+</ParamField>
+
+## 互換メモ
+
+- 正式な公開フィールドは snake_case の `reference_images`、`reference_image_type`、`output_audio` です。
+- 互換性のため `referenceImages`、`referenceImageType`、`outputAudio` も受け付けます。
+- `operation` を省略した場合、AI Sonar は入力内容から自動推定しますが、本番では明示指定を推奨します。
+
+## 入力のベストプラクティス
+
+- `image_url`、`reference_images`、`video_url`、`audio_url` には、公開アクセス可能な `https` URL を優先してください。
+- 同一リクエスト内で base64 とリモート URL を混在させるのは避ける方が安全です。
+- 署名付き URL を使う場合は、再試行や非同期タスク生成をカバーできる有効期限を確保してください。
+
+## レスポンス
+
+<ResponseField name="id" type="string">
+  正規の非同期タスク ID です。`id` と `task_id` の両方がある場合は、同じタスク識別子として扱ってください。
+</ResponseField>
+
+<ResponseField name="task_id" type="string">
+  ポーリング用の一意なタスク ID です。
+</ResponseField>
+
+<ResponseField name="poll_url" type="string">
+  このタスクに推奨されるポーリング URL です。状態確認にはこのパスをそのまま使ってください。
+</ResponseField>
+
+<ResponseField name="billing_transaction_id" type="string">
+  決済がすでに完了している場合に返される AI Sonar の請求トランザクション ID です。dashboard / 照合で使う取引識別子であり、非同期 `id` / `task_id` とは別物です。
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  初期ステータスは `pending` です。
+</ResponseField>
+
+<ResponseField name="created" type="integer">
+  タスク作成時の Unix タイムスタンプです。
+</ResponseField>
+
+<ResponseField name="model" type="string">
+  使用されたモデルです。
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/videos/generations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "veo3.1",
+    "prompt": "A cat walking through a garden, cinematic lighting",
+    "operation": "text-to-video",
+    "duration": 4,
+    "aspect_ratio": "16:9"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "pending",
+  "model": "veo3.1",
+  "created": 1706000000
+}
+```
+</ResponseExample>
+
+## 画像から動画
+
+```python
+response = requests.post(
+    "https://api.aisonar.dev/v1/videos/generations",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+    json={
+        "model": "hailuo-2.3-standard",
+        "prompt": "The scene begins from the provided image and adds gentle natural motion.",
+        "operation": "image-to-video",
+        "image_url": "https://example.com/image.jpg",
+        "duration": 6,
+        "aspect_ratio": "16:9"
+    }
+)
+```
+
+## Kling 3.0 Elements
+
+`kling_elements` は、要素参照が必要な場合に `kling-3.0-video` と一緒に使います。画像条件付きリクエスト（`image_url`、`image_urls`、`start_image`、`end_image`）を指定し、各要素をプロンプト内で `@name` として参照します。`kling_elements` と `output_audio=true` は併用できません。要素参照を使う場合は `output_audio` を省略するか `false` にしてください。
+
+```python
+response = requests.post("https://api.aisonar.dev/v1/videos/generations",
+    headers=headers,
+    json={
+        "model": "kling-3.0-video",
+        "prompt": "Place @hero_bag on a studio turntable with soft product lighting.",
+        "operation": "image-to-video",
+        "image_url": "https://example.com/studio-start.png",
+        "duration": 5,
+        "resolution": "720p",
+        "kling_elements": [
+            {
+                "name": "hero_bag",
+                "description": "black leather handbag",
+                "element_input_urls": [
+                    "https://example.com/bag-front.png",
+                    "https://example.com/bag-side.png"
+                ]
+            }
+        ]
+    }
+)
+```
+
+## 参照画像から動画
+
+モデルが専用の参照条件付けに対応している場合は `operation=reference-to-video` を使います。AI Sonar の公開契約では、画像参照は `reference_images`、マルチモーダル参照動画と参照音声は `video_urls` と `audio_urls` を使います。`seedance-2.0` と `seedance-2.0-fast` では、AI Sonar は現在最大 9 枚の参照画像に加えて、最大 3 本の参照動画と 3 本の参照音声をサポートします。`duration` は生成される出力長のみを制御し、参照動画入力の長さ上限を個別に設定するものではありません。 `grok-imagine-video` の reference-to-video は最大 7 件の画像参照（`reference_images` または `image_urls`）を受け付け、`duration` は最大 10 秒です。参照画像を `image_url` / `image` の先頭フレーム入力と組み合わせないでください。`grok-imagine-video-1.5-preview` は image-to-video のみです。
+
+```python
+response = requests.post(
+    "https://api.aisonar.dev/v1/videos/generations",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+    json={
+        "model": "veo3.1",
+        "prompt": "Keep the same subject identity and palette while adding subtle motion.",
+        "operation": "reference-to-video",
+        "reference_images": [
+            "https://example.com/ref-a.jpg",
+            "https://example.com/ref-b.jpg"
+        ],
+        "reference_image_type": "asset",
+        "duration": 8,
+        "resolution": "720p",
+        "aspect_ratio": "9:16"
+    }
+)
+```
+
+## 開始・終了フレーム制御
+
+`start_image` と `end_image` を使って最初と最後のフレームを制御します。
+
+```python
+response = requests.post(
+    "https://api.aisonar.dev/v1/videos/generations",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+    json={
+        "model": "viduq2-pro",
+        "prompt": "Smooth transition from day to night",
+        "operation": "start-end-to-video",
+        "start_image": "https://example.com/day.jpg",
+        "end_image": "https://example.com/night.jpg",
+        "duration": 5,
+        "resolution": "720p",
+        "aspect_ratio": "16:9"
+    }
+)
+```
+
+## 動画から動画
+
+`grok-imagine-video` の video-to-video では、公開 HTTPS の `.mp4` URL を `video_url` に渡します。AI Sonar はこれを xAI REST の `video.url` ボディへ変換します。`resolution` は `480p` または `720p` に設定できます。この編集フローでは `duration` と `aspect_ratio` は受け付けません。
+
+既存の動画を主入力として使う場合は `operation=video-to-video` を使用します。
+
+```python
+response = requests.post(
+    "https://api.aisonar.dev/v1/videos/generations",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+    json={
+        "model": "topaz-video-upscale",
+        "operation": "video-to-video",
+        "video_url": "https://example.com/source.mp4",
+        "prompt": "Upscale the clip while preserving the original motion.",
+        "resolution": "1080p"
+    }
+)
+```
+
+## モーション制御
+
+主体画像とモーション参照動画の両方を必要とするモデルでは `operation=motion-control` を使用します。AI Sonar は公開リクエスト形の `image_url` と `video_url` を上流契約へ正規化します。
+
+```python
+response = requests.post(
+    "https://api.aisonar.dev/v1/videos/generations",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+    json={
+        "model": "kling-3.0-motion-control",
+        "operation": "motion-control",
+        "prompt": "Keep the subject stable while following the motion reference.",
+        "image_url": "https://example.com/subject.png",
+        "video_url": "https://example.com/motion.mp4",
+        "resolution": "720p"
+    }
+)
+```
+
+## Audio-to-Video / Video Extension の公開可用性
+
+AI Sonar の公開契約は `audio-to-video` と `video-extension` を受け付けますが、このドキュメント時点の「一般公開かつ有効」モデル一覧には、これらを広く提供する公開モデルは含まれていません。統合前に [Models API](/ja/api-reference/models/list-models) か [モデルページ](https://aisonar.dev/models) で最新可用性を確認してください。
+
+## 現在の公開モデル一覧
+
+この一覧は、このドキュメントビルド時点で有効な公開動画モデルの在庫と揃えています。最新状態は [Models API](/ja/api-reference/models/list-models) を参照してください。
+
+### OpenAI
+
+| モデル | 公開オペレーション |
+|-------|----------|
+
+### Kuaishou
+
+| モデル | 公開オペレーション |
+|-------|----------|
+| `kling-3.0-motion-control` | モーション制御 |
+| `kling-3.0-video` | テキストから動画、画像から動画、開始・終了フレームから動画、要素参照 |
+| `kling-v2.5-turbo-pro` | テキストから動画、画像から動画、開始・終了フレームから動画 |
+| `kling-v2.5-turbo-std` | テキストから動画、画像から動画 |
+| `kling-v2.6-pro` | テキストから動画、画像から動画、開始・終了フレームから動画 |
+| `kling-v2.6-std` | テキストから動画、画像から動画 |
+| `kling-v3.0-pro` | テキストから動画、画像から動画、開始・終了フレームから動画 |
+| `kling-v3.0-std` | テキストから動画、画像から動画、開始・終了フレームから動画 |
+| `kling-video-o1-pro` | テキストから動画、画像から動画、参考画像から動画、開始・終了フレームから動画、動画から動画 |
+| `kling-video-o1-std` | テキストから動画、画像から動画、参考画像から動画、開始・終了フレームから動画、動画から動画 |
+
+### Google
+
+| モデル | 公開オペレーション |
+|-------|----------|
+| `veo3` | テキストから動画、画像から動画 |
+| `veo3-fast` | テキストから動画、画像から動画 |
+| `veo3-pro` | テキストから動画、画像から動画 |
+| `veo3.1` | テキストから動画、画像から動画、参考画像から動画、開始・終了フレームから動画 |
+| `veo3.1-fast` | テキストから動画、画像から動画、参考画像から動画、開始・終了フレームから動画 |
+| `veo3.1-pro` | テキストから動画、画像から動画、開始・終了フレームから動画 |
+
+### ByteDance
+
+| モデル | 公開オペレーション |
+|-------|----------|
+| `seedance-1.5-pro` | テキストから動画、画像から動画 |
+
+### MiniMax
+
+| モデル | 公開オペレーション |
+|-------|----------|
+| `hailuo-2.3-fast` | 画像から動画 |
+| `hailuo-2.3-pro` | テキストから動画、画像から動画 |
+| `hailuo-2.3-standard` | テキストから動画、画像から動画 |
+
+### Alibaba
+
+| モデル | 公開オペレーション |
+|-------|----------|
+| `wan-2.2-plus` | テキストから動画、画像から動画 |
+| `wan-2.5` | テキストから動画、画像から動画 |
+| `wan-2.6` | テキストから動画、画像から動画、参考画像から動画 |
+
+### Shengshu
+
+| モデル | 公開オペレーション |
+|-------|----------|
+| `viduq2` | テキストから動画、参考画像から動画 |
+| `viduq2-pro` | 画像から動画、参考画像から動画、開始・終了フレームから動画 |
+| `viduq2-pro-fast` | 画像から動画、開始・終了フレームから動画 |
+| `viduq2-turbo` | 画像から動画、開始・終了フレームから動画 |
+| `viduq3-pro` | テキストから動画、画像から動画、開始・終了フレームから動画 |
+| `viduq3-turbo` | テキストから動画、画像から動画、開始・終了フレームから動画 |
+
+### xAI
+
+| モデル | 公開オペレーション |
+|-------|----------|
+| `grok-imagine-video` | テキストから動画、画像から動画、参照画像から動画、動画から動画 |
+| `grok-imagine-video-1.5-preview` | 画像から動画 |
+| `grok-imagine-image-to-video` | 画像から動画 |
+| `grok-imagine-text-to-video` | テキストから動画 |
+| `grok-imagine-upscale` | 動画から動画 |
+
+### その他
+
+| モデル | 公開オペレーション |
+|-------|----------|
+| `topaz-video-upscale` | 動画から動画 |

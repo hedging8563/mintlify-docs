@@ -1,0 +1,53 @@
+---
+title: "Télécharger un fichier"
+openapi: "POST /v1/files"
+description: "Télécharge un fichier d'entrée en lot JSONL pour une création en lot ultérieure."
+---
+
+## Aperçu
+
+Ce point de terminaison fait partie de l'API Batch compatible avec OpenAI de AI Sonar. Les travaux en lot utilisent des fichiers JSONL téléchargés, s'exécutent de manière asynchrone et peuvent renvoyer des fichiers de sortie/d'erreur plus tard.
+
+## Remarques
+
+- Les fichiers d'entrée en lot doivent utiliser `purpose=batch`.
+- `completion_window` est actuellement `24h`.
+- L'ordre de sortie n'est pas garanti ; faites toujours correspondre par `custom_id`.
+- Le streaming n'est pas pris en charge à l'intérieur des éléments de lot.
+
+## Exemple
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/files" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F "purpose=batch" \
+  -F "file=@batch-input.jsonl;type=application/jsonl"
+```
+</RequestExample>
+
+## Demande / Réponse
+
+Utilisez le panneau OpenAPI interactif ci-dessus pour le schéma exact.
+
+## Conseils opérationnels
+
+- Utilisez `custom_id` pour la réconciliation idempotente en aval.
+- Attendez-vous à ce que `output_file_id` et `error_file_id` ne soient disponibles qu'après que le travailleur finalise le lot.
+- La tarification des lots peut différer de la tarification synchrone car les règles de remise `isBatchRequest=true` s'appliquent.
+## Entrées de fichiers image
+
+Cette même route `/v1/files` peut aussi téléverser des fichiers image de référence pour `/v1/images/edits`.
+
+- Utilisez `purpose=user_data` ou `purpose=vision`.
+- Ajoutez éventuellement `model` pour choisir le modèle d’édition d’image ; la valeur par défaut est `gpt-image-2`.
+- Le `file_id` renvoyé est lié au canal amont d’édition d’image sélectionné et peut être réutilisé dans `images[].file_id`.
+
+## Mode Anthropic Files API
+
+Cette même route `/v1/files` prend aussi en charge le chemin Anthropic Files API.
+
+- Ajoutez l’en-tête `anthropic-beta: files-api-2025-04-14` pour basculer en mode Anthropic.
+- En mode Anthropic, chargez directement le fichier d’origine et n’envoyez pas `purpose=batch`.
+- Le `file_id` renvoyé est lié au même canal/workspace Anthropic officiel et doit être réutilisé dans les requêtes `/v1/messages`.
+- Si vous comptez référencer ce fichier dans le contenu d’un message Anthropic, continuez à utiliser les en-têtes natifs Anthropic (`x-api-key`, `anthropic-version` et, si nécessaire, le beta header).

@@ -1,0 +1,49 @@
+---
+title: "Mettre à jour une API Key"
+openapi: "PATCH /v1/management/api-keys/{keyId}"
+description: "Met à jour une API Key utilisateur existante dans l’organisation courante."
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Vue d’ensemble
+
+Utilisez cet endpoint pour mettre à jour le nom, la limite d’usage, les modèles autorisés, l’expiration ou le statut d’une API Key utilisateur existante.
+
+## Corps de la requête
+
+Au moins un champ doit être fourni dans la requête PATCH.
+
+| Champ | Type | Valeurs par défaut / limites | Description |
+|------|------|------------------------------|-------------|
+| `status` | enum | - | `active`, `inactive`, `suspended`, `revoked` |
+| `name` | string | longueur `1-50` | Nom affiché mis à jour |
+| `limitAmount` | number \| null | min. `0`, entrée max. `1000000` | `null` = illimité, `0` = quota nul. Les valeurs positives sont normalisées vers un plafond stocké qui ne peut pas dépasser l’équivalent de `100000` USD. |
+| `limitCurrency` | enum | valeur par défaut `USD` | USD uniquement. L'envoi de `CNY` renvoie `400 currency_retired`. |
+| `models` | string[] | - | Liste d’autorisation des modèles logiques mise à jour |
+| `expiresAt` | string \| null | datetime RFC3339 | `null` efface la date d’expiration |
+
+## Notes
+
+- Les champs monétaires sont réservés au USD. Les entrées `CNY` sont obsolètes et renvoient `400 currency_retired`.
+
+- Le hard delete n’est volontairement pas pris en charge dans Management API v1.
+- `revoked` est terminal pour l’usage opérationnel courant ; créez une nouvelle clé au lieu d’attendre un futur flux de réactivation.
+
+## Exemple
+
+<RequestExample>
+```bash cURL
+curl -X PATCH "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456" \
+  -H "Authorization: Bearer mt-your-management-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "inactive",
+    "limitAmount": 0
+  }'
+```
+</RequestExample>
+
+## Requête / Réponse
+
+Utilisez le panneau OpenAPI interactif ci-dessus pour obtenir le schéma exact et les champs de réponse.

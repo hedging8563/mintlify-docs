@@ -1,0 +1,27 @@
+---
+title: "Organisationsguthaben abrufen"
+openapi: "GET /v1/management/balance"
+description: "Gibt die aktuellen Guthabensummen der Organisation für das Management-Token zurück."
+---
+
+## Übersicht
+
+Dieser Endpunkt gibt die aktuellen Guthabensummen der Organisation zurück, die mit dem Management-Token verknüpft ist. Er verwendet dieselbe Quelle der Wahrheit für Organisationsguthaben wie Abrechnung und Settlement.
+
+## Hinweise
+
+- Monetäre Wahrheitsfelder werden in USD zurückgegeben: `balance`, `total_recharge` und `total_used`.
+- `preferred_currency` spiegelt die Anzeigepräferenz der Organisation im Dashboard wider; die USD-Wahrheitsfelder ändern sich dadurch nicht.
+
+## Beispiel
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/management/balance" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## Anfrage / Antwort
+
+Verwenden Sie das interaktive OpenAPI-Panel oben für das genaue Schema.

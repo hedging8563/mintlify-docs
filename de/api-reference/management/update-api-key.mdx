@@ -1,0 +1,47 @@
+---
+title: "API-Key aktualisieren"
+openapi: "PATCH /v1/management/api-keys/{keyId}"
+description: "Aktualisiert einen vorhandenen Benutzer-API-Key für die aktuelle Organisation."
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Überblick
+
+Verwenden Sie diesen Endpunkt, um Name, Nutzungslimit, erlaubte Modelle, Ablaufzeit oder Status eines vorhandenen Benutzer-API-Keys zu aktualisieren.
+
+## Request-Body
+
+Mindestens ein Feld muss angegeben werden.
+
+| Feld | Typ | Standard / Grenzen | Beschreibung |
+|------|-----|--------------------|--------------|
+| `status` | enum | - | `active`, `inactive`, `suspended`, `revoked` |
+| `name` | string | Länge `1-50` | Aktualisierter Anzeigename |
+| `limitAmount` | number \| null | min. `0`, Eingabe max. `1000000` | `null` = unbegrenzt, `0` = Nullkontingent. Positive Werte werden auf ein gespeichertes Limit normalisiert, das 100000 USD Gegenwert nicht überschreiten kann. |
+| `limitCurrency` | enum | Standardwert `USD` | Nur USD. Das Senden von `CNY` gibt `400 currency_retired` zurück. |
+| `models` | string[] | - | Aktualisierte Allowlist für logische Modelle |
+| `expiresAt` | string \| null | RFC3339-Datetime | `null` entfernt die Ablaufzeit |
+
+## Hinweise
+
+- Hard Delete wird in Management API v1 bewusst nicht unterstützt.
+- `revoked` ist für den normalen operativen Einsatz ein Endzustand; erstellen Sie lieber einen neuen Key, statt auf eine spätere Reaktivierung zu hoffen.
+
+## Beispiel
+
+<RequestExample>
+```bash cURL
+curl -X PATCH "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456" \
+  -H "Authorization: Bearer mt-your-management-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "inactive",
+    "limitAmount": 0
+  }'
+```
+</RequestExample>
+
+## Anfrage / Antwort
+
+Verwenden Sie das interaktive OpenAPI-Panel oben für das genaue Schema und die Response-Felder.

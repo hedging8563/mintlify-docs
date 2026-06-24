@@ -1,0 +1,74 @@
+---
+title: "Cancel Task"
+openapi: "DELETE /v1/tasks/{id}"
+description: "Cancel a queued async task when the provider and model support cancellation"
+---
+
+## Overview
+
+Use `DELETE /v1/tasks/{id}` to cancel an asynchronous task that has not started running yet. Use the same task ID from the create response or the returned `poll_url`.
+
+## Supported Tasks
+
+Cancellation is currently supported for queued Volcengine Seedance video tasks using `seedance-1.5-pro`, `seedance-2.0`, or `seedance-2.0-fast`. Tasks that are already `processing`/running cannot be cancelled. Completed, failed, expired, or unsupported tasks are kept queryable for status and billing reconciliation instead of deleting upstream records.
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The async task ID returned by the create request or embedded in `poll_url`.
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="string">
+  Canonical async task identifier.
+</ResponseField>
+
+<ResponseField name="task_id" type="string">
+  Async task identifier alias.
+</ResponseField>
+
+<ResponseField name="poll_url" type="string">
+  Preferred polling URL for the task. It remains valid after cancellation.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Task status. A successfully cancelled task is returned as `failed` with `cancelled: true` for compatibility with existing status values.
+</ResponseField>
+
+<ResponseField name="cancelled" type="boolean">
+  `true` when the task was cancelled before execution.
+</ResponseField>
+
+<ResponseField name="cancellation_status" type="string">
+  Cancellation marker. The value is `cancelled` when cancellation succeeds.
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  Cancellation reason or task failure message.
+</ResponseField>
+
+## Error Behavior
+
+`400 unsupported_task_cancel` means the task type, provider, or model does not support cancellation. `409 task_not_cancellable` means the task is already processing, terminal, or otherwise no longer cancellable. `403` means the API key cannot access the task.
+
+## Example
+
+<RequestExample>
+```bash cURL
+curl -X DELETE "https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+```json Response
+{
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "failed",
+  "cancelled": true,
+  "cancellation_status": "cancelled",
+  "error": "Task cancelled before execution"
+}
+```

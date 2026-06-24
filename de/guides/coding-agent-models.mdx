@@ -1,0 +1,138 @@
+---
+title: "Modellauswahl für Coding Agents"
+description: "Das richtige Modell für jede Coding-Aufgabe — Vergleichstabelle, Empfehlungen und Konfiguration"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Modellvergleich für Coding
+
+| Modell | Geschwindigkeit | Code-Qualität | Kosten | Kontextfenster | Optimal für |
+|--------|----------------|--------------|--------|----------------|-------------|
+| `claude-opus-4-6` | Mittel | Ausgezeichnet | $$$$ | 200K | Architektur, komplexes Refactoring |
+| `gpt-5.4` | Mittel | Ausgezeichnet | $$$$ | 200K | Komplexes Reasoning, Planung |
+| `claude-sonnet-4-6` | Schnell | Sehr gut | $$$ | 200K | Allgemeines Coding, Reviews |
+| `gemini-3-pro-preview` | Schnell | Sehr gut | $$$ | 1M | Große Codebase-Analyse |
+| `gpt-5-mini` | Sehr schnell | Gut | $$ | 128K | Schnelle Edits, Vervollständigung |
+| `gemini-3-flash-preview` | Sehr schnell | Gut | $$ | 1M | Schnelle Iteration, Suche |
+| `deepseek-r1` | Mittel | Sehr gut | $ | 64K | Reasoning-intensive Aufgaben |
+| `deepseek-v3.2` | Schnell | Gut | $ | 128K | Massengenerierung, Boilerplate |
+
+## Aufgabenspezifische Empfehlungen
+
+<AccordionGroup>
+  <Accordion title="Code-Generierung / Scaffolding">
+    **Empfohlen**: `claude-sonnet-4-6`, `gemini-3-pro-preview`
+
+    Sauberer, gut strukturierter Code. Für komplexes Multi-Datei-Scaffolding: `claude-opus-4-6`.
+
+    Budget-Alternative: `deepseek-v3.2` für Boilerplate zu einem Bruchteil der Kosten.
+  </Accordion>
+
+  <Accordion title="Code-Review / Refactoring">
+    **Empfohlen**: `claude-sonnet-4-6`, `deepseek-r1`
+
+    `deepseek-r1` ist besonders kosteneffektiv — der Chain-of-Thought-Ansatz erkennt subtile Probleme.
+
+    Sicherheits-Reviews: `claude-opus-4-6` oder `gpt-5.4`.
+  </Accordion>
+
+  <Accordion title="Bug-Fixing / Debugging">
+    **Empfohlen**: `claude-sonnet-4-6`, `gpt-5-mini`
+
+    Bug-Fixing hat meist klaren Scope. Standard-Modelle reichen aus.
+  </Accordion>
+
+  <Accordion title="Architekturdesign">
+    **Empfohlen**: `claude-opus-4-6`, `gpt-5.4`
+
+    Architekturentscheidungen profitieren von stärkstem Reasoning. Selten, aber hohe Auswirkung.
+  </Accordion>
+
+  <Accordion title="Schnelle Edits / Tab-Vervollständigung">
+    **Empfohlen**: `gpt-5-mini`, `gemini-3-flash-preview`
+
+    Geschwindigkeit ist entscheidend für interaktive Nutzung.
+  </Accordion>
+</AccordionGroup>
+
+## Wie AI Sonar-Routing funktioniert
+
+### Routing-Strategien
+
+| Strategie | Verhalten | Optimal für |
+|-----------|-----------|-------------|
+| **PRIORITY** | Routing zum höchstpriorisierten verfügbaren Provider | Zuverlässigkeit |
+| **COST** | Routing zum günstigsten verfügbaren Provider | Kostenoptimierung |
+
+### Automatisches Fallback
+
+```
+Anfrage: claude-sonnet-4-6
+  → Provider A (primär): 503 Fehler
+  → Provider B (Fallback): ✓ Erfolg
+```
+
+### Native Format-Routing
+
+Wenn das ausgewählte Modell und der weitergeleitete Kanal es unterstützen, kann AI Sonar Anfragen für bessere Kompatibilität über das native API-Format der Modellfamilie weiterleiten:
+
+| Modellfamilie | API-Format | Base-URL |
+|-------------|------------|----------|
+| Claude | Anthropic Messages | `https://api.aisonar.dev` |
+| GPT | OpenAI Responses | `https://api.aisonar.dev/v1` |
+| Gemini | Gemini Native API | `https://api.aisonar.dev` oder `https://api.aisonar.dev/v1beta`, abhängig vom Client-Pfad |
+| DeepSeek | OpenAI Chat | `https://api.aisonar.dev/v1` |
+
+Claude Code ist ein starker Anthropic-nativer Pfad. Gemini-native APIs existieren ebenfalls, aber Gemini CLI selbst bleibt ein Best-Effort-Kompatibilitätspfad und sollte nicht als langfristig stabiler Arbeitsablauf betrachtet werden.
+
+## Konfiguration pro Tool
+
+<AccordionGroup>
+  <Accordion title="Claude Code">
+    ```bash
+    export ANTHROPIC_API_KEY="sk-your-api-key"
+    export ANTHROPIC_BASE_URL="https://api.aisonar.dev"
+    ```
+    Modellauswahl: `claude --model claude-sonnet-4-6`
+
+    [Vollständige Anleitung →](/de/integrations/claude-code)
+  </Accordion>
+
+  <Accordion title="Cursor">
+    Settings → Models:
+    - API Key: `sk-your-api-key`
+    - Base URL: `https://api.aisonar.dev/v1`
+
+    [Vollständige Anleitung →](/de/integrations/cursor)
+  </Accordion>
+
+  <Accordion title="Codex CLI">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export OPENAI_BASE_URL="https://api.aisonar.dev/v1"
+    ```
+    [Vollständige Anleitung →](/de/integrations/codex-cli)
+  </Accordion>
+
+  <Accordion title="Gemini CLI">
+    ```bash
+    export GEMINI_API_KEY="sk-your-api-key"
+    export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"
+    ```
+
+    Behandeln Sie dies als Best-Effort-Kompatibilität und nicht als stabilen Upstream-Vertrag.
+    [Vollständige Anleitung →](/de/integrations/gemini-cli)
+  </Accordion>
+
+  <Accordion title="OpenCode">
+    ```json
+    {
+      "provider": "openai",
+      "apiKey": "sk-your-api-key",
+      "baseURL": "https://api.aisonar.dev/v1"
+    }
+    ```
+    [Vollständige Anleitung →](/de/integrations/opencode)
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,136 @@
+---
+title: "Lựa chọn mô hình cho Coding Agent"
+description: "Chọn mô hình phù hợp cho từng tác vụ lập trình — bảng so sánh, đề xuất và cấu hình"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## So sánh mô hình cho lập trình
+
+| Mô hình | Tốc độ | Chất lượng code | Chi phí | Cửa sổ ngữ cảnh | Tốt nhất cho |
+|---------|--------|----------------|---------|-----------------|-------------|
+| `claude-opus-4-6` | Trung bình | Xuất sắc | $$$$ | 200K | Kiến trúc, refactoring phức tạp |
+| `gpt-5.4` | Trung bình | Xuất sắc | $$$$ | 200K | Suy luận phức tạp, lập kế hoạch |
+| `claude-sonnet-4-6` | Nhanh | Rất tốt | $$$ | 200K | Lập trình chung, review |
+| `gemini-3-pro-preview` | Nhanh | Rất tốt | $$$ | 1M | Phân tích codebase lớn |
+| `gpt-5-mini` | Rất nhanh | Tốt | $$ | 128K | Chỉnh sửa nhanh, hoàn thành |
+| `gemini-3-flash-preview` | Rất nhanh | Tốt | $$ | 1M | Lặp nhanh, tìm kiếm |
+| `deepseek-r1` | Trung bình | Rất tốt | $ | 64K | Tác vụ nặng suy luận |
+| `deepseek-v3.2` | Nhanh | Tốt | $ | 128K | Tạo hàng loạt, boilerplate |
+
+## Đề xuất theo tác vụ
+
+<AccordionGroup>
+  <Accordion title="Tạo code / Scaffolding">
+    **Đề xuất**: `claude-sonnet-4-6`, `gemini-3-pro-preview`
+
+    Code sạch, cấu trúc tốt. Scaffolding đa file phức tạp: dùng `claude-opus-4-6`.
+
+    Thay thế tiết kiệm: `deepseek-v3.2` xử lý boilerplate với chi phí thấp.
+  </Accordion>
+
+  <Accordion title="Review code / Refactoring">
+    **Đề xuất**: `claude-sonnet-4-6`, `deepseek-r1`
+
+    `deepseek-r1` đặc biệt hiệu quả về chi phí — cách tiếp cận chain-of-thought phát hiện vấn đề tinh vi.
+  </Accordion>
+
+  <Accordion title="Sửa bug / Debug">
+    **Đề xuất**: `claude-sonnet-4-6`, `gpt-5-mini`
+
+    Sửa bug thường có phạm vi rõ ràng. Mô hình tiêu chuẩn là đủ.
+  </Accordion>
+
+  <Accordion title="Thiết kế kiến trúc">
+    **Đề xuất**: `claude-opus-4-6`, `gpt-5.4`
+
+    Quyết định kiến trúc cần khả năng suy luận mạnh nhất. Ít xảy ra nhưng tác động lớn.
+  </Accordion>
+
+  <Accordion title="Chỉnh sửa nhanh / Tab completion">
+    **Đề xuất**: `gpt-5-mini`, `gemini-3-flash-preview`
+
+    Tốc độ là yếu tố quan trọng nhất cho sử dụng tương tác.
+  </Accordion>
+</AccordionGroup>
+
+## Cách định tuyến AI Sonar hoạt động
+
+### Chiến lược định tuyến
+
+| Chiến lược | Hành vi | Tốt nhất cho |
+|-----------|---------|-------------|
+| **PRIORITY** | Định tuyến đến nhà cung cấp ưu tiên cao nhất | Độ tin cậy |
+| **COST** | Định tuyến đến nhà cung cấp rẻ nhất | Tối ưu chi phí |
+
+### Dự phòng tự động
+
+```
+Yêu cầu: claude-sonnet-4-6
+  → Provider A (chính): lỗi 503
+  → Provider B (dự phòng): ✓ Thành công
+```
+
+### Định tuyến định dạng gốc
+
+Khi model đã chọn và kênh định tuyến hỗ trợ, AI Sonar có thể định tuyến yêu cầu qua định dạng API gốc của gia đình model để tương thích tốt hơn:
+
+| Họ mô hình | Định dạng API | URL cơ sở |
+|-------------|------------|----------|
+| Claude | Anthropic Messages | `https://api.aisonar.dev` |
+| GPT | OpenAI Responses | `https://api.aisonar.dev/v1` |
+| Gemini | Gemini Native API | `https://api.aisonar.dev` hoặc `https://api.aisonar.dev/v1beta` tùy theo đường dẫn của client |
+| DeepSeek | OpenAI Chat | `https://api.aisonar.dev/v1` |
+
+Claude Code là một đường Anthropic-native mạnh. Các API Gemini-native cũng tồn tại, nhưng bản thân Gemini CLI vẫn chỉ là một đường tương thích best-effort và không nên được xem là quy trình ổn định lâu dài.
+
+## Cấu hình theo công cụ
+
+<AccordionGroup>
+  <Accordion title="Claude Code">
+    ```bash
+    export ANTHROPIC_API_KEY="sk-your-api-key"
+    export ANTHROPIC_BASE_URL="https://api.aisonar.dev"
+    ```
+    Chọn mô hình: `claude --model claude-sonnet-4-6`
+
+    [Hướng dẫn đầy đủ →](/vi/integrations/claude-code)
+  </Accordion>
+
+  <Accordion title="Cursor">
+    Settings → Models:
+    - API Key: `sk-your-api-key`
+    - Base URL: `https://api.aisonar.dev/v1`
+
+    [Hướng dẫn đầy đủ →](/vi/integrations/cursor)
+  </Accordion>
+
+  <Accordion title="Codex CLI">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export OPENAI_BASE_URL="https://api.aisonar.dev/v1"
+    ```
+    [Hướng dẫn đầy đủ →](/vi/integrations/codex-cli)
+  </Accordion>
+
+  <Accordion title="Gemini CLI">
+    ```bash
+    export GEMINI_API_KEY="sk-your-api-key"
+    export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"
+    ```
+
+    Hãy coi đây là đường tương thích best-effort chứ không phải hợp đồng upstream ổn định.
+    [Hướng dẫn đầy đủ →](/vi/integrations/gemini-cli)
+  </Accordion>
+
+  <Accordion title="OpenCode">
+    ```json
+    {
+      "provider": "openai",
+      "apiKey": "sk-your-api-key",
+      "baseURL": "https://api.aisonar.dev/v1"
+    }
+    ```
+    [Hướng dẫn đầy đủ →](/vi/integrations/opencode)
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,129 @@
+---
+title: "Xác thực"
+description: "Bảo mật các yêu cầu AI Sonar API của bạn bằng API key"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## API Key
+
+Tất cả các yêu cầu AI Sonar API đều yêu cầu một API key.
+
+Đối với các endpoint tương thích OpenAI, gửi nó dưới dạng:
+
+```bash
+Authorization: Bearer sk-your-api-key
+```
+
+Đối với các yêu cầu `/v1/messages` tương thích Anthropic, bạn cũng có thể sử dụng:
+
+```bash
+x-api-key: sk-your-api-key
+```
+
+## Lấy API Key của bạn
+
+1. Đăng nhập vào [AI Sonar Dashboard](https://console.aisonar.dev) của bạn
+2. Mở **API Keys**
+3. Tạo một key mới
+4. Đặt cho nó một tên mang tính mô tả
+5. Sao chép ngay lập tức vì nó chỉ được hiển thị một lần
+
+<Warning>
+- Không bao giờ để lộ API key trong mã phía client
+- Không bao giờ commit API key vào hệ thống quản lý phiên bản
+- Sử dụng biến môi trường hoặc trình quản lý secret
+- Luân phiên key định kỳ
+- Xóa các key không sử dụng
+</Warning>
+
+## Sử dụng API Key
+
+<CodeGroup>
+
+```bash cURL
+curl https://api.aisonar.dev/v1/responses \
+  -H "Authorization: Bearer $TOKENLAB_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.4",
+    "input": "Hello!"
+  }'
+```
+
+```python Python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ.get("TOKENLAB_API_KEY"),
+    base_url="https://api.aisonar.dev/v1"
+)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: process.env.TOKENLAB_API_KEY,
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+```
+
+</CodeGroup>
+
+## Tính năng của API Key
+
+### Giới hạn sử dụng
+
+Bạn có thể đặt giới hạn sử dụng cho từng API key:
+
+| Thiết lập | Mô tả |
+|---------|-------------|
+| **No Limit** | Key sử dụng số dư tài khoản của bạn mà không có hạn chế |
+| **Fixed Limit** | Key ngừng hoạt động sau khi đạt đến số tiền được chỉ định |
+
+### Tiền tố của Key
+
+Tất cả API key của AI Sonar đều bắt đầu bằng `sk-`.
+
+## Tương thích Anthropic
+
+Đối với endpoint `/v1/messages`, header theo kiểu Anthropic hoạt động như mong đợi:
+
+```bash
+curl https://api.aisonar.dev/v1/messages \
+  -H "x-api-key: sk-your-api-key" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-sonnet-4-6",
+    "max_tokens": 1024,
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'
+```
+
+<Note>
+Sử dụng `Authorization: Bearer ...` cho các endpoint tương thích OpenAI như `/v1/responses`, `/v1/chat/completions`, `/v1/models`, và hầu hết các route AI Sonar khác.
+</Note>
+
+## Phản hồi lỗi
+
+| Mã trạng thái | Kiểu | Mã | Mô tả |
+|-------------|------|------|-------------|
+| 401 | `invalid_api_key` | `invalid_api_key` | Thiếu hoặc API key không hợp lệ |
+| 401 | `expired_api_key` | `expired_api_key` | API key đã bị thu hồi |
+| 402 | `insufficient_balance` | `insufficient_balance` | Số dư tài khoản không đủ |
+| 402 | `quota_exceeded` | `quota_exceeded` | Đã đạt đến giới hạn sử dụng của API key |
+
+Ví dụ:
+
+```json
+{
+  "error": {
+    "message": "Invalid API key provided",
+    "type": "invalid_api_key",
+    "code": "invalid_api_key"
+  }
+}
+```

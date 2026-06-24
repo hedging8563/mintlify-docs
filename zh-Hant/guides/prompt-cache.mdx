@@ -1,0 +1,150 @@
+---
+title: "✨ 上游 Prompt 快取"
+description: "瞭解供應商層級的 Prompt 快取及其如何降低成本"
+---
+
+## 概覽
+
+## 供應商 Prompt 快取如何運作
+
+供應商 Prompt 快取會將您 Prompt 前綴的處理後表示形式儲存在供應商的伺服器上。當您發送具有相同前綴的請求時，供應商可以跳過對這些 Token 的重複處理。
+
+### 關鍵特性
+
+- **基於前綴**：僅能快取 Prompt 的開頭部分
+- **精確比對**：需要完全相同的 Token（非語義相似度）
+- **時效限制**：快取項目會過期（通常為 5-60 分鐘）
+- **自動化**：無需特殊配置
+
+```
+請求 1: [系統提示詞 + 上下文 A + 問題 1]
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+         此前綴被快取
+
+請求 2: [系統提示詞 + 上下文 A + 問題 2]
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+         快取命中！僅處理問題 2
+```
+
+## 支援的供應商
+
+| 供應商 | 快取讀取折扣 | 快取寫入成本 | 最小 Token 數 |
+|----------|---------------------|------------------|------------|
+| **Anthropic** | 90% 折扣 | 25% 溢價 | 1024 |
+| **OpenAI** | 50% 折扣 | 與輸入相同 | 1024 |
+| **DeepSeek** | 90% 折扣 | 與輸入相同 | 64 |
+| **Google** | 75% 折扣 | 25% 溢價 | 32768 |
+
+<Info>
+折扣會自動套用。AI Sonar 會將供應商的快取定價直接轉嫁給您。
+</Info>
+
+## 識別快取使用情況
+
+### 在用量日誌中
+
+您的用量日誌會顯示詳細的快取 Token 明細：
+
+| 欄位 | 描述 |
+|-------|-------------|
+| `cacheReadTokens` | 從供應商快取提供的 Token（享有折扣） |
+| `cacheWriteTokens` | 寫入快取的 Token（供未來請求使用） |
+| `nonCachedPromptTokens` | 未經快取處理的 Token |
+
+### 在交易紀錄中
+
+當使用上游快取時，交易紀錄會顯示 **Provider Cache** 標籤：
+
+- **Provider Cache** (鴨綠色)：上游 Prompt 快取命中 - 優惠費率
+
+## 成本計算範例
+
+對於向 Claude (Anthropic) 發送 10,000 個輸入 Token 的請求：
+
+**無快取：**
+```
+10,000 tokens × $3.00/1M = $0.030
+```
+
+**使用供應商快取（8,000 個已快取 + 2,000 個新 Token）：**
+```
+快取讀取:  8,000 tokens × $0.30/1M = $0.0024  (90% 折扣)
+快取寫入:  2,000 tokens × $3.75/1M = $0.0075  (25% 溢價)
+總計: $0.0099 (節省 67%)
+```
+
+## 最佳實踐
+
+<AccordionGroup>
+  <Accordion title="使用一致的系統 Prompt">
+    將您的系統 Prompt 和靜態上下文放在訊息的開頭。這能最大化快取命中的可能性。
+  </Accordion>
+
+  <Accordion title="批次處理相似請求">
+    在短時間內發送具有相同前綴的請求，以便在快取過期前獲益。
+  </Accordion>
+
+  <Accordion title="符合最小 Token 要求">
+    確保您的可快取前綴符合供應商的最小值（例如 Anthropic/OpenAI 為 1024 個 Token）。
+  </Accordion>
+
+  <Accordion title="監控快取指標">
+    查看儀表板用量統計，瞭解快取命中率和節省金額。
+  </Accordion>
+</AccordionGroup>
+
+## 檢查快取狀態
+
+### 回應標頭
+
+```
+X-Upstream-Cache-Read: 8000   # 供應商快取讀取 tokens
+X-Upstream-Cache-Write: 2000  # 供應商快取寫入 tokens
+```
+
+### 用量 API
+
+查詢您的用量日誌以查看快取明細：
+
+```text
+GET /v1/usage/logs is currently not a public endpoint.
+Use X-Upstream-Cache-* response headers, plus the dashboard usage page.
+```
+
+回應包含：
+```json
+{
+  "promptTokens": 10000,
+  "cacheReadTokens": 8000,
+  "cacheWriteTokens": 2000,
+  "nonCachedPromptTokens": 0,
+  "completionTokens": 500,
+  "cost": 0.0099
+}
+```
+
+## 常見問題
+
+<AccordionGroup>
+  <Accordion title="我可以停用供應商快取嗎？">
+    供應商快取是自動的且無法停用。然而，它只會對您有利（降低成本），因此沒有理由停用它。
+  </Accordion>
+
+  <Accordion title="為什麼我的請求沒有命中供應商快取？">
+    常見原因：
+    - 前綴已更改（即使只有一個 Token 的差異）
+    - 快取已過期（通常為 5-60 分鐘）
+    - 前綴太短（低於最小 Token 數）
+    - 使用了不同的 API 金鑰
+  </Accordion>
+
+  <Accordion title="BYOK 是否支援供應商快取？">
+    是的！當使用您自己的 API 金鑰 (BYOK) 時，供應商快取的運作方式相同。快取會綁定到您的上游 API 金鑰。
+  </Accordion>
+
+  <Accordion title="如何最大化快取節省？">
+    1. 將靜態內容放在 Prompt 的最前面
+    2. 在不同請求之間保持系統 Prompt 的一致性
+    3. 快速連續發送相關請求
+  </Accordion>
+</AccordionGroup>

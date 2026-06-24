@@ -1,0 +1,327 @@
+---
+title: "✨ API Agent-First"
+description: "Dicas de erro estruturadas para agentes de IA se auto-corrigirem na primeira nova tentativa"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Visão geral
+
+A Agent-First API da AI Sonar enriquece respostas de erro com dicas estruturadas que agentes de IA podem analisar e agir imediatamente — sem buscas na web, sem consultas à documentação, sem suposições.
+
+Cada resposta de erro inclui campos opcionais como `did_you_mean`, `suggestions`, `hint`, `retryable` e `retry_after` dentro do objeto padrão `error`. Esses campos são compatíveis retroativamente — clientes que não os utilizam não perceberão diferença.
+
+## Campos de dica de erro
+
+Todos os campos de dica são extensões opcionais dentro do objeto `error`:
+
+| Campo | Tipo | Descrição |
+|-------|------|-------------|
+| `did_you_mean` | `string` | Nome do modelo com a correspondência mais próxima |
+| `suggestions` | `array` | Modelos recomendados com metadados |
+| `alternatives` | `array` | Modelos alternativos atualmente disponíveis |
+| `hint` | `string` | Orientação de próxima etapa legível por humano/agente |
+| `retryable` | `boolean` | Se tentar novamente a mesma solicitação pode ter sucesso |
+| `retry_after` | `number` | Segundos a aguardar antes de tentar novamente |
+| `balance_usd` | `number` | Saldo atual da conta em USD |
+| `estimated_cost_usd` | `number` | Custo estimado da solicitação com falha |
+
+## Exemplos de código de erro
+
+### model_not_found (400)
+
+Quando um nome de modelo não corresponde a nenhum modelo ativo:
+
+```json
+{
+  "error": {
+    "message": "Model not found: please check the model name",
+    "type": "invalid_request_error",
+    "param": "model",
+    "code": "model_not_found",
+    "did_you_mean": "gpt-5.4",
+    "suggestions": [
+      {"id": "gpt-5.4"},
+      {"id": "gpt-5-mini"},
+      {"id": "claude-sonnet-4-6"}
+    ],
+    "hint": "Did you mean 'gpt-5.4'? Use GET https://api.aisonar.dev/v1/models to list all available models."
+  }
+}
+```
+
+A resolução de `did_you_mean` utiliza:
+1. Mapeamento de alias estático (a partir de dados de erro em produção)
+2. Correspondência de string normalizada (remove hífens, sem distinção entre maiúsculas/minúsculas)
+3. Correspondência por distância de edição (limite ≤ 3)
+
+Rotas públicas não expõem códigos de erro separados para modelos ocultos, adiados ou não públicos. Trate modelos públicos indisponíveis da mesma forma que um erro de correspondência: verifique `did_you_mean`, `suggestions` e `hint`, e então tente novamente com um modelo público suportado.
+
+### insufficient_balance (402)
+
+Quando o saldo da conta é insuficiente para o custo estimado:
+
+```json
+{
+  "error": {
+    "message": "Insufficient balance: need ~$0.3500 for claude-sonnet-4-6, but balance is $0.1200.",
+    "type": "insufficient_balance",
+    "code": "insufficient_balance",
+    "balance_usd": 0.12,
+    "estimated_cost_usd": 0.35,
+    "suggestions": [
+      {"id": "gpt-5-mini"},
+      {"id": "deepseek-v3-2"}
+    ],
+    "hint": "Insufficient balance: need ~$0.3500 for claude-sonnet-4-6, but balance is $0.1200. Try a cheaper model, or top up at https://console.aisonar.dev/billing."
+  }
+}
+```
+
+`suggestions` contém modelos mais baratos que o custo estimado para os quais o agente pode alternar.
+
+### all_channels_failed (503)
+
+Quando todos os canais upstream para um modelo estão indisponíveis:
+
+```json
+{
+  "error": {
+    "message": "Model claude-opus-4-6 temporarily unavailable",
+    "code": "all_channels_failed",
+    "retryable": true,
+    "retry_after": 30,
+    "alternatives": [
+      {"id": "claude-sonnet-4-6", "status": "available", "tags": []},
+      {"id": "gpt-5-mini", "status": "available", "tags": []}
+    ],
+    "hint": "All channels for 'claude-opus-4-6' are temporarily unavailable. Retry in 30s or try an alternative model."
+  }
+}
+```
+
+<Note>
+`retryable` é `false` quando a razão é `no_channels` (nenhum canal configurado para esse modelo). É `true` apenas para falhas transitórias como disparos de circuito ou esgotamento de cota.
+</Note>
+
+### rate_limit_exceeded (429)
+
+```json
+{
+  "error": {
+    "message": "Rate limit: 60 rpm exceeded",
+    "type": "rate_limit_exceeded",
+    "code": "rate_limit_exceeded",
+    "retryable": true,
+    "retry_after": 8,
+    "hint": "Rate limited. Retry after 8s. Current limit: 60/min for user role."
+  }
+}
+```
+
+O valor de `retry_after` é calculado a partir do tempo real de reset da janela de limite de taxa.
+
+<Note>
+Endpoints compatíveis com OpenAI usam os tipos de erro públicos estáveis da AI Sonar, como `rate_limit_exceeded`, `upstream_error` e `all_channels_failed`. Endpoints compatíveis com Anthropic e Gemini usam suas próprias formas de resposta nativas.
+</Note>
+
+### context_length_exceeded (400)
+
+Quando a entrada excede a janela de contexto do modelo (erro upstream, enriquecido com dicas):
+
+```json
+{
+  "error": {
+    "message": "This model's maximum context length is 128000 tokens...",
+    "type": "invalid_request_error",
+    "code": "context_length_exceeded",
+    "retryable": false,
+    "suggestions": [
+      {"id": "gemini-2.5-pro"},
+      {"id": "claude-sonnet-4-6"}
+    ],
+    "hint": "Reduce your input or switch to a model with a larger context window."
+  }
+}
+```
+
+## Cabeçalhos de endpoint nativo
+
+Quando você chama `/v1/chat/completions` com um modelo que possui um endpoint nativo (Anthropic ou Gemini), a resposta de **sucesso** inclui cabeçalhos de otimização:
+
+
+
+| Provedor de Modelo | Endpoint Sugerido | Benefício |
+|---------------|-------------------|---------|
+| Anthropic (Claude) | `/v1/messages` | Sem conversão de formato, pensamento estendido, cache de prompt |
+| Google (Gemini) | `/v1beta/gemini` | Sem conversão de formato, grounding, configurações de segurança |
+| OpenAI | — | As conclusões de chat já são o formato nativo |
+
+Esses cabeçalhos aparecem tanto em respostas streaming quanto em respostas não-streaming.
+
+## Melhorias em /v1/models
+
+`/v1/models` agora carrega metadados de recomendação não-chat que agentes podem usar antes de chamar endpoints de imagem, vídeo, música, 3D, TTS, STT, embedding, rerank ou tradução.
+
+```json
+{
+  "id": "gemini-2.5-flash-image",
+  "aisonar": {
+    "category": "image",
+    "pricing_unit": "per_request",
+    "agent_preferences": {
+      "image": {
+        "preferred_rank": 1,
+        "success_rate_24h": 0.98,
+        "sample_count_24h": 423,
+        "status": "ready",
+        "updated_at": "2026-03-28T12:00:00.000Z",
+        "basis": {
+          "score_source": "clickhouse_24h",
+          "channel_id": null,
+          "physical_model": null
+        }
+      }
+    }
+  }
+}
+```
+
+| Campo | Valores | Descrição |
+|-------|--------|-------------|
+| `category` | `chat`, `image`, `video`, `audio`, `tts`, `stt`, `3d`, `embedding`, `rerank` | Tipo de modelo |
+| `pricing_unit` | `per_token`, `per_image`, `per_second`, `per_request` | Como o modelo é cobrado |
+| `cache_pricing` | object or `null` | Só é retornado quando o modelo tem preços de prompt cache upstream. |
+| `agent_preferences.<scene>` | object | Snapshot de recomendação não-chat retornado apenas em `GET /v1/models?recommended_for=<scene>` |
+
+Quando `recommended_for` está presente, `agent_preferences` é derivado de um snapshot de taxa de sucesso em cache de 24 horas:
+
+- Janela: 24 horas
+- Cache do snapshot: stale-while-revalidate
+- `status = "ready"` significa que o modelo tem amostras recentes suficientes para participar do ranqueamento
+- `status = "insufficient_samples"` significa que o modelo permanece visível, mas não é ranqueado à frente de modelos pontuados
+
+### Filtragem por categoria
+
+```bash
+GET https://api.aisonar.dev/v1/models?category=chat          # Chat models only
+GET https://api.aisonar.dev/v1/models?category=image         # Image generation models
+GET https://api.aisonar.dev/v1/models?tag=coding&category=chat  # Coding-optimized chat models
+```
+
+### Descoberta de recomendações
+
+Para fluxos não-chat, agentes devem buscar primeiro a lista recomendada atual:
+
+```bash
+GET https://api.aisonar.dev/v1/models?recommended_for=image
+GET https://api.aisonar.dev/v1/models?recommended_for=translation
+GET https://api.aisonar.dev/v1/models?category=tts&recommended_for=tts
+```
+
+Valores válidos para `recommended_for` são:
+
+- `image`
+- `video`
+- `music`
+- `3d`
+- `tts`
+- `stt`
+- `embedding`
+- `rerank`
+- `translation`
+
+Se `category` e `recommended_for` estiverem presentes, eles devem corresponder exatamente.
+
+Fluxo recomendado para agentes:
+
+1. `GET /v1/models?recommended_for=<scene>`
+2. Escolher o primeiro modelo com `agent_preferences.<scene>.status == "ready"`
+3. Chamar o endpoint explicitamente com `model=<selected>`
+4. Em erros transitórios apenas, tentar novamente com o próximo modelo `ready`
+
+## llms.txt
+
+Uma visão geral da API em formato legível por máquina está disponível em:
+
+```
+GET https://api.aisonar.dev/llms.txt
+```
+
+Inclui:
+- Template para a primeira chamada com um exemplo funcional
+- Nomes comuns de modelos (gerados dinamicamente a partir dos dados de uso)
+- Todos os 12 endpoints da API
+- Parâmetros de filtro para descoberta de modelos
+- Orientações de tratamento de erros
+
+Agentes de IA que leem `llms.txt` antes da primeira chamada à API normalmente conseguem ter sucesso na primeira tentativa.
+
+## Uso no código do agente
+
+### Python (OpenAI SDK)
+
+```python
+from openai import OpenAI, BadRequestError
+
+client = OpenAI(
+    api_key="sk-your-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+def smart_chat(messages, model="gpt-4o"):
+    try:
+        return client.chat.completions.create(
+            model=model, messages=messages
+        )
+    except BadRequestError as e:
+        error = e.body.get("error", {}) if isinstance(e.body, dict) else {}
+        # Use did_you_mean for auto-correction
+        if error.get("code") == "model_not_found" and error.get("did_you_mean"):
+            return client.chat.completions.create(
+                model=error["did_you_mean"], messages=messages
+            )
+        raise
+```
+
+### JavaScript (OpenAI SDK)
+
+```javascript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+async function smartChat(messages, model = 'gpt-4o') {
+  try {
+    return await client.chat.completions.create({ model, messages });
+  } catch (error) {
+    const err = error?.error;
+    if (err?.code === 'model_not_found' && err?.did_you_mean) {
+      return client.chat.completions.create({
+        model: err.did_you_mean, messages
+      });
+    }
+    throw error;
+  }
+}
+```
+
+## Princípios de design
+
+<CardGroup cols={2}>
+  <Card title="Falhe rápido, falhe de forma informativa" icon="bolt">
+    Erros retornam imediatamente com todos os dados que um agente precisa para se auto-corrigir.
+  </Card>
+  <Card title="Sem roteamento automático" icon="route">
+    A API nunca substitui silenciosamente um modelo diferente. O agente decide.
+  </Card>
+  <Card title="Sugestões orientadas por dados" icon="database">
+    Todas as recomendações vêm de dados de produção, não de listas codificadas.
+  </Card>
+  <Card title="Compatível com versões anteriores" icon="plug">
+    Todos os campos de dica são opcionais. Clientes existentes não veem diferença.
+  </Card>
+</CardGroup>

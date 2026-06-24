@@ -1,0 +1,200 @@
+---
+title: "OpenCode"
+description: "Konfigurasikan OpenCode untuk menggunakan AI Sonar API"
+---
+
+## Ringkasan
+
+OpenCode adalah asisten coding AI open-source yang berjalan di terminal Anda. Ini mendukung banyak penyedia LLM dan dapat dikonfigurasikan untuk menggunakan API AI Sonar guna mengakses ratusan model.
+
+
+<Note>
+**Jenis**: Alat coding
+
+**Jalur utama**: kompatibel OpenAI
+
+**Tingkat dukungan**: Jalur yang didukung
+</Note>
+
+## Instalasi
+
+<Tabs>
+  <Tab title="Script Instalasi">
+    ```bash
+    curl -fsSL https://opencode.ai/install | bash
+    ```
+  </Tab>
+  <Tab title="Homebrew">
+    ```bash
+    brew install opencode-ai/tap/opencode
+    ```
+
+    Atau gunakan tap komunitas (pembaruan lebih sering):
+    ```bash
+    brew install anomalyco/tap/opencode
+    ```
+  </Tab>
+  <Tab title="Go">
+    ```bash
+    go install github.com/opencode-ai/opencode@latest
+    ```
+  </Tab>
+</Tabs>
+
+Verifikasi instalasi:
+
+```bash
+opencode --version
+```
+
+## Konfigurasi
+
+### Langkah 1: Atur Environment Variable
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+```
+
+Untuk konfigurasi permanen, tambahkan ke `~/.bashrc` atau `~/.zshrc`:
+
+```bash
+echo 'export OPENAI_API_KEY="sk-your-api-key"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+### Langkah 2: Konfigurasikan OpenCode
+
+Dokumentasi OpenCode saat ini merekomendasikan konfigurasi penyedia melalui `opencode.json` atau `opencode.jsonc`. Untuk AI Sonar, gunakan penyedia kustom alih-alih menimpa penyedia bawaan `openai`:
+
+```jsonc
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "aisonar": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "AI Sonar",
+      "options": {
+        "baseURL": "https://api.aisonar.dev/v1",
+        "apiKey": "{env:OPENAI_API_KEY}"
+      },
+      "models": {
+        "gpt-5.4": {
+          "name": "GPT-5.4"
+        },
+        "gpt-5-mini": {
+          "name": "GPT-5 Mini"
+        }
+      }
+    }
+  },
+  "model": "aisonar/gpt-5.4"
+}
+```
+
+<Note>
+Gunakan `@ai-sdk/openai-compatible` untuk kompatibilitas gaya chat-completions. Jika Anda secara khusus membutuhkan jalur penyedia yang dibangun di atas `/v1/responses`, dokumentasi OpenCode merekomendasikan untuk mengganti package menjadi `@ai-sdk/openai`.
+</Note>
+
+## Penggunaan Dasar
+
+**Mulai mode interaktif:**
+
+```bash
+opencode
+```
+
+**Jalankan dengan prompt:**
+
+```bash
+opencode "Explain this codebase"
+```
+
+**Tentukan model:**
+
+```bash
+opencode --model aisonar/gpt-5.4 "Fix the bugs in main.py"
+```
+
+## Model yang Tersedia
+
+| Model | Paling Cocok Untuk |
+|-------|----------|
+| `gpt-5.4` | Tugas kompleks, arsitektur kode |
+| `gpt-5-mini` | Perbaikan cepat, query sederhana |
+| `claude-sonnet-4-6` | Review kode, dokumentasi |
+| `claude-opus-4-6` | Penalaran kompleks |
+| `gemini-2.5-flash` | Respons cepat |
+| `deepseek-r1` | Desain algoritma |
+
+## Perintah Umum
+
+**Analisis kode:**
+
+```bash
+opencode "What does this function do?" < src/utils.ts
+```
+
+**Hasilkan kode:**
+
+```bash
+opencode "Create a REST API with Express"
+```
+
+**Review perubahan:**
+
+```bash
+git diff | opencode "Review these changes"
+```
+
+**Perbaiki error:**
+
+```bash
+opencode "Fix the TypeScript errors in this project"
+```
+
+## Perintah Interaktif
+
+| Command | Deskripsi |
+|---------|-------------|
+| `/help` | Tampilkan perintah yang tersedia |
+| `/model <name>` | Beralih ke model yang berbeda |
+| `/clear` | Hapus riwayat percakapan |
+| `/exit` | Keluar dari OpenCode |
+
+## Pemecahan Masalah
+
+<AccordionGroup>
+  <Accordion title="Error Koneksi">
+    - Verifikasi `options.baseURL` diatur ke `https://api.aisonar.dev/v1`
+    - Periksa konektivitas jaringan
+    - Coba `curl https://api.aisonar.dev/v1/models` untuk pengujian
+  </Accordion>
+
+  <Accordion title="Autentikasi Gagal">
+    - Verifikasi environment variable `OPENAI_API_KEY` telah diatur
+    - Verifikasi `options.apiKey` mereferensikan `{env:OPENAI_API_KEY}` atau sumber secret valid lainnya
+    - Periksa bahwa key diawali dengan `sk-`
+    - Pastikan key aktif di dashboard AI Sonar
+  </Accordion>
+
+  <Accordion title="Model Tidak Ditemukan">
+    - Periksa nama model di config harus sama persis
+    - Verifikasi ketersediaan model di [aisonar.dev/en/models](https://aisonar.dev/models)
+  </Accordion>
+</AccordionGroup>
+
+## Praktik Terbaik
+
+<AccordionGroup>
+  <Accordion title="Gunakan konteks project">
+    Jalankan OpenCode dari root project Anda agar pemahaman terhadap codebase menjadi lebih baik.
+  </Accordion>
+
+  <Accordion title="Pilih model yang sesuai">
+    Gunakan model yang lebih cepat (`gpt-5-mini`) untuk tugas sederhana dan model yang lebih kuat (`gpt-5.4`, `claude-sonnet-4-6`) untuk tugas yang kompleks.
+  </Accordion>
+
+  <Accordion title="Review kode yang dihasilkan">
+    Selalu review kode yang dihasilkan AI sebelum menerapkan perubahan pada project Anda.
+  </Accordion>
+</AccordionGroup>

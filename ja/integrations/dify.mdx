@@ -1,0 +1,133 @@
+---
+title: "Dify"
+description: "OpenAI プロバイダーとカスタム base URL を使用して AI Sonar を Dify と統合します"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## 概要
+
+Dify は、OpenAI 互換のモデルプロバイダーフローを通じて AI Sonar と適切に連携できます。
+
+現在の Dify バージョンでは、通常、最も安全な方法は次のとおりです。
+- 組み込みの **OpenAI** プロバイダーを選択する
+- AI Sonar API key を設定する
+- `https://api.aisonar.dev/v1` をカスタム base URL として設定する
+
+<Note>
+一部の古い Dify ビルドでは、カスタム base URL フィールド付きの組み込み `OpenAI` プロバイダーではなく、`OpenAI-API-compatible` として公開されている場合があります。Dify の UI が異なる場合は、そのバージョンで利用可能な、最も近い OpenAI 互換のカスタムプロバイダーフローを使用してください。
+</Note>
+
+<Note>
+**種類**: フレームワーク / プラットフォーム
+
+**主要パス**: OpenAI互換のチャット経路
+
+**サポートレベル**: 範囲付きサポート
+</Note>
+
+これは chat-completions 指向の統合パスです。Dify が専用 Codex 統合と同じ Responses または WebSocket 挙動を公開することを保証するものではありません。
+
+## 前提条件
+
+- API access が有効な AI Sonar アカウント
+- Dify Cloud またはセルフホスト版 Dify
+
+## 設定手順
+
+### ステップ 1: API Key を取得する
+
+1. [AI Sonar Dashboard](https://console.aisonar.dev) にログインします
+2. [API Keys](https://console.aisonar.dev/api) を開きます
+3. `sk-` で始まる API key を作成するかコピーします
+
+### ステップ 2: プロバイダーを設定する
+
+<Steps>
+  <Step title="Model プロバイダーs を開く">
+    Dify で **Settings** → **Model プロバイダーs** に移動します
+  </Step>
+  <Step title="OpenAI を選択する">
+    **OpenAI** プロバイダーの設定を開きます。お使いの Dify バージョンでここにカスタム base URL が用意されていない場合は、代わりにそのバージョンで提供されている OpenAI 互換のカスタムプロバイダーオプションを使用してください。
+  </Step>
+  <Step title="AI Sonar の設定を入力する">
+    次の値を使用します:
+
+    | 項目 | 値 |
+    |-------|-------|
+    | APIキー | `sk-your-api-key` |
+    | API ベース URL / カスタム ベース URL | `https://api.aisonar.dev/v1` |
+  </Step>
+  <Step title="Model を追加する">
+    使用したい model を追加します。例:
+    - `gpt-5.4`
+    - `gpt-5-mini`
+    - `gpt-4o`
+    - `claude-sonnet-4-6`
+    - `claude-opus-4-6`
+    - `gemini-2.5-flash`
+    - `gemini-2.5-pro`
+    - `deepseek-r1`
+  </Step>
+</Steps>
+
+### ステップ 3: 接続をテストする
+
+1. `gpt-5-mini` または `gpt-4o` などの model を 1 つ選択します
+2. テスト prompt を送信します
+3. Dify が有効なレスポンスを受信することを確認します
+
+## ナレッジベース用の Embeddings
+
+RAG およびナレッジベースのインデックス作成では、次のような embedding model を追加します:
+- `text-embedding-3-small`
+- `text-embedding-3-large`
+
+その後、関連するナレッジベースまたはアプリケーション設定で、それをデフォルトの embedding model として設定します。
+
+## 推奨される Model の役割
+
+| ユースケース | 推奨モデル |
+|----------|------------------|
+| デフォルトの chat | `gpt-5.4`, `gpt-5-mini`, `gpt-4o` |
+| 高度な reasoning | `gpt-5.4`, `claude-opus-4-6`, `deepseek-r1` |
+| 高速 / 低コスト | `gpt-5-mini`, `gemini-2.5-flash` |
+| Embeddings | `text-embedding-3-small`, `text-embedding-3-large` |
+
+## ベストプラクティス
+
+<AccordionGroup>
+  <Accordion title="まずは組み込みの OpenAI プロバイダーから始める">
+    新しい Dify バージョンでは、カスタム base URL を備えた組み込み OpenAI プロバイダーが、通常 AI Sonar にとって最もシンプルな構成です。
+  </Accordion>
+
+  <Accordion title="反復作業には低コストな model を使用する">
+    反復作業中は `gpt-5-mini` または `gemini-2.5-flash` を使用し、より強力な model が必要な箇所にのみ、重いワークフローを切り替えてください。
+  </Accordion>
+
+  <Accordion title="Dify は通常 chat-completions 指向であることを覚えておく">
+    Dify のほとんどのフローは OpenAI 互換の chat 動作を使用します。Codex 固有の Responses や WebSocket 動作が必要な場合は、Dify ではなく専用の Codex 統合を使用してください。
+  </Accordion>
+</AccordionGroup>
+
+## トラブルシューティング
+
+<AccordionGroup>
+  <Accordion title="接続エラー">
+    - base URL が正確に `https://api.aisonar.dev/v1` であることを確認します
+    - Dify が末尾のスラッシュを重複させる場合は、それを削除します
+    - Dify サーバーが public internet 経由で AI Sonar に到達できることを確認します
+  </Accordion>
+
+  <Accordion title="401 Unauthorized">
+    - API key を再確認します
+    - その key が AI Sonar dashboard で有効であることを確認します
+    - Dify に貼り付けた値に余分なスペースや改行が含まれていないことを確認します
+  </Accordion>
+
+  <Accordion title="Model Not Found">
+    - model 名が正確であることを確認します
+    - プロバイダー UI が古い値をキャッシュしている場合は、model エントリを再追加します
+    - 現在利用可能な model を AI Sonar の docs または dashboard で確認します
+  </Accordion>
+</AccordionGroup>

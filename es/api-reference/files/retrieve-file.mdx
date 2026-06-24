@@ -1,0 +1,37 @@
+---
+title: "Recuperar archivo"
+openapi: "GET /v1/files/{file_id}"
+description: "Recupera los metadatos de un único archivo subido."
+---
+
+## Resumen
+
+Este endpoint sirve principalmente a los objetos de archivo de la API Batch compatible con OpenAI de AI Sonar.
+
+Cuando la solicitud entra en el modo de compatibilidad con Anthropic Files, la misma ruta también puede devolver metadatos de archivos estilo Anthropic para el workspace enlazado.
+
+## Notas
+
+- Los archivos de entrada del lote deben usar `purpose=batch`.
+- `completion_window` es actualmente `24h`.
+- El orden de salida no está garantizado; siempre empareja por `custom_id`.
+- No se admite streaming dentro de elementos del lote.
+
+## Ejemplo
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/files/file_abc123" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+## Solicitud / Respuesta
+
+Usa el panel OpenAPI interactivo de arriba para ver el esquema exacto.
+
+## Consejos operativos
+
+- Usa `custom_id` para reconciliación descendente idempotente.
+- Espera `output_file_id` y `error_file_id` solo después de que el worker finalice el lote.
+- El precio del lote puede diferir del síncrono porque se aplican las reglas de descuento `isBatchRequest=true`.

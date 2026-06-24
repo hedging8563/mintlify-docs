@@ -1,0 +1,229 @@
+---
+title: 'API Reference'
+description: 'Complete reference for the AI Sonar API'
+---
+
+## Overview
+
+AI Sonar is **native-first and OpenAI-compatible**. Use provider-native routes such as `POST /v1/messages` for Anthropic and `/v1beta/models/...:generateContent` for Gemini when you need native behavior, and use OpenAI-compatible `/v1` endpoints when you are migrating existing OpenAI-style SDKs or tools. `POST /v1/responses` remains an advanced optional path for Responses-specific behavior.
+
+## Base URL
+
+```
+https://api.aisonar.dev
+```
+
+## Authentication
+
+All API endpoints require authentication using a Bearer token:
+
+```bash
+Authorization: Bearer sk-your-api-key
+```
+
+Get your API key from the [Dashboard](https://console.aisonar.dev).
+
+<Warning>
+**About the Interactive Playground**: The playground on this documentation site is for demonstration purposes only and does not support entering API keys. To test the API, please use:
+- **cURL** - Copy the example commands and replace `sk-your-api-key` with your actual key
+- **Postman** - Import our [OpenAPI spec](/openapi.json)
+- **SDK** - Use OpenAI/Anthropic SDK with our base URL
+</Warning>
+
+## Supported Endpoints
+
+### Chat & Text Generation
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/v1/chat/completions` | POST | OpenAI-compatible chat completions |
+| `/v1/messages` | POST | Anthropic-compatible messages API |
+| `/v1/responses` | POST | OpenAI Responses API |
+
+### Embeddings & Rerank
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/v1/embeddings` | POST | Create text embeddings |
+| `/v1/rerank` | POST | Rerank documents |
+
+### Images
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/v1/images/generations` | POST | Generate images from text |
+| `/v1/images/edits` | POST | Edit images |
+| `/v1/images/generations/{id}` | GET | Image task status path for task-based image responses |
+
+<Info>
+Some image models may return results inline, some may return task-based responses, and some may behave either way depending on the routed provider path. If the create response includes `poll_url`, follow it exactly.
+</Info>
+
+### Audio
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/v1/audio/speech` | POST | Text-to-speech (TTS) |
+| `/v1/audio/transcriptions` | POST | Speech-to-text (STT) |
+
+### Realtime
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/v1/realtime?model={model}` | WS | Realtime WebSocket sessions |
+
+<Info>
+Use `/v1/realtime` for WebSocket upgrade requests. A plain `GET /v1/realtime` returns endpoint metadata for clients that cannot inspect WebSocket routes directly.
+</Info>
+
+### Video
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/v1/videos/generations` | POST | Create video generation task |
+| `/v1/tasks/{id}` | GET | Get async task status for video jobs |
+| `/v1/videos/generations/{id}` | GET | Legacy-compatible video task status path |
+
+<Info>
+For new clients, prefer `/v1/tasks/{id}` and follow the `poll_url` returned by create responses. Keep `/v1/videos/generations/{id}` only for backward compatibility.
+</Info>
+
+### Async Tasks
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/v1/tasks/{id}` | GET | Unified async task status endpoint. Recommended when following a returned `poll_url` |
+
+<Info>
+This endpoint is not limited to video, music, and 3D. Some image tasks may also use `/v1/tasks/{id}` as the canonical polling path.
+</Info>
+
+### Music
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/v1/music/generations` | POST | Create music generation task |
+| `/v1/music/generations/{id}` | GET | Music-specific status path |
+
+<Info>
+For new clients, prefer the returned `poll_url` first. If you need a fixed task-status endpoint, use `/v1/tasks/{id}`; keep `/v1/music/generations/{id}` for music-specific compatibility paths.
+</Info>
+
+### 3D Generation
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/v1/3d/generations` | POST | Create 3D model generation task |
+| `/v1/3d/generations/{id}` | GET | 3D-specific status path |
+
+<Info>
+For new clients, prefer the returned `poll_url` first. If you need a fixed task-status endpoint, use `/v1/tasks/{id}`; keep `/v1/3d/generations/{id}` for 3D-specific compatibility paths.
+</Info>
+
+### Models
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/v1/models` | GET | List all available models |
+| `/v1/models/{model}` | GET | Get specific model info |
+
+### Gemini (v1beta)
+
+Native Google Gemini API format support:
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/v1beta/models/{model}:generateContent` | POST | Generate content (Gemini format) |
+| `/v1beta/models/{model}:streamGenerateContent` | POST | Stream generate content (Gemini format) |
+
+<Note>
+Gemini endpoints support `?key=` query parameter authentication in addition to standard Bearer token.
+</Note>
+
+## Response Format
+
+All responses follow a consistent format:
+
+### Success Response
+
+```json
+{
+  "id": "chatcmpl-abc123",
+  "object": "chat.completion",
+  "created": 1234567890,
+  "model": "gpt-4o",
+  "choices": [...],
+  "usage": {
+    "prompt_tokens": 10,
+    "completion_tokens": 20,
+    "total_tokens": 30
+  }
+}
+```
+
+### Routing Transparency
+
+All responses include a `_routing` field with channel information:
+
+```json
+{
+  "id": "chatcmpl-abc123",
+  ...,
+  "_routing": {
+    "channel": {
+      "id": "ch_xxx",
+      "name": "channel-name",
+      "provider": "openai",
+      "channelType": "PLATFORM"
+    },
+    "cached": false,
+    "retryCount": 0
+  }
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `channel.id` | Channel identifier used |
+| `channel.provider` | Upstream provider (openai, anthropic, etc.) |
+| `channel.channelType` | `PLATFORM` (AI Sonar) or `PRIVATE` (BYOK) |
+| `cached` | Whether response was served from cache |
+| `retryCount` | Number of retry attempts (if any) |
+
+### Error Response
+
+```json
+{
+  "error": {
+    "message": "Invalid API key provided",
+    "type": "invalid_api_key",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+## Rate Limits
+
+Rate limits are role-based and configurable by administrators. Default values:
+
+| Role | Requests/min |
+|------|-------------|
+| User | 60 |
+| Partner | 300 |
+| VIP | 1,000 |
+
+<Note>
+Contact support for custom rate limits. Exact values may vary by account configuration.
+</Note>
+
+When rate limits are exceeded, the API returns a `429` status code with a `Retry-After` header indicating how long to wait.
+
+## OpenAPI Specification
+
+<Card
+  title="OpenAPI Spec"
+  icon="file-code"
+  href="/openapi.json"
+>
+  Download the complete OpenAPI 3.0 specification
+</Card>

@@ -1,0 +1,168 @@
+---
+title: "AI 聊天应用"
+description: "配置常见的 AI 聊天应用以使用 AI Sonar 的 OpenAI 兼容 API"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## 概述
+
+大多数通用 AI 聊天应用都通过标准的 OpenAI 兼容 聊天路径连接到 AI Sonar。
+
+实际配置时，这意味着：
+- 使用 `https://api.aisonar.dev/v1` 作为 base URL，除非应用明确要求填写完整的端点 URL
+- 使用你的 AI Sonar API key 作为 OpenAI 风格的 API key
+- 选择应用可在标准聊天工作流中使用的模型
+
+<Note>
+通用聊天应用通常是**面向 chat-completions**的，而不是 Codex Responses WebSocket 客户端。对于 Codex CLI/App、Cursor 或其他需要 Responses 特定行为的编码工具，请改用专门的集成指南。
+</Note>
+
+<Note>
+**类型**: 聊天应用
+
+**主要路径**: OpenAI 兼容 chat-completions 路径
+
+**支持级别**: 支持路径
+</Note>
+
+## 支持的应用
+
+| 应用 | 平台 | 备注 |
+|-------------|----------|-------|
+| Open WebUI | Web、自托管 | 流行的自托管选择，支持 OpenAI 兼容 连接 |
+| LibreChat | Web、自托管 | 支持多提供方的聊天工作台，可接自定义 OpenAI 端点 |
+| LobeChat | Web、Desktop、自托管 | 强大的自定义提供方支持 |
+| Cherry Studio | Windows、macOS、Linux | 良好的 OpenAI 兼容 提供方流程 |
+| Chatbox | Windows、macOS、Linux | 简单的 OpenAI 兼容 配置 |
+| TypingMind | Web、Desktop | 使用自定义端点风格 |
+| NextChat | Web、自托管 | 轻量的 ChatGPT 风格客户端，支持 base URL 覆盖 |
+| ChatWise | Windows、macOS | 标准的自定义提供方模式 |
+
+## 默认连接值
+
+| 字段 | 值 |
+|-------|-------|
+| 基础 URL | `https://api.aisonar.dev/v1` |
+| API 密钥 | `sk-your-api-key` |
+| API 类型 | OpenAI 兼容 |
+
+如果应用要求填写**完整的端点 URL**而不是 base URL，请使用：
+- Chat Completions: `https://api.aisonar.dev/v1/chat/completions`
+
+## 应用配置示例
+
+<Tabs>
+  <Tab title="LobeChat">
+    **自托管 LobeChat**
+
+    ```bash
+    OPENAI_API_KEY=sk-your-api-key
+    OPENAI_PROXY_URL=https://api.aisonar.dev/v1
+    ```
+
+    **LobeChat Cloud**
+    1. 打开 **Settings** → **AI 服务提供方**
+    2. 选择 **OpenAI**
+    3. 输入你的 AI Sonar API key
+    4. 将自定义端点设置为 `https://api.aisonar.dev/v1`
+  </Tab>
+
+  <Tab title="Cherry Studio">
+    1. 打开 **Settings** → **模型提供方**
+    2. 添加一个 **OpenAI 兼容** 提供方
+    3. 输入：
+       - **Name**: AI Sonar
+       - **API Base URL**: `https://api.aisonar.dev/v1`
+       - **API Key**: `sk-your-api-key`
+    4. 添加你想使用的模型
+  </Tab>
+
+  <Tab title="Chatbox">
+    1. 打开 **Settings** → **AI Model**
+    2. 选择 **OpenAI API Compatible**
+    3. 输入：
+       - **API Host**: `https://api.aisonar.dev/v1`
+       - **API Key**: `sk-your-api-key`
+       - **Model**: `gpt-5-mini` 或 `gpt-4o`
+  </Tab>
+
+  <Tab title="TypingMind">
+    1. 打开 **Settings**
+    2. 选择 **自定义端点**
+    3. 输入：
+       - **端点 URL**: `https://api.aisonar.dev/v1/chat/completions`
+       - **API Key**: `sk-your-api-key`
+    4. 配置你希望公开的模型
+  </Tab>
+
+  <Tab title="Open WebUI">
+    1. 打开 **Admin Settings** → **Connections**
+    2. 添加一个 **OpenAI 兼容** 连接
+    3. 输入：
+       - **Base URL**: `https://api.aisonar.dev/v1`
+       - **API Key**: `sk-your-api-key`
+    4. 保存后选择你要暴露的模型
+  </Tab>
+
+  <Tab title="LibreChat">
+    在 LibreChat 的提供方配置里新增一个 OpenAI 兼容 端点，并指向：
+
+    ```yaml
+    customEndpoints:
+      - name: AI Sonar
+        apiKey: '${OPENAI_API_KEY}'
+        baseURL: 'https://api.aisonar.dev/v1'
+        models:
+          default: ['gpt-5-mini', 'gpt-5.4', 'claude-sonnet-4-6']
+          fetch: false
+    ```
+  </Tab>
+</Tabs>
+
+## 更安全的默认模型
+
+| 类别 | 推荐模型 |
+|----------|------------------|
+| 通用默认 | `gpt-5.4`, `gpt-5-mini`, `gpt-4o` |
+| Anthropic | `claude-sonnet-4-6`, `claude-opus-4-6` |
+| Google | `gemini-2.5-flash`, `gemini-2.5-pro` |
+| DeepSeek | `deepseek-r1`, `deepseek-v3-2` |
+
+## 提示
+
+<AccordionGroup>
+  <Accordion title="当应用支持时，优先使用 base URL">
+    当你提供 `https://api.aisonar.dev/v1` 作为 base URL，而不是完整的端点 URL 时，大多数应用会更容易配置，也更不容易出错。
+  </Accordion>
+
+  <Accordion title="先使用较小的模型">
+    日常聊天可先从 `gpt-5-mini` 或 `gpt-4o` 开始，然后再将更重的推理任务切换到 `gpt-5.4` 或 `claude-opus-4-6`。
+  </Accordion>
+
+  <Accordion title="将编码工具分开配置">
+    通用聊天应用和编码代理通常需要不同的端点行为。请将 Codex/Cursor 风格的工具保留在各自专门的集成页面中进行配置。
+  </Accordion>
+</AccordionGroup>
+
+## 故障排查
+
+<AccordionGroup>
+  <Accordion title="连接错误">
+    - 确认 base URL 完全等于 `https://api.aisonar.dev/v1`
+    - 如果应用会自动追加路径，请移除末尾斜杠
+    - 如果应用要求完整的端点 URL，请使用 `https://api.aisonar.dev/v1/chat/completions`
+  </Accordion>
+
+  <Accordion title="401 Unauthorized">
+    - 再次检查你的 API key
+    - 确认该 key 已在 AI Sonar dashboard 中激活
+    - 确保没有多余的空格或换行
+  </Accordion>
+
+  <Accordion title="模型不可用">
+    - 精确确认模型名称
+    - 尝试广泛支持的默认模型，例如 `gpt-5-mini`、`gpt-4o` 或 `claude-sonnet-4-6`
+    - 在 AI Sonar 文档或 dashboard 中检查当前可用性
+  </Accordion>
+</AccordionGroup>

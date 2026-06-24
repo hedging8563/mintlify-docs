@@ -1,0 +1,359 @@
+---
+title: "التوافق مع IDE و SDK"
+description: "إرشادات توافق مدعومة بالأدلة لأدوات ترميز الذكاء الاصطناعي و SDKs والأطر"
+---
+
+## نظرة عامة
+
+تكشف AI Sonar عن عدة صيغ API حتى تتمكن أدوات الترميز الشائعة وSDKs والأطر من التكامل مع أقل قدر ممكن من كود الربط.
+
+تُعد هذه الصفحة أضيق نطاقًا من مصفوفة تسويقية عن قصد:
+
+- **Supported** تعني أننا نوثق مسار إعداد ملموس وتكشف AI Sonar عن شكل البروتوكول الذي يتوقعه ذلك المسار.
+- **مسار أصلي قوي** تعني أن المستودع يحتوي أيضًا على أداة موائمة مباشرة أو دليل على شكل الطلب لتلك عائلة البروتوكول.
+- **أفضل جهد** تعني أن التكامل يمكن أن يعمل، لكن العميل upstream لا يعامل سير عمل بوابة مخصصة هذا كعقد مستقر.
+
+<Note>
+  لا تتم معالجة الحقول غير المدعومة بشكل موحد. على مسارات التوافق، يتم تجاهل بعض الحقول أو تطبيعها. على `/v1/responses`، يمكن أن تُرجع الحقول غير المدعومة أخطاء `400` أو `503` صريحة عندما لا تستطيع تلك المسار ضمان السلوك المطلوب.
+</Note>
+
+## صيغ API المدعومة
+
+| نقطة النهاية | الصيغة | حالة الاستخدام |
+|----------|--------|----------|
+| `/v1/chat/completions` | OpenAI Chat | توافق شامل |
+| `/v1/responses` | OpenAI Responses | محادثات ذات حالة |
+| `/v1/messages` | Anthropic Messages | ميزات Claude الأصلية |
+| `/v1beta/models/:model:generateContent` | Google Gemini | الميزات الأصلية لـ Gemini |
+
+## التوافق مع IDE و CLI
+
+### مسارات الأدوات الموثقة
+
+| الأداة | مستوى الدعم | التنسيق | الملاحظات |
+|------|---------------|--------|-------|
+| **Cursor** | مدعوم مع قيود | متوافق مع OpenAI | يعمل لتدفّقات الدردشة/المحرر القياسية عبر BYOK، وليس بديلاً عن الميزات التي يديرها Cursor مثل إكمال التبويب |
+| **Claude Code CLI** | مسار أصلي قوي | Anthropic | مسار `/v1/messages` الأصلي مع تغطية من المهايئ لـ التفكير و`tool_choice` |
+| **Codex CLI** | مدعوم مع قيود على النموذج/المسار | OpenAI Responses | اعتبر `/v1/responses` مسارًا متقدمًا لعمليات سير العمل الخاصة بـ Codex؛ بعض الحقول الخاصة بـ Responses فقط غير مضمونة عبر كل نموذج ومسار مُوجَّه |
+| **Gemini CLI** | أفضل جهد / تجريبي | Gemini | تدفق عنوان URL الأساسي المخصص لـ AI Sonar ليس عقدًا مستقرًا مع المصدر الأصلي |
+| **OpenCode** | مدعوم | متوافق مع OpenAI | استخدم مزوّدًا متوافقًا مع OpenAI افتراضيًا؛ وانتقل إلى مزوّد قائم على Responses فقط عندما تحتاج إليه صراحةً |
+
+<Note>
+  غالبًا ما تعمل محررات ووكلاء متوافقة مع OpenAI بنفس نمط عنوان base URL، لكن هذا المستودع لا يحتفظ حاليًا بتغطية توافق انحدار خاصة بالأدوات لـ Windsurf وAider وContinue.dev وCline/Roo Code وGitHub Copilot والعملاء المماثلين.
+</Note>
+
+### أمثلة التكوين
+
+<Tabs>
+  <Tab title="Cursor">
+    ```
+    Base URL: https://api.aisonar.dev/v1
+    API Key: sk-your-api-key
+    ```
+    يستخدم Cursor داخليًا تنسيق أدوات على طريقة Anthropic. تدعم AI Sonar كلا التنسيقين:
+    - تنسيق OpenAI: `{ type: "function", function: { name, parameters } }`
+    - Anthropic format: `{ name, input_schema }` (بدون حقل type)
+  </Tab>
+  <Tab title="Claude Code">
+    ```bash
+    export ANTHROPIC_BASE_URL="https://api.aisonar.dev"
+    export ANTHROPIC_API_KEY="sk-your-api-key"
+    ```
+  </Tab>
+  <Tab title="OpenCode">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export LOCAL_ENDPOINT="https://api.aisonar.dev/v1"
+    ```
+  </Tab>
+  <Tab title="Aider">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export OPENAI_BASE_URL="https://api.aisonar.dev/v1"
+    aider --model gpt-5.4
+    ```
+  </Tab>
+</Tabs>
+
+## توافق SDK
+
+### مسارات SDKs والأطر الموثقة
+
+| SDK / Framework | Language | مستوى الدعم | ملاحظات |
+|-----------------|----------|---------------|-------|
+| **OpenAI SDK** | Python/JS/Go | المسار الأساسي المدعوم | مسار توافق لـ `/v1` Chat Completions وEmbeddings؛ استخدم المسارات الأصلية الخاصة بالمزوّد للسلوك الخاص بالمزوّد، ولا تفترض أن الحقول الخاصة بـ Responses فقط تعمل عبر كل نموذج |
+| **Anthropic SDK** | Python/JS | مسار أصلي قوي | مسار Messages الأصلي مع دعم مباشر للأدوات، والتفكير، والتخزين المؤقت للمحفزات |
+| **Vercel AI SDK** | TypeScript | نمط التكامل الموصى به | فضّل `@ai-sdk/openai-compatible`؛ واستخدم `@ai-sdk/openai` فقط عندما تريد صراحةً سلوكًا أصليًا لـ Responses |
+| **LangChain** | Python/JS | الواجهات القياسية المدعومة | `ChatOpenAI` و`OpenAIEmbeddings` هما النطاق المقصود؛ والإضافات الأصلية للمورّد خارجة عن النطاق |
+| **LlamaIndex** | Python | مدعوم عبر `OpenAILike` | استخدم `OpenAILike`، وليس فئات OpenAI المدمجة، لبوابات الطرف الثالث مثل AI Sonar |
+| **Dify** | - | مدعوم مع قيود على النطاق | مزوّد OpenAI وتدفقات موجهة نحو chat-completions هي المسار المقصود؛ وليست مناسبة لسلوك Responses الخاص بـ Codex أو WebSocket |
+
+## معلمات Chat Completions
+
+### المعلمات الأساسية
+
+| المعلمة | النوع | الوصف |
+|-----------|------|-------------|
+| `model` | string | معرّف النموذج (مطلوب) |
+| `messages` | array | رسائل المحادثة (مطلوبة) |
+| `max_tokens` | integer | الحد الأقصى لرموز الإخراج |
+| `temperature` | number | درجة حرارة العيّنة (0-2) |
+| `top_p` | number | أخذ عينات النواة (0-1) |
+| `stream` | boolean | تمكين البث المتدفق |
+
+### استدعاء الأدوات
+
+```json
+{
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_weather",
+        "description": "Get weather for a location",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "location": { "type": "string" }
+          }
+        },
+        "strict": true
+      }
+    }
+  ],
+  "tool_choice": "auto",
+  "parallel_tool_calls": true
+}
+```
+
+### خيارات Tool Choice
+
+| التنسيق | المثال | الوصف |
+|--------|---------|-------------|
+| سلسلة نصية | `"auto"`, `"none"`, `"required"` | تحديد بسيط |
+| OpenAI Object | `{ "type": "function", "function": { "name": "fn" } }` | فرض دالة محددة |
+| Anthropic Object | `{ "type": "tool", "name": "fn", "disable_parallel_tool_use": true }` | الصيغة الأصلية لـ Anthropic |
+
+### المعلمات المتقدمة
+
+| المعلمة | النوع | الوصف |
+|-----------|------|-------------|
+| `stream_options` | object | `{ include_usage: true }` لحساب عدد الرموز |
+| `reasoning_effort` | string | `"low"`, `"medium"`, `"high"` لنماذج GPT-5 الممكّنة للاستدلال |
+| `service_tier` | string | `"auto"` أو `"default"` |
+| `seed` | integer | مخرجات حتمية |
+| `logprobs` | boolean | إرجاع الاحتمالات اللوغاريتمية |
+| `top_logprobs` | integer | عدد أعلى logprobs (0-20) |
+| `logit_bias` | object | خريطة انحياز الرموز (-100 to 100) |
+| `frequency_penalty` | رقم | عقوبة التكرار (-2 إلى 2) |
+| `presence_penalty` | number | عقوبة الموضوع (-2 to 2) |
+| `stop` | string/array | تسلسلات الإيقاف |
+| `n` | integer | عدد الإكمالات (1-128) |
+| `user` | string | معرّف المستخدم للتتبّع |
+
+### ميزات OpenAI المتقدمة
+
+| المعلمة | النوع | الوصف |
+|-----------|------|-------------|
+| `modalities` | مصفوفة | `["text", "audio"]` للاستخدام متعدد الوسائط |
+| `audio` | object | إعدادات إخراج الصوت (الصوت، التنسيق) |
+| `prediction` | object | المخرجات المتوقعة لإكمال أسرع |
+| `metadata` | object | أزواج مفتاح-قيمة للتتبّع |
+| `store` | boolean | التخزين للاسترجاع لاحقًا |
+
+### خيارات خاصة بالمزود
+
+```json
+{
+  "anthropic_options": {
+    "thinking": {
+      "type": "enabled",
+      "budget_tokens": 10000
+    },
+    "prompt_caching": true
+  },
+  "google_options": {
+    "safety_settings": [...],
+    "google_search": true,
+    "code_execution": true
+  }
+}
+```
+
+## معلمات Anthropic Messages
+
+### المعلمات الأساسية
+
+| المعلمة | النوع | الوصف |
+|-----------|------|-------------|
+| `model` | string | معرّف النموذج |
+| `messages` | array | رسائل المحادثة |
+| `max_tokens` | integer | الحد الأقصى للمخرجات (حتى 128000) |
+| `system` | string/array | مطالبة النظام |
+| `stream` | boolean | تمكين البث المتدفق |
+
+### استدعاء الأدوات
+
+```json
+{
+  "tools": [
+    {
+      "name": "get_weather",
+      "description": "Get weather",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "location": { "type": "string" }
+        }
+      }
+    }
+  ],
+  "tool_choice": {
+    "type": "auto",
+    "disable_parallel_tool_use": false
+  }
+}
+```
+
+### التفكير الموسع
+
+```json
+{
+  "model": "claude-opus-4-6",
+  "thinking": {
+    "type": "enabled",
+    "budget_tokens": 10000
+  }
+}
+```
+
+## معلمات Responses API
+
+### المعلمات الأساسية
+
+| المعلمة | النوع | الوصف |
+|-----------|------|-------------|
+| `model` | string | معرّف النموذج |
+| `input` | string/array | محتوى الإدخال |
+| `instructions` | string | تعليمات النظام |
+| `max_output_tokens` | integer | الحد الأقصى لرموز الإخراج |
+| `previous_response_id` | نص | متابعة المحادثة |
+
+### المعلمات المتقدمة
+
+| المعلمة | النوع | الوصف |
+|-----------|------|-------------|
+| `truncation_strategy` | نص | `"auto"` أو `"disabled"` |
+| `include` | array | `["reasoning.encrypted_content"]` |
+| `reasoning_effort` | string | لنماذج الاستدلال |
+| `service_tier` | string | فئة الأولوية |
+
+### تنسيق الأدوات
+
+يدعم كلا من تنسيقات أدوات OpenAI وAnthropic:
+
+```json
+// OpenAI format
+{ "type": "function", "name": "fn", "parameters": {...} }
+
+// Anthropic format (Cursor compatibility)
+{ "name": "fn", "input_schema": {...} }
+```
+
+## معلمات Gemini API
+
+### المعلمات الأساسية
+
+| المعلمة | النوع | الوصف |
+|-----------|------|-------------|
+| `contents` | array | محتوى المحادثة |
+| `systemInstruction` | object | مطالبة النظام |
+| `generationConfig` | object | إعدادات التوليد |
+
+### الأدوات
+
+```json
+{
+  "tools": [{
+    "functionDeclarations": [{
+      "name": "search",
+      "description": "Search the web",
+      "parameters": {...}
+    }],
+    "codeExecution": {},
+    "googleSearch": {}
+  }],
+  "toolConfig": {
+    "functionCallingConfig": {
+      "mode": "AUTO"
+    }
+  }
+}
+```
+
+### إعدادات السلامة
+
+```json
+{
+  "safetySettings": [
+    {
+      "category": "HARM_CATEGORY_HARASSMENT",
+      "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+    }
+  ]
+}
+```
+
+### معلمات إضافية
+
+| المعلمة | النوع | الوصف |
+|-----------|------|-------------|
+| `cachedContent` | string | مرجع المحتوى المخزّن مؤقتًا |
+| `responseMimeType` | نص | `"text/plain"` أو `"application/json"` |
+| `responseSchema` | object | مخطط JSON للإخراج المنظّم |
+
+## البث (Streaming)
+
+تدعم جميع نقاط النهاية بث Server-Sent Events (SSE):
+
+```bash
+# Chat Completions
+curl https://api.aisonar.dev/v1/chat/completions \
+  -H "Authorization: Bearer sk-xxx" \
+  -d '{"model": "gpt-4o", "messages": [...], "stream": true}'
+
+# With usage tracking
+-d '{"...", "stream_options": {"include_usage": true}}'
+```
+
+## التعامل مع الأخطاء
+
+تعيد AI Sonar استجابات أخطاء متوافقة مع OpenAI:
+
+```json
+{
+  "error": {
+    "message": "Invalid API key",
+    "type": "invalid_api_key",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+انظر [دليل معالجة الأخطاء](/guides/error-handling) للتفاصيل.
+
+## أفضل الممارسات
+
+<AccordionGroup>
+  <Accordion title="استخدم passthrough للمعلمات غير المعروفة">
+    تستخدم كل المخططات `.passthrough()` - يتم تمرير المعلمات غير المعروفة إلى المزودين upstream.
+  </Accordion>
+
+  <Accordion title="فضّل stream_options لضمان دقة الفوترة">
+    فعّل `stream_options.include_usage` للحصول على عدّ دقيق للـ tokens في الاستجابات المتدفقة.
+  </Accordion>
+
+  <Accordion title="استخدم تنسيق tool_choice المناسب">
+    طابق التنسيق المتوقع في SDK الخاص بك. تقبل AI Sonar كلا من تنسيقات OpenAI وAnthropic.
+  </Accordion>
+</AccordionGroup>

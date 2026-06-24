@@ -1,0 +1,26 @@
+---
+title: "Liệt kê API Keys"
+openapi: "GET /v1/management/api-keys"
+description: "Liệt kê API key do người dùng quản lý cho token quản lý hiện tại của tổ chức."
+---
+
+## Tổng Quan
+
+Trả về danh sách API key của người dùng trong tổ chức gắn với token quản lý hiện tại.
+
+## Ghi Chú
+
+- Các key do hệ thống quản lý, như Playground hoặc Claw, sẽ không xuất hiện trong kết quả.
+
+## Ví Dụ
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/management/api-keys" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## Yêu Cầu / Phản Hồi
+
+Sử dụng bảng điều khiển OpenAPI tương tác ở trên để xem schema chính xác.

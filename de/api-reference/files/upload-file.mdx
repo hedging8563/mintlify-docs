@@ -1,0 +1,53 @@
+---
+title: "Datei hochladen"
+openapi: "POST /v1/files"
+description: "Lädt eine JSONL-Batch-Eingabedatei für die spätere Batch-Erstellung hoch."
+---
+
+## Übersicht
+
+Dieser Endpunkt ist Teil von AI Sonars OpenAI-kompatibler Batch-API. Batch-Jobs verwenden hochgeladene JSONL-Dateien, laufen asynchron und können später Ausgabedateien/Fehlerdateien zurückgeben.
+
+## Hinweise
+
+- Batch-Eingabedateien müssen `purpose=batch` verwenden.
+- `completion_window` beträgt derzeit `24h`.
+- Die Ausgabereihenfolge ist nicht garantiert; immer nach `custom_id` abgleichen.
+- Streaming wird innerhalb von Batch-Elementen nicht unterstützt.
+
+## Beispiel
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/files" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F "purpose=batch" \
+  -F "file=@batch-input.jsonl;type=application/jsonl"
+```
+</RequestExample>
+
+## Anfrage / Antwort
+
+Verwenden Sie das interaktive OpenAPI-Panel oben für das genaue Schema.
+
+## Betriebliche Tipps
+
+- Verwenden Sie `custom_id` für idempotente nachgelagerte Abstimmungen.
+- Erwarten Sie `output_file_id` und `error_file_id` erst, nachdem der Worker das Batch abgeschlossen hat.
+- Die Batch-Preise können von den synchronen Preisen abweichen, da die Rabattregeln für `isBatchRequest=true` gelten.
+## Bilddatei-Eingaben
+
+Dieselbe Route `/v1/files` kann auch Bildreferenzdateien für `/v1/images/edits` hochladen.
+
+- Verwende `purpose=user_data` oder `purpose=vision`.
+- Gib optional `model` an, um das Image-Edit-Modell auszuwählen; Standard ist `gpt-image-2`.
+- Die zurückgegebene `file_id` wird an den ausgewählten Upstream-Image-Edit-Channel gebunden und kann in `images[].file_id` wiederverwendet werden.
+
+## Anthropic Files API-Modus
+
+Dieselbe Route `/v1/files` unterstützt auch den Anthropic-Files-API-Pfad.
+
+- Füge den Header `anthropic-beta: files-api-2025-04-14` hinzu, um in den Anthropic-Modus zu wechseln.
+- Im Anthropic-Modus lädst du die Originaldatei direkt hoch und sendest kein `purpose=batch`.
+- Das zurückgegebene `file_id` wird an denselben offiziellen Anthropic-Channel/Workspace gebunden und sollte in späteren `/v1/messages`-Requests wiederverwendet werden.
+- Wenn du die hochgeladene Datei in Anthropic-Nachrichteninhalten referenzieren willst, verwende weiterhin die nativen Anthropic-Header (`x-api-key`, `anthropic-version` und bei Bedarf den Beta-Header).

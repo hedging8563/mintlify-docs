@@ -1,0 +1,252 @@
+---
+title: "OpenAI SDK"
+description: "استخدم AI Sonar مع OpenAI SDKs الرسمية والعملاء المتوافقين مع OpenAI"
+---
+
+## نظرة عامة
+
+تعمل AI Sonar مع OpenAI SDKs الرسمية عن طريق توجيه العميل إلى `https://api.aisonar.dev/v1`.
+
+لمعظم المشاريع الجديدة، يفضّل استخدام **Chat Completions** كمسار OpenAI المتوافق الافتراضي. استخدم **Responses API** فقط عندما تحتاج صراحةً إلى سلوك مخصّص لـ Responses.
+
+لا تُضمن المطابقة التامة لسلوك الحقول الخاصة بـ Responses عبر كل نموذج ومسار موجه.
+
+<Note>
+Python و JavaScript و Go لديها OpenAI SDKs رسمية. تعمل PHP بشكل جيد مع عملاء المجتمع المتوافقين مع OpenAI، لكنها ليست OpenAI SDK رسمية.
+</Note>
+
+<Note>
+**النوع**: Native SDK
+
+**المسار الأساسي**: متوافق مع OpenAI / Chat Completions
+
+**درجة الدعم**: مسار أساسي مدعوم
+</Note>
+
+## التثبيت
+
+<CodeGroup>
+
+```bash Python
+pip install openai
+```
+
+```bash JavaScript
+npm install openai
+```
+
+```bash Go
+go get github.com/openai/openai-go/v3
+```
+
+</CodeGroup>
+
+<Note>
+استخدم `POST /v1/responses` فقط عندما تحتاج صراحةً إلى سلوك مخصّص لـ Responses. بعض الحقول الخاصة بـ Responses قد تعتمد أيضًا على النموذج والمسار الموجه.
+</Note>
+
+## تكوين العميل
+
+<CodeGroup>
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1",
+)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1',
+});
+```
+
+```go Go
+package main
+
+import (
+    openai "github.com/openai/openai-go/v3"
+    "github.com/openai/openai-go/v3/option"
+)
+
+func main() {
+    client := openai.NewClient(
+        option.WithAPIKey("sk-your-api-key"),
+        option.WithBaseURL("https://api.aisonar.dev/v1"),
+    )
+
+    _ = client
+}
+```
+
+</CodeGroup>
+
+## موصى به: Chat Completions
+
+<CodeGroup>
+
+```python Python
+response = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "Explain what AI Sonar does in one sentence."}]
+)
+
+print(response.choices[0].message.content)
+```
+
+```javascript JavaScript
+const response = await client.chat.completions.create({
+  model: 'gpt-5.4',
+  messages: [{ role: 'user', content: 'Explain what AI Sonar does in one sentence.' }],
+});
+
+console.log(response.choices[0].message.content);
+```
+
+```bash cURL
+curl https://api.aisonar.dev/v1/chat/completions \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.4",
+    "messages": [
+      {"role": "user", "content": "Explain what AI Sonar does in one sentence."}
+    ]
+  }'
+```
+
+</CodeGroup>
+
+## متقدم: Responses API
+
+استخدم هذا المسار فقط عندما تعتمد أداتك أو سير عملك صراحةً على دلالات OpenAI Responses.
+
+### البث مع Responses
+
+<CodeGroup>
+
+```python Python
+stream = client.responses.create(
+    model="gpt-5.4",
+    input="Write a short poem about coding.",
+    stream=True,
+)
+
+for event in stream:
+    if event.type == "response.output_text.delta":
+        print(event.delta, end="")
+```
+
+```javascript JavaScript
+const stream = await client.responses.create({
+  model: 'gpt-5.4',
+  input: 'Write a short poem about coding.',
+  stream: true,
+});
+
+for await (const event of stream) {
+  if (event.type === 'response.output_text.delta') {
+    process.stdout.write(event.delta);
+  }
+}
+```
+
+</CodeGroup>
+
+## الأدوات / استدعاء الدوال
+
+```python
+response = client.responses.create(
+    model="gpt-5.4",
+    input="What's the weather in Tokyo?",
+    tools=[{
+        "type": "function",
+        "name": "get_weather",
+        "description": "Get weather for a location",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "location": {"type": "string"}
+            },
+            "required": ["location"]
+        }
+    }]
+)
+
+for item in response.output:
+    if item.type == "function_call":
+        print(item.name)
+        print(item.arguments)
+```
+
+## الرؤية مع Responses
+
+```python
+response = client.responses.create(
+    model="gpt-4o",
+    input=[{
+        "role": "user",
+        "content": [
+            {"type": "input_text", "text": "What's in this image?"},
+            {"type": "input_image", "image_url": "https://example.com/image.jpg"}
+        ]
+    }]
+)
+
+print(response.output_text)
+```
+
+## التجسيدات (Embeddings)
+
+```python
+response = client.embeddings.create(
+    model="text-embedding-3-small",
+    input="Hello world"
+)
+
+print(response.data[0].embedding[:5])
+```
+
+## Chat Completions
+
+يعد Chat Completions هو مسار OpenAI المتوافق الافتراضي لـ AI Sonar:
+
+```python
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "Hello!"}
+    ]
+)
+
+print(response.choices[0].message.content)
+```
+
+## استكشاف الأخطاء وإصلاحها
+
+<AccordionGroup>
+  <Accordion title="خطأ في الاتصال">
+    - تحقق من أن base URL هو بالضبط `https://api.aisonar.dev/v1`
+    - تحقق من وجود تداخل بروكسي أو تجاوزات مخصصة لعميل HTTP
+    - تأكد من أن إصدار SDK لديك محدث قبل استكشاف سلوك المزود
+  </Accordion>
+
+  <Accordion title="فشل المصادقة">
+    - تحقق من أن مفتاح API يبدأ بـ `sk-`
+    - تحقق من أن المفتاح نشط في لوحة تحكم AI Sonar
+    - أكد أن SDK يرسل `Authorization: Bearer ...`
+  </Accordion>
+
+  <Accordion title="مسار API خاطئ">
+    - `responses.create(...)` يرسل طلبات إلى `/v1/responses`
+    - `chat.completions.create(...)` يرسل طلبات إلى `/v1/chat/completions`
+    - استخدم Chat Completions بشكل افتراضي ما لم تكن بحاجة صراحةً إلى سلوك خاص بـ Responses
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,38 @@
+---
+title: "Listar archivos"
+openapi: "GET /v1/files"
+description: "Lista los archivos enviados para flujos por lotes y los modos de compatibilidad con archivos admitidos."
+---
+
+## Resumen
+
+Este endpoint sirve principalmente a la API Batch compatible con OpenAI de AI Sonar, incluyendo entradas de lote subidas y archivos de salida o error generados.
+
+Cuando la solicitud entra en el modo de compatibilidad con Anthropic Files, la misma ruta también puede listar archivos estilo Anthropic disponibles para el workspace enlazado.
+
+## Notas
+
+- Los archivos de entrada del lote deben usar `purpose=batch`.
+- Usa `purpose=batch_output` para centrarte en los archivos de salida generados.
+- `completion_window` es actualmente `24h`.
+- El orden de salida no está garantizado; siempre empareja por `custom_id`.
+- No se admite streaming dentro de elementos del lote.
+
+## Ejemplo
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/files?purpose=batch&limit=20" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+## Solicitud / Respuesta
+
+Usa el panel OpenAPI interactivo de arriba para ver el esquema exacto.
+
+## Consejos operativos
+
+- Usa `custom_id` para reconciliación descendente idempotente.
+- Espera `output_file_id` y `error_file_id` solo después de que el worker finalice el lote.
+- El precio del lote puede diferir del síncrono porque se aplican las reglas de descuento `isBatchRequest=true`.

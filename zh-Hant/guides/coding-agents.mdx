@@ -1,0 +1,66 @@
+---
+title: "Coding Agents"
+description: "透過智慧路由、快取和模型選擇，將 Coding Agent 成本降低高達 90%"
+---
+
+## 為什麼 Coding Agent 費用高
+
+Claude Code、Cursor、Codex CLI 等 Coding Agent 功能強大，但 token 消耗速度往往讓團隊大吃一驚。
+
+**每次請求上下文很長。** 每次呼叫都包含系統提示、專案檔案和對話歷史——模型開始思考之前通常已有 10,000–100,000+ 個 token。
+
+**呼叫頻率極高。** 一次編碼工作階段會觸發數十次 API 呼叫：程式碼生成、搜尋、審查、自動補全和工具呼叫。一小時的工作階段輕鬆超過 200 次請求。
+
+**對話內容不斷累積。** 每一輪都會重新傳送完整的訊息歷史。到第 20 輪時，你已經為同一段上下文付了 20 次費用。
+
+<Info>
+典型的一小時 Claude Code 工作階段可消耗 2–5M token。按直連 API 價格，根據模型不同，每小時費用為 $6–30+。
+</Info>
+
+## AI Sonar 如何幫助
+
+<CardGroup cols={2}>
+  <Card title="多提供方路由" icon="route" href="/zh-Hant/guides/coding-agent-cost#smart-model-selection">
+    自動為每個模型路由到最便宜的可用提供方。同一模型，更低價格。
+  </Card>
+  <Card title="Prompt Cache 透傳" icon="bolt" href="/zh-Hant/guides/prompt-cache">
+    上游前綴快取（Anthropic、OpenAI、DeepSeek）自動生效——長系統提示在提供方層被快取。
+  </Card>
+  <Card title="模型自動降級" icon="arrows-rotate" href="/zh-Hant/guides/coding-agent-models#how-aisonar-routing-works">
+    若某個提供方當機或回應慢，請求自動切換到下一個可用提供方。零停機。
+  </Card>
+</CardGroup>
+
+## 支援的 Coding 工具
+
+<CardGroup cols={3}>
+  <Card title="Cursor" icon="text-slash" href="/zh-Hant/integrations/cursor">
+    帶 Tab 補全和對話功能的 AI IDE
+  </Card>
+  <Card title="Claude Code" icon="terminal" href="/zh-Hant/integrations/claude-code">
+    Anthropic 官方 CLI Coding Agent
+  </Card>
+  <Card title="Codex CLI" icon="code" href="/zh-Hant/integrations/codex-cli">
+    OpenAI 基於終端的 Coding Agent
+  </Card>
+  <Card title="Gemini CLI" icon="gem" href="/zh-Hant/integrations/gemini-cli">
+    Google 命令列程式設計助手
+  </Card>
+  <Card title="OpenCode" icon="laptop-code" href="/zh-Hant/integrations/opencode">
+    開源終端 Coding Agent
+  </Card>
+  <Card title="AI Sonar API Skill" icon="lemon" href="/zh-Hant/integrations/coding-agent-skill">
+    使用 AI Sonar 共享 API 整合技能
+  </Card>
+</CardGroup>
+
+## 深入了解
+
+<CardGroup cols={2}>
+  <Card title="成本優化指南" icon="piggy-bank" href="/zh-Hant/guides/coding-agent-cost">
+    降低 Coding Agent 費用的具體策略：模型選擇、快取、token 管理及真實成本對比。
+  </Card>
+  <Card title="模型選擇指南" icon="microchip" href="/zh-Hant/guides/coding-agent-models">
+    哪種程式設計任務用哪個模型？對比表格、任務專項推薦及各工具設定說明。
+  </Card>
+</CardGroup>

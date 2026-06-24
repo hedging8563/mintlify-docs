@@ -1,0 +1,47 @@
+---
+title: "Update API Key"
+openapi: "PATCH /v1/management/api-keys/{keyId}"
+description: "Updates an existing user API key for the current organization."
+---
+
+## Overview
+
+Use this endpoint to update the name, usage limit, allowed models, expiry, or status of an existing user API key.
+
+## Request Body
+
+At least one field must be provided.
+
+| Field | Type | Default / Limits | Notes |
+|-------|------|------------------|-------|
+| `status` | enum | - | `active`, `inactive`, `suspended`, `revoked` |
+| `name` | string | length `1-50` | Updated display name |
+| `limitAmount` | number \| null | min `0`, input max `1000000` | `null` = unlimited, `0` = zero quota. Positive values are normalized to a stored cap that cannot exceed `100000` USD equivalent. |
+| `limitCurrency` | enum | default `USD` | USD only. Sending `CNY` returns `400 currency_retired`. |
+| `models` | string[] | - | Updated logical model allowlist |
+| `expiresAt` | string \| null | RFC3339 datetime | `null` clears the expiry |
+
+## Notes
+
+- Monetary fields are USD-only. `CNY` inputs are retired and return `400 currency_retired`.
+
+- Hard delete is intentionally not supported in Management API v1.
+- `revoked` is terminal for ordinary operational use; create a new key instead of expecting a future un-revoke flow.
+
+## Example
+
+<RequestExample>
+```bash cURL
+curl -X PATCH "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456" \
+  -H "Authorization: Bearer mt-your-management-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "inactive",
+    "limitAmount": 0
+  }'
+```
+</RequestExample>
+
+## Request / Response
+
+Use the interactive OpenAPI panel above for the exact schema and response fields.

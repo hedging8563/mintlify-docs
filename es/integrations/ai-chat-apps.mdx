@@ -1,0 +1,168 @@
+---
+title: "Aplicaciones de chat con AI"
+description: "Configura aplicaciones populares de chat con AI para usar la API compatible con OpenAI de AI Sonar"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Resumen general
+
+La mayoría de las aplicaciones generales de chat con AI se conectan a AI Sonar mediante la ruta de chat estándar compatible con OpenAI.
+
+En la práctica, eso significa:
+- usar `https://api.aisonar.dev/v1` como URL base, a menos que la aplicación solicite explícitamente una URL completa del punto de conexión
+- usar tu clave API de AI Sonar como clave API con estilo OpenAI
+- elegir modelos que la aplicación pueda usar en un flujo de trabajo de chat estándar
+
+<Note>
+Las aplicaciones generales de chat suelen estar **orientadas a chat completions**, no a clientes WebSocket de Codex Responses. Para Codex CLI/App, Cursor u otras herramientas de programación que requieren un comportamiento específico de Responses, usa en su lugar las guías de integración dedicadas.
+</Note>
+
+<Note>
+**Tipo**: Aplicación de chat
+
+**Ruta principal**: ruta chat-completions compatible con OpenAI
+
+**Nivel de soporte**: Ruta compatible
+</Note>
+
+## Aplicaciones compatibles
+
+| Aplicación | Plataforma | Notas |
+|-------------|----------|-------|
+| Open WebUI | Web, autoalojado | Cliente autoalojado popular con conexiones compatibles con OpenAI |
+| LibreChat | Web, autoalojado | Interfaz de chat multiproveedor con soporte para puntos de conexión OpenAI personalizados |
+| LobeChat | Web, Desktop, autoalojado | Sólido soporte para proveedores personalizados |
+| Cherry Studio | Windows, macOS, Linux | Buen flujo para proveedores compatibles con OpenAI |
+| Chatbox | Windows, macOS, Linux | Configuración simple compatible con OpenAI |
+| TypingMind | Web, Desktop | Usa un estilo de punto de conexión personalizado |
+| NextChat | Web, autoalojado | Cliente ligero estilo ChatGPT con soporte para sobrescritura de la URL base |
+| ChatWise | Windows, macOS | Patrón estándar de proveedor personalizado |
+
+## Valores de conexión predeterminados
+
+| Campo | Valor |
+|-------|-------|
+| URL base | `https://api.aisonar.dev/v1` |
+| Clave API | `sk-your-api-key` |
+| Tipo de API | Compatible con OpenAI |
+
+Si una aplicación solicita una **URL completa del punto de conexión** en lugar de una URL base, usa:
+- Chat Completions: `https://api.aisonar.dev/v1/chat/completions`
+
+## Ejemplos de configuración de aplicaciones
+
+<Tabs>
+  <Tab title="LobeChat">
+    **LobeChat autoalojado**
+
+    ```bash
+    OPENAI_API_KEY=sk-your-api-key
+    OPENAI_PROXY_URL=https://api.aisonar.dev/v1
+    ```
+
+    **LobeChat Cloud**
+    1. Abre **Settings** → **AI Service Provider**
+    2. Selecciona **OpenAI**
+    3. Introduce tu clave API de AI Sonar
+    4. Establece el punto de conexión personalizado en `https://api.aisonar.dev/v1`
+  </Tab>
+
+  <Tab title="Cherry Studio">
+    1. Abre **Settings** → **Model Provider**
+    2. Añade un proveedor **compatible con OpenAI**
+    3. Introduce:
+       - **Name**: AI Sonar
+       - **API Base URL**: `https://api.aisonar.dev/v1`
+       - **API Key**: `sk-your-api-key`
+    4. Añade los modelos que quieras usar
+  </Tab>
+
+  <Tab title="Chatbox">
+    1. Abre **Settings** → **AI Model**
+    2. Elige **OpenAI API Compatible**
+    3. Introduce:
+       - **API Host**: `https://api.aisonar.dev/v1`
+       - **API Key**: `sk-your-api-key`
+       - **Modelo**: `gpt-5-mini` o `gpt-4o`
+  </Tab>
+
+  <Tab title="TypingMind">
+    1. Abre **Settings**
+    2. Elige **Custom Endpoint**
+    3. Introduce:
+       - **Endpoint URL**: `https://api.aisonar.dev/v1/chat/completions`
+       - **API Key**: `sk-your-api-key`
+    4. Configura los modelos que quieras exponer
+  </Tab>
+
+  <Tab title="Open WebUI">
+    1. Abre **Admin Settings** → **Connections**
+    2. Añade una conexión **compatible con OpenAI**
+    3. Introduce:
+       - **Base URL**: `https://api.aisonar.dev/v1`
+       - **API Key**: `sk-your-api-key`
+    4. Guarda y selecciona los modelos que quieras exponer
+  </Tab>
+
+  <Tab title="LibreChat">
+    Añade un punto de conexión compatible con OpenAI en la configuración del proveedor de LibreChat y apúntalo a:
+
+    ```yaml
+    customEndpoints:
+      - name: AI Sonar
+        apiKey: '${OPENAI_API_KEY}'
+        baseURL: 'https://api.aisonar.dev/v1'
+        models:
+          default: ['gpt-5-mini', 'gpt-5.4', 'claude-sonnet-4-6']
+          fetch: false
+    ```
+  </Tab>
+</Tabs>
+
+## Valores predeterminados de modelo más seguros
+
+| Categoría | Modelos sugeridos |
+|----------|------------------|
+| Predeterminado general | `gpt-5.4`, `gpt-5-mini`, `gpt-4o` |
+| Anthropic | `claude-sonnet-4-6`, `claude-opus-4-6` |
+| Google | `gemini-2.5-flash`, `gemini-2.5-pro` |
+| DeepSeek | `deepseek-r1`, `deepseek-v3-2` |
+
+## Consejos
+
+<AccordionGroup>
+  <Accordion title="Prioriza la URL base cuando la aplicación la admita">
+    La mayoría de las aplicaciones son más fáciles de configurar y menos frágiles cuando proporcionas `https://api.aisonar.dev/v1` como URL base en lugar de una URL completa del punto de conexión.
+  </Accordion>
+
+  <Accordion title="Usa primero modelos más pequeños">
+    Comienza con `gpt-5-mini` o `gpt-4o` para el chat diario, y luego pasa las tareas de razonamiento más pesadas a `gpt-5.4` o `claude-opus-4-6`.
+  </Accordion>
+
+  <Accordion title="Mantén separadas las herramientas de programación">
+    Las aplicaciones generales de chat y los agentes de programación suelen requerir un comportamiento de punto de conexión diferente. Mantén las herramientas de estilo Codex/Cursor en sus páginas de integración dedicadas.
+  </Accordion>
+</AccordionGroup>
+
+## Solución de problemas
+
+<AccordionGroup>
+  <Accordion title="Error de conexión">
+    - Verifica que la URL base sea exactamente `https://api.aisonar.dev/v1`
+    - Elimina las barras diagonales finales si la aplicación añade rutas automáticamente
+    - Si la aplicación quiere una URL completa del punto de conexión, usa `https://api.aisonar.dev/v1/chat/completions`
+  </Accordion>
+
+  <Accordion title="401 Unauthorized">
+    - Vuelve a comprobar tu API key
+    - Confirma que la key esté activa en el dashboard de AI Sonar
+    - Asegúrate de que no haya espacios o saltos de línea adicionales
+  </Accordion>
+
+  <Accordion title="Modelo no disponible">
+    - Verifica exactamente el nombre del modelo
+    - Prueba un valor predeterminado ampliamente compatible como `gpt-5-mini`, `gpt-4o` o `claude-sonnet-4-6`
+    - Consulta la disponibilidad actual en la documentación o el dashboard de AI Sonar
+  </Accordion>
+</AccordionGroup>

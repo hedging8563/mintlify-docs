@@ -1,0 +1,188 @@
+---
+title: "Gemini CLI"
+description: "Google Gemini CLI'yı AI Sonar API kullanacak şekilde yapılandırın"
+---
+
+## Genel Bakış
+
+
+
+<Note>
+**Tür**: Kodlama aracı
+
+**Birincil yol**: Gemini-native
+
+**Destek seviyesi**: En iyi çaba uyumluluk
+</Note>
+
+Google Gemini CLI, Gemini modelleriyle etkileşim kurmak için kullanılan bir komut satırı aracıdır. AI Sonar, Gemini CLI'yı 300'den fazla modele erişimle kullanmanıza olanak tanıyan uyumlu bir uç nokta (endpoint) sağlar.
+
+
+<Warning>
+Bu entegrasyonu deneysel kabul edin: Gemini CLI şu anda AI Sonar benzeri özel Base URL iş akışını kararlı bir resmi yapılandırma olarak belgelemiyor. Desteklenen bir AI Sonar terminal kurulumu istiyorsanız Codex CLI, Claude Code veya OpenCode kullanın.
+</Warning>
+
+## Sistem Gereksinimleri
+
+- **Node.js**: Sürüm 20.0+
+- **OS**: Windows 10/11, macOS 10.15+, Ubuntu 20.04+ veya Debian 10+
+
+## Kurulum
+
+```bash
+npm install -g @google/gemini-cli
+```
+
+Kurulumu doğrulayın:
+
+```bash
+gemini --version
+```
+
+## Yapılandırma
+
+### Adım 1: API Anahtarınızı Alın
+
+1. [AI Sonar Dashboard](https://console.aisonar.dev) sayfasına giriş yapın
+2. [API Keys](https://console.aisonar.dev/api) bölümüne gidin
+3. API anahtarınızı oluşturun ve kopyalayın (format: `sk-...`)
+
+### Adım 2: Ortam Değişkenlerini Ayarlayın
+
+**Geçici (mevcut oturum):**
+
+```bash
+export GEMINI_API_KEY="sk-your-api-key"
+export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"
+```
+
+**Kalıcı yapılandırma:**
+
+Kabuk (shell) yapılandırma dosyanıza ekleyin:
+
+<Tabs>
+  <Tab title="Bash">
+    ```bash
+    echo 'export GEMINI_API_KEY="sk-your-api-key"' >> ~/.bashrc
+    echo 'export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"' >> ~/.bashrc
+    source ~/.bashrc
+    ```
+  </Tab>
+  <Tab title="Zsh">
+    ```bash
+    echo 'export GEMINI_API_KEY="sk-your-api-key"' >> ~/.zshrc
+    echo 'export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"' >> ~/.zshrc
+    source ~/.zshrc
+    ```
+  </Tab>
+  <Tab title="Fish">
+    ```bash
+    set -Ux GEMINI_API_KEY "sk-your-api-key"
+    set -Ux GOOGLE_GEMINI_BASE_URL "https://api.aisonar.dev"
+    ```
+  </Tab>
+</Tabs>
+
+<Warning>
+Değişikliklerin etkili olması için yapılandırmadan sonra terminalinizi yeniden başlatın.
+</Warning>
+
+<Note>
+**Bilinen kısıtlama**: Bazı durumlarda, önbelleğe alınmış bir Google oturumu varsa Gemini CLI, `GOOGLE_GEMINI_BASE_URL` değişkenini dikkate almayabilir. Bağlantı sorunları yaşıyorsanız, CLI önbelleğini temizlemeyi veya yeni bir terminal oturumu başlatmayı deneyin.
+</Note>
+
+## Temel Kullanım
+
+Gemini CLI'yı proje dizininizden başlatın:
+
+```bash
+cd your-project
+gemini
+```
+
+İlk çalıştırmada şunları yapacaksınız:
+1. Bir tema seçin
+2. Güvenlik bildirimini onaylayın
+3. Çalışma dizinine güvenin
+
+## Mevcut Modeller
+
+| Model | Açıklama |
+|-------|-------------|
+| `gemini-2.5-pro` | En yetenekli Gemini modeli |
+| `gemini-2.5-flash` | Çoğu görev için hızlı ve verimli |
+| `gemini-2.0-flash` | Önceki nesil, kararlı |
+
+## Yaygın Komutlar
+
+**Bir soru sorun:**
+
+```
+> What is the best way to structure a React app?
+```
+
+**Kodu analiz edin:**
+
+```
+> Explain the code in src/main.ts
+```
+
+**Kod oluşturun:**
+
+```
+> Create a Python function to parse JSON files
+```
+
+**Değişiklikleri gözden geçirin:**
+
+```
+> Review the recent git changes and suggest improvements
+```
+
+## Yapılandırmayı Doğrulayın
+
+```bash
+# Ortam değişkenlerini kontrol edin
+echo $GEMINI_API_KEY
+echo $GOOGLE_GEMINI_BASE_URL
+
+# Bağlantıyı test edin
+gemini
+```
+
+## Sorun Giderme
+
+<AccordionGroup>
+  <Accordion title="Bağlantı Hatası">
+    - `GOOGLE_GEMINI_BASE_URL` değişkeninin `https://api.aisonar.dev` olarak ayarlandığını doğrulayın
+    - Not: Gemini uç noktası için `/v1` son eki yoktur
+    - Ağ bağlantısını kontrol edin
+  </Accordion>
+
+  <Accordion title="Kimlik Doğrulama Başarısız">
+    - `GEMINI_API_KEY` ortam değişkeninin ayarlandığını doğrulayın
+    - Anahtarın `sk-` ile başladığını kontrol edin
+    - Anahtarın AI Sonar panelinde aktif olduğundan emin olun
+  </Accordion>
+
+  <Accordion title="Model Mevcut Değil">
+    - Gemini modellerinin uygunluğunu [aisonar.dev/en/models](https://aisonar.dev/models) adresinden kontrol edin
+    - Farklı bir Gemini model varyantı deneyin
+  </Accordion>
+</AccordionGroup>
+
+## En İyi Uygulamalar
+
+<AccordionGroup>
+  <Accordion title="Proje dizininde kullanın">
+    Daha iyi bağlam anlayışı için Gemini CLI'yı her zaman proje kök dizininizden çalıştırın.
+  </Accordion>
+
+  <Accordion title="Dizinlere dikkatle güvenin">
+    Yalnızca size ait olan dizinlere güvenin. Gemini CLI dosyaları okuyabilir ve değiştirebilir.
+  </Accordion>
+
+  <Accordion title="Üretilen kodu gözden geçirin">
+    Yapay zeka tarafından oluşturulan kodu projenize işlemeden (commit) önce her zaman gözden geçirin.
+  </Accordion>
+</AccordionGroup>

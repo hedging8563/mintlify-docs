@@ -1,0 +1,74 @@
+---
+title: "Batalkan task"
+openapi: "DELETE /v1/tasks/{id}"
+description: "Batalkan task asinkron yang masih antre ketika provider dan model mendukungnya"
+---
+
+## Ringkasan
+
+Gunakan `DELETE /v1/tasks/{id}` untuk membatalkan task asinkron yang belum mulai berjalan. Gunakan task ID yang sama dari respons create atau dari `poll_url`.
+
+## Task yang didukung
+
+Pembatalan saat ini didukung untuk task video Volcengine Seedance yang masih antre dengan `seedance-1.5-pro`, `seedance-2.0`, atau `seedance-2.0-fast`. Task yang sudah `processing`/running tidak dapat dibatalkan. Task yang selesai, gagal, kedaluwarsa, atau tidak didukung tetap dapat ditanyakan untuk rekonsiliasi status dan billing, bukan menghapus record upstream.
+
+## Parameter path
+
+<ParamField path="id" type="string" required>
+  Async task ID yang dikembalikan oleh permintaan create atau tertanam di `poll_url`.
+</ParamField>
+
+## Respons
+
+<ResponseField name="id" type="string">
+  Identifier async task kanonis.
+</ResponseField>
+
+<ResponseField name="task_id" type="string">
+  Alias identifier async task.
+</ResponseField>
+
+<ResponseField name="poll_url" type="string">
+  Polling URL yang disarankan untuk task. Tetap valid setelah pembatalan.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Status task. Task yang berhasil dibatalkan dikembalikan sebagai `failed` dengan `cancelled: true` agar kompatibel dengan nilai status yang ada.
+</ResponseField>
+
+<ResponseField name="cancelled" type="boolean">
+  `true` ketika task dibatalkan sebelum eksekusi.
+</ResponseField>
+
+<ResponseField name="cancellation_status" type="string">
+  Penanda pembatalan. Nilainya `cancelled` ketika pembatalan berhasil.
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  Alasan pembatalan atau pesan kegagalan task.
+</ResponseField>
+
+## Perilaku error
+
+`400 unsupported_task_cancel` berarti tipe task, provider, atau model tidak mendukung pembatalan. `409 task_not_cancellable` berarti task sudah diproses, sudah terminal, atau tidak lagi dapat dibatalkan. `403` berarti API key tidak dapat mengakses task.
+
+## Contoh
+
+<RequestExample>
+```bash cURL
+curl -X DELETE "https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+```json Response
+{
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "failed",
+  "cancelled": true,
+  "cancellation_status": "cancelled",
+  "error": "Task cancelled before execution"
+}
+```

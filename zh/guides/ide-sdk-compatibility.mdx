@@ -1,0 +1,359 @@
+---
+title: "IDE 与 SDK 兼容性"
+description: "基于证据的 AI 编码工具、SDK 和框架兼容性指南"
+---
+
+## 概述
+
+AI Sonar 提供多种 API 格式，使常见的编码工具、SDK 和框架能够通过最少的粘合代码进行集成。
+
+本页故意比营销矩阵更聚焦：
+
+- **Supported** 表示我们记录了具体的设置路径，并且 AI Sonar 暴露了该路径所期望的协议形态。
+- **强原生路径** 表示仓库中也有针对该协议家族的直接适配器或请求格式的证据。
+- **尽力支持** 表示集成可以工作，但上游客户端并不将此自定义网关工作流视为稳定契约。
+
+<Note>
+  不受支持的字段并非统一处理。在兼容性路由上，某些字段会被忽略或规范化。在 `/v1/responses` 路由上，当该路由无法保证所请求的行为时，不支持的字段可能会返回显式的 `400` 或 `503` 错误。
+</Note>
+
+## 支持的 API 格式
+
+| 端点 | 格式 | 使用场景 |
+|----------|--------|----------|
+| `/v1/chat/completions` | OpenAI Chat | 通用兼容性 |
+| `/v1/responses` | OpenAI Responses | 有状态会话 |
+| `/v1/messages` | Anthropic Messages | Claude 原生特性 |
+| `/v1beta/models/:model:generateContent` | Google Gemini | Gemini 原生特性 |
+
+## IDE 与 CLI 兼容性
+
+### 文档化的工具路径
+
+| 工具 | 支持级别 | 格式 | 备注 |
+|------|---------------|--------|-------|
+| **Cursor** | 有限支持 | OpenAI 兼容 | 适用于 BYOK 标准聊天/编辑器流程，但不能替代 Cursor 管理的功能，例如 Tab Completion |
+| **Claude Code CLI** | 强原生路径 | Anthropic | 原生 `/v1/messages` 路由，提供针对 thinking 和 `tool_choice` 的适配器覆盖 |
+| **Codex CLI** | 支持，但有模型/路径限制 | OpenAI Responses | 将 `/v1/responses` 视为针对 Codex 特定工作流的高级路径；某些仅 Responses 的字段并不保证在每个模型和路由路径上都可用 |
+| **Gemini CLI** | 尽力支持 / 实验性 | Gemini | 自定义 AI Sonar 基础 URL 流并非稳定的上游契约 |
+| **OpenCode** | Supported | OpenAI 兼容 | 默认使用 OpenAI 兼容的 provider；仅在明确需要时迁移到基于 Responses 的 provider |
+
+<Note>
+  其他 OpenAI 兼容的编辑器和 agent 工具通常也能使用相同的基础 URL 模式，但本仓库目前并未为 Windsurf、Aider、Continue.dev、Cline/Roo Code、GitHub Copilot 及类似客户端维护针对工具的回归覆盖。
+</Note>
+
+### 配置示例
+
+<Tabs>
+  <Tab title="Cursor">
+    ```
+    Base URL: https://api.aisonar.dev/v1
+    API Key: sk-your-api-key
+    ```
+    Cursor 在内部使用 Anthropic 风格的工具格式。AI Sonar 支持两种格式：
+    - OpenAI 格式: `{ type: "function", function: { name, parameters } }`
+    - Anthropic format: `{ name, input_schema }` (没有 type 字段)
+  </Tab>
+  <Tab title="Claude Code">
+    ```bash
+    export ANTHROPIC_BASE_URL="https://api.aisonar.dev"
+    export ANTHROPIC_API_KEY="sk-your-api-key"
+    ```
+  </Tab>
+  <Tab title="OpenCode">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export LOCAL_ENDPOINT="https://api.aisonar.dev/v1"
+    ```
+  </Tab>
+  <Tab title="Aider">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export OPENAI_BASE_URL="https://api.aisonar.dev/v1"
+    aider --model gpt-5.4
+    ```
+  </Tab>
+</Tabs>
+
+## SDK 兼容性
+
+### 文档化的 SDK 与框架路径
+
+| SDK / 框架 | 语言 | 支持级别 | 备注 |
+|-----------------|----------|---------------|-------|
+| **OpenAI SDK** | Python/JS/Go | 核心支持路径 | Chat Completions 和 Embeddings 是默认记录的路径；某些仅 Responses 的字段并不保证在每个模型和路由路径上都可用 |
+| **Anthropic SDK** | Python/JS | 强原生路径 | 原生 Messages 路由，有针对 tools、thinking 和 prompt caching 的直接证据 |
+| **Vercel AI SDK** | TypeScript | 推荐集成模式 | 优先使用 `@ai-sdk/openai-compatible`；仅在你明确需要 Responses 原生行为时使用 `@ai-sdk/openai` |
+| **LangChain** | Python/JS | 支持标准接口 | `ChatOpenAI` 和 `OpenAIEmbeddings` 是预期范围；厂商原生的扩展不在范围内 |
+| **LlamaIndex** | Python | 通过 `OpenAILike` 支持 | 针对第三方网关（如 AI Sonar）使用 `OpenAILike`，而非内置的 OpenAI 类 |
+| **Dify** | - | 支持，但有范围限制 | 以 OpenAI provider 和 chat-completions 为导向的流程是预期路径；不适用于 Codex 特定的 Responses 或 WebSocket 行为 |
+
+## Chat Completions 参数
+
+### 核心参数
+
+| 参数 | 类型 | 描述 |
+|-----------|------|-------------|
+| `model` | string | 模型标识符（必填） |
+| `messages` | array | 会话消息（必填） |
+| `max_tokens` | integer | 最大输出 token 数 |
+| `temperature` | number | 采样温度（0-2） |
+| `top_p` | number | 核心采样（0-1） |
+| `stream` | boolean | 启用流式输出 |
+
+### 工具调用
+
+```json
+{
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_weather",
+        "description": "Get weather for a location",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "location": { "type": "string" }
+          }
+        },
+        "strict": true
+      }
+    }
+  ],
+  "tool_choice": "auto",
+  "parallel_tool_calls": true
+}
+```
+
+### Tool Choice 选项
+
+| 格式 | 示例 | 描述 |
+|--------|---------|-------------|
+| String | `"auto"`, `"none"`, `"required"` | 简单选择 |
+| OpenAI Object | `{ "type": "function", "function": { "name": "fn" } }` | 强制指定函数 |
+| Anthropic Object | `{ "type": "tool", "name": "fn", "disable_parallel_tool_use": true }` | Anthropic 原生格式 |
+
+### 高级参数
+
+| 参数 | 类型 | 描述 |
+|-----------|------|-------------|
+| `stream_options` | object | 使用 `{ include_usage: true }` 可获取 token 计数 |
+| `reasoning_effort` | string | 对启用推理的 GPT-5 模型使用 `"low"`、`"medium"`、`"high"` |
+| `service_tier` | string | `"auto"` 或 `"default"` |
+| `seed` | integer | 确定性输出 |
+| `logprobs` | boolean | 返回对数概率 |
+| `top_logprobs` | integer | 返回的 top logprobs 数量（0-20） |
+| `logit_bias` | object | token 偏差映射（-100 到 100） |
+| `frequency_penalty` | number | 重复惩罚（-2 到 2） |
+| `presence_penalty` | number | 主题惩罚（-2 到 2） |
+| `stop` | string/array | 停止序列 |
+| `n` | integer | 完成数（1-128） |
+| `user` | string | 用于跟踪的用户标识符 |
+
+### OpenAI 高级特性
+
+| 参数 | 类型 | 描述 |
+|-----------|------|-------------|
+| `modalities` | array | 多模态，例如 `["text", "audio"]` |
+| `audio` | object | 音频输出配置（voice、format） |
+| `prediction` | object | 用于更快完成的预测输出 |
+| `metadata` | object | 用于跟踪的键值对 |
+| `store` | boolean | 是否存储以便后续检索 |
+
+### 提供者特定选项
+
+```json
+{
+  "anthropic_options": {
+    "thinking": {
+      "type": "enabled",
+      "budget_tokens": 10000
+    },
+    "prompt_caching": true
+  },
+  "google_options": {
+    "safety_settings": [...],
+    "google_search": true,
+    "code_execution": true
+  }
+}
+```
+
+## Anthropic Messages 参数
+
+### 核心参数
+
+| 参数 | 类型 | 描述 |
+|-----------|------|-------------|
+| `model` | string | 模型标识符 |
+| `messages` | array | 会话消息 |
+| `max_tokens` | integer | 最大输出（可达 128000） |
+| `system` | string/array | 系统提示 |
+| `stream` | boolean | 启用流式输出 |
+
+### 工具调用
+
+```json
+{
+  "tools": [
+    {
+      "name": "get_weather",
+      "description": "Get weather",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "location": { "type": "string" }
+        }
+      }
+    }
+  ],
+  "tool_choice": {
+    "type": "auto",
+    "disable_parallel_tool_use": false
+  }
+}
+```
+
+### 扩展 Thinking
+
+```json
+{
+  "model": "claude-opus-4-6",
+  "thinking": {
+    "type": "enabled",
+    "budget_tokens": 10000
+  }
+}
+```
+
+## Responses API 参数
+
+### 核心参数
+
+| 参数 | 类型 | 描述 |
+|-----------|------|-------------|
+| `model` | string | 模型标识符 |
+| `input` | string/array | 输入内容 |
+| `instructions` | string | 系统指令 |
+| `max_output_tokens` | integer | 最大输出 token 数 |
+| `previous_response_id` | string | 继续会话的响应 ID |
+
+### 高级参数
+
+| 参数 | 类型 | 描述 |
+|-----------|------|-------------|
+| `truncation_strategy` | string | `"auto"` 或 `"disabled"` |
+| `include` | array | `["reasoning.encrypted_content"]` |
+| `reasoning_effort` | string | 用于推理型模型 |
+| `service_tier` | string | 优先级层级 |
+
+### 工具格式
+
+同时支持 OpenAI 和 Anthropic 的工具格式：
+
+```json
+// OpenAI format
+{ "type": "function", "name": "fn", "parameters": {...} }
+
+// Anthropic format (Cursor compatibility)
+{ "name": "fn", "input_schema": {...} }
+```
+
+## Gemini API 参数
+
+### 核心参数
+
+| 参数 | 类型 | 描述 |
+|-----------|------|-------------|
+| `contents` | array | 会话内容 |
+| `systemInstruction` | object | 系统提示 |
+| `generationConfig` | object | 生成设置 |
+
+### 工具
+
+```json
+{
+  "tools": [{
+    "functionDeclarations": [{
+      "name": "search",
+      "description": "Search the web",
+      "parameters": {...}
+    }],
+    "codeExecution": {},
+    "googleSearch": {}
+  }],
+  "toolConfig": {
+    "functionCallingConfig": {
+      "mode": "AUTO"
+    }
+  }
+}
+```
+
+### 安全设置
+
+```json
+{
+  "safetySettings": [
+    {
+      "category": "HARM_CATEGORY_HARASSMENT",
+      "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+    }
+  ]
+}
+```
+
+### 附加参数
+
+| 参数 | 类型 | 描述 |
+|-----------|------|-------------|
+| `cachedContent` | string | 缓存内容引用 |
+| `responseMimeType` | string | `"text/plain"` 或 `"application/json"` |
+| `responseSchema` | object | 结构化输出的 JSON schema |
+
+## 流式传输
+
+所有端点均支持 Server-Sent Events (SSE) 流式传输：
+
+```bash
+# Chat Completions
+curl https://api.aisonar.dev/v1/chat/completions \
+  -H "Authorization: Bearer sk-xxx" \
+  -d '{"model": "gpt-4o", "messages": [...], "stream": true}'
+
+# With usage tracking
+-d '{"...", "stream_options": {"include_usage": true}}'
+```
+
+## 错误处理
+
+AI Sonar 返回与 OpenAI 兼容的错误响应：
+
+```json
+{
+  "error": {
+    "message": "Invalid API key",
+    "type": "invalid_api_key",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+详情见 [错误处理指南](/guides/error-handling)。
+
+## 最佳实践
+
+<AccordionGroup>
+  <Accordion title="对未知参数使用 passthrough">
+    所有 schema 使用 `.passthrough()` —— 未知参数会被转发到上游提供者。
+  </Accordion>
+
+  <Accordion title="为精确计费优先使用 stream_options">
+    在流式响应中启用 `stream_options.include_usage` 以获得准确的 token 计数。
+  </Accordion>
+
+  <Accordion title="使用合适的 tool_choice 格式">
+    匹配您 SDK 期望的格式。AI Sonar 接受 OpenAI 和 Anthropic 两种格式。
+  </Accordion>
+</AccordionGroup>

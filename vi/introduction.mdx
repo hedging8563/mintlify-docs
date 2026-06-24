@@ -1,0 +1,122 @@
+---
+title: "Giới thiệu"
+description: "Truy cập hàng trăm mô hình AI qua một API thống nhất"
+---
+
+## AI Sonar là gì?
+
+AI Sonar là một nền tảng tổng hợp API AI cho phép bạn truy cập thống nhất tới **hàng trăm mô hình AI** từ các nhà cung cấp như OpenAI, Anthropic, Google, DeepSeek, Moonshot, MiniMax và nhiều nhà cung cấp khác.
+
+<CardGroup cols={2}>
+  <Card title="Gốc + tương thích" icon="plug">
+    Hãy dùng các tuyến Anthropic/Gemini gốc khi hành vi của nhà cung cấp quan trọng, hoặc các tuyến `/v1` tương thích OpenAI cho các công cụ kiểu OpenAI hiện có.
+  </Card>
+  <Card title="Định dạng gốc" icon="shuffle">
+    Gọi các endpoint theo phong cách OpenAI, Anthropic, Gemini và Responses từ một nền tảng duy nhất.
+  </Card>
+  <Card title="Trả theo mức sử dụng" icon="coins">
+    Không cần đăng ký. Chỉ trả cho những gì bạn thực sự sử dụng.
+  </Card>
+  <Card title="Độ sẵn sàng cao" icon="shield-check">
+    Định tuyến thông minh, failover, và hỗ trợ đa kênh cải thiện độ tin cậy.
+  </Card>
+</CardGroup>
+
+## Các khả năng được hỗ trợ
+
+| Khả năng | Mô tả | Ví dụ mô hình |
+|------------|-------------|----------------|
+| **Chat & Lập luận** | Sinh văn bản, lập kế hoạch, công cụ | `gpt-5.4`, `claude-sonnet-4-6`, `deepseek-r1` |
+| **Thị giác** | Hiểu ảnh và chat đa phương thức | `gpt-4o`, `claude-sonnet-4-6`, `gemini-2.5-flash` |
+| **Tạo ảnh** | Chuyển văn bản thành ảnh và chỉnh sửa ảnh | `dall-e-3`, `flux-pro`, `midjourney` |
+| **Âm thanh** | TTS và chuyển âm thanh thành văn bản (transcription) | `gpt-4o-mini-tts`, `whisper-1`, `gpt-4o-transcribe` |
+| **Nhúng** | Vector hóa văn bản | `text-embedding-3-small`, `text-embedding-3-large` |
+| **Âm nhạc** | Sinh nhạc bằng AI | `suno` |
+| **3D** | Tạo tài sản 3D | `tripo3d` |
+
+## Chọn định dạng yêu cầu
+
+Hãy bắt đầu bằng tuyến phù hợp với hành vi bạn cần. Dùng các tuyến native Anthropic/Gemini cho các tính năng native của nhà cung cấp; dùng `/v1/chat/completions` tương thích OpenAI khi đang chuyển đổi mã chat kiểu OpenAI hiện có.
+
+<CodeGroup>
+
+```bash cURL
+curl https://api.aisonar.dev/v1/chat/completions \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.4",
+    "messages": [
+      {"role": "user", "content": "Explain what AI Sonar does in one sentence."}
+    ]
+  }'
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "Explain what AI Sonar does in one sentence."}]
+)
+
+print(response.choices[0].message.content)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.chat.completions.create({
+  model: 'gpt-5.4',
+  messages: [{ role: 'user', content: 'Explain what AI Sonar does in one sentence.' }],
+});
+
+console.log(response.choices[0].message.content);
+```
+
+<Note>
+Chỉ sử dụng `POST /v1/responses` khi bạn thực sự cần hành vi đặc thù của Responses. Đây không phải là con đường tương thích mặc định cho tất cả các mô hình.
+</Note>
+
+</CodeGroup>
+
+## Tính năng chính
+
+<CardGroup cols={2}>
+  <Card title="Nhiều định dạng API" icon="layers" href="/guides/api-formats">
+    Sử dụng định dạng gốc của OpenAI, Anthropic, Gemini hoặc Responses với một tài khoản.
+  </Card>
+  <Card title="Lỗi ưu tiên cho Agent" icon="wand-magic-sparkles" href="/guides/agent-first-api">
+    Các gợi ý có cấu trúc giúp các agent lập trình tự sửa lỗi nhanh hơn.
+  </Card>
+  <Card title="Phạm vi tích hợp" icon="toolbox" href="/guides/ide-sdk-compatibility">
+    Kết nối IDE, SDK, framework và ứng dụng chat với ít thay đổi phụ thuộc nhà cung cấp hơn.
+  </Card>
+</CardGroup>
+
+## Bước tiếp theo
+
+<CardGroup cols={2}>
+  <Card title="Bắt đầu nhanh" icon="rocket" href="/quickstart">
+    Đưa yêu cầu đầu tiên hoạt động trong vài phút.
+  </Card>
+  <Card title="Tham khảo API" icon="book" href="/api-reference/introduction">
+    Khám phá tài liệu tham khảo từng endpoint một.
+  </Card>
+  <Card title="Tích hợp" icon="puzzle-piece" href="/integrations/openai-sdk">
+    Bắt đầu với tích hợp SDK, IDE và ứng dụng.
+  </Card>
+  <Card title="Mô hình" icon="robot" href="https://aisonar.dev/models">
+    Duyệt khả năng sẵn có và giá của các mô hình hiện tại.
+  </Card>
+</CardGroup>

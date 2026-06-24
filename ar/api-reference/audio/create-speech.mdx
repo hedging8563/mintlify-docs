@@ -1,0 +1,123 @@
+---
+title: "إنشاء كلام"
+openapi: "POST /v1/audio/speech"
+description: "ينشئ صوتًا من النص المُدخل"
+---
+
+## نص الطلب
+
+**مهلة الطلبات المتزامنة:** ينتظر هذا الـ endpoint غير الخاص بالمحادثة حتى ينتهي النموذج الذي تم التوجيه إليه. قد تتجاوز المدخلات الكبيرة أو الصوت الطويل أو الدُفعات الكبيرة القيمة الافتراضية الشائعة للعميل وهي 30s، لذا اضبط مهلة عميل HTTP على `120s` على الأقل.
+
+<ParamField body="model" type="string" default="tts-1">
+  نموذج TTS: `tts-1` (قياسي) أو `tts-1-hd` (جودة أعلى).
+</ParamField>
+
+<ParamField body="input" type="string" required>
+  النص المطلوب إنشاء صوت له. الحد الأقصى 4096 حرفًا.
+</ParamField>
+
+<ParamField body="voice" type="string" required>
+  الصوت المستخدم: `alloy`، `ash`، `ballad`، `coral`، `echo`، `fable`، `nova`، `onyx`، `sage`، `shimmer`، `verse`.
+</ParamField>
+
+<ParamField body="response_format" type="string" default="mp3">
+  تنسيق الصوت: `mp3`، `opus`، `aac`، `flac`، `wav`، `pcm`.
+</ParamField>
+
+<ParamField body="speed" type="number" default="1.0">
+  سرعة الصوت (من 0.25 إلى 4.0).
+</ParamField>
+
+## الاستجابة
+
+يعيد ملف الصوت بالتنسيق المطلوب.
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/audio/speech" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "tts-1-hd",
+    "voice": "nova",
+    "input": "Hello, welcome to AI Sonar!"
+  }' \
+  --output speech.mp3
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.audio.speech.create(
+    model="tts-1-hd",
+    voice="nova",
+    input="Hello, welcome to AI Sonar!"
+)
+
+response.stream_to_file("speech.mp3")
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+import fs from 'fs';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.audio.speech.create({
+  model: 'tts-1-hd',
+  voice: 'nova',
+  input: 'Hello, welcome to AI Sonar!'
+});
+
+const buffer = Buffer.from(await response.arrayBuffer());
+fs.writeFileSync('speech.mp3', buffer);
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/audio/speech');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Content-Type: application/json',
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => json_encode([
+        'model' => 'tts-1-hd',
+        'voice' => 'nova',
+        'input' => 'Hello, welcome to AI Sonar!'
+    ])
+]);
+
+$audio = curl_exec($ch);
+curl_close($ch);
+
+file_put_contents('speech.mp3', $audio);
+```
+</RequestExample>
+
+## عينات الأصوات
+
+| الصوت | الوصف |
+|-------|-------------|
+| `alloy` | محايد، متوازن |
+| `ash` | هادئ، متزن |
+| `ballad` | لحني، تعبيري |
+| `coral` | دافئ، جذاب |
+| `echo` | دافئ، حواري |
+| `fable` | تعبيري، سردي |
+| `nova` | ودود، واضح |
+| `onyx` | عميق، موثوق |
+| `sage` | حكيم، متأمل |
+| `shimmer` | ناعم، لطيف |
+| `verse` | ديناميكي، متعدد الاستخدامات |

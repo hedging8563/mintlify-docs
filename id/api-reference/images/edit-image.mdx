@@ -1,0 +1,237 @@
+---
+title: "Edit Gambar"
+openapi: "POST /v1/images/edits"
+description: "Edit gambar berdasarkan prompt dan gambar sumber"
+---
+
+## Ikhtisar
+
+Membuat gambar hasil edit atau diperluas dari gambar asli dan prompt.
+
+Route ini mendukung:
+
+- alur upload `multipart/form-data` gaya DALL-E klasik yang didokumentasikan di bawah
+- request JSON yang menyediakan `image_url`, `image_urls`, atau referensi resmi `images` untuk keluarga image-to-image yang didukung
+
+<Note>
+`gpt-image-2` didukung di sini. Endpoint ini menerima upload multipart `image`, JSON `image_url` / `image_urls`, dan referensi resmi `images[]` (`image_url` atau `file_id`) hingga 16 gambar sumber. Buat `file_id` terlebih dahulu melalui `/v1/files`. Setel `async: true` untuk menerima task terlebih dahulu; model edit resmi FLUX/BFL memakai alur polling task yang sama.
+
+Edit dengan `gpt-image-2` tidak menerima `resolution` atau `background`; gunakan `size` untuk dimensi output. Untuk edit multi-gambar atau latensi tinggi, sebaiknya gunakan `async: true` lalu polling task yang dikembalikan.
+
+Request Nano Banana dengan gambar referensi (`nano-banana`, `nano-banana-2`, dan `nano-banana-pro`) tersedia melalui `/v1/images/generations` dengan `operation: "image-to-image"` dan `image_urls`, bukan endpoint `/v1/images/edits` ini.
+
+Model edit gambar xAI Grok Imagine (`grok-imagine-image`, `grok-imagine-image-quality`, dan legacy `grok-imagine-image-pro`) menerima maksimal 3 gambar sumber. Request dengan lebih dari 3 gambar sumber gagal sebelum diteruskan ke upstream dengan `400 too_many_images`.
+
+Catatan kompatibilitas: jika permintaan `gpt-image-2` mengirim `input_fidelity`, AI Sonar menghapus kolom itu sebelum meneruskan karena GPT Image 2 sudah otomatis memproses input gambar dengan fidelitas tinggi.
+</Note>
+
+## Body Request
+
+**Timeout permintaan sinkron:** beberapa penyedia gambar yang dirutekan mengembalikan gambar final secara inline dan menunggu proses generasi selesai. Permintaan resolusi tinggi atau kualitas tinggi dapat memakan waktu hampir satu menit atau lebih, jadi atur timeout HTTP client Anda minimal `120s`. Jika respons pembuatan berisi `status: "pending"`, `task_id`, atau `poll_url`, ikuti `poll_url` yang dikembalikan.
+
+URL gambar jarak jauh: ketika provider yang dirutekan memerlukan input multipart, AI Sonar mengambil JSON `image_url`, `image_urls`, atau `images[].image_url` lalu meneruskan byte-nya sebagai part multipart `image`. URL harus publik melalui `http`/`https`, tanpa kredensial tertanam atau fragment, dan tidak boleh resolve ke localhost, rentang IP privat, atau IP reserved; setiap redirect divalidasi ulang. Payload yang diambil harus benar-benar berupa gambar PNG, JPEG, atau WebP. Batasnya `50MB` per gambar, total `200MB` untuk gambar yang diambil dari URL dalam satu request, timeout `10s`, dan maksimal `3` redirect.
+
+<ParamField body="image" type="file">
+  Gambar sumber multipart. Ulangi `image` untuk mengirim beberapa sumber GPT Image. File harus PNG, JPEG, atau WebP, maksimal 16 gambar sumber dan `50MB` per file. Model edit xAI Grok Imagine memakai field input yang sama, tetapi membatasi gambar sumber menjadi 3. Edit mask DALL-E 2 legacy tetap mengharapkan input PNG dengan area transparan, atau `mask` terpisah.
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  Deskripsi teks dari edit yang diinginkan.
+</ParamField>
+
+<ParamField body="mask" type="file">
+  Gambar tambahan dengan area yang benar-benar transparan untuk menunjukkan di mana gambar harus diedit. Harus PNG yang valid, kurang dari 50MB, dan memiliki dimensi yang sama dengan `image`.
+</ParamField>
+
+<ParamField body="model" type="string" default="dall-e-2">
+  Model yang digunakan untuk edit gambar. `gpt-image-2` didukung; edit gaya DALL-E legacy tetap bisa memakai `dall-e-2`.
+</ParamField>
+
+<ParamField body="n" type="integer" default="1">
+  Jumlah gambar yang dibuat. Harus antara 1 dan 10.
+</ParamField>
+
+<ParamField body="size" type="string">
+  Ukuran gambar yang dihasilkan. Untuk `gpt-image-2`, gunakan `auto` atau `WIDTHxHEIGHT`; dimensi harus kelipatan 16, sisi terpanjang maksimal `3840px`, rasio sisi panjang/pendek maksimal `3:1`, dan total piksel antara `655,360` dan `8,294,400`. Edit DALL-E legacy mendukung `256x256`, `512x512`, atau `1024x1024`.
+</ParamField>
+
+<ParamField body="response_format" type="string" default="url">
+  Format pengembalian gambar yang dihasilkan. Harus `url` atau `b64_json`; default-nya `url`.
+
+  Untuk rute `gpt-image-2` Azure Official atau Azure-compatible, AI Sonar tidak meneruskan `response_format` ke upstream. Gateway selalu menerima data gambar upstream sebagai `b64_json`; untuk request `url`, setiap gambar diunggah ke CDN lalu `data[].url` dikembalikan. Jika storage CDN tidak tersedia atau upload gagal, request gagal alih-alih fallback ke Base64. Untuk `b64_json`, Base64 mentah dikembalikan.
+</ParamField>
+
+<ParamField body="async" type="boolean" default="false">
+  Setel ke `true` dengan `gpt-image-2` atau model edit resmi FLUX/BFL untuk mengembalikan task sebelum gambar final siap. Edit async yang selesai mengembalikan URL apa pun `response_format` yang diminta; gunakan request sinkron jika membutuhkan `b64_json`.
+</ParamField>
+
+<ParamField body="user" type="string">
+  Identifier unik yang mewakili end-user Anda untuk monitoring abuse.
+</ParamField>
+
+## Respons
+
+<ResponseField name="created" type="integer">
+  Unix timestamp saat gambar dibuat.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Array gambar yang dihasilkan.
+
+  Setiap object berisi:
+  - `url` (string): URL gambar hasil edit (jika response_format `url`)
+  - `b64_json` (string): Gambar Base64-encoded (jika response_format `b64_json`)
+</ResponseField>
+
+### Respons Task Async
+
+Setel `async: true` dengan `gpt-image-2` atau model edit resmi FLUX/BFL untuk membuat task alih-alih menunggu gambar hasil edit di request. Respons berisi `status: "pending"`, `task_id`, dan `poll_url`. Poll `/v1/tasks/{task_id}` hingga task menjadi `completed` atau `failed`.
+
+Task edit async hanya mengembalikan URL gambar final. Jika membutuhkan data gambar mentah `b64_json`, gunakan request sinkron.
+
+
+Saat task dibuat, biaya perkiraan dapat dicadangkan terlebih dahulu. Task yang selesai ditagih sesuai pemakaian aktual; task yang gagal atau timeout akan melepaskan atau mengembalikan cadangan biaya.
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/images/edits" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F "image=@sunlit_lounge.png" \
+  -F "mask=@mask.png" \
+  -F "prompt=A sunlit indoor lounge area with a pool" \
+  -F "n=1" \
+  -F "size=1024x1024"
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.images.edit(
+    model="dall-e-2",
+    image=open("sunlit_lounge.png", "rb"),
+    mask=open("mask.png", "rb"),
+    prompt="A sunlit indoor lounge area with a pool",
+    n=1,
+    size="1024x1024"
+)
+
+print(response.data[0].url)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+import fs from 'fs';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.images.edit({
+  model: 'dall-e-2',
+  image: fs.createReadStream('sunlit_lounge.png'),
+  mask: fs.createReadStream('mask.png'),
+  prompt: 'A sunlit indoor lounge area with a pool',
+  n: 1,
+  size: '1024x1024'
+});
+
+console.log(response.data[0].url);
+```
+
+```go Go
+package main
+
+import (
+    "bytes"
+    "fmt"
+    "io"
+    "mime/multipart"
+    "net/http"
+    "os"
+)
+
+func main() {
+    body := &bytes.Buffer{}
+    writer := multipart.NewWriter(body)
+
+    image, _ := os.Open("sunlit_lounge.png")
+    defer image.Close()
+    part, _ := writer.CreateFormFile("image", "sunlit_lounge.png")
+    io.Copy(part, image)
+
+    mask, _ := os.Open("mask.png")
+    defer mask.Close()
+    maskPart, _ := writer.CreateFormFile("mask", "mask.png")
+    io.Copy(maskPart, mask)
+
+    writer.WriteField("prompt", "A sunlit indoor lounge area with a pool")
+    writer.WriteField("n", "1")
+    writer.WriteField("size", "1024x1024")
+    writer.Close()
+
+    req, _ := http.NewRequest("POST", "https://api.aisonar.dev/v1/images/edits", body)
+    req.Header.Set("Authorization", "Bearer sk-your-api-key")
+    req.Header.Set("Content-Type", writer.FormDataContentType())
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+
+    result, _ := io.ReadAll(resp.Body)
+    fmt.Println(string(result))
+}
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/images/edits');
+
+$image = new CURLFile('sunlit_lounge.png', 'image/png', 'sunlit_lounge.png');
+$mask = new CURLFile('mask.png', 'image/png', 'mask.png');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => [
+        'image' => $image,
+        'mask' => $mask,
+        'prompt' => 'A sunlit indoor lounge area with a pool',
+        'n' => 1,
+        'size' => '1024x1024'
+    ]
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+echo $data['data'][0]['url'];
+```
+</RequestExample>
+
+<ResponseExample>
+```json Respons
+{
+  "created": 1706000000,
+  "data": [
+    {
+      "url": "https://..."
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## Catatan
+
+<Note>
+  Kegagalan mengambil gambar jarak jauh dikembalikan sebagai error input sebelum request dikirim ke upstream. URL tidak dapat dijangkau, timeout, respons 403/404, host privat/internal, kredensial atau fragment di URL, konten non-gambar, format tidak didukung, dan pelanggaran ukuran akan mengembalikan `400` atau `413` serta menunjukkan input `image_url` / `image_urls[n]`. Untuk aset privat atau yang dilindungi header, upload file multipart `image` langsung atau buat referensi `/v1/files`.
+</Note>

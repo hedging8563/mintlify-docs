@@ -1,0 +1,292 @@
+---
+title: "Créer une réponse"
+openapi: "POST /v1/responses"
+description: "Crée une réponse en utilisant le format OpenAI Responses API"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+L'API Responses est la nouvelle API de conversation stateful d'OpenAI. AI Sonar prend en charge ce format comme un chemin optionnel avancé pour les modèles compatibles ; utilisez `POST /v1/chat/completions` comme route compatible OpenAI par défaut, sauf si vous avez explicitement besoin d'un comportement spécifique à Responses.
+
+## Corps de la requête
+
+<ParamField body="model" type="string" required>
+  ID du modèle à utiliser. Voir [Models](https://aisonar.dev/models) pour les options disponibles.
+</ParamField>
+
+<ParamField body="input" type="array" required>
+  Une liste d'éléments d'entrée constituant la conversation.
+
+  Chaque élément peut être :
+  - `message` : Un message de conversation avec rôle et contenu
+  - `function_call` : Une requête d'appel de fonction
+  - `function_call_output` : Sortie d'un appel de fonction
+
+  Pour les entrées multimodales, `message.content` peut être soit une chaîne simple, soit un tableau de blocs de contenu. Pour les modèles capables de traiter des images, comme les variantes GPT-5.4, transmettez les images en tant que blocs `input_image` au lieu d'incorporer directement des URLs ou des chaînes Base64 dans du texte brut.
+
+  Exemples de blocs de contenu :
+  - `{ "type": "input_text", "text": "Describe this image" }`
+  - `{ "type": "input_image", "image_url": "https://example.com/image.jpg" }`
+  - `{ "type": "input_image", "image_url": "data:image/png;base64,..." }`
+</ParamField>
+
+<ParamField body="instructions" type="string">
+  Instructions système pour le modèle (équivalent du message système).
+</ParamField>
+
+<ParamField body="max_output_tokens" type="integer">
+  Nombre maximal de tokens à générer.
+</ParamField>
+
+<ParamField body="temperature" type="number" default="1">
+  Température d'échantillonnage entre 0 et 2.
+</ParamField>
+
+<ParamField body="tools" type="array">
+  Une liste d'outils que le modèle peut appeler.
+
+  Pour les outils hébergés `image_generation` qui utilisent le modèle d'outil image par défaut ou définissent explicitement `model: "gpt-image-2"`, AI Sonar supprime `input_fidelity` avant de transmettre la requête, car GPT Image 2 traite déjà les entrées image en haute fidélité. N'envoyez pas `background: "transparent"` pour cet outil ; AI Sonar ne le supprime pas silencieusement, car cela changerait la sémantique de sortie.
+</ParamField>
+
+<ParamField body="stream" type="boolean" default="false">
+  Si true, renvoie un flux d'événements.
+</ParamField>
+
+<ParamField body="previous_response_id" type="string">
+  ID d'une réponse précédente à partir de laquelle continuer la conversation.
+</ParamField>
+
+<ParamField body="store" type="boolean" default="true">
+  Indique s'il faut stocker la réponse pour une récupération ultérieure.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Métadonnées à attacher à la réponse à des fins de suivi.
+</ParamField>
+
+<ParamField body="text" type="object">
+  Options de configuration pour la génération de texte. Le comportement de `text.format` dépend du modèle sélectionné et du chemin routé ; il n'est pas garanti de manière uniforme sur tous les modèles.
+</ParamField>
+
+<ParamField body="parallel_tool_calls" type="boolean" default="true">
+  Indique s'il faut autoriser plusieurs appels d'outils en parallèle.
+</ParamField>
+
+<ParamField body="top_p" type="number">
+  Paramètre de sampling Nucleus (0-1).
+</ParamField>
+
+<ParamField body="reasoning" type="object">
+  Configuration du raisonnement pour les modèles prenant en charge le raisonnement, tels que les variantes de la famille GPT-5.
+
+  - `effort` (string) : Niveau d'effort de raisonnement (`low`, `medium`, `high`)
+</ParamField>
+
+## Réponse
+
+<ResponseField name="id" type="string">
+  Identifiant unique de la réponse.
+</ResponseField>
+
+<ResponseField name="object" type="string">
+  Toujours `response`.
+</ResponseField>
+
+<ResponseField name="created" type="integer">
+  Timestamp Unix de création de la réponse.
+</ResponseField>
+
+<ResponseField name="output" type="array">
+  Liste des éléments de sortie générés par le modèle.
+</ResponseField>
+
+<ResponseField name="usage" type="object">
+  Statistiques d'utilisation des tokens.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/responses" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o",
+    "input": [
+      {"type": "message", "role": "user", "content": "Hello!"}
+    ],
+    "max_output_tokens": 1000
+  }'
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.responses.create(
+    model="gpt-4o",
+    input=[
+        {"type": "message", "role": "user", "content": "Hello!"}
+    ],
+    max_output_tokens=1000
+)
+
+print(response.output)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.responses.create({
+  model: 'gpt-4o',
+  input: [
+    { type: 'message', role: 'user', content: 'Hello!' }
+  ],
+  max_output_tokens: 1000
+});
+
+console.log(response.output);
+```
+
+```go Go
+package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "fmt"
+    "net/http"
+)
+
+func main() {
+    payload := map[string]interface{}{
+        "model": "gpt-4o",
+        "input": []map[string]interface{}{
+            {"type": "message", "role": "user", "content": "Hello!"},
+        },
+        "max_output_tokens": 1000,
+    }
+    body, _ := json.Marshal(payload)
+
+    req, _ := http.NewRequest("POST", "https://api.aisonar.dev/v1/responses", bytes.NewBuffer(body))
+    req.Header.Set("Authorization", "Bearer sk-your-api-key")
+    req.Header.Set("Content-Type", "application/json")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+
+    var result map[string]interface{}
+    json.NewDecoder(resp.Body).Decode(&result)
+    fmt.Println(result["output"])
+}
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/responses');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Content-Type: application/json',
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => json_encode([
+        'model' => 'gpt-4o',
+        'input' => [
+            ['type' => 'message', 'role' => 'user', 'content' => 'Hello!']
+        ],
+        'max_output_tokens' => 1000
+    ])
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+print_r($data['output']);
+```
+## Exemple d’entrée visuelle
+
+Utilisez les modèles capables d'images en plaçant les images dans `message.content` sous forme de blocs `input_image`. La valeur de `image_url` peut être soit une URL publique, soit une URL de données Base64.
+
+```json
+{
+  "model": "gpt-5.4",
+  "input": [
+    {
+      "type": "message",
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "Please describe this image."
+        },
+        {
+          "type": "input_image",
+          "image_url": "https://example.com/demo.jpg"
+        }
+      ]
+    }
+  ]
+}
+```
+
+```json
+{
+  "model": "gpt-5.4",
+  "input": [
+    {
+      "type": "message",
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "Please describe this image."
+        },
+        {
+          "type": "input_image",
+          "image_url": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ..."
+        }
+      ]
+    }
+  ]
+}
+```
+
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "id": "resp_abc123",
+  "object": "response",
+  "created": 1706000000,
+  "model": "gpt-4o",
+  "output": [
+    {
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {"type": "text", "text": "Hello! How can I help you today?"}
+      ]
+    }
+  ],
+  "usage": {
+    "input_tokens": 10,
+    "output_tokens": 12,
+    "total_tokens": 22
+  }
+}
+```
+</ResponseExample>

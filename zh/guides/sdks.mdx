@@ -1,0 +1,114 @@
+---
+title: "SDK 与库"
+description: "用于 AI Sonar 集成的推荐 SDK 和库"
+---
+
+## 概述
+
+AI Sonar 最容易按所需行为选择 SDK：
+- 需要 Claude 原生 `/v1/messages` 行为时，使用官方 **Anthropic SDKs**
+- 需要 Gemini 原生请求格式时，使用官方 **Gemini / Google AI** 工具
+- 迁移 OpenAI 兼容 `/v1` 路由或 Responses 风格用法时，使用官方 **OpenAI SDKs**
+
+具体支持边界请以各集成页为准。在这套文档里，“recommended” 或 “supported” 代表存在已文档化的配置路径，并不自动等同于每个框架辅助层或提供商特定功能都做了端到端回归。
+
+## 推荐的 SDK
+
+<CardGroup cols={2}>
+  <Card title="OpenAI Python" icon="python" href="https://github.com/openai/openai-python">
+    `pip install openai`
+  </Card>
+  <Card title="OpenAI Node" icon="node-js" href="https://github.com/openai/openai-node">
+    `npm install openai`
+  </Card>
+  <Card title="OpenAI Go" icon="golang" href="https://github.com/openai/openai-go">
+    `go get github.com/openai/openai-go/v3`
+  </Card>
+  <Card title="Anthropic SDK" icon="robot" href="https://github.com/anthropics/anthropic-sdk-python">
+    原生支持 Claude Messages API
+  </Card>
+</CardGroup>
+
+## OpenAI SDK 示例
+
+当你迁移已有 OpenAI 兼容客户端，或明确想走 `/v1` 兼容路径时使用这个示例。需要 Claude 原生或 Gemini 原生功能时，请改用对应的原生 SDK。
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.responses.create(
+    model="gpt-5.4",
+    input="Explain AI Sonar in one sentence."
+)
+
+print(response.output_text)
+```
+
+## OpenAI Go 示例
+
+```go
+package main
+
+import (
+    openai "github.com/openai/openai-go/v3"
+    "github.com/openai/openai-go/v3/option"
+)
+
+func main() {
+    client := openai.NewClient(
+        option.WithAPIKey("sk-your-api-key"),
+        option.WithBaseURL("https://api.aisonar.dev/v1"),
+    )
+
+    _ = client
+}
+```
+
+## Anthropic SDK 示例
+
+```python
+from anthropic import Anthropic
+
+client = Anthropic(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev"
+)
+
+message = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+```
+
+## 你应该使用哪个 SDK？
+
+| 目标 | 推荐路径 |
+|------|------------------|
+| 提供商原生行为 | 原生提供商 SDK 或路由 |
+| 已有 OpenAI 兼容客户端 | OpenAI SDK + AI Sonar `/v1` |
+| 可移植聊天 / Embeddings | OpenAI 兼容 `/v1` 路由 |
+| Claude 原生功能 | Anthropic SDK |
+| Gemini 原生请求格式 | Gemini-native API / SDK |
+| LangChain / LlamaIndex / Vercel AI SDK | 使用专门的集成页面 |
+
+## 最佳实践
+
+<AccordionGroup>
+  <Accordion title="行为重要时优先选原生路由">
+    Anthropic 或 Gemini 原生路由适合提供商特定字段、工具、流式细节，以及不应通过另一种格式翻译的行为。
+  </Accordion>
+
+  <Accordion title="迁移时使用 OpenAI 兼容 `/v1`">
+    OpenAI 兼容 SDK 最适合已有 OpenAI 风格客户端、可移植聊天和 embeddings。它是兼容入口，不是 AI Sonar 唯一的 API 表面。
+  </Accordion>
+
+  <Accordion title="明确指定 base URL">
+    在 client 配置中直接传入 AI Sonar 的 base URL，而不是依赖较旧的环境变量别名。
+  </Accordion>
+</AccordionGroup>

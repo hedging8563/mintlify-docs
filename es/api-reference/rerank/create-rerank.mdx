@@ -1,0 +1,206 @@
+---
+title: "Reordenar documentos"
+openapi: "POST /v1/rerank"
+description: "Reordena documentos por relevancia respecto a una consulta"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+Reordena documentos utilizando modelos de similitud semántica. Útil para mejorar los resultados de búsqueda y las aplicaciones RAG.
+
+## Cuerpo de la solicitud
+
+**Tiempo de espera de solicitudes síncronas:** este endpoint no-chat espera a que el modelo enrutado termine. Entradas grandes, audio largo o lotes grandes pueden superar los valores predeterminados habituales de 30s del cliente, así que configura el timeout de tu cliente HTTP en al menos `120s`.
+
+<ParamField body="model" type="string" required>
+  ID del modelo de reranker a utilizar (por ejemplo, `BAAI/bge-reranker-v2-m3`, `qwen3-rerank`).
+</ParamField>
+
+<ParamField body="query" type="string" required>
+  La consulta con la que se clasificarán los documentos. Longitud máxima: `32,000` caracteres.
+</ParamField>
+
+<ParamField body="documents" type="array" required>
+  Lista de documentos (cadenas de texto) a reordenar. Límites: hasta `1,000` documentos, cada documento hasta `100,000` caracteres y como máximo `2,000,000` caracteres de documentos en total.
+</ParamField>
+
+<ParamField body="top_n" type="integer">
+  Número de mejores resultados a devolver. Por defecto se devuelven todos los documentos. Debe ser al menos `1` y no puede superar `documents.length`. AI Sonar no tiene actualmente un límite duro inferior específico de proveedor bajo gobierno; si un proveedor publica uno más adelante, deberá añadirse primero a la truth de request-shape de rerank antes de documentarlo o aplicarlo.
+</ParamField>
+
+<ParamField body="return_documents" type="boolean" default="false">
+  Indica si se debe incluir el texto original del documento en la respuesta.
+</ParamField>
+
+## Respuesta
+
+<ResponseField name="results" type="array">
+  Lista clasificada de documentos con puntuaciones.
+
+  Cada resultado contiene:
+  - `index` (integer): Índice original del documento
+  - `relevance_score` (number): Puntuación de relevancia (0-1)
+  - `document` (string): Texto original (si `return_documents=true`)
+</ResponseField>
+
+<ResponseField name="model" type="string">
+  El modelo utilizado para el reordenamiento.
+</ResponseField>
+
+<ResponseField name="usage" type="object">
+  Estadísticas de uso de tokens.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/rerank" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "BAAI/bge-reranker-v2-m3",
+    "query": "What is machine learning?",
+    "documents": [
+      "Machine learning is a subset of AI",
+      "The weather is nice today",
+      "Deep learning uses neural networks"
+    ],
+    "top_n": 2,
+    "return_documents": true
+  }'
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    "https://api.aisonar.dev/v1/rerank",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+    json={
+        "model": "BAAI/bge-reranker-v2-m3",
+        "query": "What is machine learning?",
+        "documents": [
+            "Machine learning is a subset of AI",
+            "The weather is nice today",
+            "Deep learning uses neural networks"
+        ],
+        "top_n": 2
+    }
+)
+
+print(response.json())
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.aisonar.dev/v1/rerank', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer sk-your-api-key',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    model: 'BAAI/bge-reranker-v2-m3',
+    query: 'What is machine learning?',
+    documents: [
+      'Machine learning is a subset of AI',
+      'The weather is nice today',
+      'Deep learning uses neural networks'
+    ],
+    top_n: 2
+  })
+});
+
+const data = await response.json();
+console.log(data.results);
+```
+
+```go Go
+package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "fmt"
+    "net/http"
+)
+
+func main() {
+    payload := map[string]interface{}{
+        "model": "BAAI/bge-reranker-v2-m3",
+        "query": "What is machine learning?",
+        "documents": []string{
+            "Machine learning is a subset of AI",
+            "The weather is nice today",
+            "Deep learning uses neural networks",
+        },
+        "top_n": 2,
+    }
+    body, _ := json.Marshal(payload)
+
+    req, _ := http.NewRequest("POST", "https://api.aisonar.dev/v1/rerank", bytes.NewBuffer(body))
+    req.Header.Set("Authorization", "Bearer sk-your-api-key")
+    req.Header.Set("Content-Type", "application/json")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+
+    var result map[string]interface{}
+    json.NewDecoder(resp.Body).Decode(&result)
+    fmt.Println(result["results"])
+}
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/rerank');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Content-Type: application/json',
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => json_encode([
+        'model' => 'BAAI/bge-reranker-v2-m3',
+        'query' => 'What is machine learning?',
+        'documents' => [
+            'Machine learning is a subset of AI',
+            'The weather is nice today',
+            'Deep learning uses neural networks'
+        ],
+        'top_n' => 2
+    ])
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+print_r($data['results']);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "results": [
+    {
+      "index": 0,
+      "relevance_score": 0.95,
+      "document": "Machine learning is a subset of AI"
+    },
+    {
+      "index": 2,
+      "relevance_score": 0.82,
+      "document": "Deep learning uses neural networks"
+    }
+  ],
+  "model": "BAAI/bge-reranker-v2-m3",
+  "usage": {
+    "prompt_tokens": 45,
+    "total_tokens": 45
+  }
+}
+```
+</ResponseExample>

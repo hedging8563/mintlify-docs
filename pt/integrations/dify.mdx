@@ -1,0 +1,133 @@
+---
+title: "Dify"
+description: "Integre o AI Sonar com o Dify usando o provedor OpenAI e uma URL base personalizada"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Visão geral
+
+O Dify funciona bem com o AI Sonar por meio do fluxo de provedor de modelo compatível com OpenAI.
+
+Nas versões atuais do Dify, o caminho mais seguro geralmente é:
+- escolher o provedor integrado **OpenAI**
+- definir sua chave de API do AI Sonar
+- definir uma URL base personalizada de `https://api.aisonar.dev/v1`
+
+<Note>
+Algumas versões mais antigas do Dify expõem isso como `OpenAI-API-compatible` em vez do provedor integrado `OpenAI` com um campo de URL base personalizada. Se a interface do seu Dify parecer diferente, use o fluxo de provedor personalizado compatível com OpenAI mais próximo disponível nessa versão.
+</Note>
+
+<Note>
+**Tipo**: Framework ou plataforma
+
+**Caminho principal**: caminho de chat compatível com OpenAI
+
+**Nível de suporte**: Compatível com limites
+</Note>
+
+Este é um caminho de integração orientado a chat-completions. Ele não deve ser interpretado como garantia de que o Dify exponha o mesmo comportamento de Responses ou WebSocket que integrações dedicadas do Codex.
+
+## Pré-requisitos
+
+- Conta do AI Sonar com acesso à API
+- Dify Cloud ou Dify auto-hospedado
+
+## Etapas de configuração
+
+### Etapa 1: Obtenha sua chave de API
+
+1. Faça login no [AI Sonar Dashboard](https://console.aisonar.dev)
+2. Abra [API Keys](https://console.aisonar.dev/api)
+3. Crie ou copie uma chave de API que comece com `sk-`
+
+### Etapa 2: Configure o provedor
+
+<Steps>
+  <Step title="Abra os provedores de modelo">
+    No Dify, vá para **Settings** → **Model Providers**
+  </Step>
+  <Step title="Selecione OpenAI">
+    Abra as configurações do provedor **OpenAI**. Se a sua versão do Dify não oferecer uma URL base personalizada aqui, use a opção de provedor personalizado compatível com OpenAI exposta por essa versão.
+  </Step>
+  <Step title="Insira as configurações do AI Sonar">
+    Use estes valores:
+
+    | Campo | Valor |
+    |-------|-------|
+    | Chave da API | `sk-your-api-key` |
+    | URL base da API / URL base personalizada | `https://api.aisonar.dev/v1` |
+  </Step>
+  <Step title="Adicione modelos">
+    Adicione os modelos que deseja usar, por exemplo:
+    - `gpt-5.4`
+    - `gpt-5-mini`
+    - `gpt-4o`
+    - `claude-sonnet-4-6`
+    - `claude-opus-4-6`
+    - `gemini-2.5-flash`
+    - `gemini-2.5-pro`
+    - `deepseek-r1`
+  </Step>
+</Steps>
+
+### Etapa 3: Teste a conexão
+
+1. Escolha um modelo como `gpt-5-mini` ou `gpt-4o`
+2. Envie um prompt de teste
+3. Confirme que o Dify recebe uma resposta válida
+
+## Embeddings para bases de conhecimento
+
+Para RAG e indexação de base de conhecimento, adicione um modelo de embedding como:
+- `text-embedding-3-small`
+- `text-embedding-3-large`
+
+Em seguida, defina-o como o modelo de embedding padrão nas configurações da base de conhecimento ou da aplicação relevante.
+
+## Papéis de modelo recomendados
+
+| Caso de uso | Modelos sugeridos |
+|----------|------------------|
+| Chat padrão | `gpt-5.4`, `gpt-5-mini`, `gpt-4o` |
+| Raciocínio profundo | `gpt-5.4`, `claude-opus-4-6`, `deepseek-r1` |
+| Rápido/barato | `gpt-5-mini`, `gemini-2.5-flash` |
+| Embeddings | `text-embedding-3-small`, `text-embedding-3-large` |
+
+## Boas práticas
+
+<AccordionGroup>
+  <Accordion title="Comece com o provedor OpenAI integrado">
+    Nas versões mais recentes do Dify, o provedor OpenAI integrado com uma URL base personalizada geralmente é a configuração mais limpa para o AI Sonar.
+  </Accordion>
+
+  <Accordion title="Use modelos mais baratos para iteração">
+    Use `gpt-5-mini` ou `gemini-2.5-flash` durante a iteração e depois troque os fluxos de trabalho mais pesados por modelos mais robustos apenas onde for necessário.
+  </Accordion>
+
+  <Accordion title="Lembre-se de que o Dify geralmente é orientado a chat-completions">
+    A maioria dos fluxos do Dify usa um comportamento de chat compatível com OpenAI. Se você precisar de Responses específicas do Codex ou comportamento de WebSocket, use as integrações dedicadas do Codex em vez do Dify.
+  </Accordion>
+</AccordionGroup>
+
+## Solução de problemas
+
+<AccordionGroup>
+  <Accordion title="Erro de conexão">
+    - Verifique se a URL base é exatamente `https://api.aisonar.dev/v1`
+    - Remova barras finais se o Dify as duplicar
+    - Confirme que o servidor Dify consegue alcançar o AI Sonar pela internet pública
+  </Accordion>
+
+  <Accordion title="401 Unauthorized">
+    - Verifique novamente a chave de API
+    - Confirme que a chave está ativa no dashboard do AI Sonar
+    - Certifique-se de que o valor colado no Dify não contém espaços extras ou quebras de linha
+  </Accordion>
+
+  <Accordion title="Modelo não encontrado">
+    - Verifique o nome do modelo exatamente
+    - Adicione novamente a entrada do modelo se a interface do provedor tiver armazenado em cache um valor antigo
+    - Verifique a disponibilidade atual do modelo na documentação ou no dashboard do AI Sonar
+  </Accordion>
+</AccordionGroup>

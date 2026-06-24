@@ -1,0 +1,186 @@
+---
+title: "AI Sonar 提供者設定"
+description: "在 OpenClaw 中將 AI Sonar 設為自訂提供者，透過 OpenAI、Responses、Anthropic 與 Gemini 相容路由進行配置"
+---
+
+<Note>
+本指南適用於希望將 AI Sonar 作為 AI 提供者連接的 **自我部署（self-hosted）OpenClaw** 使用者。
+</Note>
+
+## 概覽
+
+對於目前的 OpenClaw 版本，建議的做法是透過 `models.providers` 來配置 AI Sonar。
+
+如果您只是想快速開始，僅設定 `aisonar` 即足夠。僅在您明確需要 **Responses API**、**Claude native**、**Gemini native** 或 **MiniMax native** 行為時才新增其他提供者。
+
+| 提供者 | OpenClaw `api` | 適用於 | baseUrl |
+|----------|----------------|----------|---------|
+| `aisonar` | `openai-completions` | 適用於 GPT、DeepSeek、Qwen 以及大多數與 OpenAI 相容的呼叫 | `https://api.aisonar.dev/v1` |
+| `aisonar-responses` | `openai-responses` | 期望 `/v1/responses` 語意的 OpenAI Responses 工作流程 | `https://api.aisonar.dev/v1` |
+| `aisonar-claude` | `anthropic-messages` | 原生 Claude Messages API | `https://api.aisonar.dev` |
+| `aisonar-gemini` | `google-generative-ai` | 原生 Gemini API 格式 | `https://api.aisonar.dev` |
+| `aisonar-minimax` | `anthropic-messages` | 原生 MiniMax 路由 | `https://api.aisonar.dev` |
+
+<Warning>
+僅對 `openai-completions` 與 `openai-responses` 使用 `/v1` 後綴。
+
+像 `anthropic-messages` 與 `google-generative-ai` 這類原生提供者應使用 `https://api.aisonar.dev`（不要加 `/v1`），否則 OpenClaw 可能會組成錯誤的上游路徑。
+</Warning>
+
+## 前置需求
+
+- 一個自我部署的 OpenClaw 實例
+- 一個 AI Sonar API Key — [在這裡取得](https://console.aisonar.dev)
+
+## 設定
+
+編輯您的 OpenClaw 設定檔：
+
+- **自我部署**: `~/.openclaw/openclaw.json`
+
+在 `models.providers` 下新增 AI Sonar 提供者：
+
+```json5
+{
+  agents: {
+    defaults: {
+      model: {
+        primary: "aisonar-claude/claude-sonnet-4-6"
+      }
+    }
+  },
+  models: {
+    mode: "merge",
+    providers: {
+      aisonar: {
+        api: "openai-completions",
+        baseUrl: "https://api.aisonar.dev/v1",
+        apiKey: "sk-your-api-key",
+        models: [
+          { id: "gpt-4o", name: "GPT-4o" },
+          { id: "deepseek-r1", name: "DeepSeek R1" },
+          { id: "qwen3-32b", name: "Qwen 3 32B" }
+        ]
+      },
+      "aisonar-responses": {
+        api: "openai-responses",
+        baseUrl: "https://api.aisonar.dev/v1",
+        apiKey: "sk-your-api-key",
+        models: [
+          { id: "gpt-4o", name: "GPT-4o (Responses)" },
+          { id: "gpt-5.2", name: "GPT-5.2 (Responses)" }
+        ]
+      },
+      "aisonar-claude": {
+        api: "anthropic-messages",
+        baseUrl: "https://api.aisonar.dev",
+        apiKey: "sk-your-api-key",
+        models: [
+          { id: "claude-sonnet-4-6", name: "Claude Sonnet 4.6" },
+          { id: "claude-opus-4-6", name: "Claude Opus 4.6" }
+        ]
+      },
+      "aisonar-gemini": {
+        api: "google-generative-ai",
+        baseUrl: "https://api.aisonar.dev",
+        apiKey: "sk-your-api-key",
+        models: [
+          { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash" },
+          { id: "gemini-3-flash-preview", name: "Gemini 3 Flash Preview" }
+        ]
+      },
+      "aisonar-minimax": {
+        api: "anthropic-messages",
+        baseUrl: "https://api.aisonar.dev",
+        apiKey: "sk-your-api-key",
+        models: [
+          { id: "minimax-m1", name: "MiniMax M1" }
+        ]
+      }
+    }
+  }
+}
+```
+
+<Info>
+所有 5 個提供者使用相同的 **API Key**。您只需要一個 AI Sonar 帳戶。
+</Info>
+
+<Info>
+上面 `models` 陣列僅顯示常見範例。視需要為每個提供者新增更多模型 ID。
+</Info>
+
+## 使用模型
+
+OpenClaw 仍以 `provider/model` 格式來參考模型：
+
+```json5
+{
+  agents: {
+    defaults: {
+      model: {
+        primary: "aisonar-gemini/gemini-2.5-flash"
+      }
+    }
+  }
+}
+```
+
+### 模型範例
+
+| 提供者 | 模型參考 | 說明 |
+|----------|-----------------|-------------|
+| `aisonar` | `aisonar/gpt-4o` | OpenAI 相容路由 |
+| `aisonar` | `aisonar/deepseek-r1` | DeepSeek 推理模型 |
+| `aisonar-responses` | `aisonar-responses/gpt-4o` | Responses API 路由 |
+| `aisonar-claude` | `aisonar-claude/claude-sonnet-4-6` | Claude 原生 Messages 路由 |
+| `aisonar-gemini` | `aisonar-gemini/gemini-2.5-flash` | Gemini 原生路由 |
+| `aisonar-minimax` | `aisonar-minimax/minimax-m1` | MiniMax 原生路由 |
+
+在 [aisonar.dev/models](https://aisonar.dev/models) 瀏覽所有可用模型。
+
+## 何時使用哪個提供者
+
+- `aisonar`: 大多數通用代理與聊天使用情境的預設選擇。
+- `aisonar-responses`: 當您的 OpenClaw 工作流程明確依賴 OpenAI Responses 語意時使用。
+- `aisonar-claude`: 當您想要 Claude 的原生 Messages 行為時使用。
+- `aisonar-gemini`: 當您需要 Gemini 原生的請求/回應格式或已有 Gemini 風格的整合時使用。
+- `aisonar-minimax`: 當您想要透過 MiniMax 的原生路由時使用。
+
+如果您不需要 Gemini 原生行為，仍然可以透過 OpenAI 相容路由使用 `aisonar/gemini-*` 呼叫 Gemini 模型。
+
+## 常見錯誤
+
+<AccordionGroup>
+  <Accordion title="仍在使用舊的頂層 providers 陣列">
+    目前的 OpenClaw 文件使用 `models.providers`。如果您保留舊的頂層 `providers` 陣列格式，OpenClaw 可能會忽略該設定或無法如預期解析提供者前綴。
+  </Accordion>
+  <Accordion title="在 aisonar-responses 忘記加上 /v1">
+    `openai-responses` 映射到 AI Sonar 的 `/v1/responses` 路徑，因此 `aisonar-responses` 必須使用 `https://api.aisonar.dev/v1`。
+  </Accordion>
+  <Accordion title="在 aisonar-claude、aisonar-gemini 或 aisonar-minimax 新增 /v1">
+    `anthropic-messages` 與 `google-generative-ai` 應使用 `https://api.aisonar.dev`（不要加 `/v1`）。加上 `/v1` 會產生不正確的請求路徑。
+  </Accordion>
+  <Accordion title="OpenClaw 仍然支援原生 Gemini 嗎？">
+    支援。現行 OpenClaw 文件仍包含內建的 `google` 提供者，並且也支援使用 `api: "google-generative-ai"` 的自訂提供者。因此 `aisonar-gemini` 對於 OpenClaw 使用者來說仍然是有效的原生 Gemini 路由。
+  </Accordion>
+</AccordionGroup>
+
+## 驗證設定
+
+儲存設定後，重新啟動您的 OpenClaw 實例並用簡單訊息測試。如果您看到回應，表示提供者已正確配置。
+
+```bash
+# 自託管：重新啟動服務
+systemctl --user restart openclaw    # Linux
+launchctl stop cc.aisonar.openclaw && launchctl start cc.aisonar.openclaw  # macOS
+```
+
+## 下一步
+
+一旦 OpenClaw 已連線，以下指南可協助您更有效地使用 AI Sonar：
+
+- [API 格式](/guides/api-formats) — 了解 OpenAI、Responses、Anthropic 與 Gemini 路由之間的差異
+- [IDE / SDK 相容性](/guides/ide-sdk-compatibility) — 了解何時使用 `/v1/responses` 較為適合
+- [錯誤處理](/guides/error-handling) — 學習常見失敗模式與復原策略
+- [模型總覽](https://aisonar.dev/models) — 在將模型接入代理前先瀏覽模型 ID

@@ -1,0 +1,136 @@
+---
+title: "Coding Agent Model Seçimi"
+description: "Her kodlama görevi için doğru modeli seçin — karşılaştırma tablosu, öneriler ve yapılandırma"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Kodlama İçin Model Karşılaştırması
+
+| Model | Hız | Kod kalitesi | Maliyet | Bağlam penceresi | En iyi kullanım |
+|-------|-----|-------------|---------|-------------------|----------------|
+| `claude-opus-4-6` | Orta | Mükemmel | $$$$ | 200K | Mimari, karmaşık refactoring |
+| `gpt-5.4` | Orta | Mükemmel | $$$$ | 200K | Karmaşık muhakeme, planlama |
+| `claude-sonnet-4-6` | Hızlı | Çok iyi | $$$ | 200K | Genel kodlama, incelemeler |
+| `gemini-3-pro-preview` | Hızlı | Çok iyi | $$$ | 1M | Büyük kod tabanı analizi |
+| `gpt-5-mini` | Çok hızlı | İyi | $$ | 128K | Hızlı düzenlemeler, tamamlama |
+| `gemini-3-flash-preview` | Çok hızlı | İyi | $$ | 1M | Hızlı iterasyon, arama |
+| `deepseek-r1` | Orta | Çok iyi | $ | 64K | Muhakeme yoğun görevler |
+| `deepseek-v3.2` | Hızlı | İyi | $ | 128K | Toplu üretim, şablon kod |
+
+## Göreve Göre Öneriler
+
+<AccordionGroup>
+  <Accordion title="Kod üretimi / Scaffolding">
+    **Önerilen**: `claude-sonnet-4-6`, `gemini-3-pro-preview`
+
+    Temiz, iyi yapılandırılmış kod. Karmaşık çoklu dosya scaffolding: `claude-opus-4-6`.
+
+    Bütçe alternatifi: `deepseek-v3.2` şablon kodu düşük maliyetle işler.
+  </Accordion>
+
+  <Accordion title="Kod incelemesi / Refactoring">
+    **Önerilen**: `claude-sonnet-4-6`, `deepseek-r1`
+
+    `deepseek-r1` özellikle maliyet etkin — chain-of-thought yaklaşımı ince sorunları yakalar.
+  </Accordion>
+
+  <Accordion title="Hata düzeltme / Hata ayıklama">
+    **Önerilen**: `claude-sonnet-4-6`, `gpt-5-mini`
+
+    Hata düzeltme genellikle net bir kapsama sahiptir. Standart modeller yeterlidir.
+  </Accordion>
+
+  <Accordion title="Mimari tasarım">
+    **Önerilen**: `claude-opus-4-6`, `gpt-5.4`
+
+    Mimari kararlar en güçlü muhakemeden faydalanır. Nadir ama yüksek etkili.
+  </Accordion>
+
+  <Accordion title="Hızlı düzenlemeler / Tab tamamlama">
+    **Önerilen**: `gpt-5-mini`, `gemini-3-flash-preview`
+
+    Etkileşimli kullanımda hız kritiktir.
+  </Accordion>
+</AccordionGroup>
+
+## AI Sonar Yönlendirmesi Nasıl Çalışır
+
+### Yönlendirme Stratejileri
+
+| Strateji | Davranış | En iyi kullanım |
+|----------|---------|----------------|
+| **PRIORITY** | En yüksek öncelikli mevcut sağlayıcıya yönlendirir | Güvenilirlik |
+| **COST** | En ucuz mevcut sağlayıcıya yönlendirir | Maliyet optimizasyonu |
+
+### Otomatik Yedekleme
+
+```
+İstek: claude-sonnet-4-6
+  → Sağlayıcı A (birincil): 503 hatası
+  → Sağlayıcı B (yedek): ✓ Başarılı
+```
+
+### Yerel Format Yönlendirmesi
+
+Seçilen model ve yönlendirilmiş kanal bunu desteklediğinde, AI Sonar uyumluluğu artırmak için istekleri model ailesinin yerel API biçimi üzerinden yönlendirebilir:
+
+| Model Ailesi | API Biçimi | Temel URL |
+|-------------|------------|----------|
+| Claude | Anthropic Mesajları | `https://api.aisonar.dev` |
+| GPT | OpenAI Yanıtları | `https://api.aisonar.dev/v1` |
+| Gemini | Gemini Yerel API | `https://api.aisonar.dev` veya `https://api.aisonar.dev/v1beta` istemci yoluna bağlı olarak |
+| DeepSeek | OpenAI Sohbet | `https://api.aisonar.dev/v1` |
+
+Claude Code güçlü bir Anthropic-native yoldur. Gemini-native API’ler de vardır, ancak Gemini CLI’nin kendisi hâlâ best-effort bir uyumluluk yoludur ve uzun vadeli olarak kararlı bir iş akışı gibi sunulmamalıdır.
+
+## Araç Başına Yapılandırma
+
+<AccordionGroup>
+  <Accordion title="Claude Code">
+    ```bash
+    export ANTHROPIC_API_KEY="sk-your-api-key"
+    export ANTHROPIC_BASE_URL="https://api.aisonar.dev"
+    ```
+    Model seçimi: `claude --model claude-sonnet-4-6`
+
+    [Tam rehber →](/tr/integrations/claude-code)
+  </Accordion>
+
+  <Accordion title="Cursor">
+    Settings → Models:
+    - API Key: `sk-your-api-key`
+    - Base URL: `https://api.aisonar.dev/v1`
+
+    [Tam rehber →](/tr/integrations/cursor)
+  </Accordion>
+
+  <Accordion title="Codex CLI">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export OPENAI_BASE_URL="https://api.aisonar.dev/v1"
+    ```
+    [Tam rehber →](/tr/integrations/codex-cli)
+  </Accordion>
+
+  <Accordion title="Gemini CLI">
+    ```bash
+    export GEMINI_API_KEY="sk-your-api-key"
+    export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"
+    ```
+
+    Bu yolu kararlı bir upstream sözleşmesi olarak değil, best-effort uyumluluk yolu olarak değerlendirin.
+    [Tam rehber →](/tr/integrations/gemini-cli)
+  </Accordion>
+
+  <Accordion title="OpenCode">
+    ```json
+    {
+      "provider": "openai",
+      "apiKey": "sk-your-api-key",
+      "baseURL": "https://api.aisonar.dev/v1"
+    }
+    ```
+    [Tam rehber →](/tr/integrations/opencode)
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,55 @@
+---
+title: "LiteLLM"
+description: "LiteLLM を AI Sonar の上流プロバイダーまたは内部ゲートウェイ層として使用します"
+---
+
+## 概要
+
+LiteLLM と AI Sonar は、主に 2 つの形で組み合わせられます。
+
+- AI Sonar を LiteLLM の背後にある **OpenAI 互換 upstream** として使う
+- LiteLLM を AI Sonar の前段に置き、virtual key、追加ルーティング、集中 observability を担わせる
+
+AI Sonar では、LiteLLM の **custom OpenAI / OpenAI 互換** パスを使い、`api_base` を `https://api.aisonar.dev/v1` に向けるのが最も扱いやすい標準構成です。
+
+<Note>
+Claude-native や Gemini-native の request shape が必要な場合は、LiteLLM の OpenAI 互換 抽象に押し込むのではなく、AI Sonar 側の native integration を優先してください。
+</Note>
+
+<Note>
+**種類**: フレームワーク / プラットフォーム
+
+**主要パス**: OpenAI互換 upstream
+
+**サポートレベル**: サポート済みパス
+</Note>
+
+## インストール
+
+```bash
+pip install 'litellm[proxy]'
+```
+
+## Proxy 設定
+
+```yaml
+model_list:
+  - model_name: aisonar-gpt-5.4
+    litellm_params:
+      model: custom_openai/gpt-5.4
+      api_base: https://api.aisonar.dev/v1
+      api_key: os.environ/OPENAI_API_KEY
+```
+
+起動:
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+litellm --config litellm-config.yaml --port 4000
+```
+
+## ベストプラクティス
+
+- AI Sonar はまず `custom_openai` upstream として扱う
+- 追加の gateway 層が本当に必要なときだけ LiteLLM を前段に置く
+- プロバイダー固有の細部まで OpenAI 互換 経路で過度に期待しない

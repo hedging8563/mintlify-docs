@@ -1,0 +1,192 @@
+---
+title: "Buat Musik"
+openapi: "POST /v1/music/generations"
+description: "Membuat tugas pembuatan musik menggunakan Suno"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+Hasilkan musik dan lirik menggunakan AI. Ini adalah API asinkron. Respons create mengembalikan identitas tugas dan, ketika tersedia, juga dapat menyertakan `poll_url` yang diprioritaskan.
+
+## Body Permintaan
+
+<ParamField body="model" type="string" default="suno_music">
+  Model yang digunakan: `suno_music` untuk pembuatan musik, `suno_lyrics` hanya untuk lirik.
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  Deskripsi musik yang akan dihasilkan. Dapat mencakup gaya, suasana hati, instrumen, dll.
+</ParamField>
+
+<ParamField body="title" type="string">
+  Judul untuk lagu yang dihasilkan.
+</ParamField>
+
+<ParamField body="tags" type="string">
+  Tag gaya (misalnya, "pop, upbeat, electronic").
+</ParamField>
+
+<ParamField body="action" type="string">
+  Tipe pembuatan: `MUSIC` (default) atau `LYRICS`.
+</ParamField>
+
+<ParamField body="mv" type="string">
+  Versi model yang digunakan.
+</ParamField>
+
+<ParamField body="continue_clip_id" type="string">
+  ID klip sebelumnya untuk dilanjutkan.
+</ParamField>
+
+<ParamField body="continue_at" type="number">
+  Timestamp (dalam detik) untuk dilanjutkan.
+</ParamField>
+
+<ParamField body="user" type="string">
+  Pengidentifikasi unik untuk pengguna akhir.
+</ParamField>
+
+## Respons
+
+<ResponseField name="id" type="string">
+  ID tugas untuk polling status.
+</ResponseField>
+
+<ResponseField name="task_id" type="string">
+  Alias identifier tugas asinkron ketika dikembalikan oleh adapter.
+</ResponseField>
+
+<ResponseField name="poll_url" type="string">
+  URL polling prioritas ketika tersedia.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Status tugas: `pending`, `processing`, `completed`, atau `failed`.
+</ResponseField>
+
+<ResponseField name="created" type="integer">
+  Unix timestamp pembuatan tugas.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/music/generations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "suno_music",
+    "prompt": "An upbeat electronic dance track with heavy bass",
+    "title": "Night Drive",
+    "tags": "electronic, EDM, energetic"
+  }'
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    "https://api.aisonar.dev/v1/music/generations",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+    json={
+        "model": "suno_music",
+        "prompt": "An upbeat electronic dance track with heavy bass",
+        "title": "Night Drive",
+        "tags": "electronic, EDM, energetic"
+    }
+)
+
+task_id = response.json()["id"]
+print(f"Task ID: {task_id}")
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.aisonar.dev/v1/music/generations', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer sk-your-api-key',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    model: 'suno_music',
+    prompt: 'An upbeat electronic dance track with heavy bass',
+    title: 'Night Drive',
+    tags: 'electronic, EDM, energetic'
+  })
+});
+
+const data = await response.json();
+console.log(`Task ID: ${data.id}`);
+```
+
+```go Go
+package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "fmt"
+    "net/http"
+)
+
+func main() {
+    payload := map[string]interface{}{
+        "model":  "suno_music",
+        "prompt": "An upbeat electronic dance track with heavy bass",
+        "title":  "Night Drive",
+        "tags":   "electronic, EDM, energetic",
+    }
+    body, _ := json.Marshal(payload)
+
+    req, _ := http.NewRequest("POST", "https://api.aisonar.dev/v1/music/generations", bytes.NewBuffer(body))
+    req.Header.Set("Authorization", "Bearer sk-your-api-key")
+    req.Header.Set("Content-Type", "application/json")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+
+    var result map[string]interface{}
+    json.NewDecoder(resp.Body).Decode(&result)
+    fmt.Printf("Task ID: %s\n", result["id"])
+}
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/music/generations');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Content-Type: application/json',
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => json_encode([
+        'model' => 'suno_music',
+        'prompt' => 'An upbeat electronic dance track with heavy bass',
+        'title' => 'Night Drive',
+        'tags' => 'electronic, EDM, energetic'
+    ])
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+echo "Task ID: " . $data['id'];
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "pending",
+  "created": 1706000000,
+  "model": "suno_music"
+}
+```
+</ResponseExample>

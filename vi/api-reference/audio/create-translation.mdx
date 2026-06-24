@@ -1,0 +1,164 @@
+---
+title: "Tạo Bản dịch"
+openapi: "POST /v1/audio/translations"
+description: "Dịch audio thành văn bản tiếng Anh"
+---
+
+## Tổng quan
+
+Dịch audio ở bất kỳ ngôn ngữ được hỗ trợ nào thành văn bản tiếng Anh. Không giống như transcription, endpoint này luôn trả về văn bản tiếng Anh bất kể ngôn ngữ đầu vào là gì.
+
+## Nội dung yêu cầu
+
+**Timeout cho yêu cầu đồng bộ:** endpoint không phải chat này chờ model được định tuyến hoàn tất. Input lớn, audio dài, hoặc batch lớn có thể vượt quá mặc định 30s phổ biến của client, vì vậy hãy đặt timeout của HTTP client ít nhất là `120s`.
+
+<ParamField body="file" type="file" required>
+  Tệp audio cần dịch. Các định dạng được hỗ trợ: `flac`, `mp3`, `mp4`, `mpeg`, `mpga`, `m4a`, `ogg`, `wav`, `webm`. Kích thước tệp tối đa là 25 MB.
+</ParamField>
+
+<ParamField body="model" type="string" default="whisper-1">
+  Model sẽ được sử dụng. Hiện tại chỉ hỗ trợ `whisper-1`.
+</ParamField>
+
+<ParamField body="prompt" type="string">
+  Văn bản tùy chọn để định hướng phong cách của model hoặc tiếp tục một đoạn trước đó. Nên là tiếng Anh.
+</ParamField>
+
+<ParamField body="response_format" type="string" default="json">
+  Định dạng của đầu ra. Các tùy chọn: `json`, `text`, `srt`, `verbose_json`, `vtt`.
+</ParamField>
+
+<ParamField body="temperature" type="number">
+  Nhiệt độ lấy mẫu, trong khoảng từ 0 đến 1. Các giá trị cao hơn như 0.8 tạo ra đầu ra ngẫu nhiên hơn, trong khi các giá trị thấp hơn như 0.2 khiến đầu ra tập trung và mang tính xác định hơn.
+</ParamField>
+
+## Phản hồi
+
+<ResponseField name="text" type="string">
+  Văn bản đã dịch bằng tiếng Anh.
+</ResponseField>
+
+Đối với định dạng `verbose_json`, phản hồi cũng bao gồm:
+
+<ResponseField name="language" type="string">
+  Ngôn ngữ được phát hiện của audio đầu vào.
+</ResponseField>
+
+<ResponseField name="duration" type="number">
+  Thời lượng của audio đầu vào tính bằng giây.
+</ResponseField>
+
+<ResponseField name="segments" type="array">
+  Các đoạn của văn bản đã dịch kèm dấu thời gian.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/audio/translations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F "file=@german_audio.mp3" \
+  -F "model=whisper-1"
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+with open("german_audio.mp3", "rb") as audio_file:
+    response = client.audio.translations.create(
+        model="whisper-1",
+        file=audio_file
+    )
+
+print(response.text)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+import fs from 'fs';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.audio.translations.create({
+  model: 'whisper-1',
+  file: fs.createReadStream('german_audio.mp3')
+});
+
+console.log(response.text);
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/audio/translations');
+
+$file = new CURLFile('german_audio.mp3', 'audio/mpeg', 'german_audio.mp3');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => [
+        'file' => $file,
+        'model' => 'whisper-1'
+    ]
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+echo $data['text'];
+```
+</RequestExample>
+
+<ResponseExample>
+```json json
+{
+  "text": "Hello, my name is Wolfgang and I come from Germany. Where are you from?"
+}
+```
+
+```json verbose_json
+{
+  "task": "translate",
+  "language": "german",
+  "duration": 8.470000267028809,
+  "text": "Hello, my name is Wolfgang and I come from Germany. Where are you from?",
+  "segments": [
+    {
+      "id": 0,
+      "seek": 0,
+      "start": 0.0,
+      "end": 4.0,
+      "text": " Hello, my name is Wolfgang and I come from Germany.",
+      "tokens": [50364, 2425, 11, 452, 1315, 307, 25329, 293, 286, 808, 490, 5765, 13, 50564],
+      "temperature": 0.0,
+      "avg_logprob": -0.45,
+      "compression_ratio": 1.0,
+      "no_speech_prob": 0.0
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## Dịch thuật so với Chuyển lời nói thành văn bản
+
+| Tính năng | Dịch thuật | Transcription |
+|---------|-------------|---------------|
+| Ngôn ngữ đầu ra | Luôn là tiếng Anh | Giống với đầu vào |
+| Trường hợp sử dụng | Chuyển audio tiếng nước ngoài sang tiếng Anh | Giữ nguyên ngôn ngữ gốc |
+| Tham số ngôn ngữ | Không áp dụng | Gợi ý tùy chọn |
+
+<Note>
+  Endpoint dịch thuật tự động phát hiện ngôn ngữ nguồn và dịch sang tiếng Anh. Tham số `language` từ transcription sẽ bị bỏ qua.
+</Note>

@@ -1,0 +1,201 @@
+---
+title: "OpenCode"
+description: "Cấu hình OpenCode để sử dụng API AI Sonar"
+---
+
+## Tổng quan
+
+
+
+<Note>
+**Loại**: Công cụ coding
+
+**Đường chính**: tương thích OpenAI
+
+**Mức hỗ trợ**: Đường được hỗ trợ
+</Note>
+
+OpenCode là một trợ lý lập trình AI mã nguồn mở chạy trong terminal của bạn. Công cụ này hỗ trợ nhiều nhà cung cấp LLM và có thể được cấu hình để sử dụng API của AI Sonar nhằm truy cập hàng trăm mô hình.
+
+## Cài đặt
+
+<Tabs>
+  <Tab title="Script cài đặt">
+    ```bash
+    curl -fsSL https://opencode.ai/install | bash
+    ```
+  </Tab>
+  <Tab title="Homebrew">
+    ```bash
+    brew install opencode-ai/tap/opencode
+    ```
+
+    Hoặc sử dụng tap từ cộng đồng (cập nhật thường xuyên hơn):
+    ```bash
+    brew install anomalyco/tap/opencode
+    ```
+  </Tab>
+  <Tab title="Go">
+    ```bash
+    go install github.com/opencode-ai/opencode@latest
+    ```
+  </Tab>
+</Tabs>
+
+Xác minh cài đặt:
+
+```bash
+opencode --version
+```
+
+## Cấu hình
+
+### Bước 1: Thiết lập biến môi trường
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+```
+
+Để cấu hình vĩnh viễn, thêm vào `~/.bashrc` hoặc `~/.zshrc`:
+
+```bash
+echo 'export OPENAI_API_KEY="sk-your-api-key"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+### Bước 2: Cấu hình OpenCode
+
+Tài liệu hiện tại của OpenCode khuyến nghị cấu hình các nhà cung cấp thông qua `opencode.json` hoặc `opencode.jsonc`. Với AI Sonar, hãy sử dụng một nhà cung cấp tùy chỉnh thay vì ghi đè nhà cung cấp `openai` tích hợp sẵn:
+
+```jsonc
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "aisonar": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "AI Sonar",
+      "options": {
+        "baseURL": "https://api.aisonar.dev/v1",
+        "apiKey": "{env:OPENAI_API_KEY}"
+      },
+      "models": {
+        "gpt-5.4": {
+          "name": "GPT-5.4"
+        },
+        "gpt-5-mini": {
+          "name": "GPT-5 Mini"
+        }
+      }
+    }
+  },
+  "model": "aisonar/gpt-5.4"
+}
+```
+
+<Note>
+Sử dụng `@ai-sdk/openai-compatible` để tương thích theo kiểu chat-completions. Nếu bạn cần cụ thể một đường dẫn nhà cung cấp được xây dựng trên `/v1/responses`, tài liệu OpenCode khuyến nghị chuyển package sang `@ai-sdk/openai`.
+</Note>
+
+## Cách dùng cơ bản
+
+**Khởi động chế độ tương tác:**
+
+```bash
+opencode
+```
+
+**Chạy với một prompt:**
+
+```bash
+opencode "Explain this codebase"
+```
+
+**Chỉ định model:**
+
+```bash
+opencode --model aisonar/gpt-5.4 "Fix the bugs in main.py"
+```
+
+## Các model khả dụng
+
+| Mô hình | Phù hợp nhất cho |
+|-------|----------|
+| `gpt-5.4` | Tác vụ phức tạp, kiến trúc code |
+| `gpt-5-mini` | Sửa lỗi nhanh, truy vấn đơn giản |
+| `claude-sonnet-4-6` | Review code, tài liệu |
+| `claude-opus-4-6` | Suy luận phức tạp |
+| `gemini-2.5-flash` | Phản hồi nhanh |
+| `deepseek-r1` | Thiết kế thuật toán |
+
+## Các lệnh phổ biến
+
+**Phân tích code:**
+
+```bash
+opencode "What does this function do?" < src/utils.ts
+```
+
+**Sinh code:**
+
+```bash
+opencode "Create a REST API with Express"
+```
+
+**Review thay đổi:**
+
+```bash
+git diff | opencode "Review these changes"
+```
+
+**Sửa lỗi:**
+
+```bash
+opencode "Fix the TypeScript errors in this project"
+```
+
+## Các lệnh tương tác
+
+| Command | Mô tả |
+|---------|-------------|
+| `/help` | Hiển thị các lệnh khả dụng |
+| `/model <name>` | Chuyển sang một model khác |
+| `/clear` | Xóa lịch sử hội thoại |
+| `/exit` | Thoát OpenCode |
+
+## Khắc phục sự cố
+
+<AccordionGroup>
+  <Accordion title="Lỗi kết nối">
+    - Xác minh `options.baseURL` được đặt thành `https://api.aisonar.dev/v1`
+    - Kiểm tra kết nối mạng
+    - Thử `curl https://api.aisonar.dev/v1/models` để kiểm tra
+  </Accordion>
+
+  <Accordion title="Xác thực thất bại">
+    - Xác minh biến môi trường `OPENAI_API_KEY` đã được thiết lập
+    - Xác minh `options.apiKey` tham chiếu đến `{env:OPENAI_API_KEY}` hoặc một nguồn secret hợp lệ khác
+    - Kiểm tra khóa bắt đầu bằng `sk-`
+    - Đảm bảo khóa đang hoạt động trong dashboard AI Sonar
+  </Accordion>
+
+  <Accordion title="Không tìm thấy model">
+    - Kiểm tra tên model trong config có khớp chính xác hay không
+    - Xác minh tính khả dụng của model tại [aisonar.dev/en/models](https://aisonar.dev/models)
+  </Accordion>
+</AccordionGroup>
+
+## Thực tiễn tốt nhất
+
+<AccordionGroup>
+  <Accordion title="Sử dụng ngữ cảnh dự án">
+    Chạy OpenCode từ thư mục gốc của dự án để hiểu codebase của bạn tốt hơn.
+  </Accordion>
+
+  <Accordion title="Chọn model phù hợp">
+    Sử dụng các model nhanh hơn (`gpt-5-mini`) cho tác vụ đơn giản và các model mạnh hơn (`gpt-5.4`, `claude-sonnet-4-6`) cho tác vụ phức tạp.
+  </Accordion>
+
+  <Accordion title="Review code được sinh ra">
+    Luôn review code do AI sinh ra trước khi áp dụng các thay đổi vào dự án của bạn.
+  </Accordion>
+</AccordionGroup>

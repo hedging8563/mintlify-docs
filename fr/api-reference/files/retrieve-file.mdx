@@ -1,0 +1,38 @@
+---
+title: "Récupérer le fichier"
+openapi: "GET /v1/files/{file_id}"
+description: "Récupère les métadonnées d’un seul fichier téléversé."
+---
+
+## Aperçu
+
+Ce point de terminaison sert principalement les objets de fichier de l’API Batch compatible avec OpenAI de AI Sonar.
+
+Lorsque la requête active le mode de compatibilité Anthropic Files, la même route peut aussi renvoyer des métadonnées de fichier de style Anthropic pour l’espace de travail lié.
+
+## Remarques
+
+- Les fichiers d'entrée de lot doivent utiliser `purpose=batch`.
+- Utilisez `purpose=batch_output` pour vous concentrer sur les fichiers de sortie générés.
+- `completion_window` est actuellement `24h`.
+- L'ordre de sortie n'est pas garanti ; il faut toujours faire correspondre par `custom_id`.
+- Le streaming n'est pas pris en charge à l'intérieur des éléments de lot.
+
+## Exemple
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/files/file_abc123" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+## Requête / Réponse
+
+Utilisez le panneau OpenAPI interactif ci-dessus pour le schéma exact.
+
+## Conseils opérationnels
+
+- Utilisez `custom_id` pour la réconciliation idempotente en aval.
+- Attendez-vous à ce que `output_file_id` et `error_file_id` ne soient disponibles qu'après que le travailleur finalise le lot.
+- La tarification des lots peut différer de la tarification synchrone car les règles de remise `isBatchRequest=true` s'appliquent.

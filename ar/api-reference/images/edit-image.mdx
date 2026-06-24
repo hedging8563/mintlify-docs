@@ -1,0 +1,237 @@
+---
+title: "تعديل صورة"
+openapi: "POST /v1/images/edits"
+description: "تعديل صورة بناءً على وصف نصي وصورة مصدر"
+---
+
+## نظرة عامة
+
+إنشاء صورة معدلة أو موسعة من صورة أصلية ووصف نصي. يتطلب نوع المحتوى `multipart/form-data`.
+
+يدعم المسار كلا النمطين:
+
+- مسار الرفع التقليدي `multipart/form-data` على نمط DALL-E والمذكور أدناه
+- طلبات JSON التي توفر `image_url` أو `image_urls` أو مراجع `images` الرسمية لعائلات الصور المدعومة من صورة إلى صورة
+
+<Note>
+`gpt-image-2` مدعوم هنا. يقبل رفع multipart باسم `image`، و JSON `image_url` / `image_urls`، ومراجع `images[]` الرسمية (`image_url` أو `file_id`) حتى 16 صورة مصدر. أنشئ قيم `file_id` أولاً عبر `/v1/files`. اضبط `async: true` لإرجاع مهمة أولاً؛ وتستخدم نماذج التحرير الرسمية FLUX/BFL تدفق الاستعلام عن المهمة نفسه.
+
+لا تقبل عمليات تحرير `gpt-image-2` الحقلين `resolution` أو `background`؛ استخدم `size` لأبعاد الإخراج. للطلبات متعددة الصور أو عالية التأخير، يُفضّل استخدام `async: true` ثم الاستعلام عن المهمة المُعادة.
+
+طلبات Nano Banana مع صورة مرجعية (`nano-banana` و`nano-banana-2` و`nano-banana-pro`) متاحة عبر `/v1/images/generations` مع `operation: "image-to-image"` و`image_urls`، وليس عبر واجهة `/v1/images/edits` هذه.
+
+تقبل نماذج تحرير الصور xAI Grok Imagine (`grok-imagine-image` و`grok-imagine-image-quality` و`grok-imagine-image-pro` القديم) حتى 3 صور مصدر كحد أقصى. تفشل الطلبات التي تتجاوز 3 صور مصدر قبل تمريرها إلى upstream مع `400 too_many_images`.
+
+ملاحظة توافق: إذا أرسل طلب `gpt-image-2` الحقل `input_fidelity`، تزيله AI Sonar قبل التمرير لأن GPT Image 2 يعالج مدخلات الصور تلقائيا بدقة عالية.
+</Note>
+
+## جسم الطلب
+
+**مهلة الطلبات المتزامنة:** قد يعيد بعض مزودي الصور الذين يتم التوجيه إليهم الصورة النهائية inline وينتظرون اكتمال التوليد. قد تستغرق طلبات الدقة العالية أو الجودة العالية ما يقارب دقيقة أو أكثر، لذا اضبط مهلة عميل HTTP على `120s` على الأقل. إذا احتوت استجابة الإنشاء على `status: "pending"` أو `task_id` أو `poll_url`، فاتبع `poll_url` المُعاد بدلًا من الانتظار.
+
+عناوين الصور البعيدة: عندما يتطلب المزوّد الموجّه إليه إدخال multipart، تجلب AI Sonar قيم JSON `image_url` أو `image_urls` أو `images[].image_url` وتعيد تمرير البايتات كأجزاء multipart باسم `image`. يجب أن تكون العناوين عامة عبر `http`/`https`، بلا بيانات اعتماد مضمّنة أو fragments، وألا تشير إلى localhost أو نطاقات IP خاصة أو محجوزة؛ ويتم فحص كل إعادة توجيه من جديد. يجب أن تكون الحمولة التي تم جلبها صورة PNG أو JPEG أو WebP حقيقية. الحدود هي `50MB` لكل صورة، و`200MB` إجمالاً للصور المجلبة من URL في الطلب الواحد، و timeout قدره `10s`، وحتى `3` عمليات إعادة توجيه.
+
+<ParamField body="image" type="file">
+  صور المصدر في multipart. كرّر حقل `image` لإرسال عدة صور مصدر لـ GPT Image. يجب أن تكون الملفات PNG أو JPEG أو WebP، بحد أقصى 16 صورة مصدر و`50MB` لكل ملف. تستخدم نماذج تحرير xAI Grok Imagine حقول الإدخال نفسها لكنها تحد صور المصدر بـ 3. لا تزال تعديلات DALL-E 2 القديمة بالماسك تتوقع مدخلات PNG ذات مناطق شفافة، أو `mask` منفصلاً.
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  وصف نصي للتعديل المطلوب.
+</ParamField>
+
+<ParamField body="mask" type="file">
+  صورة إضافية تشير مناطقها الشفافة بالكامل إلى أماكن التعديل. يجب أن تكون ملف PNG صالح، أقل من 50MB، وبنفس أبعاد `image`.
+</ParamField>
+
+<ParamField body="model" type="string" default="dall-e-2">
+  النموذج المستخدم لتحرير الصور. `gpt-image-2` مدعوم؛ ويمكن الاستمرار في استخدام `dall-e-2` لتحريرات DALL-E القديمة.
+</ParamField>
+
+<ParamField body="n" type="integer" default="1">
+  عدد الصور المراد إنشاؤها. يجب أن يكون بين 1 و 10.
+</ParamField>
+
+<ParamField body="size" type="string">
+  حجم الصورة المُنشأة. بالنسبة إلى `gpt-image-2` استخدم `auto` أو `WIDTHxHEIGHT`؛ يجب أن تكون الأبعاد من مضاعفات 16، وأطول ضلع لا يتجاوز `3840px`، ونسبة الطويل إلى القصير لا تتجاوز `3:1`، وإجمالي البكسلات بين `655,360` و`8,294,400`. تدعم تحريرات DALL-E القديمة `256x256` أو `512x512` أو `1024x1024`.
+</ParamField>
+
+<ParamField body="response_format" type="string" default="url">
+  تنسيق إرجاع الصور المُنشأة. يجب أن يكون `url` أو `b64_json`؛ والقيمة الافتراضية هي `url`.
+
+  بالنسبة إلى مسارات `gpt-image-2` على Azure Official أو القنوات المتوافقة مع Azure، لا تمرّر AI Sonar الحقل `response_format` إلى upstream. يحصل gateway دائمًا على بيانات الصور من upstream بصيغة `b64_json`؛ عند طلب `url` يرفع كل صورة إلى CDN ويعيد `data[].url`. إذا لم يكن تخزين CDN متاحًا أو فشل الرفع، يفشل الطلب بدلاً من الرجوع إلى Base64. عند طلب `b64_json` يُعاد Base64 الخام.
+</ParamField>
+
+<ParamField body="async" type="boolean" default="false">
+  اضبطه على `true` مع `gpt-image-2` أو نماذج تحرير FLUX/BFL الرسمية لإرجاع مهمة قبل أن تكون الصورة النهائية جاهزة. تعيد التحريرات غير المتزامنة المكتملة روابط URL بغض النظر عن `response_format` المطلوب؛ استخدم الطلبات المتزامنة إذا كنت تحتاج إلى `b64_json`.
+</ParamField>
+
+<ParamField body="user" type="string">
+  معرف فريد يمثل المستخدم النهائي لمراقبة سوء الاستخدام.
+</ParamField>
+
+## الاستجابة
+
+<ResponseField name="created" type="integer">
+  الطابع الزمني Unix لوقت إنشاء الصور.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  مصفوفة الصور المُنشأة.
+
+  كل عنصر يحتوي على:
+  - `url` (string): رابط الصورة المعدلة (إذا كان response_format هو `url`)
+  - `b64_json` (string): الصورة بترميز Base64 (إذا كان response_format هو `b64_json`)
+</ResponseField>
+
+### استجابة المهمة غير المتزامنة
+
+اضبط `async: true` مع `gpt-image-2` أو نماذج تحرير FLUX/BFL الرسمية لإنشاء مهمة بدلاً من انتظار الصورة المحررة داخل الطلب. تتضمن الاستجابة `status: "pending"` و`task_id` و`poll_url`. استعلم عن `/v1/tasks/{task_id}` حتى تصل المهمة إلى `completed` أو `failed`.
+
+تعيد مهام التحرير غير المتزامنة روابط URL للصور النهائية فقط. إذا كنت تحتاج إلى بيانات `b64_json` الخام، فاستخدم طلبًا متزامنًا.
+
+
+قد يتم حجز المبلغ التقديري عند إنشاء المهمة. تُحاسَب المهام المكتملة حسب الاستخدام الفعلي، أما المهام الفاشلة أو المنتهية بالمهلة فيُحرَّر حجزها أو تُرد تكلفتها.
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/images/edits" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F "image=@sunlit_lounge.png" \
+  -F "mask=@mask.png" \
+  -F "prompt=A sunlit indoor lounge area with a pool" \
+  -F "n=1" \
+  -F "size=1024x1024"
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.images.edit(
+    model="dall-e-2",
+    image=open("sunlit_lounge.png", "rb"),
+    mask=open("mask.png", "rb"),
+    prompt="A sunlit indoor lounge area with a pool",
+    n=1,
+    size="1024x1024"
+)
+
+print(response.data[0].url)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+import fs from 'fs';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.images.edit({
+  model: 'dall-e-2',
+  image: fs.createReadStream('sunlit_lounge.png'),
+  mask: fs.createReadStream('mask.png'),
+  prompt: 'A sunlit indoor lounge area with a pool',
+  n: 1,
+  size: '1024x1024'
+});
+
+console.log(response.data[0].url);
+```
+
+```go Go
+package main
+
+import (
+    "bytes"
+    "fmt"
+    "io"
+    "mime/multipart"
+    "net/http"
+    "os"
+)
+
+func main() {
+    body := &bytes.Buffer{}
+    writer := multipart.NewWriter(body)
+
+    image, _ := os.Open("sunlit_lounge.png")
+    defer image.Close()
+    part, _ := writer.CreateFormFile("image", "sunlit_lounge.png")
+    io.Copy(part, image)
+
+    mask, _ := os.Open("mask.png")
+    defer mask.Close()
+    maskPart, _ := writer.CreateFormFile("mask", "mask.png")
+    io.Copy(maskPart, mask)
+
+    writer.WriteField("prompt", "A sunlit indoor lounge area with a pool")
+    writer.WriteField("n", "1")
+    writer.WriteField("size", "1024x1024")
+    writer.Close()
+
+    req, _ := http.NewRequest("POST", "https://api.aisonar.dev/v1/images/edits", body)
+    req.Header.Set("Authorization", "Bearer sk-your-api-key")
+    req.Header.Set("Content-Type", writer.FormDataContentType())
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+
+    result, _ := io.ReadAll(resp.Body)
+    fmt.Println(string(result))
+}
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/images/edits');
+
+$image = new CURLFile('sunlit_lounge.png', 'image/png', 'sunlit_lounge.png');
+$mask = new CURLFile('mask.png', 'image/png', 'mask.png');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => [
+        'image' => $image,
+        'mask' => $mask,
+        'prompt' => 'A sunlit indoor lounge area with a pool',
+        'n' => 1,
+        'size' => '1024x1024'
+    ]
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+echo $data['data'][0]['url'];
+```
+</RequestExample>
+
+<ResponseExample>
+```json الاستجابة
+{
+  "created": 1706000000,
+  "data": [
+    {
+      "url": "https://..."
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## ملاحظات
+
+<Note>
+  تُعاد أخطاء جلب الصور البعيدة كأخطاء إدخال قبل إرسال الطلب إلى المزوّد. العناوين غير القابلة للوصول، والمهلات، وردود 403/404، والمضيفات الخاصة أو الداخلية، ووجود بيانات اعتماد أو fragments في URL، والمحتوى غير الصوري، والصيغ غير المدعومة، وتجاوز الحجم ترجع `400` أو `413` وتحدد مدخل `image_url` / `image_urls[n]`. للملفات الخاصة أو التي تتطلب headers، ارفع ملفات multipart `image` مباشرة أو أنشئ مراجع `/v1/files`.
+</Note>

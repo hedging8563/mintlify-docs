@@ -1,0 +1,38 @@
+---
+title: "列出文件"
+openapi: "GET /v1/files"
+description: "列出上传的文件以及受支持的文件后备兼容模式。"
+---
+
+## 概述
+
+此端点主要服务于 AI Sonar 的 OpenAI 兼容 Batch API，包括上传的批量输入文件以及生成的输出或错误文件。
+
+当请求选择 Anthropic Files 兼容模式时，同一路由也可以列出绑定工作区中可用的 Anthropic 风格文件。
+
+## 注意事项
+
+- 批量输入文件必须使用 `purpose=batch`。
+- 使用 `purpose=batch_output` 以聚焦生成的输出文件。
+- `completion_window` 当前为 `24h`。
+- 输出顺序不保证；始终通过 `custom_id` 匹配。
+- 批量项目内不支持流式传输。
+
+## 示例
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/files?purpose=batch&limit=20" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+## 请求 / 响应
+
+使用上面的交互式 OpenAPI 面板获取确切的模式。
+
+## 操作提示
+
+- 使用 `custom_id` 进行幂等的下游对账。
+- 仅在工作者完成批处理后，期待 `output_file_id` 和 `error_file_id`。
+- 批量定价可能与同步定价不同，因为适用 `isBatchRequest=true` 的折扣规则。

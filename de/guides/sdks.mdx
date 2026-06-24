@@ -1,0 +1,116 @@
+---
+title: "SDKs & Bibliotheken"
+description: "Empfohlene SDKs und Bibliotheken für AI Sonar-Integrationen"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Überblick
+
+AI Sonar lässt sich am einfachsten integrieren, wenn du das SDK nach dem benötigten Verhalten auswählst:
+- offizielle **Anthropic SDKs** für Claude-native /v1/messages
+- offizielle **Gemini / Google AI** Tools für Gemini-native Request-Formate
+- offizielle **OpenAI SDKs** für OpenAI-kompatible /v1-Routen und Responses-ähnliche Nutzung
+
+Die Support-Grenzen stehen auf den Integrationsseiten. In dieser Dokumentation bedeutet "recommended" oder "supported", dass ein dokumentierter Setup-Pfad existiert; es bedeutet nicht automatisch, dass jeder Framework-Helper oder jede provider-spezifische Funktion end-to-end regressionsgetestet ist.
+
+## Empfohlene SDKs
+
+<CardGroup cols={2}>
+  <Card title="OpenAI Python" icon="python" href="https://github.com/openai/openai-python">
+    `pip install openai`
+  </Card>
+  <Card title="OpenAI Node" icon="node-js" href="https://github.com/openai/openai-node">
+    `npm install openai`
+  </Card>
+  <Card title="OpenAI Go" icon="golang" href="https://github.com/openai/openai-go">
+    `go get github.com/openai/openai-go/v3`
+  </Card>
+  <Card title="Anthropic SDK" icon="robot" href="https://github.com/anthropics/anthropic-sdk-python">
+    Native Unterstützung für Claude Messages API
+  </Card>
+</CardGroup>
+
+## OpenAI SDK-Beispiel
+
+Nutze dieses Beispiel, wenn du einen bestehenden OpenAI-kompatiblen Client migrierst oder den /v1-Kompatibilitätspfad möchtest. Für Claude-native oder Gemini-native Funktionen verwende stattdessen das passende native SDK.
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.responses.create(
+    model="gpt-5.4",
+    input="Explain AI Sonar in one sentence."
+)
+
+print(response.output_text)
+```
+
+## OpenAI Go-Beispiel
+
+```go
+package main
+
+import (
+    openai "github.com/openai/openai-go/v3"
+    "github.com/openai/openai-go/v3/option"
+)
+
+func main() {
+    client := openai.NewClient(
+        option.WithAPIKey("sk-your-api-key"),
+        option.WithBaseURL("https://api.aisonar.dev/v1"),
+    )
+
+    _ = client
+}
+```
+
+## Anthropic SDK-Beispiel
+
+```python
+from anthropic import Anthropic
+
+client = Anthropic(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev"
+)
+
+message = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+```
+
+## Welches SDK solltest du verwenden?
+
+| Ziel | Empfohlener Pfad |
+|------|------------------|
+| Provider-natives Verhalten | Natives Provider-SDK oder Route |
+| Bestehender OpenAI-kompatibler Client | OpenAI SDK mit AI Sonar /v1 |
+| Portable Chats / Embeddings | OpenAI-kompatible /v1-Routen |
+| Claude-native Funktionen | Anthropic SDK |
+| Gemini-native Request-Formate | Gemini-native API / SDK |
+| LangChain / LlamaIndex / Vercel AI SDK | Die jeweilige Integrationsseite nutzen |
+
+## Bewährte Praktiken
+
+<AccordionGroup>
+  <Accordion title="Native Routen wählen, wenn Verhalten zählt">
+    Nutze Anthropic- oder Gemini-native Routen für provider-spezifische Felder, Tools, Streaming-Details und Verhalten, das nicht durch ein anderes Format übersetzt werden sollte.
+  </Accordion>
+
+  <Accordion title="OpenAI-kompatibles /v1 für Migration nutzen">
+    OpenAI-kompatible SDKs sind ideal für bestehende OpenAI-ähnliche Clients, portable Chats und Embeddings. Sie sind ein Kompatibilitätspfad, nicht die einzige AI Sonar API-Oberfläche.
+  </Accordion>
+
+  <Accordion title="Base URLs explizit halten">
+    Übergib AI Sonar Base URLs direkt in der Client-Konfiguration, statt ältere Environment-Variable-Aliase zu verwenden.
+  </Accordion>
+</AccordionGroup>

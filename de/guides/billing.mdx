@@ -1,0 +1,196 @@
+---
+title: "Abrechnung & Preise"
+description: "Verstehen Sie das Pay-as-you-go-Preismodell von AI Sonar"
+---
+
+## Übersicht
+
+AI Sonar nutzt ein **Pay-as-you-go-Preismodell**. Sie zahlen nur für das, was Sie tatsächlich nutzen, ohne Abonnements oder Mindestverpflichtungen.
+
+## So funktioniert die Abrechnung
+
+1. **Guthaben hinzufügen** zu Ihrem Konto
+2. **Die API nutzen** – Kosten werden pro Anfrage abgezogen
+3. **Nutzung überwachen** in Ihrem Dashboard
+4. **Aufladen**, wenn Ihr Guthaben niedrig ist
+
+## Preismodelle
+
+### Preise pro Token
+
+Die meisten Textgenerierungsmodelle werden pro Million Token abgerechnet:
+
+| Modell | Input (pro 1 Mio. Token) | Output (pro 1 Mio. Token) |
+|-------|----------------------|------------------------|
+| GPT-4o | $1.75 | $7.00 |
+| GPT-4o-mini | $0.105 | $0.42 |
+| Claude Opus 4.5 | $3.50 | $17.50 |
+| Claude Sonnet 4.5 | $2.10 | $10.50 |
+| Claude Haiku 4.5 | $0.70 | $3.50 |
+| Gemini 2.5 Pro | $0.875 | $7.00 |
+| Gemini 2.5 Flash | $0.1225 | $0.525 |
+| DeepSeek R1 | $0.385 | $1.533 |
+| DeepSeek V3.2 | $0.196 | $0.294 |
+
+<Note>
+  Die angezeigten Preise sind ermäßigte Plattformpreise. Die tatsächlichen Preise können variieren. Aktuelle Tarife finden Sie auf der [Preisseite](https://aisonar.dev/de/pricing).
+</Note>
+
+### Preise pro Anfrage
+
+Bild-, Video- und Audiomodelle werden pro Anfrage abgerechnet:
+
+| Modell | Preis pro Anfrage |
+|-------|-------------------|
+| DALL-E 3 (1024x1024) | $0.04 |
+| Midjourney | $0.05 |
+| Whisper (pro Minute) | $0.006 |
+| TTS-1 | $0.015 |
+
+### Abrechnung für asynchrone Aufgaben (Video/Musik/3D und einige Bildmodelle)
+
+<Note>
+  Bei aufgabenbasierter Generierung kann beim Erstellen der Aufgabe ein geschätzter Betrag reserviert oder vorab abgezogen werden. Die endgültige Abrechnung erfolgt erst, nachdem die asynchrone Aufgabe beim Polling oder bei der Finalisierung einen erfolgreichen Endstatus erreicht hat.
+</Note>
+
+Für aufgabenbasierte Generierungsabläufe (Video, Musik, 3D und einige Bildmodelle):
+
+1. Übermitteln Sie die Aufgabe. AI Sonar kann einen geschätzten Betrag vorab abziehen oder reservieren, um Guthaben und API-Key-Ausgabenlimits zu prüfen.
+2. Fragen Sie die zurückgegebene `poll_url` ab oder rufen Sie `GET /v1/tasks/{id}` auf, bis die Aufgabe einen Endstatus erreicht.
+3. Wenn die Aufgabe erfolgreich abgeschlossen ist, zeichnet die endgültige Abrechnung die Nutzung auf und die Task-Antwort enthält `billing_transaction_id`.
+4. Wenn die Erstellung fehlschlägt oder der Endstatus failed ist, wird der ausstehende Betrag erstattet oder freigegeben und die Anfrage als nicht abrechenbar markiert.
+
+Wenn im dashboard nach sichtbarem Endstatus keine Abrechnung oder Erstattung erscheint, wenden Sie sich bitte an support@aisonar.dev.
+
+```python
+# Beispiel: Abrechnung der Videogenerierung
+response = client.post("/v1/videos/generations", json={
+    "model": "veo3.1",
+    "prompt": "A sunset over the ocean"
+})
+# Der geschätzte Betrag kann jetzt reserviert werden; die endgültige Abrechnung erscheint nach Erfolg.
+
+poll_url = response.json()["poll_url"]
+task_id = response.json()["task_id"]
+# poll_url für Status abfragen; billing_transaction_id erscheint nach der Abrechnung.
+```
+
+### Billing-Transaktions-IDs
+
+Erfolgreiche abrechenbare, nicht-streamende OpenAI-kompatible JSON-Antworten enthalten `billing_transaction_id`, wenn die Abrechnung vor dem Abschluss der Antwort beendet wurde. Derselbe Wert wird auch als `X-Billing-Transaction-ID`-Antwortheader ausgegeben, damit Browser- und Serverintegrationen ihn lesen können. Native Kompatibilitätsrouten wie Gemini `/v1beta` können den Wert nur per Header ausgeben, um die provider-native Antwortform beizubehalten. Für asynchrone Medienaufgaben sollten Sie die zurückgegebene `poll_url` oder `GET /v1/tasks/{id}` abfragen; die Task-Antwort enthält `billing_transaction_id`, sobald die Abrechnung abgeschlossen ist. Streaming-Antworten können erst nach dem Versand des Streams abgerechnet werden. Wenn der Header fehlt, verwenden Sie die Dashboard-Nutzungslogs für den Abgleich.
+
+## Token-Zählung
+
+Token sind die Grundeinheiten der Textverarbeitung:
+
+- ~4 Zeichen = 1 Token (Englisch)
+- ~1-2 Zeichen = 1 Token (Chinesisch)
+- 1 Bild = variiert je nach Größe und Detailgrad
+
+### Token-Schätzung
+
+```python
+# Grobe Schätzung
+def estimate_tokens(text):
+    return len(text) / 4  # Ungefähr für Englisch
+
+# Tatsächliche Anzahl (für OpenAI-Modelle)
+import tiktoken
+encoder = tiktoken.encoding_for_model("gpt-4o")
+tokens = encoder.encode("Your text here")
+print(f"Token-Anzahl: {len(tokens)}")
+```
+
+## Nutzungsverfolgung
+
+### Dashboard
+
+Überwachen Sie Ihre Nutzung im [Dashboard](https://console.aisonar.dev):
+
+- Echtzeit-Guthaben
+- Nutzungshistorie nach Modell
+- Kostenaufschlüsselung
+- API-Key-Nutzung
+
+### API-Antwort
+
+Jede Antwort enthält Informationen zur Nutzung:
+
+```json
+{
+  "usage": {
+    "prompt_tokens": 50,
+    "completion_tokens": 100,
+    "total_tokens": 150
+  }
+}
+```
+
+## Kostenoptimierung
+
+<AccordionGroup>
+  <Accordion title="Geeignete Modelle verwenden">
+    Verwenden Sie kleinere Modelle (GPT-4o-mini, Gemini Flash) für einfache Aufgaben.
+  </Accordion>
+
+  <Accordion title="Caching implementieren">
+    Speichern Sie Antworten für wiederholte identische Anfragen im Cache.
+  </Accordion>
+
+  <Accordion title="Prompts optimieren">
+    Halten Sie Prompts prägnant und wahren Sie gleichzeitig die Klarheit.
+  </Accordion>
+
+  <Accordion title="max_tokens festlegen">
+    Begrenzen Sie die Antwortlänge, wenn keine vollständigen Antworten benötigt werden.
+  </Accordion>
+
+  <Accordion title="Streaming für lange Antworten nutzen">
+    Streaming verursacht keine zusätzlichen Kosten, verbessert aber die wahrgenommene Leistung.
+  </Accordion>
+</AccordionGroup>
+
+## Benachrichtigungen bei niedrigem Guthaben
+
+Konfigurieren Sie Warnmeldungen, wenn Ihr Guthaben sinkt:
+
+1. Gehen Sie zu **Dashboard → Einstellungen → Benachrichtigungen**
+2. Legen Sie Ihren Schwellenwert fest
+3. Erhalten Sie E-Mail-Benachrichtigungen
+
+## Guthaben hinzufügen
+
+### Zahlungsmethoden
+
+- Stripe (Visa, Mastercard)
+
+### Schritte
+
+1. Melden Sie sich im [Dashboard](https://console.aisonar.dev) an
+2. Klicken Sie auf **Guthaben hinzufügen**
+3. Wählen Sie Betrag und Zahlungsmethode aus
+4. Schließen Sie die Zahlung ab
+
+Das Guthaben wird sofort nach der Zahlungsbestätigung gutgeschrieben.
+
+## API-Key-Limits
+
+Sie können Ausgabenlimits für einzelne API-Keys festlegen:
+
+1. Gehen Sie zu **Dashboard → API-Keys**
+2. Klicken Sie auf einen Key zum Bearbeiten
+3. Legen Sie ein **Nutzunglimit** fest
+
+Wenn das Limit erreicht ist, geben Anfragen mit diesem Key den Fehler `402 Payment Required` zurück.
+
+## Rechnungen
+
+Für Geschäftskonten sind Rechnungen verfügbar:
+
+1. Gehen Sie zu **Dashboard → Abrechnung**
+2. Transaktionsverlauf anzeigen
+3. Rechnungen als PDF herunterladen
+
+## Fragen?
+
+Kontaktieren Sie support@aisonar.dev bei Fragen zur Abrechnung.

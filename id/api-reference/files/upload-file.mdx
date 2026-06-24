@@ -1,0 +1,53 @@
+---
+title: "Unggah File"
+openapi: "POST /v1/files"
+description: "Mengunggah file input batch JSONL untuk pembuatan batch selanjutnya."
+---
+
+## Ikhtisar
+
+Endpoint ini adalah bagian dari Batch API AI Sonar yang kompatibel dengan OpenAI. Pekerjaan batch menggunakan file JSONL yang diunggah, dijalankan secara asinkron, dan dapat mengembalikan file output/error di kemudian hari.
+
+## Catatan
+
+- File input batch harus menggunakan `purpose=batch`.
+- `completion_window` saat ini adalah `24h`.
+- Urutan output tidak dijamin; selalu cocokkan dengan `custom_id`.
+- Streaming tidak didukung di dalam item batch.
+
+## Contoh
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/files" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F "purpose=batch" \
+  -F "file=@batch-input.jsonl;type=application/jsonl"
+```
+</RequestExample>
+
+## Permintaan / Respons
+
+Gunakan panel OpenAPI interaktif di atas untuk skema yang tepat.
+
+## Tips Operasional
+
+- Gunakan `custom_id` untuk rekonsiliasi downstream yang idempotent.
+- Harapkan `output_file_id` dan `error_file_id` hanya setelah pekerja menyelesaikan batch.
+- Harga batch mungkin berbeda dari harga sinkron karena aturan diskon `isBatchRequest=true` berlaku.
+## Input file gambar
+
+Route `/v1/files` yang sama juga dapat mengunggah file gambar referensi untuk `/v1/images/edits`.
+
+- Gunakan `purpose=user_data` atau `purpose=vision`.
+- Opsional, sertakan `model` untuk memilih model edit gambar; default-nya adalah `gpt-image-2`.
+- `file_id` yang dikembalikan diikat ke channel edit gambar upstream yang dipilih dan dapat digunakan ulang di `images[].file_id`.
+
+## Mode Anthropic Files API
+
+Rute `/v1/files` yang sama ini juga mendukung jalur Anthropic Files API.
+
+- Tambahkan header `anthropic-beta: files-api-2025-04-14` untuk beralih ke mode Anthropic.
+- Dalam mode Anthropic, unggah file asli secara langsung dan jangan kirim `purpose=batch`.
+- `file_id` yang dikembalikan akan terikat ke channel/workspace Anthropic resmi yang sama dan harus digunakan kembali dalam permintaan `/v1/messages`.
+- Jika Anda berencana merujuk file yang diunggah ini dalam konten pesan Anthropic, tetap gunakan header native Anthropic (`x-api-key`, `anthropic-version`, dan beta header bila diperlukan).

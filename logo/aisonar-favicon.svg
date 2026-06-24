@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" role="img" aria-label="AI Sonar">
+  <rect width="40" height="40" rx="10" fill="#6D28D9"/>
+  <path d="M12 27.5c4.2 4.2 11 4.2 15.2 0" fill="none" stroke="#F5F3FF" stroke-width="2.6" stroke-linecap="round"/>
+  <path d="M15.2 24.2c2.4 2.4 6.3 2.4 8.8 0" fill="none" stroke="#EDE9FE" stroke-width="2.4" stroke-linecap="round"/>
+  <circle cx="19.6" cy="20.2" r="3.8" fill="#FFFFFF"/>
+  <path d="M19.6 7.5v6.1M29.8 12.8l-4.3 4.3M9.5 12.8l4.3 4.3" fill="none" stroke="#DDD6FE" stroke-width="2.4" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,131 @@
+---
+title: "Dify"
+description: "Integrate AI Sonar with Dify using the OpenAI provider and a custom base URL"
+---
+
+## Overview
+
+Dify works well with AI Sonar through its OpenAI-compatible model provider flow.
+
+This is a chat-completions-oriented integration path. It should not be read as a guarantee that Dify exposes the same Responses or WebSocket behavior as dedicated Codex integrations.
+
+For current Dify versions, the safest path is usually:
+- choose the built-in **OpenAI** provider
+- set your AI Sonar API key
+- set a custom base URL of `https://api.aisonar.dev/v1`
+
+<Note>
+Some older Dify builds expose this as `OpenAI-API-compatible` instead of the built-in `OpenAI` provider with a custom base URL field. If your Dify UI looks different, use the closest OpenAI-compatible custom provider flow available in that version.
+</Note>
+
+<Note>
+**Type**: Framework or Platform
+
+**Primary Path**: OpenAI-compatible chat path
+
+**Support Confidence**: Supported with scope limits
+</Note>
+
+## Prerequisites
+
+- AI Sonar account with API access
+- Dify Cloud or self-hosted Dify
+
+## Configuration Steps
+
+### Step 1: Get Your API Key
+
+1. Log into [AI Sonar Dashboard](https://console.aisonar.dev)
+2. Open [API Keys](https://console.aisonar.dev/api)
+3. Create or copy an API key that starts with `sk-`
+
+### Step 2: Configure the Provider
+
+<Steps>
+  <Step title="Open Model Providers">
+    In Dify, go to **Settings** → **Model Providers**
+  </Step>
+  <Step title="Select OpenAI">
+    Open the **OpenAI** provider settings. If your Dify version does not offer a custom base URL here, use the OpenAI-compatible custom provider option exposed by that version instead.
+  </Step>
+  <Step title="Enter AI Sonar Settings">
+    Use these values:
+
+    | Field | Value |
+    |-------|-------|
+    | API Key | `sk-your-api-key` |
+    | API Base URL / Custom Base URL | `https://api.aisonar.dev/v1` |
+  </Step>
+  <Step title="Add Models">
+    Add the models you want to use, for example:
+    - `gpt-5.4`
+    - `gpt-5-mini`
+    - `gpt-4o`
+    - `claude-sonnet-4-6`
+    - `claude-opus-4-6`
+    - `gemini-2.5-flash`
+    - `gemini-2.5-pro`
+    - `deepseek-r1`
+  </Step>
+</Steps>
+
+### Step 3: Test Connection
+
+1. Pick one model such as `gpt-5-mini` or `gpt-4o`
+2. Send a test prompt
+3. Confirm Dify receives a valid response
+
+## Embeddings for Knowledge Bases
+
+For RAG and knowledge base indexing, add an embedding model such as:
+- `text-embedding-3-small`
+- `text-embedding-3-large`
+
+Then set it as the default embedding model in the relevant knowledge base or application settings.
+
+## Recommended Model Roles
+
+| Use Case | Suggested Models |
+|----------|------------------|
+| Default chat | `gpt-5.4`, `gpt-5-mini`, `gpt-4o` |
+| Deep reasoning | `gpt-5.4`, `claude-opus-4-6`, `deepseek-r1` |
+| Fast/cheap | `gpt-5-mini`, `gemini-2.5-flash` |
+| Embeddings | `text-embedding-3-small`, `text-embedding-3-large` |
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Start with the built-in OpenAI provider">
+    In newer Dify versions, the built-in OpenAI provider with a custom base URL is usually the cleanest setup for AI Sonar.
+  </Accordion>
+
+  <Accordion title="Use cheaper models for iteration">
+    Use `gpt-5-mini` or `gemini-2.5-flash` while iterating, then switch heavier workflows to stronger models only where needed.
+  </Accordion>
+
+  <Accordion title="Remember Dify is usually chat-completions oriented">
+    Most Dify flows use OpenAI-compatible chat behavior. If you need Codex-specific Responses or WebSocket behavior, use the dedicated Codex integrations instead of Dify.
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Connection Error">
+    - Verify the base URL is exactly `https://api.aisonar.dev/v1`
+    - Remove trailing slashes if Dify duplicates them
+    - Confirm the Dify server can reach AI Sonar over the public internet
+  </Accordion>
+
+  <Accordion title="401 Unauthorized">
+    - Double-check the API key
+    - Confirm the key is active in AI Sonar dashboard
+    - Make sure the value pasted into Dify does not contain extra spaces or line breaks
+  </Accordion>
+
+  <Accordion title="Model Not Found">
+    - Verify the model name exactly
+    - Re-add the model entry if the provider UI cached an older value
+    - Check current model availability in AI Sonar docs or dashboard
+  </Accordion>
+</AccordionGroup>

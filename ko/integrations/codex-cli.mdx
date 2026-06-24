@@ -1,0 +1,224 @@
+---
+title: "Codex CLI"
+description: "OpenAI Codex CLI를 AI Sonar API와 사용하도록 구성"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## 개요
+
+
+
+<Note>
+**유형**: 코딩 도구
+
+**Primary Path**: OpenAI Responses (고급 선택 경로)
+
+**Support Confidence**: 모델/경로 제한이 있는 지원
+</Note>
+
+OpenAI Codex는 터미널에서 코드를 읽고 수정하며 실행할 수 있는 경량의 코딩 에이전트인 오픈 소스 커맨드라인 도구(CLI)입니다. 이는 GPT 모델 기반으로 구축되었으며 코드 생성에 최적화되어 있습니다.
+
+AI Sonar의 경우 Codex CLI는 `/v1/responses`를 사용할 수 있지만, 이를 고급 호환성 경로로 취급해야 합니다. 일부 Responses 전용 기능은 모든 모델 및 라우트에서 보장되지 않습니다.
+
+Codex CLI 원격 압축은 `POST /v1/responses/compact`에서 지원됩니다. Codex는 `/compact` 및 자동 압축 시 현재 세션의 `model`을 `body.model`로 보내므로, 압축에 사용할 모델이 Responses 경로에서 사용 가능해야 합니다. `/v1/compact`는 설정하지 마세요.
+
+## 시스템 요구사항
+
+- **OS**: macOS, Linux (공식 지원), Windows는 WSL을 통해 지원
+- **Node.js**: 버전 18+
+- **npm**: 버전 10.x.x 이상
+
+## 설치
+
+```bash
+npm install -g @openai/codex
+```
+
+설치 확인:
+
+```bash
+codex --version
+```
+
+## 구성
+
+### 1단계: API 키 설정
+
+**임시(현재 세션):**
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+```
+
+**영구 구성:**
+
+`~/.bashrc`, `~/.zshrc`, 또는 `~/.bash_profile`에 추가:
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+```
+
+그런 다음 다시 로드:
+
+```bash
+source ~/.zshrc  # or source ~/.bashrc
+```
+
+### 2단계: config.toml 구성
+
+`~/.codex/config.toml`을 편집:
+
+```toml
+model_provider = "aisonar"
+model = "gpt-5.4"
+model_reasoning_effort = "xhigh"
+plan_mode_reasoning_effort = "xhigh"
+fast_mode = true
+model_context_window = 1000000
+model_auto_compact_token_limit = 900000
+sandbox_mode = "danger-full-access"
+approval_policy = "never"
+
+disable_response_storage = false
+personality = "friendly"
+service_tier = "fast"
+
+[model_providers.aisonar]
+env_key = "OPENAI_API_KEY"
+name = "AI Sonar"
+base_url = "https://api.aisonar.dev/v1"
+wire_api = "responses"
+supports_websockets = true
+websocket_connect_timeout_ms = 15000
+
+[features]
+responses_websockets = true
+responses_websockets_v2 = true
+```
+
+이 WebSocket 모드는 Codex 클라이언트를 위한 Responses-over-WebSocket 브리지입니다. `response.create`와 `response.cancel`만 허용합니다. OpenAI Realtime API가 아니며 `session.update`, `conversation.item.*`, `input_audio_buffer.*`, 바이너리 오디오 또는 중첩된 Realtime `response.create.response` envelope는 허용하지 않습니다.
+
+<Note>
+config 파일이 존재하지 않는 경우, 한 번 `codex`를 실행하여 파일을 생성한 후 편집하세요. `config.toml`을 변경한 후에는 새로운 제공자 설정이 다시 로드되도록 Codex를 완전히 재시작하십시오.
+</Note>
+
+<Warning>
+Codex는 커스텀 제공자에 대한 `chat/completions` 지원을 단계적으로 중단하고 있습니다. 의도적으로 오래된 호환성 경로를 사용하지 않는 한 AI Sonar에는 `wire_api = "responses"`를 유지하세요.
+</Warning>
+
+<Note>
+선택한 모델이나 라우트에서 지원되지 않는 Responses 전용 필드를 요청에 포함하면, AI Sonar는 요청을 조용히 다운그레이드하는 대신 명시적인 오류를 반환합니다.
+</Note>
+
+## 기본 사용법
+
+**대화형 모드 시작:**
+
+```bash
+codex
+```
+
+**직접 명령:**
+
+```bash
+codex "Fix the bug in main.py line 42"
+```
+
+**모델 지정:**
+
+```bash
+codex -m gpt-5.4 "Build a REST API server"
+```
+
+## 권장 모델
+
+| 모델 | 용도 |
+|-------|----------|
+| `gpt-5.4` | 코딩 및 추론에 가장 적합한 기본 선택 |
+| `gpt-5-mini` | 코딩 워크플로우를 위한 더 빠르고 저렴한 대체 |
+| `claude-sonnet-4-6` | 코드 리뷰, 문서화 |
+| `deepseek-r1` | 알고리즘 설계, 추론 |
+
+## 대화형 명령
+
+| 명령 | 설명 |
+|---------|-------------|
+| `/help` | 도움말 표시 |
+| `/exit` 또는 `Ctrl+C` | 종료 |
+| `/clear` | 대화 지우기 |
+| `/config` | 구성 보기 |
+| `/model <name>` | 모델 전환 |
+| `/tokens` | 토큰 사용량 보기 |
+
+## 구성 확인
+
+```bash
+# 환경 변수 확인
+echo $OPENAI_API_KEY
+
+# API 연결 테스트
+codex "Hello, Codex!"
+
+# 구성 보기
+cat ~/.codex/config.toml
+```
+
+## 일반 사용 사례
+
+**코드 리뷰:**
+
+```bash
+git diff | codex "Review these code changes"
+```
+
+**커밋 메시지 생성:**
+
+```bash
+git diff --staged | codex "Generate a commit message for these changes"
+```
+
+**오류 수정:**
+
+```bash
+codex "Fix the TypeScript errors in src/components/"
+```
+
+**코드 설명:**
+
+```bash
+cat main.py | codex "Explain what this code does"
+```
+
+## 문제 해결
+
+<AccordionGroup>
+  <Accordion title="연결 오류">
+    - `config.toml`의 `base_url`이 정확히 `https://api.aisonar.dev/v1`인지 확인하세요
+    - 네트워크 연결 상태를 확인하세요
+    - 프록시 간섭이 없는지 확인하세요
+  </Accordion>
+
+  <Accordion title="인증 실패">
+    - `~/.codex/config.toml`에 `env_key = "OPENAI_API_KEY"`가 있는지 확인하세요
+    - `OPENAI_API_KEY` 환경 변수가 설정되어 있는지 확인하세요
+    - 키가 `sk-`로 시작하는지 확인하세요
+    - AI Sonar 대시보드에서 키가 활성화되어 있는지 확인하세요
+  </Accordion>
+
+  <Accordion title="모델을 찾을 수 없음">
+    - 모델 이름이 정확히 일치하는지 확인하세요
+    - [aisonar.dev/en/models](https://aisonar.dev/models)에서 모델 가용성을 확인하세요
+  </Accordion>
+
+  <Accordion title="Responses-native 필드 거부됨">
+    - 일부 필드는 선택한 모델 및 라우트에 대해 AI Sonar가 해당 동작을 보장할 수 있을 때만 `/v1/responses`에서 사용할 수 있습니다
+    - `unsupported_request_field`가 표시되면 해당 필드를 제거하거나 해당 필드에 의존하지 않는 워크플로로 전환하세요
+  </Accordion>
+
+  <Accordion title="/compact 또는 자동 압축 실패">
+    - Codex CLI는 `/v1/compact`가 아니라 `POST /v1/responses/compact`를 호출합니다
+    - 압축 요청은 현재 세션의 `model`을 사용하므로 해당 모델이 Responses 경로에서 사용 가능해야 합니다
+    - `wire_api = "responses"` 및 `base_url = "https://api.aisonar.dev/v1"`를 유지하세요
+  </Accordion>
+</AccordionGroup>

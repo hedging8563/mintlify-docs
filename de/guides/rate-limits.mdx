@@ -1,0 +1,154 @@
+---
+title: "Rate Limits"
+description: "Rate Limits verstehen und handhaben"
+---
+
+## Überblick
+
+AI Sonar implementiert Rate Limits, um eine faire Nutzung und die Stabilität der Plattform sicherzustellen. Die Limits variieren je nach Account-Tier.
+
+## Rate-Limit-Tiers
+
+| Tier | Anfragen/Min | Beschreibung |
+|------|-------------|-------------|
+| **User** | 1.000 | Standard-Tier für alle Accounts |
+| **Partner** | 3.000 | Für Integrationspartner |
+| **VIP** | 10.000 | Nutzer mit hohem Volumen |
+
+<Note>
+  Rate Limits können sich ändern. Kontaktieren Sie support@aisonar.dev für benutzerdefinierte Limits.
+</Note>
+
+## Rate-Limit-Antwort
+
+Wenn Sie das Rate Limit überschreiten, gibt die API einen `429`-Statuscode mit einem `Retry-After`-Header zurück, der angibt, wie lange vor einem erneuten Versuch gewartet werden muss.
+
+## Rate Limit überschritten
+
+Wenn Sie das Limit überschreiten, erhalten Sie eine `429`-Antwort:
+
+```json
+{
+  "error": {
+    "message": "Rate limit exceeded. Please retry later.",
+    "type": "rate_limit_exceeded",
+    "code": "rate_limit_exceeded"
+  }
+}
+```
+
+Die Antwort enthält einen `Retry-After`-Header:
+```
+Retry-After: 60  # Seconds to wait before retrying
+```
+
+## Umgang mit Rate Limits
+
+### Exponentielles Backoff
+
+Implementieren Sie exponentielles Backoff für automatische Wiederholungen:
+
+```python
+import time
+from openai import OpenAI, RateLimitError
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+def make_request_with_backoff(messages, max_retries=5):
+    for attempt in range(max_retries):
+        try:
+            return client.chat.completions.create(
+                model="gpt-4o",
+                messages=messages
+            )
+        except RateLimitError as e:
+            if attempt == max_retries - 1:
+                raise
+
+            wait_time = 2 ** attempt  # 1, 2, 4, 8, 16 seconds
+            print(f"Rate limited. Waiting {wait_time}s...")
+            time.sleep(wait_time)
+```
+
+### Request-Queueing
+
+Für Anwendungen mit hohem Volumen implementieren Sie eine Request-Queue:
+
+```python
+import asyncio
+from collections import deque
+
+class RateLimitedClient:
+    def __init__(self, requests_per_minute=60):
+        self.rpm = requests_per_minute
+        self.interval = 60 / requests_per_minute
+        self.last_request = 0
+
+    async def request(self, messages):
+        # Wait if needed to respect rate limit
+        now = asyncio.get_event_loop().time()
+        wait_time = max(0, self.last_request + self.interval - now)
+        if wait_time > 0:
+            await asyncio.sleep(wait_time)
+
+        self.last_request = asyncio.get_event_loop().time()
+        return await self.client.chat.completions.create(
+            model="gpt-4o",
+            messages=messages
+        )
+```
+
+### Batch-Verarbeitung
+
+Für Bulk-Operationen verarbeiten Sie Daten in Batches mit Verzögerungen:
+
+```python
+def process_batch(items, batch_size=50, delay=1):
+    results = []
+    for i in range(0, len(items), batch_size):
+        batch = items[i:i + batch_size]
+        for item in batch:
+            result = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[{"role": "user", "content": item}]
+            )
+            results.append(result)
+        time.sleep(delay)  # Pause between batches
+    return results
+```
+
+## Bewährte Praktiken
+
+<AccordionGroup>
+  <Accordion title="Überwachen Sie Ihre Nutzung">
+    Verfolgen Sie Rate-Limit-Header, um proaktiv unter den Limits zu bleiben.
+  </Accordion>
+
+  <Accordion title="Caching implementieren">
+    Cachen Sie Antworten für identische Requests, um API-Aufrufe zu reduzieren.
+  </Accordion>
+
+  <Accordion title="Geeignete Modelle verwenden">
+    Schnellere Modelle (wie gpt-5-mini) ermöglichen mehr Durchsatz.
+  </Accordion>
+
+  <Accordion title="Kontaktieren Sie uns für höhere Limits">
+    Wenn Sie höhere Limits benötigen, kontaktieren Sie support@aisonar.dev.
+  </Accordion>
+</AccordionGroup>
+
+## Ihr Tier upgraden
+
+So beantragen Sie ein Tier-Upgrade:
+
+1. Melden Sie sich in Ihrem [Dashboard](https://console.aisonar.dev) an
+2. Gehen Sie zu **Settings → Account**
+3. Kontaktieren Sie den Support mit Ihrem Anwendungsfall
+
+Oder senden Sie eine E-Mail an support@aisonar.dev mit:
+- Der E-Mail-Adresse Ihres Accounts
+- Dem erwarteten Anfragevolumen
+- Einer Beschreibung des Anwendungsfalls

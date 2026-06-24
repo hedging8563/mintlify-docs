@@ -1,0 +1,75 @@
+---
+title: "OpenAI"
+description: "GPT-4, GPT-4o, o1, o3, DALL-E, Whisper, TTS"
+---
+
+## Overview
+
+AI Sonar provides access to OpenAI models. Total: **31 models** available.
+
+## Chat Models
+
+| Model ID | Pricing |
+|----------|--------|
+| `gpt-4.1` | $1.4/1M in |
+| `gpt-4.1-mini` | $0.28/1M in |
+| `gpt-4o` | $1.75/1M in |
+| `gpt-4o-mini` | $0.1155/1M in |
+| `gpt-5` | $0.875/1M in |
+| `gpt-5-chat` | $0.875/1M in |
+| `gpt-5-codex` | $0.875/1M in |
+| `gpt-5-mini` | $0.175/1M in |
+| `gpt-5-nano` | $0.035/1M in |
+| `gpt-5-pro` | $10.5/1M in |
+| `gpt-5.1` | $0.875/1M in |
+| `gpt-5.1-codex` | $0.875/1M in |
+| `gpt-5.1-codex-max` | $0.875/1M in |
+| `gpt-5.2` | $1.225/1M in |
+| `gpt-5.2-chat` | $1.225/1M in |
+| `gpt-5.2-codex` | $1.225/1M in |
+| `gpt-5.3-codex` | $1.225/1M in |
+| `gpt-5.4` | $0.75/1M in |
+| `gpt-5.4-mini` | $0.225/1M in |
+| `gpt-5.4-nano` | $0.14/1M in |
+| `gpt-5.5` | $1.5/1M in |
+| `gpt-oss-120b` | $0.105/1M in |
+| `gpt-oss-20b` | $0.075/1M in |
+| `o4-mini` | $0.77/1M in |
+
+## Image Generation
+
+| Model ID | Pricing |
+|----------|--------|
+| `gpt-image-1-mini` | $1.4/1M in |
+| `gpt-image-1.5` | $3.5/1M in |
+| `gpt-image-2` | $1.5/1M in |
+
+## Speech-to-Text
+
+| Model ID | Pricing |
+|----------|--------|
+| `openai-gpt-4o-mini-transcribe` | $0.875/1M in |
+| `openai-gpt-4o-transcribe` | $1.75/1M in |
+| `whisper-large-v3` | See dashboard |
+| `whisper-large-v3-turbo` | See dashboard |
+
+
+## Usage
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="gpt-5.2",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+```
+
+<Note>
+Prices shown are platform prices (~70% of official rates).
+</Note>

@@ -1,0 +1,187 @@
+---
+title: "이미지 변형 생성"
+openapi: "POST /v1/images/variations"
+description: "주어진 이미지의 변형을 생성합니다"
+---
+
+## 개요
+
+주어진 이미지의 변형을 생성합니다. `multipart/form-data` 콘텐츠 타입이 필요합니다.
+
+## 요청 본문
+
+**동기 요청 타임아웃:** 일부 라우팅된 이미지 제공자는 생성이 완료될 때까지 기다린 뒤 최종 이미지를 inline 으로 반환합니다. 고해상도 또는 고품질 요청은 1분 안팎이거나 그 이상 걸릴 수 있으므로 HTTP 클라이언트 타임아웃을 최소 `120s` 로 설정하세요. 생성 응답에 `status: "pending"`, `task_id`, 또는 `poll_url` 이 포함되어 있으면 반환된 `poll_url` 을 따라 폴링하세요.
+
+<ParamField body="image" type="file" required>
+  변형의 기반으로 사용할 이미지. 유효한 PNG 파일이어야 하며, 50MB 미만이고 정사각형이어야 합니다.
+</ParamField>
+
+<ParamField body="model" type="string" default="dall-e-2">
+  이미지 변형에 사용할 모델. 현재 `dall-e-2`만 지원됩니다.
+</ParamField>
+
+<ParamField body="n" type="integer" default="1">
+  생성할 이미지 수. 1에서 10 사이여야 합니다.
+</ParamField>
+
+<ParamField body="size" type="string">
+  생성된 이미지의 크기. `256x256`, `512x512` 또는 `1024x1024` 중 하나여야 합니다.
+</ParamField>
+
+<ParamField body="response_format" type="string" default="url">
+  생성된 이미지가 반환되는 형식. `url` 또는 `b64_json`이어야 합니다.
+</ParamField>
+
+<ParamField body="user" type="string">
+  남용 모니터링을 위한 최종 사용자의 고유 식별자.
+</ParamField>
+
+## 응답
+
+<ResponseField name="created" type="integer">
+  이미지가 생성된 시점의 Unix 타임스탬프.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  생성된 이미지 변형 배열.
+
+  각 객체에 포함된 항목:
+  - `url` (string): 변형 이미지의 URL (response_format이 `url`인 경우)
+  - `b64_json` (string): Base64로 인코딩된 이미지 (response_format이 `b64_json`인 경우)
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/images/variations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F "image=@cat.png" \
+  -F "n=2" \
+  -F "size=1024x1024"
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.images.create_variation(
+    model="dall-e-2",
+    image=open("cat.png", "rb"),
+    n=2,
+    size="1024x1024"
+)
+
+for image in response.data:
+    print(image.url)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+import fs from 'fs';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.images.createVariation({
+  model: 'dall-e-2',
+  image: fs.createReadStream('cat.png'),
+  n: 2,
+  size: '1024x1024'
+});
+
+response.data.forEach(image => console.log(image.url));
+```
+
+```go Go
+package main
+
+import (
+    "bytes"
+    "fmt"
+    "io"
+    "mime/multipart"
+    "net/http"
+    "os"
+)
+
+func main() {
+    body := &bytes.Buffer{}
+    writer := multipart.NewWriter(body)
+
+    file, _ := os.Open("cat.png")
+    defer file.Close()
+    part, _ := writer.CreateFormFile("image", "cat.png")
+    io.Copy(part, file)
+
+    writer.WriteField("n", "2")
+    writer.WriteField("size", "1024x1024")
+    writer.Close()
+
+    req, _ := http.NewRequest("POST", "https://api.aisonar.dev/v1/images/variations", body)
+    req.Header.Set("Authorization", "Bearer sk-your-api-key")
+    req.Header.Set("Content-Type", writer.FormDataContentType())
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+
+    result, _ := io.ReadAll(resp.Body)
+    fmt.Println(string(result))
+}
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/images/variations');
+
+$image = new CURLFile('cat.png', 'image/png', 'cat.png');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => [
+        'image' => $image,
+        'n' => 2,
+        'size' => '1024x1024'
+    ]
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+foreach ($data['data'] as $image) {
+    echo $image['url'] . "\n";
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json 응답
+{
+  "created": 1706000000,
+  "data": [
+    {
+      "url": "https://..."
+    },
+    {
+      "url": "https://..."
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## 참고 사항
+
+<Note>
+  이미지 변형은 DALL-E 2에서만 사용할 수 있습니다. 모델은 원본 이미지와 스타일 및 내용이 유사한 새 이미지를 생성합니다.
+</Note>

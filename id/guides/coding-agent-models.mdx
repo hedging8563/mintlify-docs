@@ -1,0 +1,151 @@
+---
+title: "Pemilihan Model Coding Agent"
+description: "Pilih model yang tepat untuk setiap tugas coding — tabel perbandingan, rekomendasi, dan konfigurasi"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Perbandingan Model untuk Coding
+
+| Model | Kecepatan | Kualitas Kode | Biaya | Context Window | Terbaik Untuk |
+|-------|-----------|---------------|-------|----------------|---------------|
+| `claude-opus-4-6` | Sedang | Sangat Baik | $$$$ | 200K | Arsitektur, refactoring kompleks |
+| `gpt-5.4` | Sedang | Sangat Baik | $$$$ | 200K | Penalaran kompleks, perencanaan |
+| `claude-sonnet-4-6` | Cepat | Baik Sekali | $$$ | 200K | Coding umum, review |
+| `gemini-3-pro-preview` | Cepat | Baik Sekali | $$$ | 1M | Analisis codebase besar |
+| `gpt-5-mini` | Sangat Cepat | Baik | $$ | 128K | Edit cepat, completions |
+| `gemini-3-flash-preview` | Sangat Cepat | Baik | $$ | 1M | Iterasi cepat, pencarian |
+| `deepseek-r1` | Sedang | Baik Sekali | $ | 64K | Tugas yang membutuhkan penalaran |
+| `deepseek-v3.2` | Cepat | Baik | $ | 128K | Pembuatan massal, boilerplate |
+
+## Rekomendasi per Tugas
+
+<AccordionGroup>
+  <Accordion title="Pembuatan Kode / Scaffolding">
+    **Rekomendasi**: `claude-sonnet-4-6`, `gemini-3-pro-preview`
+
+    Model-model ini menghasilkan kode yang bersih dan terstruktur dengan baik serta konvensi penamaan yang bagus. Untuk scaffolding multi-file yang kompleks, pertimbangkan `claude-opus-4-6`.
+
+    Alternatif hemat: `deepseek-v3.2` menangani boilerplate dengan baik dengan biaya yang jauh lebih rendah.
+  </Accordion>
+
+  <Accordion title="Review Kode / Refactoring">
+    **Rekomendasi**: `claude-sonnet-4-6`, `deepseek-r1`
+
+    Review kode mendapat manfaat dari kemampuan penalaran. `deepseek-r1` sangat hemat biaya di sini — pendekatan chain-of-thought-nya menangkap masalah yang halus.
+
+    Untuk review yang berfokus pada keamanan: `claude-opus-4-6` atau `gpt-5.4`.
+  </Accordion>
+
+  <Accordion title="Perbaikan Bug / Debugging">
+    **Rekomendasi**: `claude-sonnet-4-6`, `gpt-5-mini`
+
+    Perbaikan bug biasanya memiliki cakupan yang jelas — Anda tahu apa yang rusak. Model tier standar menangani ini dengan baik. Gunakan model premium hanya untuk bug kompleks yang melibatkan banyak file.
+  </Accordion>
+
+  <Accordion title="Desain Arsitektur">
+    **Rekomendasi**: `claude-opus-4-6`, `gpt-5.4`
+
+    Keputusan arsitektur mendapat manfaat dari penalaran terkuat. Biaya premium sepadan karena keputusan ini jarang tetapi berdampak besar.
+  </Accordion>
+
+  <Accordion title="Edit Cepat / Tab Completion">
+    **Rekomendasi**: `gpt-5-mini`, `gemini-3-flash-preview`
+
+    Kecepatan sangat penting untuk penggunaan interaktif. Model budget dengan waktu respons cepat memberikan pengalaman terbaik. Jangan buang token premium untuk autocomplete.
+  </Accordion>
+</AccordionGroup>
+
+## Cara Kerja Routing AI Sonar
+
+AI Sonar secara otomatis mengarahkan permintaan Anda ke provider terbaik yang tersedia.
+
+### Strategi Routing
+
+| Strategi | Perilaku | Terbaik Untuk |
+|----------|----------|---------------|
+| **PRIORITY** | Mengarahkan ke provider dengan prioritas tertinggi yang tersedia | Fokus pada keandalan |
+| **COST** | Mengarahkan ke provider termurah yang tersedia | Fokus pada biaya |
+
+Anda dapat mengatur strategi pilihan Anda di dashboard.
+
+### Fallback Otomatis
+
+Jika provider tidak tersedia atau mengembalikan error, AI Sonar secara otomatis mencoba ulang dengan provider berikutnya:
+
+```
+Permintaan: claude-sonnet-4-6
+  → Provider A (utama): error 503
+  → Provider B (fallback): ✓ Berhasil
+```
+
+Ini terjadi secara transparan — coding agent Anda melihat respons normal.
+
+### Routing Format Native
+
+Ketika model yang dipilih dan kanal perutean mendukungnya, AI Sonar dapat merutekan permintaan melalui format API native keluarga model untuk kompatibilitas yang lebih baik:
+
+| Keluarga Model | Format API | URL Dasar |
+|-------------|------------|----------|
+| Claude | Anthropic Messages | `https://api.aisonar.dev` |
+| GPT | Respons OpenAI | `https://api.aisonar.dev/v1` |
+| Gemini | Gemini Native API | `https://api.aisonar.dev` atau `https://api.aisonar.dev/v1beta` tergantung jalur klien |
+| DeepSeek | Obrolan OpenAI | `https://api.aisonar.dev/v1` |
+
+Claude Code adalah jalur Anthropic-native yang kuat. API Gemini-native juga ada, tetapi Gemini CLI sendiri tetap merupakan jalur kompatibilitas best-effort dan tidak boleh dianggap sebagai alur kerja yang stabil untuk jangka panjang.
+
+## Konfigurasi per Tool
+
+<AccordionGroup>
+  <Accordion title="Claude Code">
+    ```bash
+    export ANTHROPIC_API_KEY="sk-your-api-key"
+    export ANTHROPIC_BASE_URL="https://api.aisonar.dev"
+    ```
+
+    Pilih model: `claude --model claude-sonnet-4-6`
+
+    [Panduan lengkap →](/integrations/claude-code)
+  </Accordion>
+
+  <Accordion title="Cursor">
+    Di Settings → Models:
+    - API Key: `sk-your-api-key`
+    - Base URL: `https://api.aisonar.dev/v1`
+    - Model: `claude-sonnet-4-6` atau `gpt-5-mini`
+
+    [Panduan lengkap →](/integrations/cursor)
+  </Accordion>
+
+  <Accordion title="Codex CLI">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export OPENAI_BASE_URL="https://api.aisonar.dev/v1"
+    ```
+
+    [Panduan lengkap →](/integrations/codex-cli)
+  </Accordion>
+
+  <Accordion title="Gemini CLI">
+    ```bash
+    export GEMINI_API_KEY="sk-your-api-key"
+    export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"
+    ```
+
+    Perlakukan jalur ini sebagai kompatibilitas best-effort, bukan kontrak upstream yang stabil.
+
+    [Panduan lengkap →](/integrations/gemini-cli)
+  </Accordion>
+
+  <Accordion title="OpenCode">
+    ```json
+    {
+      "provider": "openai",
+      "apiKey": "sk-your-api-key",
+      "baseURL": "https://api.aisonar.dev/v1"
+    }
+    ```
+
+    [Panduan lengkap →](/integrations/opencode)
+  </Accordion>
+</AccordionGroup>

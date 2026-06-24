@@ -1,0 +1,222 @@
+---
+title: "Codex CLI"
+description: "تكوين OpenAI Codex CLI لاستخدام AI Sonar API"
+---
+
+## نظرة عامة
+
+
+
+<Note>
+**النوع**: أداة برمجة
+
+**المسار الأساسي**: OpenAI Responses (مسار اختياري متقدم)
+
+**ثقة الدعم**: مدعوم مع قيود على النموذج/المسار
+</Note>
+
+OpenAI Codex هو أداة مفتوحة المصدر لسطر الأوامر (CLI) تعمل كوكيل برمجي خفيف الوزن، قادر على قراءة الكود وتعديله وتشغيله في الطرفية. تم بناؤه على نماذج GPT ومحسّن لتوليد الشيفرة.
+
+بالنسبة لـ AI Sonar، يمكن لـ Codex CLI استخدام `/v1/responses`، لكن يجب اعتباره مسار توافق متقدم. بعض ميزات Responses-only غير مضمونة عبر كل نموذج ومسار موجه.
+
+يدعم Codex CLI الضغط البعيد عبر `POST /v1/responses/compact`. يرسل Codex قيمة `model` الخاصة بالجلسة الحالية في `body.model` عند استخدام `/compact` والضغط التلقائي، لذلك يجب أن يكون النموذج الذي تريد استخدامه للضغط متاحا على مسار Responses. لا تقم بضبط `/v1/compact`.
+
+## متطلبات النظام
+
+- **OS**: macOS, Linux (دعم رسمي)، Windows عبر WSL
+- **Node.js**: الإصدار 18+
+- **npm**: الإصدار 10.x.x أو أعلى
+
+## التثبيت
+
+```bash
+npm install -g @openai/codex
+```
+
+التحقق من التثبيت:
+
+```bash
+codex --version
+```
+
+## التكوين
+
+### الخطوة 1: تعيين مفتاح API
+
+**مؤقت (الجلسة الحالية):**
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+```
+
+**تكوين دائم:**
+
+أضف إلى `~/.bashrc`، `~/.zshrc`، أو `~/.bash_profile`:
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+```
+
+ثم أعد التحميل:
+
+```bash
+source ~/.zshrc  # or source ~/.bashrc
+```
+
+### الخطوة 2: تكوين config.toml
+
+حرر `~/.codex/config.toml`:
+
+```toml
+model_provider = "aisonar"
+model = "gpt-5.4"
+model_reasoning_effort = "xhigh"
+plan_mode_reasoning_effort = "xhigh"
+fast_mode = true
+model_context_window = 1000000
+model_auto_compact_token_limit = 900000
+sandbox_mode = "danger-full-access"
+approval_policy = "never"
+
+disable_response_storage = false
+personality = "friendly"
+service_tier = "fast"
+
+[model_providers.aisonar]
+env_key = "OPENAI_API_KEY"
+name = "AI Sonar"
+base_url = "https://api.aisonar.dev/v1"
+wire_api = "responses"
+supports_websockets = true
+websocket_connect_timeout_ms = 15000
+
+[features]
+responses_websockets = true
+responses_websockets_v2 = true
+```
+
+وضع WebSocket هذا هو جسر Responses-over-WebSocket لعملاء Codex. يقبل `response.create` و`response.cancel` فقط؛ وهو ليس OpenAI Realtime API ولا يقبل `session.update` أو `conversation.item.*` أو `input_audio_buffer.*` أو الصوت الثنائي أو أغلفة Realtime المتداخلة `response.create.response`.
+
+<Note>
+إذا لم يكن ملف التكوين موجودًا، شغّل `codex` مرة واحدة لتوليده، ثم حرر الملف. أعد تشغيل Codex بالكامل بعد تغيير `config.toml` حتى تُعاد تحميل إعدادات الموفر الجديدة.
+</Note>
+
+<Warning>
+Codex يتخلى تدريجيًا عن دعم `chat/completions` لمزودي الخدمات المخصصين. احتفظ بـ `wire_api = "responses"` لـ AI Sonar ما لم تكن تستخدم عن قصد مسار توافق قديم.
+</Warning>
+
+<Note>
+إذا استخدم الطلب حقولًا خاصة بـ Responses-only غير مدعومة على النموذج أو المسار المحدد، تعيد AI Sonar خطأً صريحًا بدلاً من تخفيض الطلب بهدوء.
+</Note>
+
+## الاستخدام الأساسي
+
+**بدء الوضع التفاعلي:**
+
+```bash
+codex
+```
+
+**أمر مباشر:**
+
+```bash
+codex "Fix the bug in main.py line 42"
+```
+
+**تحديد النموذج:**
+
+```bash
+codex -m gpt-5.4 "Build a REST API server"
+```
+
+## النماذج الموصى بها
+
+| النموذج | الأفضل لـ |
+|-------|----------|
+| `gpt-5.4` | أفضل خيار افتراضي للترميز والتفكير المنطقي |
+| `gpt-5-mini` | بديل أسرع وأرخص لسير عمل الترميز |
+| `claude-sonnet-4-6` | مراجعة الشيفرة، التوثيق |
+| `deepseek-r1` | تصميم الخوارزميات، التفكير المنطقي |
+
+## الأوامر التفاعلية
+
+| الأمر | الوصف |
+|---------|-------------|
+| `/help` | عرض المساعدة |
+| `/exit` or `Ctrl+C` | الخروج |
+| `/clear` | مسح المحادثة |
+| `/config` | عرض التكوين |
+| `/model <name>` | تبديل النموذج |
+| `/tokens` | عرض استخدام التوكنات |
+
+## التحقق من التكوين
+
+```bash
+# Check environment variable
+echo $OPENAI_API_KEY
+
+# Test API connection
+codex "Hello, Codex!"
+
+# View configuration
+cat ~/.codex/config.toml
+```
+
+## حالات استخدام شائعة
+
+**مراجعة الشيفرة:**
+
+```bash
+git diff | codex "Review these code changes"
+```
+
+**توليد رسائل الالتزام:**
+
+```bash
+git diff --staged | codex "Generate a commit message for these changes"
+```
+
+**إصلاح الأخطاء:**
+
+```bash
+codex "Fix the TypeScript errors in src/components/"
+```
+
+**شرح الشيفرة:**
+
+```bash
+cat main.py | codex "Explain what this code does"
+```
+
+## استكشاف الأخطاء وإصلاحها
+
+<AccordionGroup>
+  <Accordion title="خطأ في الاتصال">
+    - تحقق أن `base_url` في config.toml هو بالضبط `https://api.aisonar.dev/v1`
+    - تحقق من اتصال الشبكة
+    - تأكد من عدم وجود تداخل بروكسي
+  </Accordion>
+
+  <Accordion title="فشل المصادقة">
+    - تحقق من وجود `env_key = \"OPENAI_API_KEY\"` في `~/.codex/config.toml`
+    - تحقق من تعيين متغير البيئة `OPENAI_API_KEY`
+    - تأكد من أن المفتاح يبدأ بـ `sk-`
+    - تأكد من أن المفتاح نشط في لوحة تحكم AI Sonar
+  </Accordion>
+
+  <Accordion title="النموذج غير موجود">
+    - تحقق أن اسم النموذج يطابق بالضبط
+    - تحقق من توفر النموذج على [aisonar.dev/en/models](https://aisonar.dev/models)
+  </Accordion>
+
+  <Accordion title="رفض حقل مخصص لـ Responses">
+    - بعض الحقول متاحة فقط على `/v1/responses` عندما يمكن لـ AI Sonar ضمان هذا السلوك للنموذج والمسار المحددين
+    - إذا رأيت `unsupported_request_field`، احذف ذلك الحقل أو انتقل إلى سير عمل لا يعتمد عليه
+  </Accordion>
+
+  <Accordion title="فشل /compact أو الضغط التلقائي">
+    - يستدعي Codex CLI `POST /v1/responses/compact`، وليس `/v1/compact`
+    - يستخدم طلب الضغط `model` الخاص بالجلسة الحالية، لذلك يجب أن يكون هذا النموذج متاحا على مسار Responses
+    - أبق `wire_api = "responses"` و `base_url = "https://api.aisonar.dev/v1"`
+  </Accordion>
+</AccordionGroup>

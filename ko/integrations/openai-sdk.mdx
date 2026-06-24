@@ -1,0 +1,252 @@
+---
+title: "OpenAI SDK"
+description: "공식 OpenAI SDK 및 OpenAI 호환 클라이언트를 사용하여 AI Sonar 사용"
+---
+
+## 개요
+
+AI Sonar는 클라이언트의 base URL을 `https://api.aisonar.dev/v1`로 지정하여 공식 OpenAI SDK와 함께 작동합니다.
+
+대부분의 새로운 프로젝트에서는 기본 OpenAI 호환 경로로 **Chat Completions**를 사용하는 것을 권장합니다. **Responses API**는 Responses 고유의 동작이 명시적으로 필요할 때만 사용하세요.
+
+Responses 전용 필드는 선택한 모델 및 라우팅된 경로에 따라 동일하게 동작한다고 보장되지 않습니다.
+
+<Note>
+Python, JavaScript, 및 Go에는 공식 OpenAI SDK가 있습니다. PHP는 OpenAI 호환 커뮤니티 클라이언트와 잘 작동하지만 공식 OpenAI SDK는 아닙니다.
+</Note>
+
+<Note>
+**유형**: 네이티브 SDK
+
+**주요 경로**: OpenAI-호환 / Chat Completions
+
+**지원 신뢰도**: 지원되는 핵심 경로
+</Note>
+
+## 설치
+
+<CodeGroup>
+
+```bash Python
+pip install openai
+```
+
+```bash JavaScript
+npm install openai
+```
+
+```bash Go
+go get github.com/openai/openai-go/v3
+```
+
+</CodeGroup>
+
+<Note>
+`POST /v1/responses`는 Responses 고유의 동작이 명시적으로 필요할 때만 사용하세요. 일부 Responses 전용 필드는 여전히 선택한 모델과 라우팅된 경로에 따라 달라질 수 있습니다.
+</Note>
+
+## 클라이언트 구성
+
+<CodeGroup>
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1",
+)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1',
+});
+```
+
+```go Go
+package main
+
+import (
+    openai "github.com/openai/openai-go/v3"
+    "github.com/openai/openai-go/v3/option"
+)
+
+func main() {
+    client := openai.NewClient(
+        option.WithAPIKey("sk-your-api-key"),
+        option.WithBaseURL("https://api.aisonar.dev/v1"),
+    )
+
+    _ = client
+}
+```
+
+</CodeGroup>
+
+## 권장: Chat Completions
+
+<CodeGroup>
+
+```python Python
+response = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "Explain what AI Sonar does in one sentence."}]
+)
+
+print(response.choices[0].message.content)
+```
+
+```javascript JavaScript
+const response = await client.chat.completions.create({
+  model: 'gpt-5.4',
+  messages: [{ role: 'user', content: 'Explain what AI Sonar does in one sentence.' }],
+});
+
+console.log(response.choices[0].message.content);
+```
+
+```bash cURL
+curl https://api.aisonar.dev/v1/chat/completions \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.4",
+    "messages": [
+      {"role": "user", "content": "Explain what AI Sonar does in one sentence."}
+    ]
+  }'
+```
+
+</CodeGroup>
+
+## 고급: Responses API
+
+이 경로는 도구나 워크플로가 OpenAI Responses 의미론에 명시적으로 의존하는 경우에만 사용하세요.
+
+### Responses 스트리밍
+
+<CodeGroup>
+
+```python Python
+stream = client.responses.create(
+    model="gpt-5.4",
+    input="Write a short poem about coding.",
+    stream=True,
+)
+
+for event in stream:
+    if event.type == "response.output_text.delta":
+        print(event.delta, end="")
+```
+
+```javascript JavaScript
+const stream = await client.responses.create({
+  model: 'gpt-5.4',
+  input: 'Write a short poem about coding.',
+  stream: true,
+});
+
+for await (const event of stream) {
+  if (event.type === 'response.output_text.delta') {
+    process.stdout.write(event.delta);
+  }
+}
+```
+
+</CodeGroup>
+
+## 도구 / 함수 호출
+
+```python
+response = client.responses.create(
+    model="gpt-5.4",
+    input="What's the weather in Tokyo?",
+    tools=[{
+        "type": "function",
+        "name": "get_weather",
+        "description": "Get weather for a location",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "location": {"type": "string"}
+            },
+            "required": ["location"]
+        }
+    }]
+)
+
+for item in response.output:
+    if item.type == "function_call":
+        print(item.name)
+        print(item.arguments)
+```
+
+## Responses를 이용한 Vision
+
+```python
+response = client.responses.create(
+    model="gpt-4o",
+    input=[{
+        "role": "user",
+        "content": [
+            {"type": "input_text", "text": "What's in this image?"},
+            {"type": "input_image", "image_url": "https://example.com/image.jpg"}
+        ]
+    }]
+)
+
+print(response.output_text)
+```
+
+## 임베딩
+
+```python
+response = client.embeddings.create(
+    model="text-embedding-3-small",
+    input="Hello world"
+)
+
+print(response.data[0].embedding[:5])
+```
+
+## Chat Completions
+
+Chat Completions는 AI Sonar의 기본 OpenAI 호환 경로입니다:
+
+```python
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "Hello!"}
+    ]
+)
+
+print(response.choices[0].message.content)
+```
+
+## 문제 해결
+
+<AccordionGroup>
+  <Accordion title="연결 오류">
+    - base URL이 정확히 `https://api.aisonar.dev/v1`인지 확인하세요
+    - 프록시 간섭 또는 사용자 지정 HTTP 클라이언트 오버라이드가 있는지 확인하세요
+    - 프로바이더 동작을 디버깅하기 전에 SDK 버전이 최신인지 확인하세요
+  </Accordion>
+
+  <Accordion title="인증 실패">
+    - API 키가 `sk-`로 시작하는지 확인하세요
+    - AI Sonar 대시보드에서 키가 활성화되어 있는지 확인하세요
+    - SDK가 `Authorization: Bearer ...`를 전송하고 있는지 확인하세요
+  </Accordion>
+
+  <Accordion title="잘못된 API 경로">
+    - `responses.create(...)`는 `/v1/responses`로 요청을 보냅니다
+    - `chat.completions.create(...)`는 `/v1/chat/completions`로 요청을 보냅니다
+    - Responses 고유 동작이 명시적으로 필요하지 않는 한 기본적으로 Chat Completions를 사용하세요
+  </Accordion>
+</AccordionGroup>

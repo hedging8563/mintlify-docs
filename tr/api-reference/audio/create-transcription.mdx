@@ -1,0 +1,174 @@
+---
+title: "Transkripsiyon Oluştur"
+openapi: "POST /v1/audio/transcriptions"
+description: "Sesi giriş diline transkribe eder"
+---
+
+## İstek Gövdesi
+
+**Senkron istek zaman aşımı:** Bu chat dışı endpoint, yönlendirilen modelin tamamlanmasını bekler. Büyük girdiler, uzun sesler veya büyük batch’ler yaygın 30s istemci varsayılanlarını aşabilir; bu yüzden HTTP istemcisi zaman aşımını en az `120s` olarak ayarlayın.
+
+<ParamField body="file" type="file" required>
+  Transkribe edilecek ses dosyası. Desteklenen formatlar: flac, mp3, mp4, mpeg, mpga, m4a, ogg, wav, webm.
+</ParamField>
+
+<ParamField body="model" type="string" default="whisper-1">
+  Kullanılacak model. Şu anda yalnızca `whisper-1` desteklenmektedir.
+</ParamField>
+
+<ParamField body="language" type="string">
+  Sesin dili, ISO-639-1 formatında (ör. `en`, `zh`, `ja`).
+</ParamField>
+
+<ParamField body="prompt" type="string">
+  Modelin stilini yönlendirmek veya önceki bir segmenti devam ettirmek için isteğe bağlı metin.
+</ParamField>
+
+<ParamField body="response_format" type="string" default="json">
+  Çıktı formatı: `json`, `text`, `srt`, `verbose_json`, `vtt`.
+</ParamField>
+
+<ParamField body="temperature" type="number" default="0">
+  Örnekleme temperature değeri (0 ile 1 arası).
+</ParamField>
+
+<ParamField body="timestamp_granularities" type="array">
+  Zaman damgası ayrıntı düzeyi: `word` ve/veya `segment`. `verbose_json` gerektirir.
+</ParamField>
+
+## Yanıt
+
+<ResponseField name="text" type="string">
+  Transkribe edilen metin.
+</ResponseField>
+
+`verbose_json` için:
+
+<ResponseField name="task" type="string">
+  Her zaman `transcribe`.
+</ResponseField>
+
+<ResponseField name="language" type="string">
+  Algılanan dil.
+</ResponseField>
+
+<ResponseField name="duration" type="number">
+  Ses süresi, saniye cinsinden.
+</ResponseField>
+
+<ResponseField name="segments" type="array">
+  Zaman damgalarıyla birlikte transkripsiyon segmentleri.
+</ResponseField>
+
+<ResponseField name="words" type="array">
+  Kelime düzeyinde zaman damgaları (istenirse).
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/audio/transcriptions" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F file="@audio.mp3" \
+  -F model="whisper-1" \
+  -F language="en"
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+with open("audio.mp3", "rb") as audio_file:
+    response = client.audio.transcriptions.create(
+        model="whisper-1",
+        file=audio_file,
+        language="en"
+    )
+
+print(response.text)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+import fs from 'fs';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.audio.transcriptions.create({
+  model: 'whisper-1',
+  file: fs.createReadStream('audio.mp3'),
+  language: 'en'
+});
+
+console.log(response.text);
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/audio/transcriptions');
+
+$file = new CURLFile('audio.mp3', 'audio/mpeg', 'audio.mp3');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => [
+        'file' => $file,
+        'model' => 'whisper-1',
+        'language' => 'en'
+    ]
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+echo $data['text'];
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response (json)
+{
+  "text": "Hello, this is a test of the transcription API."
+}
+```
+
+```json Response (verbose_json)
+{
+  "task": "transcribe",
+  "language": "english",
+  "duration": 5.5,
+  "text": "Hello, this is a test of the transcription API.",
+  "segments": [
+    {
+      "id": 0,
+      "start": 0.0,
+      "end": 2.5,
+      "text": "Hello, this is a test",
+      "tokens": [...]
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## Çeviri
+
+Sesi İngilizceye çevirmek için translations endpoint'ini kullanın:
+
+```python
+response = client.audio.translations.create(
+    model="whisper-1",
+    file=audio_file
+)
+```

@@ -1,0 +1,196 @@
+---
+title: "Penagihan & Harga"
+description: "Pahami harga pay-as-you-go AI Sonar"
+---
+
+## Ikhtisar
+
+AI Sonar menggunakan **harga pay-as-you-go**. Anda hanya membayar untuk apa yang Anda gunakan, tanpa langganan atau komitmen minimum.
+
+## Cara Kerja Penagihan
+
+1. **Tambahkan kredit** ke akun Anda
+2. **Gunakan API** - biaya dipotong per permintaan
+3. **Pantau penggunaan** di dashboard Anda
+4. **Top up** saat saldo Anda rendah
+
+## Model Harga
+
+### Harga Per-Token
+
+Sebagian besar model pembuatan teks dikenakan harga per juta token:
+
+| Model | Input (per 1M token) | Output (per 1M token) |
+|-------|----------------------|------------------------|
+| GPT-4o | $1.75 | $7.00 |
+| GPT-4o-mini | $0.105 | $0.42 |
+| Claude Opus 4.5 | $3.50 | $17.50 |
+| Claude Sonnet 4.5 | $2.10 | $10.50 |
+| Claude Haiku 4.5 | $0.70 | $3.50 |
+| Gemini 2.5 Pro | $0.875 | $7.00 |
+| Gemini 2.5 Flash | $0.1225 | $0.525 |
+| DeepSeek R1 | $0.385 | $1.533 |
+| DeepSeek V3.2 | $0.196 | $0.294 |
+
+<Note>
+  Harga yang ditampilkan adalah harga platform yang didiskon. Harga aktual dapat bervariasi. Periksa [halaman harga](https://aisonar.dev/id/pricing) untuk tarif saat ini.
+</Note>
+
+### Harga Per-Permintaan
+
+Model gambar, video, dan audio dikenakan harga per permintaan:
+
+| Model | Harga per Permintaan |
+|-------|-------------------|
+| DALL-E 3 (1024x1024) | $0.04 |
+| Midjourney | $0.05 |
+| Whisper (per menit) | $0.006 |
+| TTS-1 | $0.015 |
+
+### Penagihan Tugas Asinkron (Video/Musik/3D dan Beberapa Model Gambar)
+
+<Note>
+  Untuk pembuatan berbasis tugas, pembuatan tugas dapat mencadangkan atau memotong di muka biaya estimasi. Settlement final hanya terjadi setelah tugas asinkron mencapai status terminal sukses saat polling atau finalization.
+</Note>
+
+Untuk alur pembuatan berbasis tugas (video, musik, 3D, dan beberapa model gambar):
+
+1. Kirim tugas. AI Sonar dapat menerapkan pre-deduction atau reservasi estimasi untuk memeriksa saldo dan batas pengeluaran API Key.
+2. Poll `poll_url` yang dikembalikan, atau panggil `GET /v1/tasks/{id}`, sampai tugas mencapai status terminal.
+3. Saat tugas selesai dengan sukses, settlement final mencatat penggunaan dan respons tugas menyertakan `billing_transaction_id`.
+4. Jika pembuatan gagal atau status terminal adalah failed, jumlah yang tertunda akan dikembalikan atau dilepaskan dan request ditandai tidak dapat ditagih.
+
+Jika dashboard tidak menunjukkan settlement atau refund setelah status terminal terlihat, hubungi support@aisonar.dev untuk bantuan.
+
+```python
+# Contoh: Billing pembuatan video
+response = client.post("/v1/videos/generations", json={
+    "model": "veo3.1",
+    "prompt": "A sunset over the ocean"
+})
+# Biaya estimasi dapat dicadangkan sekarang; billing final muncul setelah sukses.
+
+poll_url = response.json()["poll_url"]
+task_id = response.json()["task_id"]
+# Poll poll_url untuk status; billing_transaction_id muncul setelah settlement.
+```
+
+### ID transaksi billing
+
+Respons JSON berbayar non-streaming yang kompatibel dengan OpenAI menyertakan `billing_transaction_id` ketika settlement selesai sebelum respons difinalisasi. Nilai yang sama juga diekspos melalui header respons `X-Billing-Transaction-ID` untuk integrasi browser dan server. Route kompatibilitas native seperti Gemini `/v1beta` dapat mengekspos nilai ini hanya melalui header agar bentuk respons native provider tetap terjaga. Untuk task media async, polling `poll_url` yang dikembalikan atau `GET /v1/tasks/{id}`; respons task akan menyertakan `billing_transaction_id` setelah settlement selesai. Respons streaming bisa diselesaikan setelah stream terkirim, jadi jika header tidak ada, gunakan log penggunaan di dashboard untuk rekonsiliasi.
+
+## Penghitungan Token
+
+Token adalah unit dasar pemrosesan teks:
+
+- ~4 karakter = 1 token (Bahasa Inggris)
+- ~1-2 karakter = 1 token (Bahasa Mandarin)
+- 1 gambar = bervariasi berdasarkan ukuran dan detail
+
+### Mengestimasi Token
+
+```python
+# Rough estimation
+def estimate_tokens(text):
+    return len(text) / 4  # Approximate for English
+
+# Actual count (for OpenAI models)
+import tiktoken
+encoder = tiktoken.encoding_for_model("gpt-4o")
+tokens = encoder.encode("Your text here")
+print(f"Token count: {len(tokens)}")
+```
+
+## Pelacakan Penggunaan
+
+### Dashboard
+
+Pantau penggunaan Anda di [Dashboard](https://console.aisonar.dev):
+
+- Saldo real-time
+- Riwayat penggunaan berdasarkan model
+- Rincian biaya
+- Penggunaan kunci API
+
+### Respons API
+
+Setiap respons menyertakan informasi penggunaan:
+
+```json
+{
+  "usage": {
+    "prompt_tokens": 50,
+    "completion_tokens": 100,
+    "total_tokens": 150
+  }
+}
+```
+
+## Optimalisasi Biaya
+
+<AccordionGroup>
+  <Accordion title="Gunakan model yang sesuai">
+    Gunakan model yang lebih kecil (GPT-4o-mini, Gemini Flash) untuk tugas-tugas sederhana.
+  </Accordion>
+
+  <Accordion title="Terapkan caching">
+    Simpan cache respons untuk permintaan identik yang berulang.
+  </Accordion>
+
+  <Accordion title="Optimalkan prompt">
+    Buat prompt tetap ringkas sambil mempertahankan kejelasan.
+  </Accordion>
+
+  <Accordion title="Atur max_tokens">
+    Batasi panjang respons ketika respons lengkap tidak diperlukan.
+  </Accordion>
+
+  <Accordion title="Gunakan streaming untuk respons panjang">
+    Streaming tidak memerlukan biaya tambahan tetapi meningkatkan persepsi performa.
+  </Accordion>
+</AccordionGroup>
+
+## Peringatan Saldo Rendah
+
+Konfigurasikan peringatan saat saldo Anda turun:
+
+1. Buka **Dashboard → Settings → Notifications**
+2. Atur jumlah ambang batas Anda
+3. Terima notifikasi email
+
+## Menambah Kredit
+
+### Metode Pembayaran
+
+- Stripe (Visa, Mastercard)
+
+### Langkah-langkah
+
+1. Masuk ke [Dashboard](https://console.aisonar.dev)
+2. Klik **Add Credits**
+3. Pilih jumlah dan metode pembayaran
+4. Selesaikan pembayaran
+
+Kredit ditambahkan secara instan setelah konfirmasi pembayaran.
+
+## Batas Kunci API
+
+Anda dapat menetapkan batas pengeluaran pada masing-masing kunci API:
+
+1. Buka **Dashboard → API Keys**
+2. Klik pada kunci untuk mengedit
+3. Atur **Usage Limit**
+
+Ketika batas tercapai, permintaan dengan kunci tersebut akan mengembalikan `402 Payment Required`.
+
+## Faktur
+
+Untuk akun bisnis, faktur tersedia:
+
+1. Buka **Dashboard → Billing**
+2. Lihat riwayat transaksi
+3. Unduh faktur sebagai PDF
+
+## Pertanyaan?
+
+Hubungi support@aisonar.dev untuk pertanyaan terkait penagihan.

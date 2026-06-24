@@ -1,0 +1,26 @@
+---
+title: "API-Schlüssel auflisten"
+openapi: "GET /v1/management/api-keys"
+description: "Listet benutzerverwaltete API-Schlüssel für das aktuelle Organisations-Management-Token auf."
+---
+
+## Übersicht
+
+Gibt die Benutzer-API-Schlüssel der Organisation zurück, die dem aktuellen Management-Token zugeordnet ist.
+
+## Hinweise
+
+- Systemverwaltete Schlüssel wie Playground- oder Claw-Schlüssel sind ausgeschlossen.
+
+## Beispiel
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/management/api-keys" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## Anfrage / Antwort
+
+Verwenden Sie das interaktive OpenAPI-Panel oben für das genaue Schema.

@@ -1,0 +1,138 @@
+---
+title: "コーディングエージェントのモデル選択"
+description: "各コーディングタスクに最適なモデルを選択——比較表、推奨、設定"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## コーディング向けモデル比較
+
+| モデル | 速度 | コード品質 | コスト | コンテキストウィンドウ | 最適な用途 |
+|-------|------|----------|------|-------------------|----------|
+| `claude-opus-4-6` | 中程度 | 優秀 | $$$$ | 200K | アーキテクチャ、複雑なリファクタリング |
+| `gpt-5.4` | 中程度 | 優秀 | $$$$ | 200K | 複雑な推論、計画 |
+| `claude-sonnet-4-6` | 高速 | 非常に良い | $$$ | 200K | 一般的なコーディング、レビュー |
+| `gemini-3-pro-preview` | 高速 | 非常に良い | $$$ | 1M | 大規模コードベース分析 |
+| `gpt-5-mini` | 非常に高速 | 良い | $$ | 128K | クイック編集、補完 |
+| `gemini-3-flash-preview` | 非常に高速 | 良い | $$ | 1M | 高速イテレーション、検索 |
+| `deepseek-r1` | 中程度 | 非常に良い | $ | 64K | 推論重視タスク |
+| `deepseek-v3.2` | 高速 | 良い | $ | 128K | 一括生成、ボイラープレート |
+
+## タスク別推奨
+
+<AccordionGroup>
+  <Accordion title="コード生成 / スキャフォールディング">
+    **推奨**: `claude-sonnet-4-6`、`gemini-3-pro-preview`
+
+    クリーンで構造化されたコードを生成。複雑なマルチファイルスキャフォールディングには `claude-opus-4-6` を検討。
+
+    予算代替: `deepseek-v3.2` はボイラープレートを低コストで処理。
+  </Accordion>
+
+  <Accordion title="コードレビュー / リファクタリング">
+    **推奨**: `claude-sonnet-4-6`、`deepseek-r1`
+
+    `deepseek-r1` は思考連鎖アプローチで微妙な問題を検出でき、コスト効率が高い。
+
+    セキュリティレビュー: `claude-opus-4-6` または `gpt-5.4`。
+  </Accordion>
+
+  <Accordion title="バグ修正 / デバッグ">
+    **推奨**: `claude-sonnet-4-6`、`gpt-5-mini`
+
+    バグ修正は通常スコープが明確。スタンダードモデルで十分。複雑なマルチファイルバグにのみプレミアムモデルを使用。
+  </Accordion>
+
+  <Accordion title="アーキテクチャ設計">
+    **推奨**: `claude-opus-4-6`、`gpt-5.4`
+
+    アーキテクチャ決定は最強の推論能力から恩恵を受けます。頻度は低いが影響は大きい。
+  </Accordion>
+
+  <Accordion title="クイック編集 / タブ補完">
+    **推奨**: `gpt-5-mini`、`gemini-3-flash-preview`
+
+    インタラクティブ使用では速度が重要。高速レスポンスの予算モデルが最適。
+  </Accordion>
+</AccordionGroup>
+
+## AI Sonarルーティングの仕組み
+
+### ルーティング戦略
+
+| 戦略 | 動作 | 最適な用途 |
+|------|------|----------|
+| **PRIORITY** | 最高優先度の利用可能プロバイダーにルーティング | 信頼性重視 |
+| **COST** | 最安の利用可能プロバイダーにルーティング | コスト重視 |
+
+### 自動フォールバック
+
+```
+リクエスト: claude-sonnet-4-6
+  → Provider A（プライマリ）: 503エラー
+  → Provider B（フォールバック）: ✓ 成功
+```
+
+### ネイティブフォーマットルーティング
+
+選択したモデルとルーティング先チャネルが対応している場合、AI Sonar はそのモデルファミリーのネイティブ API 形式にリクエストをルーティングして、互換性を高められます:
+
+| モデルファミリー | API Format | Base URL |
+|-------------|------------|----------|
+| Claude | Anthropic Messages | `https://api.aisonar.dev` |
+| GPT | OpenAI Responses | `https://api.aisonar.dev/v1` |
+| Gemini | Gemini Native API | `https://api.aisonar.dev` または `https://api.aisonar.dev/v1beta`（クライアントのパスに応じて） |
+| DeepSeek | OpenAI Chat | `https://api.aisonar.dev/v1` |
+
+Claude Code は強い Anthropic-native パスです。Gemini-native API も存在しますが、Gemini CLI 自体は依然として best-effort な互換パスであり、長期的に安定したワークフローとしては扱うべきではありません。
+
+## ツールごとの設定
+
+<AccordionGroup>
+  <Accordion title="Claude Code">
+    ```bash
+    export ANTHROPIC_API_KEY="sk-your-api-key"
+    export ANTHROPIC_BASE_URL="https://api.aisonar.dev"
+    ```
+    モデル選択: `claude --model claude-sonnet-4-6`
+
+    [完全ガイド →](/ja/integrations/claude-code)
+  </Accordion>
+
+  <Accordion title="Cursor">
+    Settings → Models:
+    - API Key: `sk-your-api-key`
+    - Base URL: `https://api.aisonar.dev/v1`
+
+    [完全ガイド →](/ja/integrations/cursor)
+  </Accordion>
+
+  <Accordion title="Codex CLI">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export OPENAI_BASE_URL="https://api.aisonar.dev/v1"
+    ```
+    [完全ガイド →](/ja/integrations/codex-cli)
+  </Accordion>
+
+  <Accordion title="Gemini CLI">
+    ```bash
+    export GEMINI_API_KEY="sk-your-api-key"
+    export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"
+    ```
+
+    この経路は安定した upstream 契約ではなく、best-effort な互換経路として扱ってください.
+    [完全ガイド →](/ja/integrations/gemini-cli)
+  </Accordion>
+
+  <Accordion title="OpenCode">
+    ```json
+    {
+      "provider": "openai",
+      "apiKey": "sk-your-api-key",
+      "baseURL": "https://api.aisonar.dev/v1"
+    }
+    ```
+    [完全ガイド →](/ja/integrations/opencode)
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,46 @@
+---
+title: "Obtenir l’usage d’une API Key"
+openapi: "GET /v1/management/api-keys/{keyId}/usage"
+description: "Retourne les détails d’usage paginés d’une API Key utilisateur."
+---
+
+## Vue d’ensemble
+
+Cet endpoint renvoie les détails d’usage au niveau de la clé sans exposer les métadonnées de routage physique.
+
+## Paramètres de requête
+
+| Paramètre | Type | Valeurs par défaut / limites | Description |
+|-----------|------|------------------------------|-------------|
+| `page` | integer | valeur par défaut `1`, min. `1` | Numéro de page à partir de 1 |
+| `limit` | integer | valeur par défaut `50`, min. `1`, max. `100` | Nombre d’éléments par page |
+| `logicalModel` | string | longueur maximale `100` | Nom du modèle logique demandé |
+| `modelVendor` | string | longueur maximale `100` | Fournisseur public du modèle |
+| `scene` | enum | - | `chat`, `image`, `audio`, `video`, `embedding`, `rerank`, `translation`, `music`, `3d` |
+| `accessChannel` | enum | - | `platform` ou `byok` |
+| `startDate` | string | - | Borne inférieure incluse ; accepte RFC3339 avec fuseau horaire ou `YYYY-MM-DD` |
+| `endDate` | string | - | Borne supérieure incluse ; accepte RFC3339 avec fuseau horaire ou `YYYY-MM-DD` |
+
+Si `startDate` et `endDate` sont fournis ensemble, `startDate` doit être antérieur ou égal à `endDate`.
+
+## Notes
+
+- Les champs monétaires sont réservés au USD. Les entrées `CNY` sont obsolètes et renvoient `400 currency_retired`.
+
+- La réponse est paginée.
+- La réponse ne contient que des champs publics de billing et de reporting.
+- Une ligne d’usage peut aussi inclure `billing_transaction_id` une fois que la requête sous-jacente a été réglée. Utilisez-le avec `request_id` pour le rapprochement au niveau de la requête.
+- Les métadonnées de routage interne et de canaux physiques restent masquées.
+
+## Exemple
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/usage?page=1&limit=20&scene=video&accessChannel=platform&startDate=2026-03-01&endDate=2026-03-31" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## Requête / Réponse
+
+Utilisez le panneau OpenAPI interactif ci-dessus pour obtenir le schéma exact et les champs de réponse.

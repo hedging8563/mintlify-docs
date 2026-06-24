@@ -1,0 +1,54 @@
+---
+title: "Realtime WebSocket"
+openapi: "GET /v1/realtime"
+description: "Echtzeit-Sprach- und multimodale Sitzungen per WebSocket verbinden"
+---
+
+## Überblick
+
+Dieser Endpunkt ist für Echtzeit-Sitzungen wie Spracherkennung, Sprachsynthese, Sprachübersetzung oder multimodale Realtime-Modelle gedacht. Normale `GET`-Anfragen liefern Metadaten; WebSocket-Upgrades werden an die geroutete Realtime-Upstream-Sitzung weitergeleitet.
+
+<Note>Agents sollten zuerst über `/v1/models` ein realtime-fähiges Modell finden und erst danach den Socket öffnen.</Note>
+
+## Verbindung
+
+<ParamField query="model" type="string" required>
+  Realtime-Modell-ID. Wählen Sie ein Modell, dessen öffentlicher Vertrag realtime unterstützt.
+</ParamField>
+
+<ParamField header="Authorization" type="string" required>
+  Bearer-API-Key. WebSocket-Clients senden beim Upgrade `Authorization: Bearer sk-your-api-key`.
+</ParamField>
+
+<RequestExample>
+```javascript JavaScript
+import WebSocket from 'ws';
+
+const socket = new WebSocket('wss://api.aisonar.dev/v1/realtime?model=qwen-tts-realtime', {
+  headers: { Authorization: 'Bearer sk-your-api-key' }
+});
+
+socket.on('open', () => {
+  socket.send(JSON.stringify({ type: 'session.start' }));
+});
+
+socket.on('message', (data) => {
+  console.log('realtime event', data.toString());
+});
+```
+
+```bash cURL
+curl "https://api.aisonar.dev/v1/realtime" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+## Nachrichten
+
+AI Sonar leitet WebSocket-Nachrichten zwischen Client und geroutetem Realtime-Anbieter weiter. Verwenden Sie die offiziellen Event-Formate des gewählten Modells und geben Sie `model` in der Query an.
+
+## Abrechnung und Schließen
+
+Realtime-Sitzungen nutzen dasselbe API-Key-Guthaben. AI Sonar zieht beim Öffnen eine kleine Schätzung vorab ab und rechnet beim Schließen ab oder erstattet.
+
+Schließen Sie den Client-Socket, wenn die Sitzung beendet ist. Schließt der Upstream zuerst, leitet AI Sonar den Close-Code nach Möglichkeit weiter.

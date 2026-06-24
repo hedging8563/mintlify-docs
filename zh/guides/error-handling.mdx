@@ -1,0 +1,281 @@
+---
+title: "错误处理"
+description: "优雅地处理 API 错误"
+---
+
+## 错误响应格式
+
+所有错误返回一致的 JSON 格式，并可选包含 [Agent-First hints](/guides/agent-first-api)：
+
+```json
+{
+  "error": {
+    "message": "Human-readable error description",
+    "type": "error_type",
+    "code": "error_code",
+    "param": "parameter_name",
+    "did_you_mean": "suggested_model",
+    "suggestions": [{"id": "model-id"}],
+    "hint": "Next step guidance",
+    "retryable": true,
+    "retry_after": 30
+  }
+}
+```
+
+基础字段（`message`, `type`, `code`, `param`）始终存在。提示字段（`did_you_mean`, `suggestions`, `hint`, `retryable`, `retry_after`, `balance_usd`, `estimated_cost_usd`）是用于 AI agent 自我纠正的可选扩展。详情见 [Agent-First API guide](/guides/agent-first-api)。
+
+兼容 OpenAI 的端点使用 AI Sonar 的稳定网关错误类型。兼容 Anthropic 和 Gemini 的端点使用它们各自原生的错误类别和响应格式。
+
+## HTTP 状态码
+
+| 代码 | 描述 |
+|------|-------------|
+| 400 | 错误请求 - 参数无效 |
+| 401 | 未授权 - API key 无效或缺失 |
+| 402 | 需要付款 - 余额不足 |
+| 403 | 禁止 - 访问被拒或模型不允许 |
+| 404 | 未找到 - 模型或资源未找到 |
+| 413 | 负载过大 - 输入或文件大小超限 |
+| 429 | 请求过多 - 超出速率限制 |
+| 500 | 服务器内部错误 |
+| 502 | 错误网关 - 上游提供商错误 |
+| 503 | 服务不可用 - 服务暂时不可用 |
+| 504 | 网关超时 - 请求超时 |
+
+## 错误类型
+
+### 认证错误 (401)
+
+| 类型 | 代码 | 描述 |
+|------|------|-------------|
+| `invalid_api_key` | `invalid_api_key` | API key 缺失或无效 |
+| `expired_api_key` | `expired_api_key` | API key 已被撤销 |
+
+```python
+from openai import OpenAI, AuthenticationError
+
+try:
+    response = client.chat.completions.create(...)
+except AuthenticationError as e:
+    print(f"Authentication failed: {e.message}")
+```
+
+### 支付错误 (402)
+
+| 类型 | 代码 | 描述 |
+|------|------|-------------|
+| `insufficient_balance` | `insufficient_balance` | 账户余额过低 |
+| `quota_exceeded` | `quota_exceeded` | API key 使用限额已达 |
+
+```python
+from openai import OpenAI, APIStatusError
+
+try:
+    response = client.chat.completions.create(...)
+except APIStatusError as e:
+    if e.status_code == 402:
+        print("Please top up your account balance")
+```
+
+### 访问错误 (403)
+
+| 类型 | 代码 | 描述 |
+|------|------|-------------|
+| `access_denied` | `access_denied` | 访问资源被拒绝 |
+| `access_denied` | `model_not_allowed` | 该 API key 不允许使用此模型 |
+
+```json
+{
+  "error": {
+    "message": "You don't have permission to access this model",
+    "type": "access_denied",
+    "code": "model_not_allowed"
+  }
+}
+```
+
+### 验证错误 (400)
+
+| 类型 | 描述 |
+|------|-------------|
+| `invalid_request_error` | 请求参数无效 |
+| `context_length_exceeded` | 输入超出模型的上下文长度 |
+| `model_not_found` | 请求的模型在当前公共合约中不可用 |
+
+```json
+{
+  "error": {
+    "message": "Model not found: please check the model name",
+    "type": "invalid_request_error",
+    "param": "model",
+    "code": "model_not_found",
+    "did_you_mean": "gpt-5.4",
+    "suggestions": [{"id": "gpt-5.4"}, {"id": "gpt-5-mini"}],
+    "hint": "Did you mean 'gpt-5.4'? Use GET https://api.aisonar.dev/v1/models to list all available models."
+  }
+}
+```
+
+公共路由不会在响应体中区分拼写错误、隐藏、延迟或非公开的模型状态。如果模型当前无法通过公共合约访问，AI Sonar 会返回 `model_not_found`。
+
+### 速率限制错误 (429)
+
+当超过速率限制时：
+
+```json
+{
+  "error": {
+    "message": "Rate limit: 60 rpm exceeded",
+    "type": "rate_limit_exceeded",
+    "code": "rate_limit_exceeded",
+    "retryable": true,
+    "retry_after": 8,
+    "hint": "Rate limited. Retry after 8s. Current limit: 60/min for user role."
+  }
+}
+```
+
+**包含的头部：**
+
+```
+Retry-After: 8
+```
+
+`Retry-After` 头和 `retry_after` 字段都指示在重试前应等待的确切秒数。
+
+### 负载过大 (413)
+
+当输入或文件大小超过限制时：
+
+```json
+{
+  "error": {
+    "message": "Input size exceeds maximum allowed",
+    "type": "invalid_request_error",
+    "code": "payload_too_large"
+  }
+}
+```
+
+常见原因：
+- 图像文件过大（最大 20MB）
+- 音频文件过大（最大 25MB）
+- 输入文本超过模型上下文长度
+
+### 上游错误 (502, 503)
+
+| 类型 | 描述 |
+|------|-------------|
+| `upstream_error` | 提供方返回错误 |
+| `all_channels_failed` | 没有可用的提供方 |
+| `timeout_error` | 请求超时 |
+
+当所有通道都失败时，响应会包含备选模型：
+
+```json
+{
+  "error": {
+    "message": "Model claude-opus-4-6 temporarily unavailable",
+    "code": "all_channels_failed",
+    "retryable": true,
+    "retry_after": 30,
+    "alternatives": [
+      {"id": "claude-sonnet-4-6", "status": "available", "tags": []},
+      {"id": "gpt-5-mini", "status": "available", "tags": []}
+    ],
+    "hint": "Retry in 30s or switch to an available model."
+  }
+}
+```
+
+## 在 Python 中处理错误
+
+```python
+from openai import OpenAI, APIError, RateLimitError, APIConnectionError
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+def chat_with_retry(messages, max_retries=3):
+    for attempt in range(max_retries):
+        try:
+            return client.chat.completions.create(
+                model="gpt-4o",
+                messages=messages
+            )
+        except RateLimitError as e:
+            if attempt < max_retries - 1:
+                import time
+                time.sleep(2 ** attempt)  # Exponential backoff
+                continue
+            raise
+        except APIConnectionError as e:
+            print(f"Connection error: {e}")
+            raise
+        except APIError as e:
+            print(f"API error: {e.status_code} - {e.message}")
+            raise
+```
+
+## 在 JavaScript 中处理错误
+
+```javascript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+async function chatWithRetry(messages, maxRetries = 3) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await client.chat.completions.create({
+        model: 'gpt-4o',
+        messages
+      });
+    } catch (error) {
+      if (error instanceof OpenAI.RateLimitError) {
+        if (attempt < maxRetries - 1) {
+          await new Promise(r => setTimeout(r, 2 ** attempt * 1000));
+          continue;
+        }
+      }
+      throw error;
+    }
+  }
+}
+```
+
+## 最佳实践
+
+<AccordionGroup>
+  <Accordion title="实现指数退避">
+    当受到速率限制时，在重试之间逐步延长等待时间：
+    ```python
+    wait_time = 2 ** attempt  # 1s, 2s, 4s, 8s...
+    ```
+  </Accordion>
+
+  <Accordion title="设置超时">
+    始终设置合理的超时时间以避免请求挂起：
+    ```python
+    client = OpenAI(timeout=60.0)  # 60 second timeout
+    ```
+  </Accordion>
+
+  <Accordion title="记录错误以便调试">
+    记录完整的错误响应，包括请求 ID 以便支持：
+    ```python
+    except APIError as e:
+        logger.error(f"API Error: {e.status_code} - {e.message}")
+    ```
+  </Accordion>
+
+  <Accordion title="处理模型特定错误">
+    一些模型有特定要求（例如，最大 tokens、图像格式）。在发起请求前验证输入。
+  </Accordion>
+</AccordionGroup>

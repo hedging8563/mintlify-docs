@@ -1,0 +1,325 @@
+---
+title: "✨ 에이전트 우선 API"
+description: "AI 에이전트가 첫 번째 재시도에서 자체 수정할 수 있도록 구조화된 오류 힌트"
+---
+
+## 개요
+
+AI Sonar의 Agent-First API는 오류 응답을 AI 에이전트가 즉시 파싱하고 조치할 수 있는 구조화된 힌트로 풍부하게 합니다 — 웹 검색 없음, 문서 조회 없음, 추측 없음.
+
+모든 오류 응답은 표준 `error` 객체 내부에 `did_you_mean`, `suggestions`, `hint`, `retryable`, `retry_after`와 같은 선택적 필드를 포함합니다. 이러한 필드는 하위 호환성을 유지하므로 이를 사용하지 않는 클라이언트에는 차이가 없습니다.
+
+## 오류 힌트 필드
+
+모든 힌트 필드는 `error` 객체 내부의 선택적 확장입니다:
+
+| 필드 | 타입 | 설명 |
+|-------|------|-------------|
+| `did_you_mean` | `string` | 가장 근접한 일치 모델 이름 |
+| `suggestions` | `array` | 메타데이터가 포함된 권장 모델 목록 |
+| `alternatives` | `array` | 현재 사용 가능한 대체 모델들 |
+| `hint` | `string` | 사람/에이전트가 읽을 수 있는 다음 단계 안내 |
+| `retryable` | `boolean` | 동일한 요청을 재시도하면 성공할 가능성 여부 |
+| `retry_after` | `number` | 재시도 전에 기다려야 할 초 |
+| `balance_usd` | `number` | 현재 계정 잔액(USD) |
+| `estimated_cost_usd` | `number` | 실패한 요청의 예상 비용(USD) |
+
+## 오류 코드 예시
+
+### model_not_found (400)
+
+모델 이름이 활성 모델과 일치하지 않을 때:
+
+```json
+{
+  "error": {
+    "message": "Model not found: please check the model name",
+    "type": "invalid_request_error",
+    "param": "model",
+    "code": "model_not_found",
+    "did_you_mean": "gpt-5.4",
+    "suggestions": [
+      {"id": "gpt-5.4"},
+      {"id": "gpt-5-mini"},
+      {"id": "claude-sonnet-4-6"}
+    ],
+    "hint": "Did you mean 'gpt-5.4'? Use GET https://api.aisonar.dev/v1/models to list all available models."
+  }
+}
+```
+
+`did_you_mean` 해석은 다음을 사용합니다:
+1. 정적 별칭 매핑(운영 중 수집된 오류 데이터에서 유래)
+2. 정규화된 문자열 매칭(하이픈 제거, 대소문자 구분 없음)
+3. 편집 거리 매칭(임계값 ≤ 3)
+
+공개 라우트는 숨김, 연기 또는 비공개 모델에 대해 별도의 오류 코드를 노출하지 않습니다. 사용 불가능한 공개 모델은 미스로 취급하세요: `did_you_mean`, `suggestions`, `hint`를 검사한 뒤 지원되는 공개 모델로 재시도하십시오.
+
+### insufficient_balance (402)
+
+계정 잔액이 예상 비용보다 부족할 때:
+
+```json
+{
+  "error": {
+    "message": "Insufficient balance: need ~$0.3500 for claude-sonnet-4-6, but balance is $0.1200.",
+    "type": "insufficient_balance",
+    "code": "insufficient_balance",
+    "balance_usd": 0.12,
+    "estimated_cost_usd": 0.35,
+    "suggestions": [
+      {"id": "gpt-5-mini"},
+      {"id": "deepseek-v3-2"}
+    ],
+    "hint": "Insufficient balance: need ~$0.3500 for claude-sonnet-4-6, but balance is $0.1200. Try a cheaper model, or top up at https://console.aisonar.dev/billing."
+  }
+}
+```
+
+`suggestions`에는 에이전트가 전환할 수 있는, 예상 비용보다 저렴한 모델들이 포함됩니다.
+
+### all_channels_failed (503)
+
+모델의 모든 업스트림 채널이 사용 불가할 때:
+
+```json
+{
+  "error": {
+    "message": "Model claude-opus-4-6 temporarily unavailable",
+    "code": "all_channels_failed",
+    "retryable": true,
+    "retry_after": 30,
+    "alternatives": [
+      {"id": "claude-sonnet-4-6", "status": "available", "tags": []},
+      {"id": "gpt-5-mini", "status": "available", "tags": []}
+    ],
+    "hint": "All channels for 'claude-opus-4-6' are temporarily unavailable. Retry in 30s or try an alternative model."
+  }
+}
+```
+
+<Note>
+원인이 `no_channels`(이 모델에 대해 구성된 채널이 없음)인 경우 `retryable`은 `false`입니다. 회로 차단(circuit breaker) 트립이나 할당량 소진 같은 일시적 실패에 대해서만 `true`입니다.
+</Note>
+
+### rate_limit_exceeded (429)
+
+```json
+{
+  "error": {
+    "message": "Rate limit: 60 rpm exceeded",
+    "type": "rate_limit_exceeded",
+    "code": "rate_limit_exceeded",
+    "retryable": true,
+    "retry_after": 8,
+    "hint": "Rate limited. Retry after 8s. Current limit: 60/min for user role."
+  }
+}
+```
+
+`retry_after` 값은 실제 레이트 리미트 윈도우 재설정 시간으로부터 계산됩니다.
+
+<Note>
+OpenAI 호환 엔드포인트는 `rate_limit_exceeded`, `upstream_error`, `all_channels_failed`와 같은 AI Sonar의 안정적인 공개 오류 유형을 사용합니다. Anthropic 호환 및 Gemini 호환 엔드포인트는 자체 네이티브 응답 형태를 사용합니다.
+</Note>
+
+### context_length_exceeded (400)
+
+입력이 모델의 컨텍스트 창을 초과할 때(업스트림 오류, 힌트로 보강됨):
+
+```json
+{
+  "error": {
+    "message": "This model's maximum context length is 128000 tokens...",
+    "type": "invalid_request_error",
+    "code": "context_length_exceeded",
+    "retryable": false,
+    "suggestions": [
+      {"id": "gemini-2.5-pro"},
+      {"id": "claude-sonnet-4-6"}
+    ],
+    "hint": "Reduce your input or switch to a model with a larger context window."
+  }
+}
+```
+
+## 네이티브 엔드포인트 헤더
+
+모델이 네이티브 엔드포인트(Anthropic 또는 Gemini)를 가진 상태에서 `/v1/chat/completions`를 호출하면, **성공 응답**에 최적화 헤더가 포함됩니다:
+
+
+
+| 모델 제공자 | 권장 엔드포인트 | 이점 |
+|---------------|-------------------|---------|
+| Anthropic (Claude) | `/v1/messages` | 포맷 변환 없음, 확장된 사고(extended thinking), 프롬프트 캐싱 |
+| Google (Gemini) | `/v1beta/gemini` | 포맷 변환 없음, 그라운딩(grounding), 안전 설정 |
+| OpenAI | — | Chat completions가 이미 네이티브 포맷입니다 |
+
+이 헤더는 스트리밍 및 비스트리밍 응답 모두에 나타납니다.
+
+## /v1/models 향상사항
+
+`/v1/models`는 이제 에이전트가 이미지, 비디오, 음악, 3D, TTS, STT, 임베딩, 재순위(rerank), 또는 번역 엔드포인트를 호출하기 전에 사용할 수 있는 비채팅 권장 메타데이터를 제공합니다.
+
+```json
+{
+  "id": "gemini-2.5-flash-image",
+  "aisonar": {
+    "category": "image",
+    "pricing_unit": "per_request",
+    "agent_preferences": {
+      "image": {
+        "preferred_rank": 1,
+        "success_rate_24h": 0.98,
+        "sample_count_24h": 423,
+        "status": "ready",
+        "updated_at": "2026-03-28T12:00:00.000Z",
+        "basis": {
+          "score_source": "clickhouse_24h",
+          "channel_id": null,
+          "physical_model": null
+        }
+      }
+    }
+  }
+}
+```
+
+| 필드 | 값 | 설명 |
+|-------|--------|-------------|
+| `category` | `chat`, `image`, `video`, `audio`, `tts`, `stt`, `3d`, `embedding`, `rerank` | 모델 유형 |
+| `pricing_unit` | `per_token`, `per_image`, `per_second`, `per_request` | 모델 과금 방식 |
+| `cache_pricing` | object or `null` | 모델별 업스트림 prompt cache 가격이 있을 때만 반환됩니다. |
+| `agent_preferences.<scene>` | object | `GET /v1/models?recommended_for=<scene>` 일 때만 반환되는 비채팅 추천 스냅샷 |
+
+`recommended_for`가 있을 때 `agent_preferences`는 캐시된 24시간 성공률 스냅샷에서 유도됩니다:
+
+- 윈도우: 24시간
+- 스냅샷 캐시: stale-while-revalidate
+- `status = "ready"`는 모델이 순위에 참여할 만큼 최근 샘플이 충분함을 의미합니다
+- `status = "insufficient_samples"`는 모델이 가시성은 유지하지만 점수화된 모델보다 우선 순위로 랭크되지 않음을 의미합니다
+
+### 카테고리 필터링
+
+```bash
+GET https://api.aisonar.dev/v1/models?category=chat          # Chat models only
+GET https://api.aisonar.dev/v1/models?category=image         # Image generation models
+GET https://api.aisonar.dev/v1/models?tag=coding&category=chat  # Coding-optimized chat models
+```
+
+### 권장 모델 검색
+
+비채팅 워크플로우의 경우, 에이전트는 먼저 현재 권장되는 후보 목록을 가져와야 합니다:
+
+```bash
+GET https://api.aisonar.dev/v1/models?recommended_for=image
+GET https://api.aisonar.dev/v1/models?recommended_for=translation
+GET https://api.aisonar.dev/v1/models?category=tts&recommended_for=tts
+```
+
+유효한 `recommended_for` 값은 다음과 같습니다:
+
+- `image`
+- `video`
+- `music`
+- `3d`
+- `tts`
+- `stt`
+- `embedding`
+- `rerank`
+- `translation`
+
+`category`와 `recommended_for`가 모두 제공된 경우, 두 값은 정확히 일치해야 합니다.
+
+권장 에이전트 흐름:
+
+1. `GET /v1/models?recommended_for=<scene>`
+2. 첫 번째로 `agent_preferences.<scene>.status == "ready"`인 모델을 선택
+3. `model=<selected>`로 엔드포인트를 명시적으로 호출
+4. 일시적 오류인 경우에만 다음 `ready` 모델로 재시도
+
+## llms.txt
+
+머신 리더블 API 개요는 다음에서 확인할 수 있습니다:
+
+```
+GET https://api.aisonar.dev/llms.txt
+```
+
+포함 내용:
+- 작동 예제가 포함된 첫 호출 템플릿
+- 일반적인 모델 이름들(사용량 데이터에서 동적으로 생성)
+- 12개 API 엔드포인트 전체
+- 모델 검색을 위한 필터 파라미터
+- 오류 처리 지침
+
+첫 API 호출 전에 `llms.txt`를 읽는 AI 에이전트는 일반적으로 첫 시도에서 성공할 수 있습니다.
+
+## 에이전트 코드에서의 사용
+
+### Python (OpenAI SDK)
+
+```python
+from openai import OpenAI, BadRequestError
+
+client = OpenAI(
+    api_key="sk-your-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+def smart_chat(messages, model="gpt-4o"):
+    try:
+        return client.chat.completions.create(
+            model=model, messages=messages
+        )
+    except BadRequestError as e:
+        error = e.body.get("error", {}) if isinstance(e.body, dict) else {}
+        # Use did_you_mean for auto-correction
+        if error.get("code") == "model_not_found" and error.get("did_you_mean"):
+            return client.chat.completions.create(
+                model=error["did_you_mean"], messages=messages
+            )
+        raise
+```
+
+### JavaScript (OpenAI SDK)
+
+```javascript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+async function smartChat(messages, model = 'gpt-4o') {
+  try {
+    return await client.chat.completions.create({ model, messages });
+  } catch (error) {
+    const err = error?.error;
+    if (err?.code === 'model_not_found' && err?.did_you_mean) {
+      return client.chat.completions.create({
+        model: err.did_you_mean, messages
+      });
+    }
+    throw error;
+  }
+}
+```
+
+## 설계 원칙
+
+<CardGroup cols={2}>
+  <Card title="빠르게 실패하고, 정보 제공형 실패" icon="bolt">
+    오류는 에이전트가 자체 수정하는 데 필요한 모든 데이터를 즉시 반환합니다.
+  </Card>
+  <Card title="자동 라우팅 없음" icon="route">
+    API는 결코 다른 모델을 조용히 대체하지 않습니다. 결정은 에이전트가 내립니다.
+  </Card>
+  <Card title="데이터 기반 권장" icon="database">
+    모든 권장 사항은 하드코딩 목록이 아닌 운영 데이터에서 도출됩니다.
+  </Card>
+  <Card title="하위 호환성 유지" icon="plug">
+    모든 힌트 필드는 선택적입니다. 기존 클라이언트에는 변화가 없습니다.
+  </Card>
+</CardGroup>

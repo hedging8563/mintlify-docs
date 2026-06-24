@@ -1,0 +1,188 @@
+---
+title: "Gemini CLI"
+description: "Cấu hình Google Gemini CLI để sử dụng AI Sonar API"
+---
+
+## Tổng quan
+
+
+
+<Note>
+**Loại**: Công cụ coding
+
+**Đường chính**: Gemini-native
+
+**Mức hỗ trợ**: tương thích Nỗ lực tối đa
+</Note>
+
+Google Gemini CLI là một công cụ dòng lệnh để tương tác với các mô hình Gemini. AI Sonar cung cấp một endpoint tương thích cho phép bạn sử dụng Gemini CLI với quyền truy cập vào hàng trăm mô hình.
+
+
+<Warning>
+Hãy coi đây là tích hợp thử nghiệm: Gemini CLI hiện chưa tài liệu hóa một quy trình Base URL tùy chỉnh kiểu AI Sonar theo cách ổn định. Nếu bạn cần một luồng AI Sonar trên terminal được hỗ trợ rõ ràng, hãy ưu tiên Codex CLI, Claude Code hoặc OpenCode.
+</Warning>
+
+## Yêu cầu hệ thống
+
+- **Node.js**: Phiên bản 20.0+
+- **Hệ điều hành**: Windows 10/11, macOS 10.15+, Ubuntu 20.04+, hoặc Debian 10+
+
+## Cài đặt
+
+```bash
+npm install -g @google/gemini-cli
+```
+
+Xác minh cài đặt:
+
+```bash
+gemini --version
+```
+
+## Cấu hình
+
+### Bước 1: Lấy API Key của bạn
+
+1. Đăng nhập vào [AI Sonar Dashboard](https://console.aisonar.dev)
+2. Đi tới [API Keys](https://console.aisonar.dev/api)
+3. Tạo và sao chép API key của bạn (định dạng: `sk-...`)
+
+### Bước 2: Thiết lập biến môi trường
+
+**Tạm thời (phiên hiện tại):**
+
+```bash
+export GEMINI_API_KEY="sk-your-api-key"
+export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"
+```
+
+**Cấu hình vĩnh viễn:**
+
+Thêm vào tệp cấu hình shell của bạn:
+
+<Tabs>
+  <Tab title="Bash">
+    ```bash
+    echo 'export GEMINI_API_KEY="sk-your-api-key"' >> ~/.bashrc
+    echo 'export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"' >> ~/.bashrc
+    source ~/.bashrc
+    ```
+  </Tab>
+  <Tab title="Zsh">
+    ```bash
+    echo 'export GEMINI_API_KEY="sk-your-api-key"' >> ~/.zshrc
+    echo 'export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"' >> ~/.zshrc
+    source ~/.zshrc
+    ```
+  </Tab>
+  <Tab title="Fish">
+    ```bash
+    set -Ux GEMINI_API_KEY "sk-your-api-key"
+    set -Ux GOOGLE_GEMINI_BASE_URL "https://api.aisonar.dev"
+    ```
+  </Tab>
+</Tabs>
+
+<Warning>
+Khởi động lại terminal của bạn sau khi cấu hình để các thay đổi có hiệu lực.
+</Warning>
+
+<Note>
+**Hạn chế đã biết**: Trong một số trường hợp, Gemini CLI có thể không tuân thủ `GOOGLE_GEMINI_BASE_URL` nếu có một phiên Google được lưu trong bộ nhớ cache. Nếu bạn gặp vấn đề về kết nối, hãy thử xóa bộ nhớ cache của CLI hoặc bắt đầu một phiên terminal mới.
+</Note>
+
+## Cách sử dụng cơ bản
+
+Khởi động Gemini CLI từ thư mục dự án của bạn:
+
+```bash
+cd your-project
+gemini
+```
+
+Trong lần chạy đầu tiên, bạn sẽ:
+1. Chọn một chủ đề (theme)
+2. Xác nhận thông báo an toàn
+3. Tin cậy thư mục làm việc
+
+## Các mô hình hiện có
+
+| Mô hình | Mô tả |
+|-------|-------------|
+| `gemini-2.5-pro` | Mô hình Gemini mạnh mẽ nhất |
+| `gemini-2.5-flash` | Nhanh, hiệu quả cho hầu hết các tác vụ |
+| `gemini-2.0-flash` | Thế hệ trước, ổn định |
+
+## Các lệnh phổ biến
+
+**Đặt câu hỏi:**
+
+```
+> What is the best way to structure a React app?
+```
+
+**Phân tích mã nguồn:**
+
+```
+> Explain the code in src/main.ts
+```
+
+**Tạo mã nguồn:**
+
+```
+> Create a Python function to parse JSON files
+```
+
+**Xem lại các thay đổi:**
+
+```
+> Review the recent git changes and suggest improvements
+```
+
+## Xác minh cấu hình
+
+```bash
+# Kiểm tra các biến môi trường
+echo $GEMINI_API_KEY
+echo $GOOGLE_GEMINI_BASE_URL
+
+# Kiểm tra kết nối
+gemini
+```
+
+## Xử lý sự cố
+
+<AccordionGroup>
+  <Accordion title="Lỗi kết nối">
+    - Xác minh `GOOGLE_GEMINI_BASE_URL` đã được đặt thành `https://api.aisonar.dev`
+    - Lưu ý: Không có hậu tố `/v1` cho Gemini endpoint
+    - Kiểm tra kết nối mạng
+  </Accordion>
+
+  <Accordion title="Xác thực thất bại">
+    - Xác minh biến môi trường `GEMINI_API_KEY` đã được thiết lập
+    - Kiểm tra xem key có bắt đầu bằng `sk-` không
+    - Đảm bảo key đang hoạt động trong AI Sonar dashboard
+  </Accordion>
+
+  <Accordion title="Mô hình không khả dụng">
+    - Kiểm tra tính khả dụng của các mô hình Gemini tại [aisonar.dev/en/models](https://aisonar.dev/models)
+    - Thử một biến thể mô hình Gemini khác
+  </Accordion>
+</AccordionGroup>
+
+## Thực hành tốt nhất
+
+<AccordionGroup>
+  <Accordion title="Sử dụng trong thư mục dự án">
+    Luôn chạy Gemini CLI từ thư mục gốc của dự án để hiểu ngữ cảnh tốt hơn.
+  </Accordion>
+
+  <Accordion title="Tin cậy thư mục một cách cẩn thận">
+    Chỉ tin cậy các thư mục bạn sở hữu. Gemini CLI có thể đọc và sửa đổi các tệp.
+  </Accordion>
+
+  <Accordion title="Xem lại mã được tạo">
+    Luôn xem lại mã do AI tạo trước khi commit vào dự án của bạn.
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,74 @@
+---
+title: "Annuler une tâche"
+openapi: "DELETE /v1/tasks/{id}"
+description: "Annulez une tâche asynchrone en file d’attente lorsque le fournisseur et le modèle le permettent"
+---
+
+## Aperçu
+
+Utilisez `DELETE /v1/tasks/{id}` pour annuler une tâche asynchrone qui n’a pas encore commencé à s’exécuter. Utilisez le même ID de tâche que celui de la réponse create ou celui inclus dans `poll_url`.
+
+## Tâches prises en charge
+
+L’annulation est actuellement prise en charge pour les tâches vidéo Volcengine Seedance en file d’attente avec `seedance-1.5-pro`, `seedance-2.0` ou `seedance-2.0-fast`. Les tâches déjà en `processing`/running ne peuvent pas être annulées. Les tâches terminées, échouées, expirées ou non prises en charge restent consultables pour le statut et le rapprochement de facturation, au lieu de supprimer les enregistrements upstream.
+
+## Paramètres de chemin
+
+<ParamField path="id" type="string" required>
+  ID de tâche asynchrone retourné par la requête create ou inclus dans `poll_url`.
+</ParamField>
+
+## Réponse
+
+<ResponseField name="id" type="string">
+  Identifiant canonique de tâche asynchrone.
+</ResponseField>
+
+<ResponseField name="task_id" type="string">
+  Alias de l’identifiant de tâche asynchrone.
+</ResponseField>
+
+<ResponseField name="poll_url" type="string">
+  URL de polling recommandée pour la tâche. Elle reste valide après l’annulation.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Statut de la tâche. Une tâche annulée avec succès est retournée comme `failed` avec `cancelled: true` pour rester compatible avec les valeurs de statut existantes.
+</ResponseField>
+
+<ResponseField name="cancelled" type="boolean">
+  `true` lorsque la tâche a été annulée avant l’exécution.
+</ResponseField>
+
+<ResponseField name="cancellation_status" type="string">
+  Marqueur d’annulation. La valeur est `cancelled` lorsque l’annulation réussit.
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  Raison de l’annulation ou message d’échec de la tâche.
+</ResponseField>
+
+## Comportement des erreurs
+
+`400 unsupported_task_cancel` signifie que le type de tâche, le fournisseur ou le modèle ne prend pas en charge l’annulation. `409 task_not_cancellable` signifie que la tâche est déjà en cours de traitement, terminale ou n’est plus annulable. `403` signifie que la clé API ne peut pas accéder à cette tâche.
+
+## Exemple
+
+<RequestExample>
+```bash cURL
+curl -X DELETE "https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+```json Response
+{
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "failed",
+  "cancelled": true,
+  "cancellation_status": "cancelled",
+  "error": "Task cancelled before execution"
+}
+```

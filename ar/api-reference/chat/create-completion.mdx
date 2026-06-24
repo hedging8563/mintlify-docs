@@ -1,0 +1,279 @@
+---
+title: "إنشاء استكمال المحادثة"
+openapi: "POST /v1/chat/completions"
+description: "ينشئ استكمالًا لرسالة المحادثة"
+---
+
+## جسم الطلب
+
+<ParamField body="model" type="string" required>
+  معرف النموذج المستخدم. راجع [Models](https://aisonar.dev/models) للاطلاع على الخيارات المتاحة.
+</ParamField>
+
+<ParamField body="messages" type="array" required>
+  قائمة بالرسائل التي تشكل المحادثة.
+
+  يحتوي كل كائن رسالة على:
+  - `role` (string): `system`, `user`, أو `assistant`
+  - `content` (string | array): محتوى الرسالة
+
+  عندما تكون `content` مصفوفة، يدعم AI Sonar كتلًا مُهيكلة متعددة الوسائط للنماذج المتوافقة:
+  - text: `{ "type": "text", "text": "..." }`
+  - image: `{ "type": "image_url", "image_url": { "url": "https://..." } }`
+  - video: `{ "type": "video_url", "video_url": { "url": "https://..." } }`
+  - audio: `{ "type": "audio_url", "audio_url": { "url": "https://..." } }`
+
+  لحركة المرور متعددة الوسائط في الإنتاج، يُفضّل استخدام روابط `https` عامة. سيقوم AI Sonar بترجمة هذه الكتل الوسائطية إلى شكل الطلب الخاص بمزود الخدمة المطلوب للنموذج الفيزيائي الموجه.
+</ParamField>
+
+<ParamField body="temperature" type="number" default="1">
+  درجة حرارة العينة بين 0 و2. القيم الأعلى تجعل المخرجات أكثر عشوائية.
+</ParamField>
+
+<ParamField body="max_tokens" type="integer">
+  الحد الأقصى لعدد التوكنات التي سيتم توليدها.
+</ParamField>
+
+<ParamField body="stream" type="boolean" default="false">
+  If true، سيتم إرسال دلتا الرسائل الجزئية كأحداث SSE.
+</ParamField>
+
+<ParamField body="stream_options" type="object">
+  خيارات البث. اضبط `include_usage: true` لتلقي استخدام التوكنات في أجزاء البث.
+</ParamField>
+
+<ParamField body="top_p" type="number" default="1">
+  معامل Nucleus sampling. نوصي بتغيير هذا أو temperature، وليس كليهما.
+</ParamField>
+
+<ParamField body="frequency_penalty" type="number" default="0">
+  رقم بين -2.0 و2.0. القيم الإيجابية تعاقب التوكنات المكررة.
+</ParamField>
+
+<ParamField body="presence_penalty" type="number" default="0">
+  رقم بين -2.0 و2.0. القيم الإيجابية تعاقب التوكنات الموجودة بالفعل في النص.
+</ParamField>
+
+<ParamField body="stop" type="string | array">
+  حتى 4 تسلسلات تتوقف عندها الـ API عن توليد التوكنات.
+</ParamField>
+
+<ParamField body="tools" type="array">
+  قائمة بالأدوات التي قد يستدعيها النموذج (استدعاء دوال).
+</ParamField>
+
+<ParamField body="tool_choice" type="string | object">
+  يتحكم في كيفية استخدام النموذج للأدوات. الخيارات: `auto`, `none`, `required`, أو كائن أداة محدد.
+</ParamField>
+
+<ParamField body="parallel_tool_calls" type="boolean" default="true">
+  ما إذا كان سيتم تمكين استدعاء الدوال المتوازي. اضبط على false لاستدعاء الدوال بشكل متسلسل.
+</ParamField>
+
+<ParamField body="max_completion_tokens" type="integer">
+  الحد الأقصى للتوكنات للاستكمال. بديل لـ `max_tokens`، مفيد لعائلات النماذج الأحدث الممكّنة للتفكير.
+</ParamField>
+
+<ParamField body="reasoning_effort" type="string">
+  مستوى جهد الاستدلال للنماذج الممكّنة للتفكير. الخيارات: `low`, `medium`, `high`.
+</ParamField>
+
+<ParamField body="seed" type="integer">
+  بذرة عشوائية للعينة الحتمية.
+</ParamField>
+
+<ParamField body="n" type="integer" default="1">
+  عدد الاستكمالات المراد توليدها (1-128).
+</ParamField>
+
+<ParamField body="logprobs" type="boolean">
+  ما إذا كان سيتم إرجاع لوغاريتمات الاحتمالات.
+</ParamField>
+
+<ParamField body="top_logprobs" type="integer">
+  عدد أعلى لوغاريتمات الاحتمالات المراد إرجاعها (0-20). يتطلب `logprobs: true`.
+</ParamField>
+
+<ParamField body="top_k" type="integer">
+  معامل أخذ العينات Top-K (لنماذج Anthropic/Gemini).
+</ParamField>
+
+<ParamField body="response_format" type="object">
+  مواصفات تنسيق الاستجابة. استخدم `{"type": "json_object"}` لوضع JSON. اعتبر `{"type": "json_schema", "json_schema": {...}}` كطريق بذل أقصى جهد يعتمد على النموذج المختار والسلوك الموجَّه.
+</ParamField>
+
+<ParamField body="logit_bias" type="object">
+  تعديل احتمال ظهور توكنات محددة. اربط معرفات التوكن (كسلاسل) بقيم تحيّز من -100 إلى 100.
+</ParamField>
+
+<ParamField body="user" type="string">
+  معرف فريد يمثل المستخدم النهائي لديك لأغراض مراقبة الإساءة.
+</ParamField>
+
+
+## الاستجابة
+
+<ResponseField name="id" type="string">
+  معرف فريد للاستكمال.
+</ResponseField>
+
+<ResponseField name="object" type="string">
+  دائمًا `chat.completion`.
+</ResponseField>
+
+<ResponseField name="created" type="integer">
+  طابع زمني بنظام Unix لوقت إنشاء الاستكمال.
+</ResponseField>
+
+<ResponseField name="model" type="string">
+  النموذج المستخدم للاستكمال.
+</ResponseField>
+
+<ResponseField name="choices" type="array">
+  قائمة بخيارات الاستكمال.
+
+  يحتوي كل خيار على:
+  - `index` (integer): مؤشر الخيار
+  - `message` (object): الرسالة المولدة
+  - `finish_reason` (string): سبب توقف النموذج (`stop`, `length`, `tool_calls`)
+</ResponseField>
+
+<ResponseField name="usage" type="object">
+  إحصاءات استخدام التوكنات.
+
+  - `prompt_tokens` (integer): التوكنات في المطالبة
+  - `completion_tokens` (integer): التوكنات في الاستكمال
+  - `total_tokens` (integer): إجمالي التوكنات المستخدمة
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/chat/completions" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o",
+    "messages": [
+      {"role": "system", "content": "You are a helpful assistant."},
+      {"role": "user", "content": "Hello!"}
+    ],
+    "temperature": 0.7,
+    "max_tokens": 1000
+  }'
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "Hello!"}
+    ],
+    temperature=0.7,
+    max_tokens=1000
+)
+
+print(response.choices[0].message.content)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.chat.completions.create({
+  model: 'gpt-4o',
+  messages: [
+    { role: 'system', content: 'You are a helpful assistant.' },
+    { role: 'user', content: 'Hello!' }
+  ],
+  temperature: 0.7,
+  max_tokens: 1000
+});
+
+console.log(response.choices[0].message.content);
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/chat/completions');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Content-Type: application/json',
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => json_encode([
+        'model' => 'gpt-4o',
+        'messages' => [
+            ['role' => 'system', 'content' => 'You are a helpful assistant.'],
+            ['role' => 'user', 'content' => 'Hello!']
+        ],
+        'temperature' => 0.7,
+        'max_tokens' => 1000
+    ])
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+echo $data['choices'][0]['message']['content'];
+```
+</RequestExample>
+
+## مثال متعدد الوسائط
+
+```json
+{
+  "model": "gemini-2.5-pro",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        { "type": "text", "text": "Describe this video briefly." },
+        { "type": "video_url", "video_url": { "url": "https://example.com/demo.mp4" } }
+      ]
+    }
+  ],
+  "max_tokens": 64
+}
+```
+
+<ResponseExample>
+```json Response
+{
+  "id": "chatcmpl-abc123",
+  "object": "chat.completion",
+  "created": 1706000000,
+  "model": "gpt-4o",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "Hello! How can I help you today?"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 20,
+    "completion_tokens": 9,
+    "total_tokens": 29
+  }
+}
+```
+</ResponseExample>

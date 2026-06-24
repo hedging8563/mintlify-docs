@@ -1,0 +1,327 @@
+---
+title: "Tạo video"
+description: "Dùng hợp đồng công khai thống nhất cho các luồng text-to-video, image-to-video, reference-to-video, điều khiển khung đầu/cuối, điều khiển chuyển động và video-to-video."
+---
+
+## Tổng quan
+
+AI Sonar cung cấp khả năng tạo video thông qua một API hợp nhất. Quá trình này **bất đồng bộ**: bạn gửi yêu cầu, nhận `task_id` và `poll_url`, rồi kiểm tra trạng thái định kỳ cho tới khi có kết quả cuối cùng.
+
+### Tính khả dụng và polling
+
+Danh sách model video công khai có thể thay đổi theo thời gian. Để xem tình trạng mới nhất, hãy dùng [Models API](/vi/api-reference/models/list-models) hoặc truy cập [trang Models](https://aisonar.dev/models).
+
+Nếu phản hồi tạo trả về `poll_url`, hãy gọi đúng URL đó. Khi nó trỏ tới `/v1/tasks/{id}`, hãy xem đó là endpoint trạng thái cố định chuẩn.
+
+### Hành vi mô hình và phương tiện
+
+Hành vi âm thanh phụ thuộc vào từng model. Trong AI Sonar, họ Veo 3 mặc định bật âm thanh khi bỏ qua `output_audio`. Một số model công khai chỉ hỗ trợ im lặng hoặc không cung cấp công tắc âm thanh ổn định.
+
+Trong môi trường vận hành, nên ưu tiên URL `https` công khai thay vì base64 inline cho ảnh, video và âm thanh. Các model tương thích vẫn hỗ trợ URL `data:`, nhưng URL công khai sẽ dễ retry, kiểm tra và debug hơn.
+
+### Quy trình bất đồng bộ
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant AI Sonar
+    participant Provider
+
+    Client->>AI Sonar: POST /v1/videos/generations
+    AI Sonar->>Provider: Chuyển tiếp yêu cầu đã chuẩn hóa
+    Provider-->>AI Sonar: task_id + pending
+    AI Sonar-->>Client: { task_id, poll_url, status: "pending" }
+
+    loop Kiểm tra mỗi 5-10 giây
+        Client->>AI Sonar: GET poll_url
+        AI Sonar->>Provider: Truy vấn trạng thái
+        Provider-->>AI Sonar: Cập nhật trạng thái
+        AI Sonar-->>Client: { status, video_url? }
+    end
+```
+
+## Các thao tác công khai hiện tại
+
+Hợp đồng video công khai hiện tại của AI Sonar tập trung vào các thao tác sau:
+
+- `text-to-video`
+- `image-to-video`
+- `reference-to-video`
+- `start-end-to-video`
+- `video-to-video`
+- `motion-control`
+
+Hợp đồng yêu cầu cũng chấp nhận `audio-to-video` và `video-extension` cho một số luồng đặc thù theo model, nhưng trong bản tài liệu hiện tại chưa có model công khai phổ biến nào quảng bá rõ ràng hai khả năng này.
+
+## Ma trận khả năng
+
+**Chú thích**: ✅ Có ít nhất một model công khai đang bật trong nhóm nhà cung cấp đó hỗ trợ khả năng này | ❌ Hiện chưa có model công khai đang bật nào đại diện cho khả năng đó
+
+| Nhóm | T2V | I2V | Tham chiếu | Đầu-Cuối | V2V | Chuyển động |
+|------|-----|-----|------------|----------|-----|-------------|
+| OpenAI | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Kuaishou | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Google | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| ByteDance | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| MiniMax | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Alibaba | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Shengshu | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| xAI | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ |
+| Khác | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
+
+### Giải thích khả năng
+
+- **T2V (Text-to-Video)**: Tạo video từ prompt văn bản
+- **I2V (Image-to-Video)**: Tạo video từ một ảnh đầu vào. Để tương thích rộng nhất, nên dùng `image_url`
+- **Tham chiếu**: Điều kiện hóa quá trình sinh bằng một hoặc nhiều ảnh tham chiếu qua `reference_images`
+- **Đầu-Cuối**: Điều khiển khung đầu và khung cuối bằng `start_image` và `end_image`
+- **V2V (Video-to-Video)**: Dùng một video có sẵn làm đầu vào chính
+- **Chuyển động**: Kết hợp ảnh chủ thể với video tham chiếu chuyển động
+
+## Danh sách model công khai hiện tại
+
+
+### Kuaishou
+
+| Mô hình | Thao tác công khai |
+|-------|--------------------|
+| `kling-3.0-motion-control` | Điều khiển chuyển động |
+| `kling-3.0-video` | Văn bản sang video, image-to-video, start-end-to-video, tham chiếu phần tử |
+| `kling-v2.1-master` | Văn bản sang video, image-to-video |
+| `kling-v2.1-pro` | image-to-video, start-end-to-video |
+| `kling-v2.1-standard` | image-to-video |
+| `kling-v2.5-turbo-pro` | Văn bản sang video, image-to-video, start-end-to-video |
+| `kling-v2.5-turbo-std` | Văn bản sang video, image-to-video |
+| `kling-v2.6-pro` | Văn bản sang video, image-to-video, start-end-to-video |
+| `kling-v2.6-std` | Văn bản sang video, image-to-video |
+| `kling-v3.0-pro` | Văn bản sang video, image-to-video, start-end-to-video |
+| `kling-v3.0-std` | Văn bản sang video, image-to-video, start-end-to-video |
+| `kling-video-o1-pro` | Văn bản sang video, image-to-video, reference-to-video, start-end-to-video, video-to-video |
+| `kling-video-o1-std` | Văn bản sang video, image-to-video, reference-to-video, start-end-to-video, video-to-video |
+
+### Google
+
+| Mô hình | Thao tác công khai |
+|-------|--------------------|
+| `veo3` | Văn bản sang video, image-to-video |
+| `veo3-fast` | Văn bản sang video, image-to-video |
+| `veo3-pro` | Văn bản sang video, image-to-video |
+| `veo3.1` | Văn bản sang video, image-to-video, reference-to-video, start-end-to-video |
+| `veo3.1-fast` | Văn bản sang video, image-to-video, reference-to-video, start-end-to-video |
+| `veo3.1-pro` | Văn bản sang video, image-to-video, start-end-to-video |
+
+### ByteDance
+
+| Mô hình | Thao tác công khai |
+|-------|--------------------|
+| `seedance-1.5-pro` | Văn bản sang video, image-to-video |
+
+### MiniMax
+
+| Mô hình | Thao tác công khai |
+|-------|--------------------|
+| `hailuo-2.3-fast` | Từ ảnh sang video |
+| `hailuo-2.3-pro` | Văn bản sang video, image-to-video |
+| `hailuo-2.3-standard` | Văn bản sang video, image-to-video |
+
+### Alibaba
+
+| Mô hình | Thao tác công khai |
+|-------|--------------------|
+| `wan-2.2-plus` | Văn bản sang video, image-to-video |
+| `wan-2.5` | Văn bản sang video, image-to-video |
+| `wan-2.6` | Văn bản sang video, image-to-video, reference-to-video |
+
+### Shengshu
+
+| Mô hình | Thao tác công khai |
+|-------|--------------------|
+| `viduq2` | Văn bản sang video, reference-to-video |
+| `viduq2-pro` | Ảnh thành video, tham chiếu thành video, đầu-cuối thành video |
+| `viduq2-pro-fast` | Ảnh thành video, đầu-cuối thành video |
+| `viduq2-turbo` | Chuyển ảnh thành video, từ đầu đến cuối thành video |
+| `viduq3-pro` | Văn bản sang video, image-to-video, start-end-to-video |
+| `viduq3-turbo` | Văn bản sang video, image-to-video, start-end-to-video |
+
+### xAI
+
+| Mô hình | Thao tác công khai |
+|-------|--------------------|
+| `grok-imagine-video` | Văn bản sang video, ảnh sang video, reference-to-video, video-to-video |
+| `grok-imagine-video-1.5-preview` | Ảnh sang video |
+| `grok-imagine-image-to-video` | Từ ảnh sang video |
+| `grok-imagine-text-to-video` | Văn bản sang video |
+| `grok-imagine-upscale` | Từ video sang video |
+
+### Khác
+
+| Mô hình | Thao tác công khai |
+|-------|--------------------|
+| `topaz-video-upscale` | Từ video sang video |
+
+## Ví dụ sử dụng
+
+### Text-to-video
+
+```python
+response = requests.post(f"{BASE}/videos/generations",
+    headers=headers,
+    json={
+        "model": "veo3.1",
+        "prompt": "A calm cinematic shot of a cat walking through a sunlit garden.",
+        "operation": "text-to-video",
+        "duration": 4,
+        "aspect_ratio": "16:9"
+    }
+)
+```
+
+### Ảnh thành video
+
+```python
+response = requests.post(f"{BASE}/videos/generations",
+    headers=headers,
+    json={
+        "model": "hailuo-2.3-standard",
+        "prompt": "The scene begins from the provided image and adds gentle natural motion.",
+        "operation": "image-to-video",
+        "image_url": "https://example.com/portrait.jpg",
+        "duration": 6,
+        "aspect_ratio": "16:9"
+    }
+)
+```
+
+### Kling 3.0 Elements
+
+Dùng `kling_elements` với `kling-3.0-video` khi cần tham chiếu phần tử. Cung cấp request có điều kiện ảnh (`image_url`, `image_urls`, `start_image` hoặc `end_image`) và tham chiếu từng phần tử trong prompt bằng `@name`. Không kết hợp `kling_elements` với `output_audio=true`; hãy bỏ `output_audio` hoặc đặt thành `false` khi dùng tham chiếu phần tử.
+
+```python
+response = requests.post(f"{BASE}/videos/generations",
+    headers=headers,
+    json={
+        "model": "kling-3.0-video",
+        "prompt": "Place @hero_bag on a studio turntable with soft product lighting.",
+        "operation": "image-to-video",
+        "image_url": "https://example.com/studio-start.png",
+        "duration": 5,
+        "resolution": "720p",
+        "kling_elements": [
+            {
+                "name": "hero_bag",
+                "description": "black leather handbag",
+                "element_input_urls": [
+                    "https://example.com/bag-front.png",
+                    "https://example.com/bag-side.png"
+                ]
+            }
+        ]
+    }
+)
+```
+
+### Reference-to-video
+
+Với `seedance-2.0` và `seedance-2.0-fast`, AI Sonar hiện hỗ trợ tối đa 9 ảnh tham chiếu, cùng thêm tối đa 3 video tham chiếu và 3 audio tham chiếu. `duration` chỉ điều khiển độ dài đầu ra được tạo; nó không định nghĩa giới hạn riêng cho thời lượng video tham chiếu đầu vào. Với `grok-imagine-video`, reference-to-video chấp nhận tối đa 7 tham chiếu ảnh (`reference_images` hoặc `image_urls`) và `duration` tối đa là 10 giây. Không kết hợp ảnh tham chiếu với đầu vào khung đầu `image_url` / `image`. `grok-imagine-video-1.5-preview` chỉ hỗ trợ image-to-video.
+
+```python
+response = requests.post(f"{BASE}/videos/generations",
+    headers=headers,
+    json={
+        "model": "veo3.1",
+        "prompt": "Keep the same subject identity and palette while adding subtle motion.",
+        "operation": "reference-to-video",
+        "reference_images": [
+            "https://example.com/ref-a.jpg",
+            "https://example.com/ref-b.jpg"
+        ],
+        "duration": 8,
+        "resolution": "720p",
+        "aspect_ratio": "9:16"
+    }
+)
+```
+
+### Start-end-to-video
+
+```python
+response = requests.post(f"{BASE}/videos/generations",
+    headers=headers,
+    json={
+        "model": "viduq2-pro",
+        "prompt": "Smooth transition from day to night.",
+        "operation": "start-end-to-video",
+        "start_image": "https://example.com/city-day.jpg",
+        "end_image": "https://example.com/city-night.jpg",
+        "duration": 5,
+        "resolution": "720p",
+        "aspect_ratio": "16:9"
+    }
+)
+```
+
+### Video sang video
+
+Với video-to-video của `grok-imagine-video`, hãy gửi URL HTTPS công khai dạng `.mp4` trong `video_url`. AI Sonar chuyển nó thành body REST `video.url` của xAI. Bạn có thể đặt `resolution` là `480p` hoặc `720p`; luồng chỉnh sửa này không nhận `duration` và `aspect_ratio`.
+
+```python
+response = requests.post(f"{BASE}/videos/generations",
+    headers=headers,
+    json={
+        "model": "topaz-video-upscale",
+        "operation": "video-to-video",
+        "video_url": "https://example.com/source.mp4",
+        "prompt": "Upscale this clip while preserving the original motion."
+    }
+)
+```
+
+### Motion control
+
+```python
+response = requests.post(f"{BASE}/videos/generations",
+    headers=headers,
+    json={
+        "model": "kling-3.0-motion-control",
+        "operation": "motion-control",
+        "prompt": "Keep the subject stable while following the motion reference.",
+        "image_url": "https://example.com/subject.png",
+        "video_url": "https://example.com/motion.mp4",
+        "resolution": "720p"
+    }
+)
+```
+
+## Tham chiếu tham số
+
+| Tham số | Kiểu | Ghi chú |
+|---------|------|---------|
+| `operation` | string | Trong môi trường vận hành, nên truyền một cách tường minh |
+| `image_url` | string | Dạng đầu vào ảnh ổn định nhất |
+| `image` | string | URL `data:` hữu ích cho thử nghiệm cục bộ và tích hợp nhỏ |
+| `reference_images` | string[] | Trường công khai chuẩn cho conditioning bằng ảnh tham chiếu |
+| `reference_image_type` | string | Bộ chọn tùy chọn `asset` / `style` |
+| `video_url` | string | Bắt buộc với các model `video-to-video` và `motion-control` công khai hiện tại |
+| `audio_url` | string | Dùng cho các luồng sinh video có điều kiện bằng âm thanh nếu model hỗ trợ |
+| `output_audio` | boolean | Họ Veo 3 sẽ coi trường bị bỏ qua là `true`. `kling-3.0-video` chấp nhận selector này cho điều khiển upstream `sound` và mặc định im lặng khi bỏ qua. |
+
+## Hướng dẫn chọn model nhanh
+
+<CardGroup cols={2}>
+  <Card title="Chất lượng cao nhất" icon="crown">
+    Nếu chất lượng quan trọng hơn tốc độ, **veo3.1-pro**, **kling-video-o1-pro**, và **viduq3-pro** là những lựa chọn mạnh.
+  </Card>
+  <Card title="Lặp nhanh" icon="bolt">
+    Nếu cần thử nghiệm nhanh, bạn có thể bắt đầu với **veo3.1-fast**, **hailuo-2.3-fast**, hoặc **viduq3-turbo**.
+  </Card>
+  <Card title="Luồng nhiều ảnh tham chiếu" icon="images">
+    Khi cần conditioning chuyên biệt bằng ảnh tham chiếu, hãy ưu tiên **veo3.1**, **veo3.1-fast**, **wan-2.6**, hoặc **kling-video-o1-pro / std**.
+  </Card>
+  <Card title="Video sang video" icon="film">
+    Các đường `video-to-video` công khai đang bật phổ biến hiện nay chủ yếu gồm **topaz-video-upscale**, **grok-imagine-upscale**, và **kling-video-o1-pro / std**.
+  </Card>
+</CardGroup>
+
+## Thanh toán
+
+Billing phụ thuộc vào model. Một số model video công khai thực tế gần với cách tính phí theo request, trong khi một số model khác gần với cách tính theo thời lượng giây. Để xem mặt bằng giá công khai hiện tại, hãy tham khảo [trang Models](https://aisonar.dev/models) hoặc [Pricing API](/vi/api-reference/pricing/get-pricing).

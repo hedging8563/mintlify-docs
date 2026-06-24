@@ -1,0 +1,129 @@
+---
+title: "驗證"
+description: "使用 API keys 保護您的 AI Sonar API 請求"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## API 金鑰
+
+所有 AI Sonar API 請求都需要 API key。
+
+對於 OpenAI 相容端點，請這樣傳送：
+
+```bash
+Authorization: Bearer sk-your-api-key
+```
+
+對於與 Anthropic 相容的 `/v1/messages` 請求，您也可以使用：
+
+```bash
+x-api-key: sk-your-api-key
+```
+
+## 取得您的 API Key
+
+1. 登入您的 [AI Sonar Dashboard](https://console.aisonar.dev)
+2. 開啟 **API Keys**
+3. 建立新的 key
+4. 為它指定一個具描述性的名稱
+5. 立即複製它，因為它只會顯示一次
+
+<Warning>
+- 絕對不要在 client-side 程式碼中暴露 API keys
+- 絕對不要將 API keys 提交到版本控制系統
+- 使用環境變數或 secret manager
+- 定期輪替 keys
+- 刪除未使用的 keys
+</Warning>
+
+## 使用 API Keys
+
+<CodeGroup>
+
+```bash cURL
+curl https://api.aisonar.dev/v1/responses \
+  -H "Authorization: Bearer $TOKENLAB_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.4",
+    "input": "Hello!"
+  }'
+```
+
+```python Python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ.get("TOKENLAB_API_KEY"),
+    base_url="https://api.aisonar.dev/v1"
+)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: process.env.TOKENLAB_API_KEY,
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+```
+
+</CodeGroup>
+
+## API Key 功能
+
+### 使用限制
+
+您可以為每個 API key 設定使用限制：
+
+| 設定 | 說明 |
+|---------|-------------|
+| **No Limit** | key 使用您的帳戶餘額，沒有任何限制 |
+| **Fixed Limit** | key 在達到指定金額後將停止運作 |
+
+### 金鑰前綴
+
+所有 AI Sonar API keys 都以 `sk-` 開頭。
+
+## Anthropic 相容性
+
+對於 `/v1/messages` 端點，Anthropic 風格的 header 可如預期運作：
+
+```bash
+curl https://api.aisonar.dev/v1/messages \
+  -H "x-api-key: sk-your-api-key" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-sonnet-4-6",
+    "max_tokens": 1024,
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'
+```
+
+<Note>
+對於 OpenAI 相容端點，例如 `/v1/responses`、`/v1/chat/completions`、`/v1/models` 以及大多數其他 AI Sonar 路由，請使用 `Authorization: Bearer ...`。
+</Note>
+
+## 錯誤回應
+
+| 狀態碼 | 類型 | 代碼 | 說明 |
+|-------------|------|------|-------------|
+| 401 | `invalid_api_key` | `invalid_api_key` | API key 缺失或無效 |
+| 401 | `expired_api_key` | `expired_api_key` | API key 已被撤銷 |
+| 402 | `insufficient_balance` | `insufficient_balance` | 帳戶餘額不足 |
+| 402 | `quota_exceeded` | `quota_exceeded` | 已達到 API key 使用限制 |
+
+範例：
+
+```json
+{
+  "error": {
+    "message": "Invalid API key provided",
+    "type": "invalid_api_key",
+    "code": "invalid_api_key"
+  }
+}
+```

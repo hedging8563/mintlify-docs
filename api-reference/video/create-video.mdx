@@ -1,0 +1,495 @@
+---
+title: "Create Video"
+openapi: "POST /v1/videos/generations"
+description: "Creates a video generation task"
+---
+
+## Overview
+
+For coding agents, discover the current recommended video shortlist first with `GET /v1/models?recommended_for=video`, then send the selected `model` explicitly to this endpoint.
+
+Video generation is asynchronous. You submit a request, receive a canonical async task ID and `poll_url`, then poll for the result.
+
+### Polling behavior
+
+For the most reliable polling behavior, follow the exact `poll_url` returned by the create request.
+
+If a create response returns `poll_url`, call that exact URL. When it points to `/v1/tasks/{id}`, treat that as the canonical fixed status endpoint.
+
+The async task identifier may surface as `id` or `task_id` depending on the adapter. Treat them as the same task identity.
+
+### Model and media behavior
+
+Audio output is model-dependent. In AI Sonar, Veo 3 family requests default to audio-on when `output_audio` is omitted. When a model supports audio control, use `output_audio` to explicitly toggle it. The camelCase alias `outputAudio` is also accepted for compatibility.
+
+For production integrations, prefer publicly reachable `https` URLs for images, videos, and audio. Inline `data:` URLs remain supported for compatible models, but large base64 payloads are harder to retry, inspect, and debug.
+
+## Request Body
+
+<ParamField body="model" type="string" default="veo3.1">
+  Video model ID. API default is `veo3.1`. See the [Video Generation Guide](/guides/video-generation) for the current public model matrix and supported capabilities.
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  Text description of the video to generate. Required for most public video models.
+</ParamField>
+
+<ParamField body="operation" type="string">
+  Video operation to run. Supported contract values include `text-to-video`, `image-to-video`, `reference-to-video`, `start-end-to-video`, `video-to-video`, `video-extension`, `audio-to-video`, and `motion-control`. AI Sonar can infer the operation from the supplied inputs, but explicit `operation` is recommended for production reliability.
+</ParamField>
+
+<ParamField body="image_url" type="string">
+  Publicly accessible URL of the starting image for image-to-video generation. For best cross-model compatibility, prefer `image_url`.
+</ParamField>
+
+<ParamField body="image" type="string">
+  Inline image as a data URL (for example, `data:image/jpeg;base64,...`). Supported by compatible models, but `image_url` provides the broadest compatibility across public video models.
+</ParamField>
+
+<ParamField body="reference_images" type="array">
+Reference image inputs for models that support dedicated reference conditioning. The supported count is model-dependent. For `seedance-2.0` and `seedance-2.0-fast`, AI Sonar currently supports up to 9 reference images plus up to 3 reference videos and 3 reference audios. Public `https` URLs are recommended; compatible models also accept inline `data:` URLs. For `grok-imagine-video`, reference-to-video accepts up to 7 image references and `duration` is capped at 10 seconds. `grok-imagine-video-1.5-preview` is image-to-video only and does not accept reference images.
+</ParamField>
+
+<ParamField body="reference_image_type" type="string">
+  Optional reference role for models that distinguish between `asset` and `style` references.
+</ParamField>
+
+<ParamField body="kling_elements" type="array">
+  Kling 3.0 element reference definitions. Only supported by `kling-3.0-video` for image-conditioned requests. Define 1-3 elements; each element has `name`, optional `description`, and `element_input_urls` with 2-4 image URLs. Reference an element in `prompt` as `@name`. Do not combine `kling_elements` with `output_audio=true`; omit `output_audio` or set it to `false` for element-reference requests.
+</ParamField>
+
+<ParamField body="video_url" type="string">
+  Publicly accessible URL of the source video. Required for `video-to-video` style flows and for `motion-control` models that combine a subject image with a motion reference video.
+</ParamField>
+
+<ParamField body="video_urls" type="array">
+  Additional reference video inputs for models that support multimodal reference conditioning. The supported count is model-dependent. For `seedance-2.0` and `seedance-2.0-fast`, AI Sonar currently supports up to 3 reference videos.
+</ParamField>
+
+<ParamField body="audio_url" type="string">
+  Publicly accessible audio URL for models that support `audio-to-video`.
+</ParamField>
+
+<ParamField body="audio_urls" type="array">
+  Additional reference audio inputs for models that support multimodal reference conditioning. The supported count is model-dependent. For `seedance-2.0` and `seedance-2.0-fast`, AI Sonar currently supports up to 3 reference audios.
+</ParamField>
+
+<ParamField body="task_id" type="string">
+  Provider-specific task identifier used by some continuation, extension, or derivative flows.
+</ParamField>
+
+<ParamField body="extend_at" type="integer">
+  Model-specific extension start offset used by some `video-extension` flows.
+</ParamField>
+
+<ParamField body="extend_times" type="string">
+  Model-specific extension multiplier or repeat count used by some `video-extension` flows.
+</ParamField>
+
+<ParamField body="duration" type="integer">
+  Generated output video duration in seconds (model-dependent). This field controls output length, not the duration of reference video inputs.
+</ParamField>
+
+<ParamField body="aspect_ratio" type="string">
+  Aspect ratio (for example, `16:9`, `9:16`, or `1:1`).
+</ParamField>
+
+<ParamField body="resolution" type="string">
+  Model-dependent output resolution (for example, `720p`, `1080p`, or `4k`).
+</ParamField>
+
+<ParamField body="output_audio" type="boolean">
+  Model-dependent audio output toggle. In AI Sonar, Veo 3 family requests default to `true` when this field is omitted. `kling-3.0-video` accepts this selector for non-element-reference requests and maps it to the compatible upstream sound control; omitted Kling requests default to silent output. Do not combine `output_audio=true` with `kling_elements`. Other public video models follow their governed default behavior. The camelCase alias `outputAudio` is accepted for compatibility.
+</ParamField>
+
+<ParamField body="fps" type="integer">
+  Frames per second (1-120) for models that expose FPS control.
+</ParamField>
+
+<ParamField body="negative_prompt" type="string">
+  What to avoid in the generated video.
+</ParamField>
+
+<ParamField body="seed" type="integer">
+  Random seed for reproducible generation.
+</ParamField>
+
+<ParamField body="cfg_scale" type="number">
+  Prompt adherence strength (0-20) for models that expose CFG-style control.
+</ParamField>
+
+<ParamField body="motion_strength" type="number">
+  Motion intensity (0-1) for models that expose it.
+</ParamField>
+
+<ParamField body="start_image" type="string">
+  URL or compatible image input for the first frame in `start-end-to-video`.
+</ParamField>
+
+<ParamField body="end_image" type="string">
+  URL or compatible image input for the last frame in `start-end-to-video`.
+</ParamField>
+
+<ParamField body="size" type="string">
+  Model-specific size tier used by some OpenAI-compatible video models.
+</ParamField>
+
+<ParamField body="watermark" type="boolean">
+  Optional watermark toggle for models that expose it.
+</ParamField>
+
+<ParamField body="effect_type" type="string">
+  Model-specific effect selector for specialized editing flows.
+</ParamField>
+
+<ParamField body="user" type="string">
+  A unique identifier for the end-user.
+</ParamField>
+
+## Compatibility Notes
+
+- Canonical public fields are snake_case: `reference_images`, `reference_image_type`, and `output_audio`.
+- For compatibility, AI Sonar also accepts the camelCase aliases `referenceImages`, `referenceImageType`, and `outputAudio`.
+- If `operation` is omitted, AI Sonar infers it from the supplied inputs. For production traffic, explicit `operation` is still recommended.
+
+## Media Input Best Practices
+
+- Prefer publicly reachable `https` URLs over inline base64 for `image_url`, `reference_images`, `video_url`, and `audio_url`.
+- Avoid mixing inline base64 and remote URLs in the same request when possible; using one representation per request is easier to reason about and debug.
+- If you use signed URLs, keep them valid long enough to cover retries and asynchronous task creation.
+
+## Response
+
+<ResponseField name="id" type="string">
+  Canonical async task identifier. Treat this as the same identity as `task_id` when both are present.
+</ResponseField>
+
+<ResponseField name="task_id" type="string">
+  Canonical async task identifier for polling. This is the same task identity used by async status endpoints.
+</ResponseField>
+
+<ResponseField name="poll_url" type="string">
+  Preferred polling URL for this task. Use this exact path when checking status.
+</ResponseField>
+
+<ResponseField name="billing_transaction_id" type="string">
+  AI Sonar billing transaction ID when settlement already completed. This is the dashboard/accounting transaction identifier and is separate from the async `id` / `task_id`.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Initial status: `pending`.
+</ResponseField>
+
+<ResponseField name="created" type="integer">
+  Unix timestamp when the task was created.
+</ResponseField>
+
+<ResponseField name="model" type="string">
+  Model used.
+</ResponseField>
+
+<ResponseField name="video_url" type="string">
+  Direct video URL when the result is already available.
+</ResponseField>
+
+<ResponseField name="video" type="object">
+  Single video payload with `url`, `duration`, `width`, and `height` when available.
+</ResponseField>
+
+<ResponseField name="videos" type="array">
+  Multiple video payloads when the provider returns more than one output.
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  Error message or structured error object when the task fails.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/videos/generations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "veo3.1",
+    "prompt": "A cat walking through a garden, cinematic lighting",
+    "operation": "text-to-video",
+    "duration": 4,
+    "aspect_ratio": "16:9"
+  }'
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    "https://api.aisonar.dev/v1/videos/generations",
+    headers={
+        "Authorization": "Bearer sk-your-api-key",
+        "Content-Type": "application/json"
+    },
+    json={
+        "model": "veo3.1",
+        "prompt": "A cat walking through a garden, cinematic lighting",
+        "operation": "text-to-video",
+        "duration": 4,
+        "aspect_ratio": "16:9"
+    }
+)
+
+data = response.json()
+task_id = data["task_id"]
+print(f"Poll URL: {data['poll_url']}")
+print(f"Task ID: {task_id}")
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.aisonar.dev/v1/videos/generations', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer sk-your-api-key',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    model: 'veo3.1',
+    prompt: 'A cat walking through a garden, cinematic lighting',
+    operation: 'text-to-video',
+    duration: 4,
+    aspect_ratio: '16:9'
+  })
+});
+
+const data = await response.json();
+console.log(`Poll URL: ${data.poll_url}`);
+console.log(`Task ID: ${data.task_id}`);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "pending",
+  "model": "veo3.1",
+  "created": 1706000000
+}
+```
+</ResponseExample>
+
+## Image to Video
+
+```python
+response = requests.post(
+    "https://api.aisonar.dev/v1/videos/generations",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+    json={
+        "model": "hailuo-2.3-standard",
+        "prompt": "The scene begins from the provided image and adds gentle natural motion.",
+        "operation": "image-to-video",
+        "image_url": "https://example.com/image.jpg",
+        "duration": 6,
+        "aspect_ratio": "16:9"
+    }
+)
+```
+
+## Kling 3.0 Elements
+
+Use `kling_elements` with `kling-3.0-video` when you need element references. Provide an image-conditioned request (`image_url`, `image_urls`, `start_image`, or `end_image`) and reference each element in the prompt with `@name`. Do not combine `kling_elements` with `output_audio=true`; omit `output_audio` or set it to `false` for element-reference requests.
+
+```python
+response = requests.post("https://api.aisonar.dev/v1/videos/generations",
+    headers=headers,
+    json={
+        "model": "kling-3.0-video",
+        "prompt": "Place @hero_bag on a studio turntable with soft product lighting.",
+        "operation": "image-to-video",
+        "image_url": "https://example.com/studio-start.png",
+        "duration": 5,
+        "resolution": "720p",
+        "kling_elements": [
+            {
+                "name": "hero_bag",
+                "description": "black leather handbag",
+                "element_input_urls": [
+                    "https://example.com/bag-front.png",
+                    "https://example.com/bag-side.png"
+                ]
+            }
+        ]
+    }
+)
+```
+
+## Reference to Video
+
+Use `operation=reference-to-video` when the model supports dedicated reference conditioning. In AI Sonar's public contract, image references use `reference_images`, while multimodal reference videos and audios use `video_urls` and `audio_urls`. For `seedance-2.0` and `seedance-2.0-fast`, AI Sonar currently supports up to 9 reference images plus up to 3 reference videos and 3 reference audios. `duration` controls generated output length only; it does not set a separate limit for reference video input duration. For `grok-imagine-video`, reference-to-video accepts up to 7 image references (`reference_images` or `image_urls`) and `duration` is capped at 10 seconds. Do not combine reference images with `image_url` / `image` first-frame inputs. `grok-imagine-video-1.5-preview` is image-to-video only.
+
+```python
+response = requests.post(
+    "https://api.aisonar.dev/v1/videos/generations",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+    json={
+        "model": "veo3.1",
+        "prompt": "Keep the same subject identity, palette, and framing while adding subtle natural motion.",
+        "operation": "reference-to-video",
+        "reference_images": [
+            "https://example.com/ref-a.jpg",
+            "https://example.com/ref-b.jpg"
+        ],
+        "reference_image_type": "asset",
+        "duration": 8,
+        "resolution": "720p",
+        "aspect_ratio": "9:16"
+    }
+)
+```
+
+## Keyframe Control
+
+Use `start_image` and `end_image` to control the first and last frames:
+
+```python
+response = requests.post(
+    "https://api.aisonar.dev/v1/videos/generations",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+    json={
+        "model": "viduq2-pro",
+        "prompt": "Smooth transition from day to night",
+        "operation": "start-end-to-video",
+        "start_image": "https://example.com/day.jpg",
+        "end_image": "https://example.com/night.jpg",
+        "duration": 5,
+        "resolution": "720p",
+        "aspect_ratio": "16:9"
+    }
+)
+```
+
+## Video to Video
+
+For `grok-imagine-video` video-to-video, send a public HTTPS `.mp4` URL in `video_url`. AI Sonar translates it to xAI's REST `video.url` body. You may set `resolution` to `480p` or `720p`; `duration` and `aspect_ratio` are not accepted for that edit flow.
+
+Use `operation=video-to-video` when the model accepts an existing video as the primary input.
+
+```python
+response = requests.post(
+    "https://api.aisonar.dev/v1/videos/generations",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+    json={
+        "model": "topaz-video-upscale",
+        "operation": "video-to-video",
+        "video_url": "https://example.com/source.mp4",
+        "prompt": "Upscale the clip while preserving the original motion.",
+        "resolution": "1080p"
+    }
+)
+```
+
+## Motion Control
+
+Use `operation=motion-control` when the model expects both a subject image and a motion reference video. AI Sonar maps the public `image_url` + `video_url` request shape to the upstream motion-control contract.
+
+```python
+response = requests.post(
+    "https://api.aisonar.dev/v1/videos/generations",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+    json={
+        "model": "kling-3.0-motion-control",
+        "operation": "motion-control",
+        "prompt": "Keep the subject identity stable while following the motion reference.",
+        "image_url": "https://example.com/subject.png",
+        "video_url": "https://example.com/motion.mp4",
+        "resolution": "720p"
+    }
+)
+```
+
+## Audio-to-Video and Video Extension Availability
+
+AI Sonar’s public contract accepts `audio-to-video` and `video-extension` for model-specific flows, but the current generally enabled public video model list in this docs build does not include a broad public model that advertises either capability. Use the [Models API](/api-reference/models/list-models) or the [Models page](https://aisonar.dev/models) to confirm current availability before integrating those operations.
+
+## Currently Enabled Public Video Models
+
+This list is aligned with the current enabled public video model inventory in this docs build. For the freshest state, query the [Models API](/api-reference/models/list-models).
+
+### OpenAI
+
+| Model | Public operations |
+|-------|-------------------|
+
+### Kuaishou
+
+| Model | Public operations |
+|-------|-------------------|
+| `kling-3.0-motion-control` | Motion control |
+| `kling-3.0-video` | Text-to-video, image-to-video, start-end-to-video, element references |
+| `kling-v2.5-turbo-pro` | Text-to-video, image-to-video, start-end-to-video |
+| `kling-v2.5-turbo-std` | Text-to-video, image-to-video |
+| `kling-v2.6-pro` | Text-to-video, image-to-video, start-end-to-video |
+| `kling-v2.6-std` | Text-to-video, image-to-video |
+| `kling-v3.0-pro` | Text-to-video, image-to-video, start-end-to-video |
+| `kling-v3.0-std` | Text-to-video, image-to-video, start-end-to-video |
+| `kling-video-o1-pro` | Text-to-video, image-to-video, reference-to-video, start-end-to-video, video-to-video |
+| `kling-video-o1-std` | Text-to-video, image-to-video, reference-to-video, start-end-to-video, video-to-video |
+
+### Google
+
+| Model | Public operations |
+|-------|-------------------|
+| `veo3` | Text-to-video, image-to-video |
+| `veo3-fast` | Text-to-video, image-to-video |
+| `veo3-pro` | Text-to-video, image-to-video |
+| `veo3.1` | Text-to-video, image-to-video, reference-to-video, start-end-to-video |
+| `veo3.1-fast` | Text-to-video, image-to-video, reference-to-video, start-end-to-video |
+| `veo3.1-pro` | Text-to-video, image-to-video, start-end-to-video |
+
+### ByteDance
+
+| Model | Public operations |
+|-------|-------------------|
+| `seedance-1.5-pro` | Text-to-video, image-to-video |
+
+### MiniMax
+
+| Model | Public operations |
+|-------|-------------------|
+| `hailuo-2.3-fast` | Image-to-video |
+| `hailuo-2.3-pro` | Text-to-video, image-to-video |
+| `hailuo-2.3-standard` | Text-to-video, image-to-video |
+
+### Alibaba
+
+| Model | Public operations |
+|-------|-------------------|
+| `wan-2.2-plus` | Text-to-video, image-to-video |
+| `wan-2.5` | Text-to-video, image-to-video |
+| `wan-2.6` | Text-to-video, image-to-video, reference-to-video |
+
+### Shengshu
+
+| Model | Public operations |
+|-------|-------------------|
+| `viduq2` | Text-to-video, reference-to-video |
+| `viduq2-pro` | Image-to-video, reference-to-video, start-end-to-video |
+| `viduq2-pro-fast` | Image-to-video, start-end-to-video |
+| `viduq2-turbo` | Image-to-video, start-end-to-video |
+| `viduq3-pro` | Text-to-video, image-to-video, start-end-to-video |
+| `viduq3-turbo` | Text-to-video, image-to-video, start-end-to-video |
+
+### xAI
+
+| Model | Public operations |
+|-------|-------------------|
+| `grok-imagine-video` | Text-to-video, image-to-video, reference-to-video, video-to-video |
+| `grok-imagine-video-1.5-preview` | Image-to-video |
+| `grok-imagine-image-to-video` | Image-to-video |
+| `grok-imagine-text-to-video` | Text-to-video |
+| `grok-imagine-upscale` | Video-to-video |
+
+### Other
+
+| Model | Public operations |
+|-------|-------------------|
+| `topaz-video-upscale` | Video-to-video |

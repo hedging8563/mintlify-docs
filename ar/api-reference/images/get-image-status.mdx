@@ -1,0 +1,166 @@
+---
+title: "الحصول على حالة الصورة"
+openapi: "GET /v1/tasks/{id}"
+description: "الحصول على حالة ونتيجة مهمة إنشاء صورة غير متزامنة (async)"
+---
+
+## معلمات المسار
+
+<ParamField path="id" type="string" required>
+  معرف المهمة (task ID) الذي تم إرجاعه من طلب إنشاء الصورة الأولي.
+</ParamField>
+
+<Info>
+إذا تضمن رد الإنشاء `poll_url`، فمن الأفضل استدعاء ذلك الرابط (URL) بالضبط لعملية الاستقصاء (polling). قد تظهر بعض مهام الصور `poll_url` تحت `/v1/tasks/{id}` بدلاً من مسار الحالة الخاص بالصور.
+
+يمكنك أيضًا استطلاع معرّفات مهام الصور العامة مثل `ldtask_...` عبر `/v1/images/{id}`. يستخدم مسار التوافق هذا نفس التحقق من التفويض والملكية وترويسات الفوترة واللقطات النهائية وشكل الاستجابة مثل `/v1/images/generations/{id}`.
+
+
+إذا لم تعد المهمة موجودة أو لم يعد بالإمكان حلّها عبر عقد المهمة غير المتزامنة العامة، تُرجِع AI Sonar القيمة `async_task_not_found` مع الرسالة `Task not found or no longer available.`
+</Info>
+
+## الاستجابة (Response)
+
+<ResponseField name="created" type="integer">
+  طابع زمني Unix لوقت الإنشاء.
+</ResponseField>
+
+<ResponseField name="task_id" type="string">
+  معرف المهمة.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  حالة المهمة: `pending` أو `processing` أو `completed` أو `failed`.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  مصفوفة من الصور التي تم إنشاؤها (يتم ملؤها عندما تكون الـ `status` هي `completed`).
+
+  يحتوي كل كائن على:
+  - `url` (string): رابط (URL) الصورة التي تم إنشاؤها
+  - `revised_prompt` (string): الوصف (prompt) المستخدم لعملية الإنشاء
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  رسالة الخطأ (تظهر فقط عندما تكون الـ `status` هي `failed`).
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+```python Python
+import requests
+
+response = requests.get(
+    "https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    headers={"Authorization": "Bearer sk-your-api-key"}
+)
+
+data = response.json()
+print(f"Status: {data['status']}")
+
+if data["status"] == "completed":
+    print(f"Image URL: {data['data'][0]['url']}")
+```
+
+```javascript JavaScript
+const response = await fetch(
+  'https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+  {
+    headers: {
+      'Authorization': 'Bearer sk-your-api-key'
+    }
+  }
+);
+
+const data = await response.json();
+console.log(`Status: ${data.status}`);
+
+if (data.status === 'completed') {
+  console.log(`Image URL: ${data.data[0].url}`);
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json قيد الانتظار (Pending)
+{
+  "created": 1706000000,
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "pending",
+  "data": [
+    {
+      "url": "",
+      "revised_prompt": "a beautiful sunset over mountains"
+    }
+  ]
+}
+```
+
+```json مكتمل (Completed)
+{
+  "created": 1706000000,
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "completed",
+  "data": [
+    {
+      "url": "https://cdn.example.com/generated/image-abc123.png",
+      "revised_prompt": "a beautiful sunset over mountains with vibrant orange and purple colors"
+    }
+  ]
+}
+```
+
+```json فشل (Failed)
+{
+  "created": 1706000000,
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "failed",
+  "error": "Content policy violation",
+  "data": []
+}
+```
+</ResponseExample>
+
+## أفضل الممارسات للاستقصاء (Polling Best Practices)
+
+<Tip>
+**فاصل الاستقصاء الموصى به**: 3-5 ثوانٍ. تكتمل معظم مهام إنشاء الصور في غضون 30-120 ثانية اعتماداً على النموذج ومسار المزود الموجه.
+</Tip>
+
+```python
+import requests
+import time
+
+def poll_image_task(task_id, api_key, max_wait=300, interval=3):
+    """Poll for image generation result with timeout."""
+    url = f"https://api.aisonar.dev/v1/tasks/{task_id}"
+    headers = {"Authorization": f"Bearer {api_key}"}
+
+    start_time = time.time()
+    while time.time() - start_time < max_wait:
+        response = requests.get(url, headers=headers)
+        data = response.json()
+
+        if data["status"] == "completed":
+            return data["data"][0]["url"]
+        elif data["status"] == "failed":
+            raise Exception(data.get("error", "Generation failed"))
+
+        time.sleep(interval)
+
+    raise TimeoutError(f"Task {task_id} did not complete within {max_wait}s")
+
+# Usage
+image_url = poll_image_task("ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "sk-your-api-key")
+print(f"Generated image: {image_url}")
+```

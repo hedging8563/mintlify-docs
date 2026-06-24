@@ -1,0 +1,74 @@
+---
+title: "Görevi iptal et"
+openapi: "DELETE /v1/tasks/{id}"
+description: "Sağlayıcı ve model desteklediğinde kuyruktaki asenkron görevi iptal edin"
+---
+
+## Genel bakış
+
+Henüz çalışmaya başlamamış bir asenkron görevi iptal etmek için `DELETE /v1/tasks/{id}` kullanın. create yanıtındaki görev ID’sini veya `poll_url` içindeki aynı ID’yi kullanın.
+
+## Desteklenen görevler
+
+İptal şu anda `seedance-1.5-pro`, `seedance-2.0` veya `seedance-2.0-fast` kullanan kuyruktaki Volcengine Seedance video görevleri için desteklenir. Zaten `processing`/running durumundaki görevler iptal edilemez. Tamamlanan, başarısız, süresi dolan veya desteklenmeyen görevler, upstream kayıtları silinmeden durum ve faturalama mutabakatı için sorgulanabilir kalır.
+
+## Yol parametreleri
+
+<ParamField path="id" type="string" required>
+  create isteği tarafından döndürülen veya `poll_url` içinde bulunan asenkron görev ID’si.
+</ParamField>
+
+## Yanıt
+
+<ResponseField name="id" type="string">
+  Kanonik asenkron görev tanımlayıcısı.
+</ResponseField>
+
+<ResponseField name="task_id" type="string">
+  Asenkron görev tanımlayıcısı takma adı.
+</ResponseField>
+
+<ResponseField name="poll_url" type="string">
+  Görev için tercih edilen polling URL’si. İptalden sonra da geçerlidir.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Görev durumu. Başarıyla iptal edilen görev, mevcut durum değerleriyle uyumluluk için `failed` ve `cancelled: true` olarak döner.
+</ResponseField>
+
+<ResponseField name="cancelled" type="boolean">
+  Görev yürütülmeden önce iptal edildiyse `true`.
+</ResponseField>
+
+<ResponseField name="cancellation_status" type="string">
+  İptal işareti. İptal başarılı olduğunda değer `cancelled` olur.
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  İptal nedeni veya görev hata mesajı.
+</ResponseField>
+
+## Hata davranışı
+
+`400 unsupported_task_cancel`, görev türü, sağlayıcı veya modelin iptali desteklemediği anlamına gelir. `409 task_not_cancellable`, görevin zaten işlendiği, terminal durumda olduğu veya artık iptal edilemediği anlamına gelir. `403`, API key’in göreve erişemediği anlamına gelir.
+
+## Örnek
+
+<RequestExample>
+```bash cURL
+curl -X DELETE "https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+```json Response
+{
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "failed",
+  "cancelled": true,
+  "cancellation_status": "cancelled",
+  "error": "Task cancelled before execution"
+}
+```

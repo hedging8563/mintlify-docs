@@ -1,0 +1,361 @@
+---
+title: "Kompatibilitas IDE & SDK"
+description: "Panduan kompatibilitas berbasis bukti untuk alat pengkodean AI, SDK, dan framework"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Ikhtisar
+
+AI Sonar menyediakan beberapa format API sehingga alat pengkodean umum, SDK, dan framework dapat berintegrasi dengan sedikit kode penghubung.
+
+Halaman ini sengaja dibuat lebih sempit dibanding matriks pemasaran:
+
+- **Supported** berarti kami mendokumentasikan jalur pengaturan konkret dan AI Sonar mengekspos bentuk protokol yang diharapkan jalur tersebut.
+- **Jalur native kuat** berarti repositori juga memiliki adaptor langsung atau bukti format permintaan untuk keluarga protokol tersebut.
+- **Upaya terbaik** berarti integrasi dapat bekerja, tetapi klien upstream tidak menganggap alur gateway kustom ini sebagai kontrak yang stabil.
+
+<Note>
+  Field yang tidak didukung tidak ditangani secara seragam. Pada rute kompatibilitas, beberapa field diabaikan atau dinormalisasi. Pada `/v1/responses`, field yang tidak didukung dapat mengembalikan error `400` atau `503` yang eksplisit ketika rute tersebut tidak dapat menjamin perilaku yang diminta.
+</Note>
+
+## Supported API Formats
+
+| Endpoint | Format | Kasus Penggunaan |
+|----------|--------|------------------|
+| `/v1/chat/completions` | OpenAI Chat | Kompatibilitas universal |
+| `/v1/responses` | OpenAI Responses | Percakapan berstatus |
+| `/v1/messages` | Anthropic Messages | Fitur asli Claude |
+| `/v1beta/models/:model:generateContent` | Google Gemini | Fitur asli Gemini |
+
+## Kompatibilitas IDE & CLI
+
+### Jalur Alat yang Didokumentasikan
+
+| Alat | Tingkat Dukungan | Format | Catatan |
+|------|------------------|--------|--------|
+| **Cursor** | Didukung dengan batasan | Kompatibel OpenAI | Bekerja untuk alur chat/editor BYOK standar, bukan sebagai pengganti fitur yang dikelola Cursor seperti Tab Completion |
+| **Claude Code CLI** | Jalur native kuat | Anthropic | Rute native `/v1/messages` dengan cakupan adaptor untuk thinking dan `tool_choice` |
+| **Codex CLI** | Didukung dengan batas model/jalur | OpenAI Responses | Anggap `/v1/responses` sebagai jalur lanjutan untuk alur kerja spesifik Codex; beberapa field yang hanya ada di Responses tidak dijamin berlaku pada setiap model dan jalur yang dirutekan |
+| **Gemini CLI** | Upaya terbaik / eksperimental | Gemini | Alur URL basis AI Sonar kustom bukan kontrak upstream yang stabil |
+| **OpenCode** | Didukung | Kompatibel OpenAI | Gunakan penyedia kompatibel OpenAI secara default; beralih ke penyedia berbasis Responses hanya ketika Anda secara eksplisit membutuhkannya |
+
+<Note>
+  Editor dan alat agen kompatibel OpenAI lainnya sering bekerja dengan pola URL dasar yang sama, tetapi repo ini saat ini tidak memelihara cakupan regresi khusus-alat untuk Windsurf, Aider, Continue.dev, Cline/Roo Code, GitHub Copilot, dan klien serupa.
+</Note>
+
+### Contoh Konfigurasi
+
+<Tabs>
+  <Tab title="Cursor">
+    ```
+    Base URL: https://api.aisonar.dev/v1
+    API Key: sk-your-api-key
+    ```
+    Cursor menggunakan format alat gaya Anthropic secara internal. AI Sonar mendukung keduanya:
+    - Format OpenAI: `{ type: "function", function: { name, parameters } }`
+    - Format Anthropic: `{ name, input_schema }` (no type field)
+  </Tab>
+  <Tab title="Claude Code">
+    ```bash
+    export ANTHROPIC_BASE_URL="https://api.aisonar.dev"
+    export ANTHROPIC_API_KEY="sk-your-api-key"
+    ```
+  </Tab>
+  <Tab title="OpenCode">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export LOCAL_ENDPOINT="https://api.aisonar.dev/v1"
+    ```
+  </Tab>
+  <Tab title="Aider">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export OPENAI_BASE_URL="https://api.aisonar.dev/v1"
+    aider --model gpt-5.4
+    ```
+  </Tab>
+</Tabs>
+
+## Kompatibilitas SDK
+
+### Jalur SDK & Framework yang Didokumentasikan
+
+| SDK / Framework | Bahasa | Tingkat Dukungan | Catatan |
+|-----------------|--------|------------------|--------|
+| **OpenAI SDK** | Python/JS/Go | Jalur kompatibilitas yang didukung | Rute `/v1` Chat Completions dan Embeddings adalah jalur kompatibilitas; gunakan rute native penyedia untuk perilaku khusus, dan jangan anggap field khusus Responses berlaku di semua model |
+| **Anthropic SDK** | Python/JS | Jalur native kuat | Rute Messages native dengan bukti langsung untuk tools, thinking, dan prompt caching |
+| **Vercel AI SDK** | TypeScript | Pola integrasi yang direkomendasikan | Lebih suka `@ai-sdk/openai-compatible`; gunakan `@ai-sdk/openai` hanya ketika Anda secara eksplisit menginginkan perilaku Responses-native |
+| **LangChain** | Python/JS | Permukaan standar yang didukung | `ChatOpenAI` dan `OpenAIEmbeddings` adalah ruang lingkup yang dimaksud; tambahan native vendor berada di luar ruang lingkup |
+| **LlamaIndex** | Python | Didukung melalui `OpenAILike` | Gunakan `OpenAILike`, bukan kelas OpenAI bawaan, untuk gateway pihak ketiga seperti AI Sonar |
+| **Dify** | - | Didukung dengan batas cakupan | Penyedia OpenAI dan alur berorientasi chat-completions adalah jalur yang dimaksud; tidak cocok untuk Responses spesifik Codex atau perilaku WebSocket |
+
+## Parameter Chat Completions
+
+### Parameter Inti
+
+| Parameter | Tipe | Deskripsi |
+|-----------|------|----------|
+| `model` | string | Identifikasi model (dibutuhkan) |
+| `messages` | array | Pesan percakapan (dibutuhkan) |
+| `max_tokens` | integer | Token keluaran maksimum |
+| `temperature` | number | Temperatur sampling (0-2) |
+| `top_p` | number | Sampling inti (0-1) |
+| `stream` | boolean | Aktifkan streaming |
+
+### Pemanggilan Tool
+
+```json
+{
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_weather",
+        "description": "Get weather for a location",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "location": { "type": "string" }
+          }
+        },
+        "strict": true
+      }
+    }
+  ],
+  "tool_choice": "auto",
+  "parallel_tool_calls": true
+}
+```
+
+### Opsi Tool Choice
+
+| Format | Contoh | Deskripsi |
+|--------|--------|----------|
+| String | `"auto"`, `"none"`, `"required"` | Pilihan sederhana |
+| OpenAI Object | `{ "type": "function", "function": { "name": "fn" } }` | Memaksa fungsi tertentu |
+| Anthropic Object | `{ "type": "tool", "name": "fn", "disable_parallel_tool_use": true }` | Format native Anthropic |
+
+### Parameter Lanjutan
+
+| Parameter | Tipe | Deskripsi |
+|-----------|------|----------|
+| `stream_options` | object | `{ include_usage: true }` untuk penghitungan token |
+| `reasoning_effort` | string | `"low"`, `"medium"`, `"high"` untuk model GPT-5 dengan reasoning diaktifkan |
+| `service_tier` | string | `"auto"` atau `"default"` |
+| `seed` | integer | Keluaran deterministik |
+| `logprobs` | boolean | Mengembalikan probabilitas log |
+| `top_logprobs` | integer | Jumlah top logprobs (0-20) |
+| `logit_bias` | object | Peta bias token (-100 hingga 100) |
+| `frequency_penalty` | number | Penalti pengulangan (-2 hingga 2) |
+| `presence_penalty` | number | Penalti kemunculan topik (-2 hingga 2) |
+| `stop` | string/array | Sekuen stop |
+| `n` | integer | Jumlah completions (1-128) |
+| `user` | string | Pengidentifikasi pengguna untuk pelacakan |
+
+### Fitur Lanjutan OpenAI
+
+| Parameter | Tipe | Deskripsi |
+|-----------|------|----------|
+| `modalities` | array | `["text", "audio"]` untuk multimodal |
+| `audio` | object | Konfigurasi output audio (voice, format) |
+| `prediction` | object | Output prediksi untuk penyelesaian yang lebih cepat |
+| `metadata` | object | Pasangan kunci-nilai untuk pelacakan |
+| `store` | boolean | Simpan untuk pengambilan nanti |
+
+### Opsi Spesifik Provider
+
+```json
+{
+  "anthropic_options": {
+    "thinking": {
+      "type": "enabled",
+      "budget_tokens": 10000
+    },
+    "prompt_caching": true
+  },
+  "google_options": {
+    "safety_settings": [...],
+    "google_search": true,
+    "code_execution": true
+  }
+}
+```
+
+## Parameter Anthropic Messages
+
+### Parameter Inti
+
+| Parameter | Tipe | Deskripsi |
+|-----------|------|----------|
+| `model` | string | Identifikasi model |
+| `messages` | array | Pesan percakapan |
+| `max_tokens` | integer | Keluaran maksimum (hingga 128000) |
+| `system` | string/array | Prompt sistem |
+| `stream` | boolean | Aktifkan streaming |
+
+### Pemanggilan Tool
+
+```json
+{
+  "tools": [
+    {
+      "name": "get_weather",
+      "description": "Get weather",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "location": { "type": "string" }
+        }
+      }
+    }
+  ],
+  "tool_choice": {
+    "type": "auto",
+    "disable_parallel_tool_use": false
+  }
+}
+```
+
+### Pemikiran Mendalam
+
+```json
+{
+  "model": "claude-opus-4-6",
+  "thinking": {
+    "type": "enabled",
+    "budget_tokens": 10000
+  }
+}
+```
+
+## Parameter API Responses
+
+### Parameter Inti
+
+| Parameter | Tipe | Deskripsi |
+|-----------|------|----------|
+| `model` | string | Identifikasi model |
+| `input` | string/array | Konten input |
+| `instructions` | string | Instruksi sistem |
+| `max_output_tokens` | integer | Token keluaran maksimum |
+| `previous_response_id` | string | Lanjutkan percakapan |
+
+### Parameter Lanjutan
+
+| Parameter | Tipe | Deskripsi |
+|-----------|------|----------|
+| `truncation_strategy` | string | `"auto"` atau `"disabled"` |
+| `include` | array | `["reasoning.encrypted_content"]` |
+| `reasoning_effort` | string | Untuk model reasoning |
+| `service_tier` | string | Tingkat prioritas |
+
+### Format Tool
+
+Mendukung format alat OpenAI dan Anthropic:
+
+```json
+// OpenAI format
+{ "type": "function", "name": "fn", "parameters": {...} }
+
+// Anthropic format (Cursor compatibility)
+{ "name": "fn", "input_schema": {...} }
+```
+
+## Parameter API Gemini
+
+### Parameter Inti
+
+| Parameter | Tipe | Deskripsi |
+|-----------|------|----------|
+| `contents` | array | Konten percakapan |
+| `systemInstruction` | object | Prompt sistem |
+| `generationConfig` | object | Pengaturan generasi |
+
+### Tools
+
+```json
+{
+  "tools": [{
+    "functionDeclarations": [{
+      "name": "search",
+      "description": "Search the web",
+      "parameters": {...}
+    }],
+    "codeExecution": {},
+    "googleSearch": {}
+  }],
+  "toolConfig": {
+    "functionCallingConfig": {
+      "mode": "AUTO"
+    }
+  }
+}
+```
+
+### Pengaturan Keamanan
+
+```json
+{
+  "safetySettings": [
+    {
+      "category": "HARM_CATEGORY_HARASSMENT",
+      "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+    }
+  ]
+}
+```
+
+### Parameter Tambahan
+
+| Parameter | Tipe | Deskripsi |
+|-----------|------|----------|
+| `cachedContent` | string | Referensi konten cache |
+| `responseMimeType` | string | `"text/plain"` atau `"application/json"` |
+| `responseSchema` | object | Skema JSON untuk keluaran terstruktur |
+
+## Streaming
+
+Semua endpoint mendukung streaming Server-Sent Events (SSE):
+
+```bash
+# Chat Completions
+curl https://api.aisonar.dev/v1/chat/completions \
+  -H "Authorization: Bearer sk-xxx" \
+  -d '{"model": "gpt-4o", "messages": [...], "stream": true}'
+
+# With usage tracking
+-d '{"...", "stream_options": {"include_usage": true}}'
+```
+
+## Penanganan Kesalahan
+
+AI Sonar mengembalikan respons error yang kompatibel dengan OpenAI:
+
+```json
+{
+  "error": {
+    "message": "Invalid API key",
+    "type": "invalid_api_key",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+Lihat [Panduan Penanganan Kesalahan](/guides/error-handling) untuk detail.
+
+## Praktik Terbaik
+
+<AccordionGroup>
+  <Accordion title="Gunakan passthrough untuk parameter yang tidak dikenal">
+    Semua skema menggunakan `.passthrough()` - parameter yang tidak dikenal diteruskan ke penyedia upstream.
+  </Accordion>
+
+  <Accordion title="Prioritaskan stream_options untuk penagihan yang akurat">
+    Aktifkan `stream_options.include_usage` untuk penghitungan token yang akurat dalam respons streaming.
+  </Accordion>
+
+  <Accordion title="Gunakan format tool_choice yang sesuai">
+    Cocokkan dengan format yang diharapkan SDK Anda. AI Sonar menerima format OpenAI dan Anthropic.
+  </Accordion>
+</AccordionGroup>

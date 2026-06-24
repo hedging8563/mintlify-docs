@@ -1,0 +1,121 @@
+---
+title: "获取任务状态"
+openapi: "GET /v1/tasks/{id}"
+description: "使用 create 端点返回的 `poll_url` 检索任何异步任务的状态和结果"
+---
+
+## 概览
+
+使用此端点对视频、图像、音乐和 3D 生成等任务类型进行统一的异步轮询。
+
+如果 create 响应包含 `poll_url`，请调用该精确路径。某些图像模型可能会在图像特定的状态路径或 `/v1/tasks/{id}` 下返回基于任务的响应。
+
+## 路径参数
+
+<ParamField path="id" type="string" required>
+  由 create 请求返回的任务 ID。
+</ParamField>
+
+## 响应
+
+<ResponseField name="id" type="string">
+  规范的异步任务标识符。
+</ResponseField>
+
+<ResponseField name="task_id" type="string">
+  异步任务标识符别名。
+</ResponseField>
+
+<ResponseField name="poll_url" type="string">
+  当 create 响应提供时，首选的轮询 URL。
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  任务状态，例如 `pending`、`processing`、`completed` 或 `failed`。已取消的任务会表示为 `failed` 并带有 `cancelled: true`。
+</ResponseField>
+
+<ResponseField name="cancelled" type="boolean">
+  排队中的异步任务在执行前被取消时为 `true`。
+</ResponseField>
+
+<ResponseField name="cancellation_status" type="string">
+  取消标记。取消成功时为 `cancelled`。
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  对于已完成的图片任务，生成的图片结果会在这里返回。图片任务会在 `data[].url` 中返回 URL。
+</ResponseField>
+
+<ResponseField name="progress" type="number">
+  可用时的进度百分比。
+</ResponseField>
+
+<ResponseField name="video_url" type="string">
+  任务完成并生成视频时的结果资源 URL。
+</ResponseField>
+
+<ResponseField name="video" type="object">
+  单个视频负载，包含在可用时的 `url`、`duration`、`width` 和 `height`。
+</ResponseField>
+
+<ResponseField name="videos" type="array">
+  当存在多个输出时的多个视频负载。
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  任务失败时的错误信息。
+</ResponseField>
+
+<ResponseField name="created" type="integer">
+  可用时的创建时间戳。
+</ResponseField>
+
+<ResponseField name="updated" type="integer">
+  可用时的上次更新时间戳。
+</ResponseField>
+
+<ResponseField name="model" type="string">
+  可用时任务使用的模型。
+</ResponseField>
+
+## 错误行为
+
+如果任务不再存在、已过期或无法通过公共异步任务契约解析，AI Sonar 将返回：
+
+```json
+{
+  "error": {
+    "message": "Task not found or no longer available.",
+    "type": "invalid_request_error",
+    "code": "async_task_not_found"
+  }
+}
+```
+
+## 示例
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+```python Python
+import requests
+
+poll_url = "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+response = requests.get(
+    f"https://api.aisonar.dev{poll_url}",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+)
+print(response.json())
+```
+
+```javascript JavaScript
+const pollUrl = '/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+const response = await fetch(`https://api.aisonar.dev${pollUrl}`, {
+  headers: { Authorization: 'Bearer sk-your-api-key' },
+});
+console.log(await response.json());
+```

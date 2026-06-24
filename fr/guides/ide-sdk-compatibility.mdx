@@ -1,0 +1,359 @@
+---
+title: "Compatibilité IDE & SDK"
+description: "Conseils de compatibilité fondés sur des preuves pour les outils de codage IA, les SDK et les frameworks"
+---
+
+## Aperçu
+
+AI Sonar expose plusieurs formats d'API afin que les outils de codage courants, les SDK et les frameworks puissent s'intégrer avec un minimum de code de liaison.
+
+Cette page est volontairement plus restreinte qu'une matrice marketing :
+
+- **Supported** signifie que nous documentons un chemin d'installation concret et que AI Sonar expose la forme du protocole attendue par ce chemin.
+- **Chemin natif solide** signifie que le dépôt dispose également d'un adaptateur direct ou de preuves de format de requête pour cette famille de protocoles.
+- **Best-effort** signifie que l'intégration peut fonctionner, mais que le client en amont ne considère pas ce flux de passerelle personnalisé comme un contrat stable.
+
+<Note>
+  Les champs non pris en charge ne sont pas gérés de manière uniforme. Sur les routes de compatibilité, certains champs sont ignorés ou normalisés. Sur `/v1/responses`, les champs non pris en charge peuvent renvoyer des erreurs explicites `400` ou `503` lorsque cette route ne peut pas garantir le comportement demandé.
+</Note>
+
+## Formats d'API pris en charge
+
+| Point de terminaison | Format | Cas d'utilisation |
+|----------------------|--------|-------------------|
+| `/v1/chat/completions` | OpenAI Chat | Compatibilité universelle |
+| `/v1/responses` | OpenAI Responses | Conversations avec état |
+| `/v1/messages` | Anthropic Messages | Fonctionnalités natives de Claude |
+| `/v1beta/models/:model:generateContent` | Google Gemini | Fonctionnalités natives de Gemini |
+
+## Compatibilité IDE & CLI
+
+### Chemins d'outils documentés
+
+| Outil | Niveau de prise en charge | Format | Remarques |
+|------|--------------------------|--------|----------|
+| **Cursor** | Pris en charge avec limites | compatible OpenAI | Fonctionne pour les flux de chat/éditeur standard BYOK, pas comme remplacement des fonctionnalités gérées par Cursor comme Tab Completion |
+| **Claude Code CLI** | Chemin natif solide | Anthropic | Route native `/v1/messages` avec couverture d'adaptateur pour thinking et `tool_choice` |
+| **Codex CLI** | Pris en charge avec limites de modèle/chemin | OpenAI Responses | Traitez `/v1/responses` comme un chemin avancé pour les flux de travail spécifiques à Codex ; certains champs réservés à Responses ne sont pas garantis sur chaque modèle et chaque route |
+| **Gemini CLI** | Best-effort / expérimental | Gemini | Le flux avec une URL de base AI Sonar personnalisée n'est pas un contrat amont stable |
+| **OpenCode** | Supported | compatible OpenAI | Utilisez par défaut un fournisseur compatible OpenAI ; passez à un fournisseur basé sur Responses uniquement lorsque vous en avez explicitement besoin |
+
+<Note>
+  D'autres éditeurs et outils d'agent compatibles OpenAI fonctionnent souvent avec le même motif d'URL de base, mais ce dépôt ne maintient pas actuellement de couverture de régression spécifique aux outils pour Windsurf, Aider, Continue.dev, Cline/Roo Code, GitHub Copilot et clients similaires.
+</Note>
+
+### Exemples de configuration
+
+<Tabs>
+  <Tab title="Cursor">
+    ```
+    Base URL: https://api.aisonar.dev/v1
+    API Key: sk-your-api-key
+    ```
+    Cursor utilise en interne le format d'outil de type Anthropic. AI Sonar prend en charge les deux :
+    - Format OpenAI : `{ type: "function", function: { name, parameters } }`
+    - Format Anthropic : `{ name, input_schema }` (pas de champ `type`)
+  </Tab>
+  <Tab title="Claude Code">
+    ```bash
+    export ANTHROPIC_BASE_URL="https://api.aisonar.dev"
+    export ANTHROPIC_API_KEY="sk-your-api-key"
+    ```
+  </Tab>
+  <Tab title="OpenCode">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export LOCAL_ENDPOINT="https://api.aisonar.dev/v1"
+    ```
+  </Tab>
+  <Tab title="Aider">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export OPENAI_BASE_URL="https://api.aisonar.dev/v1"
+    aider --model gpt-5.4
+    ```
+  </Tab>
+</Tabs>
+
+## Compatibilité SDK
+
+### Chemins SDK & Framework documentés
+
+| SDK / Framework | Langage | Niveau de prise en charge | Remarques |
+|-----------------|---------|---------------------------|----------|
+| **OpenAI SDK** | Python/JS/Go | Chemin principal pris en charge | Chat Completions et Embeddings sont le chemin par défaut documenté ; certains champs réservés à Responses ne sont pas garantis sur chaque modèle et chaque route |
+| **Anthropic SDK** | Python/JS | Chemin natif solide | Route Messages native avec preuves directes pour les outils, thinking, et le cache de prompt |
+| **Vercel AI SDK** | TypeScript | Modèle d’intégration recommandé | Préférez `@ai-sdk/openai-compatible` ; utilisez `@ai-sdk/openai` uniquement lorsque vous souhaitez explicitement un comportement natif Responses |
+| **LangChain** | Python/JS | Interfaces standard prises en charge | `ChatOpenAI` et `OpenAIEmbeddings` sont le périmètre prévu ; les extensions natives au fournisseur sont hors périmètre |
+| **LlamaIndex** | Python | Pris en charge via `OpenAILike` | Utilisez `OpenAILike`, pas les classes OpenAI intégrées, pour les passerelles tierces comme AI Sonar |
+| **Dify** | - | Pris en charge avec limites de périmètre | Le fournisseur OpenAI et les flux orientés chat-completions sont le chemin prévu ; pas adapté aux Responses spécifiques à Codex ou au comportement WebSocket |
+
+## Paramètres Chat Completions
+
+### Paramètres principaux
+
+| Paramètre | Type | Description |
+|-----------|------|-------------|
+| `model` | string | Identifiant du modèle (obligatoire) |
+| `messages` | array | Messages de la conversation (obligatoire) |
+| `max_tokens` | integer | Nombre maximal de tokens de sortie |
+| `temperature` | number | Température d'échantillonnage (0-2) |
+| `top_p` | number | Échantillonnage Nucleus (0-1) |
+| `stream` | boolean | Activer le streaming |
+
+### Appel d'outil
+
+```json
+{
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_weather",
+        "description": "Get weather for a location",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "location": { "type": "string" }
+          }
+        },
+        "strict": true
+      }
+    }
+  ],
+  "tool_choice": "auto",
+  "parallel_tool_calls": true
+}
+```
+
+### Options de choix d'outil
+
+| Format | Exemple | Description |
+|--------|---------|-------------|
+| String | `"auto"`, `"none"`, `"required"` | Sélection simple |
+| OpenAI Object | `{ "type": "function", "function": { "name": "fn" } }` | Forcer une fonction spécifique |
+| Anthropic Object | `{ "type": "tool", "name": "fn", "disable_parallel_tool_use": true }` | Format natif Anthropic |
+
+### Paramètres avancés
+
+| Paramètre | Type | Description |
+|-----------|------|-------------|
+| `stream_options` | object | `{ include_usage: true }` pour les comptes de tokens |
+| `reasoning_effort` | string | `"low"`, `"medium"`, `"high"` pour les modèles reasoning-enabled GPT-5 |
+| `service_tier` | string | `"auto"` ou `"default"` |
+| `seed` | integer | Sorties déterministes |
+| `logprobs` | boolean | Retourner les log probas |
+| `top_logprobs` | integer | Nombre de top logprobs (0-20) |
+| `logit_bias` | object | Carte de biais de token (-100 à 100) |
+| `frequency_penalty` | number | Pénalité de répétition (-2 à 2) |
+| `presence_penalty` | number | Pénalité de sujet (-2 à 2) |
+| `stop` | string/array | Séquences d'arrêt |
+| `n` | integer | Nombre de complétions (1-128) |
+| `user` | string | Identifiant utilisateur pour le suivi |
+
+### Fonctionnalités avancées OpenAI
+
+| Paramètre | Type | Description |
+|-----------|------|-------------|
+| `modalities` | array | `["text", "audio"]` pour le multimodal |
+| `audio` | object | Configuration de sortie audio (voice, format) |
+| `prediction` | object | Sortie prédite pour une complétion plus rapide |
+| `metadata` | object | Paires clé-valeur pour le suivi |
+| `store` | boolean | Stocker pour récupération ultérieure |
+
+### Options spécifiques au fournisseur
+
+```json
+{
+  "anthropic_options": {
+    "thinking": {
+      "type": "enabled",
+      "budget_tokens": 10000
+    },
+    "prompt_caching": true
+  },
+  "google_options": {
+    "safety_settings": [...],
+    "google_search": true,
+    "code_execution": true
+  }
+}
+```
+
+## Paramètres Anthropic Messages
+
+### Paramètres principaux
+
+| Paramètre | Type | Description |
+|-----------|------|-------------|
+| `model` | string | Identifiant du modèle |
+| `messages` | array | Messages de la conversation |
+| `max_tokens` | integer | Sortie maximale (jusqu'à 128000) |
+| `system` | string/array | Prompt système |
+| `stream` | boolean | Activer le streaming |
+
+### Appel d'outil
+
+```json
+{
+  "tools": [
+    {
+      "name": "get_weather",
+      "description": "Get weather",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "location": { "type": "string" }
+        }
+      }
+    }
+  ],
+  "tool_choice": {
+    "type": "auto",
+    "disable_parallel_tool_use": false
+  }
+}
+```
+
+### Réflexion prolongée
+
+```json
+{
+  "model": "claude-opus-4-6",
+  "thinking": {
+    "type": "enabled",
+    "budget_tokens": 10000
+  }
+}
+```
+
+## Paramètres de l'API Responses
+
+### Paramètres principaux
+
+| Paramètre | Type | Description |
+|-----------|------|-------------|
+| `model` | string | Identifiant du modèle |
+| `input` | string/array | Contenu d'entrée |
+| `instructions` | string | Instructions système |
+| `max_output_tokens` | integer | Nombre maximal de tokens de sortie |
+| `previous_response_id` | string | Poursuivre la conversation |
+
+### Paramètres avancés
+
+| Paramètre | Type | Description |
+|-----------|------|-------------|
+| `truncation_strategy` | string | `"auto"` ou `"disabled"` |
+| `include` | array | `["reasoning.encrypted_content"]` |
+| `reasoning_effort` | string | Pour les modèles de reasoning |
+| `service_tier` | string | Niveau de priorité |
+
+### Format d'outil
+
+Prend en charge les formats d'outils OpenAI et Anthropic :
+
+```json
+// OpenAI format
+{ "type": "function", "name": "fn", "parameters": {...} }
+
+// Anthropic format (Cursor compatibility)
+{ "name": "fn", "input_schema": {...} }
+```
+
+## Paramètres API Gemini
+
+### Paramètres principaux
+
+| Paramètre | Type | Description |
+|-----------|------|-------------|
+| `contents` | array | Contenu de la conversation |
+| `systemInstruction` | object | Prompt système |
+| `generationConfig` | object | Paramètres de génération |
+
+### Outils
+
+```json
+{
+  "tools": [{
+    "functionDeclarations": [{
+      "name": "search",
+      "description": "Search the web",
+      "parameters": {...}
+    }],
+    "codeExecution": {},
+    "googleSearch": {}
+  }],
+  "toolConfig": {
+    "functionCallingConfig": {
+      "mode": "AUTO"
+    }
+  }
+}
+```
+
+### Paramètres de sécurité
+
+```json
+{
+  "safetySettings": [
+    {
+      "category": "HARM_CATEGORY_HARASSMENT",
+      "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+    }
+  ]
+}
+```
+
+### Paramètres additionnels
+
+| Paramètre | Type | Description |
+|-----------|------|-------------|
+| `cachedContent` | string | Référence de contenu mis en cache |
+| `responseMimeType` | string | `"text/plain"` ou `"application/json"` |
+| `responseSchema` | object | Schéma JSON pour une sortie structurée |
+
+## Diffusion en continu
+
+Tous les endpoints prennent en charge le streaming Server-Sent Events (SSE) :
+
+```bash
+# Chat Completions
+curl https://api.aisonar.dev/v1/chat/completions \
+  -H "Authorization: Bearer sk-xxx" \
+  -d '{"model": "gpt-4o", "messages": [...], "stream": true}'
+
+# With usage tracking
+-d '{"...", "stream_options": {"include_usage": true}}'
+```
+
+## Gestion des erreurs
+
+AI Sonar renvoie des réponses d'erreur compatibles OpenAI :
+
+```json
+{
+  "error": {
+    "message": "Invalid API key",
+    "type": "invalid_api_key",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+Voir [Guide de gestion des erreurs](/guides/error-handling) pour les détails.
+
+## Bonnes pratiques
+
+<AccordionGroup>
+  <Accordion title="Utiliser le passthrough pour les paramètres inconnus">
+    Tous les schémas utilisent `.passthrough()` - les paramètres inconnus sont transmis aux fournisseurs en amont.
+  </Accordion>
+
+  <Accordion title="Préférer stream_options pour une facturation précise">
+    Activez `stream_options.include_usage` pour des comptes de tokens précis dans les réponses en streaming.
+  </Accordion>
+
+  <Accordion title="Utiliser le format tool_choice approprié">
+    Adaptez-vous au format attendu par votre SDK. AI Sonar accepte à la fois les formats OpenAI et Anthropic.
+  </Accordion>
+</AccordionGroup>

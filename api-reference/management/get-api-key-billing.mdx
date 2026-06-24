@@ -1,0 +1,28 @@
+---
+title: "Get API Key Billing"
+openapi: "GET /v1/management/api-keys/{keyId}/billing"
+description: "Returns aggregated billing breakdowns for a user API key."
+---
+
+## Overview
+
+This endpoint returns consumption-only billing aggregates for the selected API key, including total cost, total requests, usage unit breakdowns, and breakdowns by requested model name (`model`), vendor, `scene`, `accessChannel`, cache class, plus a daily cost trend.
+
+## Notes
+
+- Monetary fields are USD-only. `CNY` inputs are retired and return `400 currency_retired`.
+
+- Recharge, invoices, and other organization-level financial records are intentionally excluded.
+
+## Example
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/billing?startDate=2026-01-01&endDate=2026-01-31" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## Request / Response
+
+Use the interactive OpenAPI panel above for the exact schema.

@@ -1,0 +1,186 @@
+---
+title: "إعداد موفر AI Sonar"
+description: "تكوين AI Sonar كموفر مخصص في OpenClaw باستخدام مسارات متوافقة مع OpenAI وResponses وAnthropic وGemini"
+---
+
+<Note>
+هذا الدليل مخصّص لمستخدمي **OpenClaw المستضاف محليًا (self-hosted)** الذين يرغبون في ربط AI Sonar كمزوِّد AI خاص بهم.
+</Note>
+
+## نظرة عامة
+
+للإصدارات الحالية من OpenClaw، النهج الموصى به هو تكوين AI Sonar عبر `models.providers`.
+
+إذا كنت ترغب فقط في البدء بسرعة، فتكفي تكوين `aisonar` بمفردها. أضف الموفرين الآخرين فقط عندما تحتاج صراحةً إلى سلوك **Responses API** أو **Claude native** أو **Gemini native** أو **MiniMax native**.
+
+| المزوّد | OpenClaw `api` | الأفضل لـ | baseUrl |
+|--------|----------------|-----------|---------|
+| `aisonar` | `openai-completions` | GPT وDeepSeek وQwen ومعظم الاستدعاءات المتوافقة مع OpenAI | `https://api.aisonar.dev/v1` |
+| `aisonar-responses` | `openai-responses` | تدفقات عمل OpenAI Responses التي تتوقع دلالات `/v1/responses` | `https://api.aisonar.dev/v1` |
+| `aisonar-claude` | `anthropic-messages` | واجهة Claude Messages الأصلية | `https://api.aisonar.dev` |
+| `aisonar-gemini` | `google-generative-ai` | صيغة Gemini الأصلية | `https://api.aisonar.dev` |
+| `aisonar-minimax` | `anthropic-messages` | توجيه MiniMax الأصلي | `https://api.aisonar.dev` |
+
+<Warning>
+استخدم اللاحقة `/v1` فقط مع `openai-completions` و`openai-responses`.
+
+يجب أن تستخدم الموفرات الأصلية مثل `anthropic-messages` و`google-generative-ai` `https://api.aisonar.dev` بدون `/v1`، وإلا فقد ينشئ OpenClaw مسارًا علويًا غير صحيح.
+</Warning>
+
+## المتطلبات المسبقة
+
+- مثيل OpenClaw مستضاف محليًا (self-hosted)
+- مفتاح API من AI Sonar — [Get one here](https://console.aisonar.dev)
+
+## التكوين
+
+حرّر تهيئة OpenClaw الخاصة بك:
+
+- **مستضاف ذاتيًا**: `~/.openclaw/openclaw.json`
+
+أضف موفري AI Sonar تحت `models.providers`:
+
+```json5
+{
+  agents: {
+    defaults: {
+      model: {
+        primary: "aisonar-claude/claude-sonnet-4-6"
+      }
+    }
+  },
+  models: {
+    mode: "merge",
+    providers: {
+      aisonar: {
+        api: "openai-completions",
+        baseUrl: "https://api.aisonar.dev/v1",
+        apiKey: "sk-your-api-key",
+        models: [
+          { id: "gpt-4o", name: "GPT-4o" },
+          { id: "deepseek-r1", name: "DeepSeek R1" },
+          { id: "qwen3-32b", name: "Qwen 3 32B" }
+        ]
+      },
+      "aisonar-responses": {
+        api: "openai-responses",
+        baseUrl: "https://api.aisonar.dev/v1",
+        apiKey: "sk-your-api-key",
+        models: [
+          { id: "gpt-4o", name: "GPT-4o (Responses)" },
+          { id: "gpt-5.2", name: "GPT-5.2 (Responses)" }
+        ]
+      },
+      "aisonar-claude": {
+        api: "anthropic-messages",
+        baseUrl: "https://api.aisonar.dev",
+        apiKey: "sk-your-api-key",
+        models: [
+          { id: "claude-sonnet-4-6", name: "Claude Sonnet 4.6" },
+          { id: "claude-opus-4-6", name: "Claude Opus 4.6" }
+        ]
+      },
+      "aisonar-gemini": {
+        api: "google-generative-ai",
+        baseUrl: "https://api.aisonar.dev",
+        apiKey: "sk-your-api-key",
+        models: [
+          { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash" },
+          { id: "gemini-3-flash-preview", name: "Gemini 3 Flash Preview" }
+        ]
+      },
+      "aisonar-minimax": {
+        api: "anthropic-messages",
+        baseUrl: "https://api.aisonar.dev",
+        apiKey: "sk-your-api-key",
+        models: [
+          { id: "minimax-m1", name: "MiniMax M1" }
+        ]
+      }
+    }
+  }
+}
+```
+
+<Info>
+جميع الموفرين الخمسة يستخدمون **نفس مفتاح API**. تحتاج لحساب AI Sonar واحد فقط.
+</Info>
+
+<Info>
+قوائم `models` أعلاه تعرض أمثلة شائعة فقط. أضف المزيد من معرفات النماذج لكل موفر حسب الحاجة.
+</Info>
+
+## استخدام النماذج
+
+لا يزال OpenClaw يشير إلى النماذج بصيغة `provider/model`:
+
+```json5
+{
+  agents: {
+    defaults: {
+      model: {
+        primary: "aisonar-gemini/gemini-2.5-flash"
+      }
+    }
+  }
+}
+```
+
+### أمثلة على النماذج
+
+| المزوّد | مرجع النموذج | الوصف |
+|--------|--------------|-------|
+| `aisonar` | `aisonar/gpt-4o` | مسار متوافق مع OpenAI |
+| `aisonar` | `aisonar/deepseek-r1` | نموذج استدلال DeepSeek |
+| `aisonar-responses` | `aisonar-responses/gpt-4o` | مسار Responses API |
+| `aisonar-claude` | `aisonar-claude/claude-sonnet-4-6` | مسار Claude Messages الأصلي |
+| `aisonar-gemini` | `aisonar-gemini/gemini-2.5-flash` | مسار Gemini الأصلي |
+| `aisonar-minimax` | `aisonar-minimax/minimax-m1` | مسار MiniMax الأصلي |
+
+تصفّح جميع النماذج المتاحة على [aisonar.dev/models](https://aisonar.dev/models).
+
+## متى تستخدم أي موفر
+
+- `aisonar`: الخيار الافتراضي لمعظم حالات استخدام الوكلاء والدردشة العامة.
+- `aisonar-responses`: استخدمه عندما يعتمد سير عمل OpenClaw صراحةً على دلالات OpenAI Responses.
+- `aisonar-claude`: استخدمه عندما تريد سلوك Messages الأصلي الخاص بـ Claude.
+- `aisonar-gemini`: استخدمه عندما تريد تنسيق طلب/استجابة أصلي لـ Gemini أو تكاملات بصيغة Gemini الموجودة مسبقًا.
+- `aisonar-minimax`: استخدمه عندما تريد MiniMax عبر مساره الأصلي.
+
+إذا لم تكن بحاجة إلى سلوك Gemini الأصلي، فلا يزال بإمكانك استدعاء نماذج Gemini عبر `aisonar/gemini-*` على المسار المتوافق مع OpenAI.
+
+## الأخطاء الشائعة
+
+<AccordionGroup>
+  <Accordion title="لا تزال تستخدم مصفوفة الموفرين القديمة على المستوى العلوي">
+    تستخدم وثائق OpenClaw الحالية `models.providers`. إذا احتفظت بالتنسيق القديم لمصفوفة `providers` على المستوى العلوي، فقد يتجاهل OpenClaw التهيئة أو يفشل في حل بادئات الموفر كما هو متوقع.
+  </Accordion>
+  <Accordion title="نسيان /v1 على aisonar-responses">
+    تقوم `openai-responses` بالتوجيه إلى مسار `/v1/responses` الخاص بـ AI Sonar، لذلك يجب أن يستخدم `aisonar-responses` `https://api.aisonar.dev/v1`.
+  </Accordion>
+  <Accordion title="إضافة /v1 إلى aisonar-claude أو aisonar-gemini أو aisonar-minimax">
+    يجب أن تستخدم `anthropic-messages` و`google-generative-ai` `https://api.aisonar.dev` بدون `/v1`. إضافة `/v1` يمكن أن تُنتج مسارات طلب غير صحيحة.
+  </Accordion>
+  <Accordion title="هل لا يزال OpenClaw يدعم Gemini الأصلي؟">
+    نعم. لا تزال وثائق OpenClaw الحالية تتضمن الموفر المدمج `google` وتدعم أيضًا الموفرات المخصصة باستخدام `api: "google-generative-ai"`. لذا يظل `aisonar-gemini` مسار Gemini أصليًا صالحًا لمستخدمي OpenClaw.
+  </Accordion>
+</AccordionGroup>
+
+## التحقق من الإعداد
+
+بعد حفظ التهيئة، أعد تشغيل مثيل OpenClaw الخاص بك واختبر برسالة بسيطة. إذا رأيت استجابة، فالمزوّد مكوّن بشكل صحيح.
+
+```bash
+# مستضاف ذاتيًا: أعد تشغيل الخدمة
+systemctl --user restart openclaw    # Linux
+launchctl stop cc.aisonar.openclaw && launchctl start cc.aisonar.openclaw  # macOS
+```
+
+## الخطوات التالية
+
+بمجرد اتصال OpenClaw، تساعدك هذه الأدلة على استخدام AI Sonar بشكل أكثر فعالية:
+
+- [تنسيقات API](/guides/api-formats) — فهم الفروقات بين مسارات OpenAI وResponses وAnthropic وGemini
+- [IDE / SDK Compatibility](/guides/ide-sdk-compatibility) — متى يكون `/v1/responses` الخيار الأنسب
+- [معالجة الأخطاء](/guides/error-handling) — تعرّف على أنماط الفشل الشائعة واستراتيجيات التعافي
+- [نظرة عامة على النماذج](https://aisonar.dev/models) — تصفّح معرفات النماذج قبل توصيلها بالوكلاء

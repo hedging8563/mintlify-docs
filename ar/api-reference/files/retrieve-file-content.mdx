@@ -1,0 +1,38 @@
+---
+title: "استرجاع محتوى الملف"
+openapi: "GET /v1/files/{file_id}/content"
+description: "يقوم بتنزيل المحتوى الأصلي لملف مرفوع."
+---
+
+## نظرة عامة
+
+تخدم هذه النقطة بشكل أساسي استرجاع محتوى ملفات Batch المتوافقة مع OpenAI في AI Sonar.
+
+عندما يختار الطلب وضع التوافق مع Anthropic Files، يمكن لنفس المسار تمرير المحتوى الأصلي للملف المخزّن للمساحة العملية المرتبطة.
+
+## ملاحظات
+
+- يجب أن تستخدم ملفات الإدخال الخاصة بالدفعة `purpose=batch`.
+- `completion_window` حاليًا هو `24h`.
+- ترتيب الإخراج غير مضمون؛ يجب دائمًا المطابقة بواسطة `custom_id`.
+- لا يتم دعم البث داخل عناصر الدفعة.
+
+## مثال
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/files/file_abc123/content" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  --output batch-output.jsonl
+```
+</RequestExample>
+
+## الطلب / الاستجابة
+
+استخدم لوحة OpenAPI التفاعلية أعلاه للحصول على المخطط الدقيق.
+
+## نصائح تشغيلية
+
+- استخدم `custom_id` للتسوية اللاحقة غير القابلة للتكرار.
+- توقع `output_file_id` و `error_file_id` فقط بعد أن ينهي العامل الدفعة.
+- قد تختلف أسعار الدفعة عن الأسعار المتزامنة لأن قواعد خصم `isBatchRequest=true` تنطبق.

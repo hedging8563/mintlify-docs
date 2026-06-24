@@ -1,0 +1,146 @@
+---
+title: "Claude Code"
+description: "将 AI Sonar 与 Anthropic 的 Claude Code CLI 一起使用"
+---
+
+## 概述
+
+
+
+<Note>
+**类型**: 编码工具
+
+**主要路径**: Anthropic-native
+
+**支持级别**: 强原生路径
+</Note>
+
+[Claude Code](https://docs.anthropic.com/en/docs/claude-code) 是 Anthropic 官方提供的用于 AI 辅助编码的 CLI 工具。你可以将其配置为使用 AI Sonar 作为 API 提供方。
+
+## 安装
+
+Anthropic 现在推荐使用原生安装程序。出于兼容性考虑，npm 安装方式仍然可用，但上游已将其弃用。
+
+```bash
+curl -fsSL https://claude.ai/install.sh | bash
+```
+
+如果你明确需要 npm 包，请使用：
+
+```bash
+npm install -g @anthropic-ai/claude-code
+```
+
+<Warning>
+不要对 Claude Code 使用 `sudo npm install -g`。
+</Warning>
+
+## 配置
+
+### 环境变量
+
+设置以下环境变量：
+
+```bash
+export ANTHROPIC_API_KEY="sk-your-api-key"
+export ANTHROPIC_BASE_URL="https://api.aisonar.dev"
+```
+
+将这些添加到你的 shell 配置文件（`~/.bashrc`、`~/.zshrc` 等）中，以便持久生效。
+
+<Note>
+对于 AI Sonar，请将 `ANTHROPIC_BASE_URL` 保持为 `https://api.aisonar.dev`，不要添加 `/v1` 后缀。这与 Claude Code 文档中记录的 Anthropic 风格端点结构以及统一网关模式保持一致。
+</Note>
+
+### 配置文件
+
+或者，创建或编辑 `~/.claude/settings.json`：
+
+```json
+{
+  "env": {
+    "ANTHROPIC_API_KEY": "sk-your-api-key",
+    "ANTHROPIC_BASE_URL": "https://api.aisonar.dev"
+  }
+}
+```
+
+## 用法
+
+完成配置后，即可像平常一样使用 Claude Code：
+
+```bash
+# Start an interactive session
+claude
+
+# Run a single command
+claude "Explain this code" < main.py
+
+# Chat mode
+claude chat
+```
+
+如有需要，可验证安装是否成功：
+
+```bash
+claude --version
+claude doctor
+```
+
+## 可用模型
+
+AI Sonar 支持所有 Claude 模型：
+
+| 模型 | 描述 |
+|-------|-------------|
+| `claude-opus-4-6` | 能力最强，适合复杂推理 |
+| `claude-sonnet-4-6` | 性能均衡，非常适合编码 |
+| `claude-haiku-4-5` | 速度最快，性价比高 |
+
+## 模型选择
+
+使用 `--model` 标志指定模型：
+
+```bash
+claude --model claude-sonnet-4-6 "Review this PR"
+```
+
+或者在配置中设置默认模型：
+
+```json
+{
+  "env": {
+    "ANTHROPIC_API_KEY": "sk-your-api-key",
+    "ANTHROPIC_BASE_URL": "https://api.aisonar.dev"
+  },
+  "model": "claude-sonnet-4-6"
+}
+```
+
+## 扩展思考
+
+对于复杂推理任务，请使用支持扩展思考的模型：
+
+```bash
+claude --model claude-opus-4-6 "Design a microservices architecture for..."
+```
+
+## 故障排查
+
+<AccordionGroup>
+  <Accordion title="连接错误">
+    请确认 base URL 精确为 `https://api.aisonar.dev`（对于 Anthropic 风格请求，不要添加 `/v1` 后缀）。
+  </Accordion>
+
+  <Accordion title="无效的 API key">
+    请确保你的 AI Sonar API key 以 `sk-` 开头，并且余额充足。
+  </Accordion>
+
+  <Accordion title="网关需要 Authorization bearer token">
+    Claude Code 的网关模式也支持 `ANTHROPIC_AUTH_TOKEN`。对于标准的 AI Sonar 配置，请继续使用 `ANTHROPIC_API_KEY`，除非你有意切换了网关认证行为。
+  </Accordion>
+
+  <Accordion title="找不到模型">
+    请检查模型名称是否正确。请使用 `claude-sonnet-4-6` 这种格式。
+  </Accordion>
+</AccordionGroup>

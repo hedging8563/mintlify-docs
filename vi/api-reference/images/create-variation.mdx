@@ -1,0 +1,187 @@
+---
+title: "Tạo biến thể hình ảnh"
+openapi: "POST /v1/images/variations"
+description: "Tạo biến thể của một hình ảnh cho trước"
+---
+
+## Tổng quan
+
+Tạo biến thể của một hình ảnh cho trước. Yêu cầu content type `multipart/form-data`.
+
+## Nội dung yêu cầu
+
+**Timeout cho yêu cầu đồng bộ:** một số nhà cung cấp hình ảnh được định tuyến sẽ trả ảnh cuối cùng inline và chờ quá trình tạo hoàn tất. Yêu cầu độ phân giải cao hoặc chất lượng cao có thể mất gần một phút hoặc lâu hơn, vì vậy hãy đặt timeout của HTTP client ít nhất là `120s`. Nếu phản hồi tạo có `status: "pending"`, `task_id`, hoặc `poll_url`, hãy theo `poll_url` được trả về để polling.
+
+<ParamField body="image" type="file" required>
+  Hình ảnh dùng làm cơ sở cho biến thể. Phải là file PNG hợp lệ, nhỏ hơn 50MB và có tỷ lệ vuông.
+</ParamField>
+
+<ParamField body="model" type="string" default="dall-e-2">
+  Mô hình sử dụng cho biến thể hình ảnh. Hiện tại chỉ hỗ trợ `dall-e-2`.
+</ParamField>
+
+<ParamField body="n" type="integer" default="1">
+  Số lượng hình ảnh cần tạo. Phải từ 1 đến 10.
+</ParamField>
+
+<ParamField body="size" type="string">
+  Kích thước của hình ảnh được tạo. Phải là một trong `256x256`, `512x512`, hoặc `1024x1024`.
+</ParamField>
+
+<ParamField body="response_format" type="string" default="url">
+  Định dạng trả về của hình ảnh được tạo. Phải là `url` hoặc `b64_json`.
+</ParamField>
+
+<ParamField body="user" type="string">
+  Mã định danh duy nhất đại diện cho người dùng cuối để giám sát lạm dụng.
+</ParamField>
+
+## Phản hồi
+
+<ResponseField name="created" type="integer">
+  Dấu thời gian Unix khi hình ảnh được tạo.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Mảng các biến thể hình ảnh đã tạo.
+
+  Mỗi đối tượng chứa:
+  - `url` (string): URL của hình ảnh biến thể (nếu response_format là `url`)
+  - `b64_json` (string): Hình ảnh mã hóa Base64 (nếu response_format là `b64_json`)
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/images/variations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F "image=@cat.png" \
+  -F "n=2" \
+  -F "size=1024x1024"
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.images.create_variation(
+    model="dall-e-2",
+    image=open("cat.png", "rb"),
+    n=2,
+    size="1024x1024"
+)
+
+for image in response.data:
+    print(image.url)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+import fs from 'fs';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.images.createVariation({
+  model: 'dall-e-2',
+  image: fs.createReadStream('cat.png'),
+  n: 2,
+  size: '1024x1024'
+});
+
+response.data.forEach(image => console.log(image.url));
+```
+
+```go Go
+package main
+
+import (
+    "bytes"
+    "fmt"
+    "io"
+    "mime/multipart"
+    "net/http"
+    "os"
+)
+
+func main() {
+    body := &bytes.Buffer{}
+    writer := multipart.NewWriter(body)
+
+    file, _ := os.Open("cat.png")
+    defer file.Close()
+    part, _ := writer.CreateFormFile("image", "cat.png")
+    io.Copy(part, file)
+
+    writer.WriteField("n", "2")
+    writer.WriteField("size", "1024x1024")
+    writer.Close()
+
+    req, _ := http.NewRequest("POST", "https://api.aisonar.dev/v1/images/variations", body)
+    req.Header.Set("Authorization", "Bearer sk-your-api-key")
+    req.Header.Set("Content-Type", writer.FormDataContentType())
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+
+    result, _ := io.ReadAll(resp.Body)
+    fmt.Println(string(result))
+}
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/images/variations');
+
+$image = new CURLFile('cat.png', 'image/png', 'cat.png');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => [
+        'image' => $image,
+        'n' => 2,
+        'size' => '1024x1024'
+    ]
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+foreach ($data['data'] as $image) {
+    echo $image['url'] . "\n";
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json Phản hồi
+{
+  "created": 1706000000,
+  "data": [
+    {
+      "url": "https://..."
+    },
+    {
+      "url": "https://..."
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## Ghi chú
+
+<Note>
+  Biến thể hình ảnh chỉ khả dụng với DALL-E 2. Mô hình sẽ tạo ra các hình ảnh mới có phong cách và nội dung tương tự với hình ảnh gốc.
+</Note>

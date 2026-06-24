@@ -1,0 +1,27 @@
+---
+title: "조직 잔액 조회"
+openapi: "GET /v1/management/balance"
+description: "관리 토큰에 연결된 조직의 현재 잔액 합계를 반환합니다."
+---
+
+## 개요
+
+이 엔드포인트는 관리 토큰에 연결된 조직의 현재 잔액 합계를 반환합니다. 과금 및 정산과 동일한 조직 잔액 단일 사실원을 사용합니다.
+
+## 주의 사항
+
+- 금액의 기준 필드는 USD 로 반환됩니다: `balance`, `total_recharge`, `total_used`.
+- `preferred_currency` 는 조직 Dashboard 표시 선호도를 나타내며 USD 기준 필드는 변경하지 않습니다.
+
+## 예시
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/management/balance" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## 요청 / 응답
+
+정확한 스키마를 위해 위의 대화형 OpenAPI 패널을 사용하세요.

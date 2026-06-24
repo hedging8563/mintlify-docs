@@ -1,0 +1,196 @@
+---
+title: "✨ Üst Kaynak Prompt Önbelleği"
+description: "Sağlayıcı seviyesindeki prompt önbelleğe almayı ve maliyetleri nasıl düşürdüğünü anlayın"
+---
+
+## Genel Bakış
+
+<Note>
+**İki Önbellek Türü**
+
+| Tür | Nerede | Nasıl Çalışır | Maliyet |
+|------|-------|--------------|------|
+| **Platform Önbelleği** | AI Sonar | Semantik benzerlik eşleşmesi | Normal fiyatın %10'u |
+| **Sağlayıcı Önbelleği** | Üst Kaynak (Anthropic/OpenAI/vb) | Tam önek eşleşmesi | İndirimli token ücretleri |
+
+Bunlar **birbirini dışlar**: Eğer platform önbelleği isabet ederse, üst kaynağa çağrı yapılmaz, bu nedenle sağlayıcı önbelleği uygulanmaz.
+</Note>
+
+## Sağlayıcı Prompt Önbelleği Nasıl Çalışır?
+
+Sağlayıcı prompt önbelleğe alma, prompt önekinizin işlenmiş temsilini sağlayıcının sunucularında saklar. Aynı öneke sahip bir istek gönderdiğinizde, sağlayıcı bu tokenları yeniden işlemeyi atlayabilir.
+
+### Temel Özellikler
+
+- **Önek tabanlı**: Yalnızca promptunuzun başlangıcı önbelleğe alınabilir
+- **Tam eşleşme**: Semantik benzerlik değil, birebir aynı tokenları gerektirir
+- **Zaman sınırlı**: Önbellek girişlerinin süresi dolar (genellikle 5-60 dakika)
+- **Otomatik**: Özel bir yapılandırma gerektirmez
+
+```
+İstek 1: [Sistem promptu + Bağlam A + Soru 1]
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+         Bu önek önbelleğe alınır
+
+İstek 2: [Sistem promptu + Bağlam A + Soru 2]
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+         Önbellek isabeti! Yalnızca Soru 2 işlenir
+```
+
+## Desteklenen Sağlayıcılar
+
+| Sağlayıcı | Önbellek Okuma İndirimi | Önbellek Yazma Maliyeti | Min Token |
+|----------|---------------------|------------------|------------|
+| **Anthropic** | %90 indirim | %25 prim | 1024 |
+| **OpenAI** | %50 indirim | Girdi ile aynı | 1024 |
+| **DeepSeek** | %90 indirim | Girdi ile aynı | 64 |
+| **Google** | %75 indirim | %25 ek ücret | 32768 |
+
+<Info>
+İndirimler otomatik olarak uygulanır. AI Sonar, sağlayıcının önbellek fiyatlandırmasını size olduğu gibi yansıtır.
+</Info>
+
+## Önbellek Kullanımını Belirleme
+
+### Kullanım Günlüklerinde
+
+Kullanım günlükleriniz detaylı önbellek token dökümünü gösterir:
+
+| Alan | Açıklama |
+|-------|-------------|
+| `cacheReadTokens` | Sağlayıcı önbelleğinden sunulan tokenlar (indirimli) |
+| `cacheWriteTokens` | Önbelleğe yazılan tokenlar (gelecekteki istekler için) |
+| `nonCachedPromptTokens` | Önbellek olmadan işlenen tokenlar |
+
+### İşlemlerde
+
+Üst kaynak önbelleği kullanıldığında işlemler bir **Provider Cache** etiketi gösterir:
+
+- **Provider Cache** (turkuaz): Üst kaynak prompt önbellek isabeti - indirimli ücretler
+
+## Maliyet Hesaplama Örneği
+
+Claude (Anthropic) için 10.000 girdi tokenı içeren bir istek için:
+
+**Önbelleksiz:**
+```
+10.000 token × $3.00/1M = $0.030
+```
+
+**Sağlayıcı önbelleği ile (8.000 önbelleğe alınmış + 2.000 yeni):**
+```
+Önbellek okuma: 8.000 token × $0.30/1M = $0.0024  (%90 indirim)
+Önbellek yazma: 2.000 token × $3.75/1M = $0.0075
+Toplam: $0.0099 (%67 tasarruf)
+```
+
+## En İyi Uygulamalar
+
+<AccordionGroup>
+  <Accordion title="Tutarlı sistem promptları kullanın">
+    Sistem promptunuzu ve statik bağlamınızı mesajlarınızın başına yerleştirin. Bu, önbellek isabet potansiyelini maksimize eder.
+  </Accordion>
+
+  <Accordion title="Benzer istekleri gruplandırın">
+    Aynı öneke sahip istekleri, önbellek süresi dolmadan yararlanmak için birbirine yakın zamanlarda gönderin.
+  </Accordion>
+
+  <Accordion title="Minimum token gereksinimlerini karşılayın">
+    Önbelleğe alınabilir önekinizin sağlayıcının minimum sınırını (örneğin, Anthropic/OpenAI için 1024 token) karşıladığından emin olun.
+  </Accordion>
+
+  <Accordion title="Önbellek metriklerini izleyin">
+    Önbellek isabet oranları ve tasarruflar için panelinizdeki kullanım istatistiklerini kontrol edin.
+  </Accordion>
+</AccordionGroup>
+
+## Platform Önbelleği vs Sağlayıcı Önbelleği
+
+| Özellik | Platform Önbelleği | Sağlayıcı Önbelleği |
+|--------|----------------|----------------|
+| **Eşleşme** | Semantik benzerlik | Tam önek eşleşmesi |
+| **Maliyet** | Normal fiyatın %10'u | İndirimli ücretler |
+| **Gecikme** | Anlık (~1ms) | Azaltılmış (işleme atlanır) |
+| **Kontrol** | Panel ayarları | Otomatik |
+| **Kapsam** | Kullanıcılar arası (isteğe bağlı) | API anahtarı başına |
+
+### Hangisinin Uygulanacağı Durumlar
+
+```
+İstek gelir
+    │
+    ▼
+┌───────────────────────────┐
+│ Platform Önbellek İsabeti? │
+└───────────────────────────┘
+    │ Evet             │ Hayır
+    ▼                  ▼
+┌──────────────┐    ┌───────────────────────────┐
+│ Önbelleğe    │    │ Üst Kaynak API'sini Çağır │
+│ Alınanı Dön  │    └───────────────────────────┘
+│ (%10)        │               │
+└──────────────┘               ▼
+                    ┌────────────────────────────┐
+                    │ Sağlayıcı Önbellek İsabeti? │
+                    └────────────────────────────┘
+                        │ Evet          │ Hayır
+                        ▼               ▼
+                    İndirimli        Tam Fiyat
+                    Token Ücreti     Token Ücreti
+```
+
+## Önbellek Durumunu Kontrol Etme
+
+### Yanıt Başlıkları
+
+```
+X-Upstream-Cache-Read: 8000   # Sağlayıcı önbelleği okunan tokenlar
+X-Upstream-Cache-Write: 2000  # Sağlayıcı önbelleği yazılan tokenlar
+```
+
+### Kullanım API'si
+
+Önbellek dökümünü görmek için kullanım günlüklerinizi sorgulayın:
+
+```text
+GET /v1/usage/logs is currently not a public endpoint.
+Use X-Upstream-Cache-* response headers, plus the dashboard usage page.
+```
+
+Yanıt şunları içerir:
+```json
+{
+  "promptTokens": 10000,
+  "cacheReadTokens": 8000,
+  "cacheWriteTokens": 2000,
+  "nonCachedPromptTokens": 0,
+  "completionTokens": 500,
+  "cost": 0.0099
+}
+```
+
+## SSS
+
+<AccordionGroup>
+  <Accordion title="Sağlayıcı önbelleğe almayı devre dışı bırakabilir miyim?">
+    Sağlayıcı önbelleğe alma otomatiktir ve devre dışı bırakılamaz. Ancak, bu yalnızca size fayda sağlar (daha düşük maliyetler), bu nedenle devre dışı bırakmak için bir neden yoktur.
+  </Accordion>
+
+  <Accordion title="İsteğim neden sağlayıcı önbelleğine isabet etmedi?">
+    Yaygın nedenler:
+    - Önek değişti (tek bir token farkı bile olsa)
+    - Önbellek süresi doldu (genellikle 5-60 dakika)
+    - Önek çok kısa (minimum token sınırının altında)
+    - Farklı bir API anahtarı kullanıldı
+  </Accordion>
+
+  <Accordion title="BYOK, sağlayıcı önbelleğe almayı destekliyor mu?">
+    Evet! Kendi API anahtarlarınızı (BYOK) kullanırken, sağlayıcı önbelleğe alma aynı şekilde çalışır. Önbellek, üst kaynak API anahtarınıza bağlıdır.
+  </Accordion>
+
+  <Accordion title="Önbellek tasarrufunu nasıl maksimize ederim?">
+    1. Promptları önce statik içerik gelecek şekilde yapılandırın
+    2. İstekler arasında sistem promptlarını tutarlı tutun
+    3. İlgili istekleri hızlı bir şekilde art arda gönderin
+  </Accordion>
+</AccordionGroup>

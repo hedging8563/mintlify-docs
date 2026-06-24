@@ -1,0 +1,66 @@
+---
+title: "Coding Agents"
+description: "Kurangi biaya coding agent hingga 90% dengan routing cerdas, caching, dan pemilihan model yang tepat"
+---
+
+## Mengapa Coding Agents Mahal
+
+Coding agents seperti Claude Code, Cursor, dan Codex CLI sangat powerful — tetapi mereka mengonsumsi token dengan kecepatan yang mengejutkan banyak tim.
+
+**Konteks panjang per permintaan.** Setiap panggilan menyertakan system prompt, file proyek, dan riwayat percakapan — seringkali 10.000–100.000+ token sebelum model mulai berpikir.
+
+**Panggilan dengan frekuensi tinggi.** Satu sesi coding memicu puluhan panggilan API: pembuatan kode, pencarian, review, autocomplete, dan penggunaan tool. Sesi 1 jam bisa dengan mudah mencapai 200+ permintaan.
+
+**Akumulasi percakapan.** Setiap giliran mengirim ulang seluruh riwayat pesan. Pada giliran ke-20, Anda membayar untuk konteks yang sama sebanyak 20 kali.
+
+<Info>
+Sesi Claude Code selama 1 jam yang tipikal dapat mengonsumsi 2–5 juta token. Dengan tarif API langsung, itu berarti $6–30+ per jam tergantung modelnya.
+</Info>
+
+## Bagaimana AI Sonar Membantu
+
+<CardGroup cols={2}>
+  <Card title="Perutean multi-penyedia" icon="route" href="/id/guides/coding-agent-cost#smart-model-selection">
+    Secara otomatis mengarahkan ke penyedia termurah yang tersedia untuk setiap model. Model yang sama, harga lebih rendah.
+  </Card>
+  <Card title="Penerusan Prompt Cache" icon="bolt" href="/id/guides/prompt-cache">
+    Prefix caching upstream (Anthropic, OpenAI, DeepSeek) bekerja secara otomatis — system prompt panjang di-cache di level penyedia.
+  </Card>
+  <Card title="Fallback model" icon="arrows-rotate" href="/id/guides/coding-agent-models#how-aisonar-routing-works">
+    Jika penyedia tidak tersedia atau lambat, permintaan secara otomatis dialihkan ke penyedia berikutnya. Tanpa downtime.
+  </Card>
+</CardGroup>
+
+## Tool Coding yang Didukung
+
+<CardGroup cols={3}>
+  <Card title="Cursor" icon="text-slash" href="/id/integrations/cursor">
+    IDE bertenaga AI dengan tab completion dan chat
+  </Card>
+  <Card title="Claude Code" icon="terminal" href="/id/integrations/claude-code">
+    Coding agent CLI resmi dari Anthropic
+  </Card>
+  <Card title="Codex CLI" icon="code" href="/id/integrations/codex-cli">
+    Coding agent berbasis terminal dari OpenAI
+  </Card>
+  <Card title="Gemini CLI" icon="gem" href="/id/integrations/gemini-cli">
+    Asisten coding command-line dari Google
+  </Card>
+  <Card title="OpenCode" icon="laptop-code" href="/id/integrations/opencode">
+    Coding agent terminal open-source
+  </Card>
+  <Card title="AI Sonar API Skill" icon="lemon" href="/id/integrations/coding-agent-skill">
+    Gunakan skill integrasi API AI Sonar bersama
+  </Card>
+</CardGroup>
+
+## Pelajari Lebih Lanjut
+
+<CardGroup cols={2}>
+  <Card title="Panduan Optimasi Biaya" icon="piggy-bank" href="/id/guides/coding-agent-cost">
+    Strategi konkret untuk memangkas tagihan coding agent Anda: pemilihan model, caching, manajemen token, dan perbandingan biaya nyata.
+  </Card>
+  <Card title="Panduan Pemilihan Model" icon="microchip" href="/id/guides/coding-agent-models">
+    Model mana untuk tugas coding apa? Tabel perbandingan, rekomendasi per tugas, dan konfigurasi per tool.
+  </Card>
+</CardGroup>

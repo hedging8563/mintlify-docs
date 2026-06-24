@@ -1,0 +1,100 @@
+---
+title: "Cursor"
+description: "Sử dụng AI Sonar với trình soạn thảo mã AI Cursor"
+---
+
+## Tổng quan
+
+
+
+<Note>
+**Loại**: Công cụ coding
+
+**Đường chính**: tương thích OpenAI
+
+**Mức hỗ trợ**: Được hỗ trợ nhưng có giới hạn
+</Note>
+
+[Cursor](https://cursor.sh) hỗ trợ các nhà cung cấp bring-your-own-key (BYOK), nhưng API key tùy chỉnh chỉ hoạt động với các chat model tiêu chuẩn. Hãy sử dụng AI Sonar tại đây như một điểm cuối tương thích OpenAI cho các quy trình làm việc của trình soạn thảo theo kiểu chat, không phải như một sự thay thế hoàn chỉnh cho mọi tính năng model của Cursor.
+
+## Cấu hình
+
+1. Mở Cursor Settings (`Cmd/Ctrl + ,`)
+2. Điều hướng đến **Models** trong thanh bên trái
+3. Cuộn xuống phần **OpenAI API Key**
+4. Nhập AI Sonar API key của bạn
+5. Bật **Override OpenAI Base URL**
+6. Đặt Base URL thành:
+
+```
+https://api.aisonar.dev/v1
+```
+
+<Warning>
+API key tùy chỉnh của Cursor chỉ áp dụng cho các chat model tiêu chuẩn. Tab Completion và các tính năng chuyên biệt khác do Cursor quản lý sẽ tiếp tục sử dụng các nhà cung cấp tích hợp sẵn của Cursor.
+</Warning>
+
+<Warning>
+Luồng API key tùy chỉnh của Cursor chỉ áp dụng cho các chat model tiêu chuẩn. Các tính năng yêu cầu các model chuyên biệt do Cursor quản lý, chẳng hạn như Tab Completion và một số luồng dành riêng cho reasoning, sẽ tiếp tục sử dụng các nhà cung cấp tích hợp sẵn của Cursor. Cursor cũng lưu ý rằng các request vẫn đi qua backend của họ để tổng hợp prompt cuối cùng.
+</Warning>
+
+## Chọn model
+
+Sau khi cấu hình, hãy ưu tiên các chat model tiêu chuẩn được cung cấp thông qua AI Sonar:
+
+### Các model được khuyến nghị cho lập trình
+
+| Mô hình | Phù hợp nhất cho |
+|-------|----------|
+| `gpt-5.4` | Lập trình tổng quát, gỡ lỗi, chat |
+| `gpt-5-mini` | Chỉnh sửa nhanh và prompt nhẹ |
+
+## Những gì hoạt động tốt nhất
+
+### Chat và các luồng của trình soạn thảo
+
+Sử dụng AI Sonar thông qua Cursor cho:
+
+- Giải thích mã
+- Sửa lỗi
+- Gợi ý tái cấu trúc
+- Tạo tài liệu
+
+### Những gì vẫn dùng các model do Cursor quản lý
+
+Các tính năng này không chuyển sang endpoint AI Sonar của bạn một cách đáng tin cậy:
+
+- Tab Completion
+- Các model chuyên biệt không phải chat tiêu chuẩn
+- Các tính năng dành riêng cho nhà cung cấp mà Cursor chỉ bật trên các model tích hợp sẵn
+
+## Khắc phục sự cố
+
+<AccordionGroup>
+  <Accordion title="Model không hiển thị">
+    Cursor lưu cache trạng thái model và nhà cung cấp. Hãy khởi động lại Cursor sau khi cấu hình API key và URL cơ sở.
+  </Accordion>
+
+  <Accordion title="Model không được hỗ trợ trong chế độ BYOK">
+    API key tùy chỉnh chỉ hoạt động với các chat model tiêu chuẩn. Nếu một model sử dụng hạ tầng chuyên biệt của Cursor, hãy chuyển sang một chat model tiêu chuẩn như `gpt-5.4`.
+  </Accordion>
+
+  <Accordion title="Lỗi xác thực">
+    Xác minh rằng API key của bạn là chính xác và có đủ số dư.
+  </Accordion>
+
+  <Accordion title="Một nhà cung cấp khác ngừng hoạt động sau khi bật AI Sonar">
+    Cấu hình BYOK của Cursor có thể ảnh hưởng đến các luồng của nhà cung cấp khác. Nếu một đường dẫn model khác bị lỗi sau khi bật ghi đè OpenAI base URL, hãy tắt ghi đè và khởi động lại Cursor.
+  </Accordion>
+</AccordionGroup>
+
+## Mẹo
+
+<CardGroup cols={2}>
+  <Card title="Sử dụng model phù hợp" icon="gauge-high">
+    Sử dụng `gpt-5-mini` cho các tác vụ nhanh theo kiểu chat và `gpt-5.4` cho công việc lập trình nặng hơn.
+  </Card>
+  <Card title="Kiểm tra số dư của bạn" icon="wallet">
+    Theo dõi mức sử dụng trong dashboard AI Sonar của bạn.
+  </Card>
+</CardGroup>

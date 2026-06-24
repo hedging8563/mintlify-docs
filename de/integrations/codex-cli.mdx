@@ -1,0 +1,222 @@
+---
+title: "Codex CLI"
+description: "OpenAI Codex CLI konfigurieren, um die AI Sonar API zu verwenden"
+---
+
+## Übersicht
+
+
+
+<Note>
+**Typ**: Codierwerkzeug
+
+**Primärer Pfad**: OpenAI Responses (erweiterter optionaler Pfad)
+
+**Unterstützung**: Unterstützt mit Modell-/Pfad-Einschränkungen
+</Note>
+
+OpenAI Codex ist ein Open-Source-Kommandozeilenwerkzeug (CLI), das als leichtgewichtiger Coding-Agent dient und in der Lage ist, Code im Terminal zu lesen, zu ändern und auszuführen. Es basiert auf GPT-Modellen und ist für Code-Generierung optimiert.
+
+Für AI Sonar kann Codex CLI `/v1/responses` verwenden, aber Sie sollten dies als einen erweiterten Kompatibilitätspfad behandeln. Einige Responses-only-Funktionen sind nicht für jedes Modell und jeden gerouteten Pfad garantiert.
+
+Remote Compaction in Codex CLI wird über `POST /v1/responses/compact` unterstützt. Codex sendet bei `/compact` und Auto-Compact das aktuelle Sitzungs-`model` in `body.model`, daher muss das gewünschte Modell auf dem Responses-Pfad verfügbar sein. Konfigurieren Sie nicht `/v1/compact`.
+
+## Systemanforderungen
+
+- **OS**: macOS, Linux (offiziell unterstützt), Windows über WSL
+- **Node.js**: Version 18+
+- **npm**: Version 10.x.x oder höher
+
+## Installation
+
+```bash
+npm install -g @openai/codex
+```
+
+Installation verifizieren:
+
+```bash
+codex --version
+```
+
+## Konfiguration
+
+### Schritt 1: API-Schlüssel setzen
+
+**Temporär (aktuelle Sitzung):**
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+```
+
+**Dauerhafte Konfiguration:**
+
+In `~/.bashrc`, `~/.zshrc` oder `~/.bash_profile` hinzufügen:
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+```
+
+Dann neu laden:
+
+```bash
+source ~/.zshrc  # or source ~/.bashrc
+```
+
+### Schritt 2: config.toml konfigurieren
+
+Bearbeiten Sie `~/.codex/config.toml`:
+
+```toml
+model_provider = "aisonar"
+model = "gpt-5.4"
+model_reasoning_effort = "xhigh"
+plan_mode_reasoning_effort = "xhigh"
+fast_mode = true
+model_context_window = 1000000
+model_auto_compact_token_limit = 900000
+sandbox_mode = "danger-full-access"
+approval_policy = "never"
+
+disable_response_storage = false
+personality = "friendly"
+service_tier = "fast"
+
+[model_providers.aisonar]
+env_key = "OPENAI_API_KEY"
+name = "AI Sonar"
+base_url = "https://api.aisonar.dev/v1"
+wire_api = "responses"
+supports_websockets = true
+websocket_connect_timeout_ms = 15000
+
+[features]
+responses_websockets = true
+responses_websockets_v2 = true
+```
+
+Dieser WebSocket-Modus ist eine Responses-over-WebSocket-Brücke für Codex-Clients. Er akzeptiert `response.create` und `response.cancel`; er ist nicht die OpenAI Realtime API und akzeptiert keine `session.update`-, `conversation.item.*`-, `input_audio_buffer.*`-Events, kein binäres Audio und keine verschachtelten Realtime-`response.create.response`-Envelopes.
+
+<Note>
+Wenn die Konfigurationsdatei nicht existiert, führen Sie `codex` einmal aus, um sie zu erzeugen, und bearbeiten Sie dann die Datei. Starten Sie Codex nach dem Ändern von `config.toml` vollständig neu, damit die neuen Provider-Einstellungen geladen werden.
+</Note>
+
+<Warning>
+Codex stellt die Unterstützung für `chat/completions` bei benutzerdefinierten Providern ein. Belassen Sie `wire_api = "responses"` für AI Sonar, es sei denn, Sie verwenden absichtlich einen älteren Kompatibilitätspfad.
+</Warning>
+
+<Note>
+Wenn eine Anfrage Responses-only-Felder verwendet, die für das ausgewählte Modell oder den gewählten Pfad nicht unterstützt werden, gibt AI Sonar einen expliziten Fehler zurück, anstatt die Anfrage stillschweigend herunterzustufen.
+</Note>
+
+## Grundlegende Verwendung
+
+**Interaktiven Modus starten:**
+
+```bash
+codex
+```
+
+**Direkter Befehl:**
+
+```bash
+codex "Fix the bug in main.py line 42"
+```
+
+**Modell angeben:**
+
+```bash
+codex -m gpt-5.4 "Build a REST API server"
+```
+
+## Empfohlene Modelle
+
+| Modell | Am besten für |
+|--------|---------------|
+| `gpt-5.4` | Beste Standardwahl für Coding und Reasoning |
+| `gpt-5-mini` | Schnellere, günstigere Fallback-Option für Coding-Workflows |
+| `claude-sonnet-4-6` | Code-Review, Dokumentation |
+| `deepseek-r1` | Algorithmendesign, Reasoning |
+
+## Interaktive Befehle
+
+| Befehl | Beschreibung |
+|--------|--------------|
+| `/help` | Hilfe anzeigen |
+| `/exit` oder `Ctrl+C` | Beenden |
+| `/clear` | Konversation löschen |
+| `/config` | Konfiguration anzeigen |
+| `/model <name>` | Modell wechseln |
+| `/tokens` | Token-Verbrauch anzeigen |
+
+## Konfiguration verifizieren
+
+```bash
+# Check environment variable
+echo $OPENAI_API_KEY
+
+# Test API connection
+codex "Hello, Codex!"
+
+# View configuration
+cat ~/.codex/config.toml
+```
+
+## Häufige Anwendungsfälle
+
+**Code-Review:**
+
+```bash
+git diff | codex "Review these code changes"
+```
+
+**Commit-Nachrichten generieren:**
+
+```bash
+git diff --staged | codex "Generate a commit message for these changes"
+```
+
+**Fehler beheben:**
+
+```bash
+codex "Fix the TypeScript errors in src/components/"
+```
+
+**Code erklären:**
+
+```bash
+cat main.py | codex "Explain what this code does"
+```
+
+## Fehlerbehebung
+
+<AccordionGroup>
+  <Accordion title="Verbindungsfehler">
+    - Überprüfen Sie, ob `base_url` in config.toml genau `https://api.aisonar.dev/v1` ist
+    - Prüfen Sie die Netzwerkverbindung
+    - Stellen Sie sicher, dass kein Proxy stört
+  </Accordion>
+
+  <Accordion title="Authentifizierung fehlgeschlagen">
+    - Überprüfen Sie, ob `env_key = "OPENAI_API_KEY"` in `~/.codex/config.toml` vorhanden ist
+    - Überprüfen Sie, ob die Umgebungsvariable `OPENAI_API_KEY` gesetzt ist
+    - Prüfen Sie, ob der Schlüssel mit `sk-` beginnt
+    - Stellen Sie sicher, dass der Schlüssel im AI Sonar-Dashboard aktiv ist
+  </Accordion>
+
+  <Accordion title="Modell nicht gefunden">
+    - Prüfen Sie, ob der Modellname genau übereinstimmt
+    - Überprüfen Sie die Modellverfügbarkeit unter [aisonar.dev/en/models](https://aisonar.dev/models)
+  </Accordion>
+
+  <Accordion title="Responses-native Feld abgelehnt">
+    - Einige Felder sind nur auf `/v1/responses` verfügbar, wenn AI Sonar dieses Verhalten für das ausgewählte Modell und den gewählten Pfad garantieren kann
+    - Wenn Sie `unsupported_request_field` sehen, entfernen Sie dieses Feld oder wechseln Sie zu einem Workflow, der nicht davon abhängt
+  </Accordion>
+
+  <Accordion title="/compact oder Auto-Compact schlägt fehl">
+    - Codex CLI ruft `POST /v1/responses/compact` auf, nicht `/v1/compact`
+    - Die Compaction-Anfrage verwendet das aktuelle Sitzungs-`model`, daher muss dieses Modell auf dem Responses-Pfad verfügbar sein
+    - Behalten Sie `wire_api = "responses"` und `base_url = "https://api.aisonar.dev/v1"` bei
+  </Accordion>
+</AccordionGroup>

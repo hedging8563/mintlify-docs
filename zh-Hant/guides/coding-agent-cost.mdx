@@ -1,0 +1,145 @@
+---
+title: "Coding Agent 成本優化"
+description: "實用策略幫你將 Coding Agent API 成本降低 60-90%"
+---
+
+## 成本問題
+
+典型的 Coding Agent 工作階段消耗 token 的速度非常快：
+
+| 活動 | 每次呼叫 token 數 | 每小時呼叫次數 | 每小時 token 總量 |
+|------|----------------|--------------|-----------------|
+| 程式碼生成 | 5,000–50,000 | 10–30 | 150K–1.5M |
+| 程式碼庫搜尋 | 2,000–20,000 | 20–50 | 100K–1M |
+| 程式碼審查 | 10,000–80,000 | 5–10 | 100K–800K |
+| 自動補全 | 500–3,000 | 50–200 | 50K–600K |
+| **合計** | | | **400K–4M+** |
+
+按高階模型費率計算，每位開發者每小時 $3–30。10 人團隊每月 $500–5,000。
+
+## 智慧模型選擇
+
+並非每個編碼任務都需要最貴的模型。按任務匹配合適的檔位：
+
+| 任務 | 推薦模型 | 成本檔位 | 原因 |
+|------|---------|---------|------|
+| 架構設計 | `claude-opus-4-6`, `gpt-5.4` | $$$$ 高階 | 需要複雜推理 |
+| 程式碼生成 | `claude-sonnet-4-6`, `gemini-3-pro-preview` | $$$ 標準 | 品質/成本最佳平衡 |
+| 程式碼審查 | `claude-sonnet-4-6`, `deepseek-r1` | $$–$$$ | 模式匹配，創造性要求低 |
+| Bug 修復 | `claude-sonnet-4-6`, `gpt-5-mini` | $$–$$$ | 聚焦、定義明確的任務 |
+| Tab 補全 | `gpt-5-mini`, `gemini-3-flash-preview` | $$ 經濟 | 速度比深度更重要 |
+| 樣板程式碼 | `deepseek-v3.2`, `gpt-5-mini` | $ 低價 | 簡單重複的模式 |
+
+<Tip>
+查看[模型選擇指南](/zh-Hant/guides/coding-agent-models)了解詳細的模型對比和各工具設定。
+</Tip>
+
+## 快取策略
+
+Coding Agent 非常適合快取，因為它們不斷重複相似的模式。
+
+### Prompt Cache（提供方級別）
+
+[上游 Prompt Cache](/zh-Hant/guides/prompt-cache) 透過 AI Sonar 自動生效。長系統提示——Coding Agent 每次都會包含——在提供方層被快取：
+
+| 提供方 | 快取折扣 | 最低 token 數 |
+|----------|---------|-------------|
+| Anthropic | 讀取 90% 折扣 | 1,024 |
+| OpenAI | 讀取 50% 折扣 | 1,024 |
+| DeepSeek | 讀取 90% 折扣 | 64 |
+
+由於 Coding Agent 每次呼叫都傳送相同的系統提示 + 專案上下文，Prompt Cache 命中率通常為 **70–90%**。
+
+### 組合節省範例
+
+一個 50,000 輸入 token 的請求（典型 Coding Agent 呼叫）：
+
+```
+直連 API（無快取）：
+  50,000 tokens × $3.00/1M = $0.150
+
+使用 Prompt Cache（40,000 快取 + 10,000 新增）：
+  快取：  40,000 × $0.30/1M = $0.012
+  新增：  10,000 × $3.00/1M = $0.030
+  合計：$0.042（節省 72%）
+```
+
+## 真實成本對比
+
+典型 1 小時編碼工作階段（約 3M token）的估算成本：
+
+| 方案 | 每小時成本 | 每月（160h） |
+|------|-----------|-------------|
+| 直連 API（高階模型） | ~$15–25 | ~$2,400–4,000 |
+| AI Sonar（智慧路由） | ~$10–18 | ~$1,600–2,900 |
+| AI Sonar + Prompt Cache | ~$4–8 | ~$640–1,280 |
+
+<Warning>
+以上為示意性估算。實際成本取決於模型選擇、使用模式和快取命中率。查看[即時定價](/zh-Hant/api-reference/pricing/get-pricing)取得當前費率。
+</Warning>
+
+## Token 管理技巧
+
+### 設定 max_tokens
+
+防止生成失控：
+
+```json
+{
+  "model": "claude-sonnet-4-6",
+  "max_tokens": 4096,
+  "messages": [...]
+}
+```
+
+大多數編碼任務需要 1,000–4,000 個輸出 token。設定限制可防止模型生成不必要的長回應。
+
+### 使用 Auto-Compact
+
+大多數 Coding Agent 支援上下文壓縮——總結舊對話輪次以減少 token 數量：
+
+- **Claude Code**：內建 auto-compact，在上下文達到限制時自動觸發
+- **Cursor**：自動上下文管理
+- **Codex CLI**：使用 `--max-context` 參數
+
+### 避免上下文膨脹
+
+- 只需要一個函式時不要貼上整個檔案
+- 使用 `.gitignore` 風格的模式排除無關檔案
+- 切換任務時清除對話歷史
+
+## 快速設定
+
+每個工具只需幾行設定即可透過 AI Sonar 連接：
+
+<AccordionGroup>
+  <Accordion title="Claude Code">
+    ```bash
+    export ANTHROPIC_API_KEY="sk-your-api-key"
+    export ANTHROPIC_BASE_URL="https://api.aisonar.dev"
+    ```
+    [完整設定指南 →](/zh-Hant/integrations/claude-code)
+  </Accordion>
+
+  <Accordion title="Cursor">
+    Settings → Models → OpenAI API Key: `sk-your-key`，Base URL: `https://api.aisonar.dev/v1`
+
+    [完整設定指南 →](/zh-Hant/integrations/cursor)
+  </Accordion>
+
+  <Accordion title="Codex CLI">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export OPENAI_BASE_URL="https://api.aisonar.dev/v1"
+    ```
+    [完整設定指南 →](/zh-Hant/integrations/codex-cli)
+  </Accordion>
+
+  <Accordion title="Gemini CLI">
+    ```bash
+    export GEMINI_API_KEY="sk-your-api-key"
+    export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"
+    ```
+    [完整設定指南 →](/zh-Hant/integrations/gemini-cli)
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,252 @@
+---
+title: "OpenAI SDK"
+description: "将 AI Sonar 与官方 OpenAI SDK 以及兼容 OpenAI 的客户端一起使用"
+---
+
+## 概览
+
+要使用 AI Sonar，官方 OpenAI SDK 客户端只需将客户端的 base URL 指向 `https://api.aisonar.dev/v1`。
+
+对于大多数新项目，建议将 **Chat Completions** 作为默认的 OpenAI 兼容路径。仅在明确需要 Responses 特定行为时才使用 **Responses API**。
+
+Responses 特定字段并不能保证在每个模型和路由路径上表现一致。
+
+<Note>
+Python、JavaScript 和 Go 有官方的 OpenAI SDK。PHP 与兼容 OpenAI 的社区客户端配合良好，但它并不是官方 OpenAI SDK。
+</Note>
+
+<Note>
+**类型**: Native SDK
+
+**主要路径**: OpenAI 兼容 / Chat Completions
+
+**支持情况**: 核心支持路径
+</Note>
+
+## 安装
+
+<CodeGroup>
+
+```bash Python
+pip install openai
+```
+
+```bash JavaScript
+npm install openai
+```
+
+```bash Go
+go get github.com/openai/openai-go/v3
+```
+
+</CodeGroup>
+
+<Note>
+仅在明确需要 Responses 特定行为时使用 `POST /v1/responses`。某些仅限 Responses 的字段仍可能依赖于所选模型和路由路径。
+</Note>
+
+## 配置客户端
+
+<CodeGroup>
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1",
+)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1',
+});
+```
+
+```go Go
+package main
+
+import (
+    openai "github.com/openai/openai-go/v3"
+    "github.com/openai/openai-go/v3/option"
+)
+
+func main() {
+    client := openai.NewClient(
+        option.WithAPIKey("sk-your-api-key"),
+        option.WithBaseURL("https://api.aisonar.dev/v1"),
+    )
+
+    _ = client
+}
+```
+
+</CodeGroup>
+
+## 推荐：Chat Completions
+
+<CodeGroup>
+
+```python Python
+response = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "Explain what AI Sonar does in one sentence."}]
+)
+
+print(response.choices[0].message.content)
+```
+
+```javascript JavaScript
+const response = await client.chat.completions.create({
+  model: 'gpt-5.4',
+  messages: [{ role: 'user', content: 'Explain what AI Sonar does in one sentence.' }],
+});
+
+console.log(response.choices[0].message.content);
+```
+
+```bash cURL
+curl https://api.aisonar.dev/v1/chat/completions \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.4",
+    "messages": [
+      {"role": "user", "content": "Explain what AI Sonar does in one sentence."}
+    ]
+  }'
+```
+
+</CodeGroup>
+
+## 高级：Responses API
+
+仅当您的工具或工作流明确依赖 OpenAI Responses 语义时才使用此路径。
+
+### 使用 Responses 的流式传输
+
+<CodeGroup>
+
+```python Python
+stream = client.responses.create(
+    model="gpt-5.4",
+    input="Write a short poem about coding.",
+    stream=True,
+)
+
+for event in stream:
+    if event.type == "response.output_text.delta":
+        print(event.delta, end="")
+```
+
+```javascript JavaScript
+const stream = await client.responses.create({
+  model: 'gpt-5.4',
+  input: 'Write a short poem about coding.',
+  stream: true,
+});
+
+for await (const event of stream) {
+  if (event.type === 'response.output_text.delta') {
+    process.stdout.write(event.delta);
+  }
+}
+```
+
+</CodeGroup>
+
+## 工具 / 函数调用
+
+```python
+response = client.responses.create(
+    model="gpt-5.4",
+    input="What's the weather in Tokyo?",
+    tools=[{
+        "type": "function",
+        "name": "get_weather",
+        "description": "Get weather for a location",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "location": {"type": "string"}
+            },
+            "required": ["location"]
+        }
+    }]
+)
+
+for item in response.output:
+    if item.type == "function_call":
+        print(item.name)
+        print(item.arguments)
+```
+
+## 使用 Responses 的视觉功能
+
+```python
+response = client.responses.create(
+    model="gpt-4o",
+    input=[{
+        "role": "user",
+        "content": [
+            {"type": "input_text", "text": "What's in this image?"},
+            {"type": "input_image", "image_url": "https://example.com/image.jpg"}
+        ]
+    }]
+)
+
+print(response.output_text)
+```
+
+## Embeddings（嵌入）
+
+```python
+response = client.embeddings.create(
+    model="text-embedding-3-small",
+    input="Hello world"
+)
+
+print(response.data[0].embedding[:5])
+```
+
+## Chat Completions
+
+Chat Completions 是 AI Sonar 的默认 OpenAI 兼容路径：
+
+```python
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "Hello!"}
+    ]
+)
+
+print(response.choices[0].message.content)
+```
+
+## 故障排查
+
+<AccordionGroup>
+  <Accordion title="连接错误">
+    - 确认 base URL 精确为 `https://api.aisonar.dev/v1`
+    - 检查是否有代理干扰或自定义 HTTP 客户端覆盖
+    - 在调试提供商行为之前，确保您的 SDK 版本是最新的
+  </Accordion>
+
+  <Accordion title="身份验证失败">
+    - 检查您的 API 密钥是否以 `sk-` 开头
+    - 确认该密钥在 AI Sonar 控制面板中处于激活状态
+    - 确认 SDK 正在发送 `Authorization: Bearer ...`
+  </Accordion>
+
+  <Accordion title="错误的 API 路径">
+    - `responses.create(...)` 会向 `/v1/responses` 发送请求
+    - `chat.completions.create(...)` 会向 `/v1/chat/completions` 发送请求
+    - 默认使用 Chat Completions，除非您明确需要 Responses 特定行为
+  </Accordion>
+</AccordionGroup>

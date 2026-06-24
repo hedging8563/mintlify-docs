@@ -1,0 +1,100 @@
+---
+title: "Cursor"
+description: "在 Cursor AI 程式碼編輯器中使用 AI Sonar"
+---
+
+## 概覽
+
+
+
+<Note>
+**類型**: 程式工具
+
+**主要路徑**: OpenAI 相容
+
+**支援級別**: 支援，但有邊界
+</Note>
+
+[Cursor](https://cursor.sh) 支援自備金鑰（BYOK）供應商，但自訂 API key 僅適用於標準 chat model。請在此將 AI Sonar 作為與 OpenAI 相容的端點，用於聊天風格的編輯器工作流程，而非完全取代 Cursor 每一項 model 功能。
+
+## 設定
+
+1. 開啟 Cursor Settings（`Cmd/Ctrl + ,`）
+2. 在左側邊欄中前往 **Models**
+3. 向下捲動至 **OpenAI API Key** 區段
+4. 輸入你的 AI Sonar API key
+5. 啟用 **Override OpenAI Base URL**
+6. 將 Base URL 設定為：
+
+```
+https://api.aisonar.dev/v1
+```
+
+<Warning>
+Cursor 自訂 API key 僅適用於標準 chat model。Tab Completion 和其他由 Cursor 管理的專用功能將繼續使用 Cursor 內建的供應商。
+</Warning>
+
+<Warning>
+Cursor 的自訂 API key 流程僅適用於標準 chat model。需要由 Cursor 管理的專用 model 的功能，例如 Tab Completion 和某些特定於 reasoning 的流程，將繼續使用 Cursor 的內建供應商。Cursor 也指出，請求仍會經過其後端以進行最終 prompt 組裝。
+</Warning>
+
+## Model 選擇
+
+完成設定後，建議優先使用透過 AI Sonar 提供的標準 chat model：
+
+### 推薦用於程式開發的 Models
+
+| 模型 | 最適合用途 |
+|-------|----------|
+| `gpt-5.4` | 一般程式開發、除錯、chat |
+| `gpt-5-mini` | 快速編輯與輕量 prompt |
+
+## 最適合的使用情境
+
+### Chat 與編輯器流程
+
+透過 Cursor 使用 AI Sonar 可用於：
+
+- 程式碼說明
+- 修復 bug
+- 重構建議
+- 文件產生
+
+### 仍由 Cursor 管理 model 的功能
+
+這些功能無法可靠地切換到你的 AI Sonar 端點：
+
+- Tab 補全
+- 非標準 chat model 的專用功能
+- Cursor 僅在內建 model 上啟用的供應商特定功能
+
+## 疑難排解
+
+<AccordionGroup>
+  <Accordion title="Models 沒有顯示">
+    Cursor 會快取 model 與供應商狀態。設定 API key 和 base URL 後，請重新啟動 Cursor。
+  </Accordion>
+
+  <Accordion title="BYOK 模式中不支援該 model">
+    自訂 API key 僅適用於標準 chat model。如果某個 model 使用 Cursor 的專用基礎架構，請切換為標準 chat model，例如 `gpt-5.4`。
+  </Accordion>
+
+  <Accordion title="驗證錯誤">
+    請確認你的 API key 正確且餘額充足。
+  </Accordion>
+
+  <Accordion title="啟用 AI Sonar 後，另一個供應商停止運作">
+    Cursor 的 BYOK 設定可能會影響其他供應商流程。如果在啟用 OpenAI base URL 覆寫後，另一條 model 路徑失效，請停用該覆寫並重新啟動 Cursor。
+  </Accordion>
+</AccordionGroup>
+
+## 提示
+
+<CardGroup cols={2}>
+  <Card title="使用合適的 model" icon="gauge-high">
+    快速 chat 類型任務請使用 `gpt-5-mini`，較繁重的程式開發工作則使用 `gpt-5.4`。
+  </Card>
+  <Card title="檢查你的餘額" icon="wallet">
+    請在你的 AI Sonar dashboard 中監控使用量。
+  </Card>
+</CardGroup>

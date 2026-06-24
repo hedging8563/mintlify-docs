@@ -1,0 +1,80 @@
+# AI Sonar
+
+> Unified AI API Gateway - Access hundreds of AI models through a single API
+
+AI Sonar is an AI API aggregation platform providing unified access to models from OpenAI, Anthropic, Google, DeepSeek, and more.
+
+## Quick Start
+
+Base URL: https://api.aisonar.dev/v1
+Authentication: Bearer token (API key from dashboard)
+
+```bash
+curl https://api.aisonar.dev/v1/chat/completions \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "gpt-4o", "messages": [{"role": "user", "content": "Hello!"}]}'
+```
+
+## Documentation
+
+- [Introduction](https://docs.aisonar.dev/introduction): Overview and key features
+- [Quickstart](https://docs.aisonar.dev/quickstart): Get started in 2 minutes
+- [Authentication](https://docs.aisonar.dev/authentication): API key management
+- [Management API](https://docs.aisonar.dev/api-reference/management/introduction): Organization balance, key management, and key-level reporting
+- [API Formats](https://docs.aisonar.dev/guides/api-formats): OpenAI, Anthropic, Gemini formats
+- [Streaming](https://docs.aisonar.dev/guides/streaming): Real-time responses
+- [Error Handling](https://docs.aisonar.dev/guides/error-handling): Error codes and handling
+
+## API Reference
+
+- [Chat Completions](https://docs.aisonar.dev/api-reference/chat/create-completion): POST https://api.aisonar.dev/v1/chat/completions
+- [Messages (Anthropic)](https://docs.aisonar.dev/api-reference/messages/create-message): POST https://api.aisonar.dev/v1/messages
+- [Responses (OpenAI)](https://docs.aisonar.dev/api-reference/responses/create-response): POST https://api.aisonar.dev/v1/responses
+- [Gemini](https://docs.aisonar.dev/api-reference/gemini/generate-content): POST https://api.aisonar.dev/v1beta/models/{model}:generateContent
+- [Images](https://docs.aisonar.dev/api-reference/images/create-image): POST https://api.aisonar.dev/v1/images/generations
+- [Video](https://docs.aisonar.dev/api-reference/video/create-video): POST https://api.aisonar.dev/v1/videos/generations
+- [Audio](https://docs.aisonar.dev/api-reference/audio/create-speech): POST https://api.aisonar.dev/v1/audio/speech
+- [Realtime](https://docs.aisonar.dev/api-reference/realtime/connect): WS https://api.aisonar.dev/v1/realtime?model={model}
+- [Translations](https://docs.aisonar.dev/api-reference/translation/create-translation): POST https://api.aisonar.dev/v1/translations
+- [Embeddings](https://docs.aisonar.dev/api-reference/embeddings/create-embedding): POST https://api.aisonar.dev/v1/embeddings
+- [Models](https://docs.aisonar.dev/api-reference/models/list-models): GET https://api.aisonar.dev/v1/models
+- [Management API](https://docs.aisonar.dev/api-reference/management/introduction): Management token authentication, organization balance, and key-level usage/billing
+
+## Supported Capabilities
+
+| Capability | Example Models |
+|------------|----------------|
+| Chat | GPT-4o, Claude 3.5, Gemini 2.0, DeepSeek R1 |
+| Vision | GPT-4o, Claude 3.5 Sonnet, Gemini |
+| Image Generation | GPT Image, Flux, Stable Diffusion, Gemini image models |
+| Audio | Whisper, TTS-1, MiniMax |
+| Realtime | Qwen realtime speech models |
+| Embeddings | text-embedding-3-small |
+| Music | Suno |
+| 3D | Tripo3D |
+
+## Integrations
+
+- [Cursor](https://docs.aisonar.dev/integrations/cursor)
+- [Coding Agent Skill](https://docs.aisonar.dev/integrations/coding-agent-skill)
+- [OpenAI SDK](https://docs.aisonar.dev/integrations/openai-sdk)
+- [Anthropic SDK](https://docs.aisonar.dev/integrations/anthropic-sdk)
+- [LangChain](https://docs.aisonar.dev/integrations/langchain)
+- [Vercel AI SDK](https://docs.aisonar.dev/integrations/vercel-ai-sdk)
+
+## Key Features
+
+- **Native-first + OpenAI-compatible**: Use provider-native routes when behavior matters, or /v1 compatibility for existing OpenAI-style clients
+- **Multi-Format API**: Use OpenAI, Anthropic, or Gemini formats with one API key
+- **Smart Routing**: Automatic failover and load balancing
+- **Pay As You Go**: No subscriptions, competitive pricing
+- **Agent-First Model Discovery**: Use GET /v1/models?recommended_for=image|video|music|3d|tts|stt|embedding|rerank|translation before non-chat requests
+
+## Links
+
+- Website: https://aisonar.dev
+- Dashboard: https://console.aisonar.dev
+- Models: https://aisonar.dev/models
+- API Status: https://api.aisonar.dev/health
+- Support: support@aisonar.dev

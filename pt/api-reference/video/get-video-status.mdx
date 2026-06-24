@@ -1,0 +1,287 @@
+---
+title: "Obter status do vídeo"
+openapi: "GET /v1/tasks/{id}"
+description: "Recupera o status e o resultado de uma tarefa de geração de vídeo"
+---
+
+## Parâmetros de Caminho
+
+<ParamField path="id" type="string" required>
+  O ID da tarefa retornado pela solicitação de criação de vídeo. Considere `id` e `task_id` como a mesma identidade assíncrona.
+</ParamField>
+
+<Info>
+Se uma resposta de criação retornar `poll_url`, chame exatamente essa URL. Quando ela apontar para `/v1/tasks/{id}`, trate isso como o endpoint canônico e fixo de status.
+
+Se a tarefa não existir mais ou não puder mais ser resolvida através do contrato público async-task, AI Sonar retorna `async_task_not_found` com a mensagem `Task not found or no longer available.`
+</Info>
+
+## Resposta
+
+<ResponseField name="id" type="string">
+  Identificador canônico da tarefa assíncrona.
+</ResponseField>
+
+<ResponseField name="task_id" type="string">
+  Alias do identificador da tarefa assíncrona.
+</ResponseField>
+
+<ResponseField name="poll_url" type="string">
+  URL de polling preferencial quando a resposta de criação fornecer uma.
+</ResponseField>
+
+<ResponseField name="billing_transaction_id" type="string">
+  ID de transação de faturamento da AI Sonar quando a liquidação já foi concluída. Este é o identificador usado no dashboard / conciliação e é separado do `id` / `task_id` assíncrono.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Status da tarefa: `pending`, `processing`, `completed`, `failed`.
+</ResponseField>
+
+<ResponseField name="progress" type="number">
+  Percentual de progresso (0-100).
+</ResponseField>
+
+<ResponseField name="video_url" type="string">
+  URL do vídeo gerado (quando concluído).
+</ResponseField>
+
+<ResponseField name="video" type="object">
+  Objeto único de vídeo com `url`, `duration`, `width` e `height` quando disponíveis.
+</ResponseField>
+
+<ResponseField name="videos" type="array">
+  Múltiplos objetos de vídeo quando o upstream retornar mais de uma saída.
+</ResponseField>
+
+<ResponseField name="error" type="string">
+  Mensagem de erro (em caso de falha).
+</ResponseField>
+
+<ResponseField name="created" type="integer">
+  Timestamp de criação.
+</ResponseField>
+
+<ResponseField name="updated" type="integer">
+  Timestamp da última atualização.
+</ResponseField>
+
+<ResponseField name="model" type="string">
+  Modelo usado para a tarefa.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+```python Python
+import requests
+import time
+
+task_id = "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+
+while True:
+    response = requests.get(
+        f"https://api.aisonar.dev/v1/tasks/{task_id}",
+        headers={"Authorization": "Bearer sk-your-api-key"}
+    )
+
+    data = response.json()
+    print(f"Status: {data['status']}, Progress: {data.get('progress', 0)}%")
+
+    if data["status"] == "completed":
+        print(f"Video URL: {data['video_url']}")
+        break
+    elif data["status"] == "failed":
+        print(f"Error: {data['error']}")
+        break
+
+    time.sleep(5)  # Poll every 5 seconds
+```
+
+```javascript JavaScript
+const taskId = 'ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+
+async function pollForVideo() {
+  while (true) {
+    const response = await fetch(
+      `https://api.aisonar.dev/v1/tasks/${taskId}`,
+      { headers: { 'Authorization': 'Bearer sk-your-api-key' } }
+    );
+
+    const data = await response.json();
+    console.log(`Status: ${data.status}, Progress: ${data.progress || 0}%`);
+
+    if (data.status === 'completed') {
+      console.log(`Video URL: ${data.video_url}`);
+      return data.video_url;
+    } else if (data.status === 'failed') {
+      throw new Error(data.error);
+    }
+
+    await new Promise(r => setTimeout(r, 5000));
+  }
+}
+```
+
+```go Go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "net/http"
+    "time"
+)
+
+func main() {
+    taskID := "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+
+    for {
+        req, _ := http.NewRequest("GET",
+            fmt.Sprintf("https://api.aisonar.dev/v1/tasks/%s", taskID), nil)
+        req.Header.Set("Authorization", "Bearer sk-your-api-key")
+
+        client := &http.Client{}
+        resp, _ := client.Do(req)
+
+        var result map[string]interface{}
+        json.NewDecoder(resp.Body).Decode(&result)
+        resp.Body.Close()
+
+        fmt.Printf("Status: %s, Progress: %.0f%%\n", result["status"], result["progress"])
+
+        if result["status"] == "completed" {
+            fmt.Printf("Video URL: %s\n", result["video_url"])
+            break
+        } else if result["status"] == "failed" {
+            fmt.Printf("Error: %s\n", result["error"])
+            break
+        }
+
+        time.Sleep(5 * time.Second)
+    }
+}
+```
+
+```php PHP
+<?php
+$taskId = 'ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+
+while (true) {
+    $ch = curl_init("https://api.aisonar.dev/v1/tasks/{$taskId}");
+
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            'Authorization: Bearer sk-your-api-key'
+        ]
+    ]);
+
+    $response = curl_exec($ch);
+    curl_close($ch);
+
+    $data = json_decode($response, true);
+    echo "Status: {$data['status']}, Progress: " . ($data['progress'] ?? 0) . "%\n";
+
+    if ($data['status'] === 'completed') {
+        echo "Video URL: {$data['video_url']}\n";
+        break;
+    } elseif ($data['status'] === 'failed') {
+        echo "Error: {$data['error']}\n";
+        break;
+    }
+
+    sleep(5);
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response (pending)
+{
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "pending",
+  "progress": 0,
+  "model": "veo3.1",
+  "created": 1706000000,
+  "updated": 1706000000
+}
+```
+
+```json Response (processing)
+{
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "processing",
+  "progress": 45,
+  "model": "veo3.1",
+  "created": 1706000000,
+  "updated": 1706000030
+}
+```
+
+```json Response (completed)
+{
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "billing_transaction_id": "cmo164zyc0s48jpgegi80vqv4",
+  "status": "completed",
+  "progress": 100,
+  "video_url": "https://assets.aisonar.dev/videos/abc123.mp4",
+  "model": "veo3.1",
+  "created": 1706000000,
+  "updated": 1706000060
+}
+```
+
+```json Response (failed)
+{
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "failed",
+  "error": "Content policy violation",
+  "model": "veo3.1",
+  "created": 1706000000,
+  "updated": 1706000060
+}
+```
+</ResponseExample>
+
+## Melhores práticas de polling
+
+- Realizar polling a cada 5-10 segundos
+- Implemente backoff exponencial para tarefas longas
+- Defina um tempo máximo de espera (por exemplo, 10 minutos)
+- Trate o status `failed` de forma adequada
+
+```python
+import time
+
+def wait_for_video(task_id, max_wait=600, interval=5):
+    """Wait for video with timeout."""
+    start = time.time()
+
+    while time.time() - start < max_wait:
+        response = requests.get(
+            f"https://api.aisonar.dev/v1/tasks/{task_id}",
+            headers={"Authorization": "Bearer sk-your-api-key"}
+        )
+        data = response.json()
+
+        if data["status"] == "completed":
+            return data["video_url"]
+        elif data["status"] == "failed":
+            raise Exception(data.get("error", "Video generation failed"))
+
+        time.sleep(interval)
+
+    raise TimeoutError("Video generation timed out")
+```

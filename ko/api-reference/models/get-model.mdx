@@ -1,0 +1,153 @@
+---
+title: "모델 가져오기"
+openapi: "GET /v1/models/{model}"
+description: "모델 인스턴스를 조회합니다"
+---
+
+## 경로 매개변수
+
+<ParamField path="model" type="string" required>
+  조회할 모델의 ID입니다 (예: `gpt-5.4`, `claude-sonnet-4-6`).
+</ParamField>
+
+## 응답
+
+<ResponseField name="id" type="string">
+  모델 식별자입니다.
+</ResponseField>
+
+<ResponseField name="object" type="string">
+  항상 `model`입니다.
+</ResponseField>
+
+<ResponseField name="created" type="integer">
+  생성 타임스탬프입니다.
+</ResponseField>
+
+<ResponseField name="owned_by" type="string">
+  모델 제공자입니다.
+</ResponseField>
+
+<ResponseField name="aisonar" type="object">
+  AI Sonar 전용 공개 메타데이터입니다. 상세 경로는 `category`, `pricing_unit`, `capability_flags`, `supported_operations`, `pricing_provenance`, `public_contract_summary`, 전체 `public_contract`, 그리고 비채팅 추천 스냅샷용 scene 수준의 `agent_preferences` 를 포함할 수 있습니다.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/models/gpt-5.4" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+model = client.models.retrieve("gpt-5.4")
+print(f"Model: {model.id}, Provider: {model.owned_by}")
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const model = await client.models.retrieve('gpt-5.4');
+console.log(`Model: ${model.id}, Provider: ${model.owned_by}`);
+```
+
+```go Go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "net/http"
+)
+
+func main() {
+    req, _ := http.NewRequest("GET", "https://api.aisonar.dev/v1/models/gpt-5.4", nil)
+    req.Header.Set("Authorization", "Bearer sk-your-api-key")
+
+    resp, _ := http.DefaultClient.Do(req)
+    defer resp.Body.Close()
+
+    var model map[string]interface{}
+    json.NewDecoder(resp.Body).Decode(&model)
+    fmt.Printf("Model: %s, Provider: %s\n", model["id"], model["owned_by"])
+}
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/models/gpt-5.4');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer sk-your-api-key'
+    ]
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$model = json_decode($response, true);
+echo "Model: {$model['id']}, Provider: {$model['owned_by']}\n";
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "id": "gpt-5.4",
+  "object": "model",
+  "created": 1706000000,
+  "owned_by": "openai"
+}
+```
+</ResponseExample>
+
+## 오류 처리
+
+모델이 존재하지 않으면 404 오류를 받게 됩니다:
+
+```json
+{
+  "error": {
+    "message": "Model 'invalid-model' not found",
+    "type": "invalid_request_error",
+    "code": "model_not_found"
+  }
+}
+```
+
+## 비채팅 추천 메타데이터
+
+비채팅 모델의 경우 상세 경로는 `aisonar.agent_preferences.<scene>` 도 반환합니다.
+
+다음 항목을 확인할 때 사용하세요:
+
+- `preferred_rank`
+- `success_rate_24h`
+- `sample_count_24h`
+- `status`
+- `updated_at`
+
+공개 응답은 에이전트가 내부 라우팅 식별자를 알지 못한 채 추천 신호를 사용할 수 있도록 `basis.channel_id` 와 `basis.physical_model` 을 `null` 로 유지합니다.
+
+## 공개 상세 메타데이터
+
+`GET /v1/models` 와 비교하면, 상세 경로는 추가로 다음 항목을 반환할 수 있습니다:
+
+- `aisonar.capability_flags`
+- `aisonar.supported_operations`
+- `aisonar.pricing_provenance`
+- `aisonar.public_contract_summary`
+- `aisonar.public_contract`

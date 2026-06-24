@@ -1,0 +1,84 @@
+---
+title: "Gemini CLI"
+description: "Configura Google Gemini CLI para usar la API de AI Sonar"
+---
+
+## Resumen
+
+Google Gemini CLI es una herramienta de línea de comandos para interactuar con los modelos de Gemini. AI Sonar proporciona un punto de conexión compatible que te permite usar Gemini CLI con acceso a cientos de modelos.
+
+
+<Warning>
+Esta integración debe tratarse como experimental: Gemini CLI no documenta actualmente un flujo estable con una URL base personalizada al estilo AI Sonar. Si necesita una integración de AI Sonar realmente compatible, prefiera Codex CLI, Claude Code u OpenCode.
+</Warning>
+
+## Requisitos del sistema
+
+- **Node.js**: Versión 20.0+
+- **SO**: Windows 10/11, macOS 10.15+, Ubuntu 20.04+ o Debian 10+
+
+## Instalación
+
+```bash
+npm install -g @google/gemini-cli
+```
+
+Verifica la instalación:
+
+```bash
+gemini --version
+```
+
+## Configuración
+
+### Paso 1: Obtén tu API Key
+
+1. Inicia sesión en el [AI Sonar Dashboard](https://console.aisonar.dev)
+2. Navega a [API Keys](https://console.aisonar.dev/api)
+3. Crea y copia tu API key (formato: `sk-...`)
+
+### Paso 2: Configura las variables de entorno
+
+**Temporal (sesión actual):**
+
+```bash
+export GEMINI_API_KEY="sk-your-api-key"
+export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"
+```
+
+**Configuración permanente:**
+
+Añade a tu archivo de configuración de shell:
+
+<Tabs>
+  <Tab title="Bash">
+    ```bash
+    echo 'export GEMINI_API_KEY="sk-your-api-key"' >> ~/.bashrc
+    echo 'export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"' >> ~/.bashrc
+    source ~/.bashrc
+    ```
+  </Tab>
+  <Tab title="Zsh">
+    ```bash
+    echo 'export GEMINI_API_KEY="sk-your-api-key"' >> ~/.zshrc
+    echo 'export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"' >> ~/.zshrc
+    source ~/.zshrc
+    ```
+  </Tab>
+  <Tab title="Fish">
+    ```bash
+    set -Ux GEMINI_API_KEY "sk-your-api-key"
+    set -Ux GOOGLE_GEMINI_BASE_URL "https://api.aisonar.dev"
+    ```
+  </Tab>
+</Tabs>
+
+<Warning>
+Reinicia tu terminal después de la configuración para que los cambios surtan efecto.
+</Warning>
+
+<Note>
+**Limitación conocida**: En algunos casos, Gemini CLI puede no respetar `GOOGLE_GEMINI_BASE_URL` si existe una sesión de Google en caché. Si experimentas problemas de conexión, intenta limpiar la caché de la CLI o iniciar una nueva sesión de terminal.
+</Note>
+
+## Uso

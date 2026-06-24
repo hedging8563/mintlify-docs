@@ -1,0 +1,114 @@
+---
+title: "SDK'ler ve Kütüphaneler"
+description: "AI Sonar entegrasyonları için önerilen SDK'ler ve kütüphaneler"
+---
+
+## Genel Bakış
+
+AI Sonar'yı, SDK'yı ihtiyacınız olan davranışla eşleştirerek entegre etmesi en kolay olanıdır:
+- resmi **Anthropic SDK'leri** için Claude'a özgü `/v1/messages` davranışı
+- Gemini'ye özgü istek biçimleri için resmi **Gemini / Google AI** araçları
+- OpenAI ile uyumlu `/v1` yolları ve Responses tarzı kullanım için resmi **OpenAI SDK'ları**
+
+Destek sınırları için entegrasyon sayfalarını kullanın. Bu dokümantasyon setinde, "önerilen" veya "desteklenen" ifadesi belgelenmiş bir kurulum yolunun var olduğu anlamına gelir; bu, otomatik olarak bu depoda her çerçeve yardımcısının veya sağlayıcıya özgü özelliğin uçtan uca regresyon testinden geçtiği anlamına gelmez.
+
+## Önerilen SDK'ler
+
+<CardGroup cols={2}>
+  <Card title="OpenAI Python" icon="python" href="https://github.com/openai/openai-python">
+    `pip install openai`
+  </Card>
+  <Card title="OpenAI Node" icon="node-js" href="https://github.com/openai/openai-node">
+    `npm install openai`
+  </Card>
+  <Card title="OpenAI Go" icon="golang" href="https://github.com/openai/openai-go">
+    `go get github.com/openai/openai-go/v3`
+  </Card>
+  <Card title="Anthropic SDK" icon="robot" href="https://github.com/anthropics/anthropic-sdk-python">
+    Yerel Claude Messages API desteği
+  </Card>
+</CardGroup>
+
+## OpenAI SDK Örneği
+
+Mevcut bir OpenAI uyumlu istemciyi taşıyorsanız veya `/v1` uyumluluk yolunu istiyorsanız bunu kullanın. Claude'a özgü ya da Gemini'ye özgü özellikler için bunun yerine eşleşen yerel SDK'yı kullanın.
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.responses.create(
+    model="gpt-5.4",
+    input="Explain AI Sonar in one sentence."
+)
+
+print(response.output_text)
+```
+
+## OpenAI Go Örneği
+
+```go
+package main
+
+import (
+    openai "github.com/openai/openai-go/v3"
+    "github.com/openai/openai-go/v3/option"
+)
+
+func main() {
+    client := openai.NewClient(
+        option.WithAPIKey("sk-your-api-key"),
+        option.WithBaseURL("https://api.aisonar.dev/v1"),
+    )
+
+    _ = client
+}
+```
+
+## Anthropic SDK Örneği
+
+```python
+from anthropic import Anthropic
+
+client = Anthropic(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev"
+)
+
+message = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+```
+
+## Hangi SDK'yı Kullanmalısınız?
+
+| Amaç | Önerilen yol |
+|------|------------------|
+| Sağlayıcıya özgü davranış | Yerel sağlayıcı SDK'sı veya rota |
+| Mevcut OpenAI uyumlu istemci | AI Sonar üzerindeki OpenAI SDK `/v1` |
+| Taşınabilir sohbet / embeddings | OpenAI uyumlu `/v1` rotaları |
+| Claude'a özgü özellikler | Anthropic SDK |
+| Gemini'ye özgü istek yapıları | Gemini'ye özgü API / SDK |
+| LangChain / LlamaIndex / Vercel AI SDK | Özel entegrasyon sayfalarını kullanın |
+
+## En İyi Uygulamalar
+
+<AccordionGroup>
+  <Accordion title="Davranış önemliyse native rotaları seçin">
+    Sağlayıcıya özgü alanlar, araçlar, akış ayrıntıları ve başka bir biçim aracılığıyla çevrilmemesi gereken diğer davranışlar için Anthropic veya Gemini yerel yollarını kullanın.
+  </Accordion>
+
+  <Accordion title="Geçiş için OpenAI uyumlu `/v1` kullan">
+    OpenAI ile uyumlu SDK'lar, mevcut OpenAI tarzı istemciler, taşınabilir sohbet ve embedding'ler için en iyi yoldur. Onları tek AI Sonar API yüzeyi değil, bir uyumluluk yolu olarak değerlendirin.
+  </Accordion>
+
+  <Accordion title="Base URL'leri açık tutun">
+    Daha eski ortam değişkeni takma adlarına güvenmek yerine AI Sonar base URL'lerini doğrudan istemci yapılandırmanızda iletin.
+  </Accordion>
+</AccordionGroup>

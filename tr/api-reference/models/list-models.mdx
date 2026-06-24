@@ -1,0 +1,260 @@
+---
+title: "Modelleri Listele"
+openapi: "GET /v1/models"
+description: "Mevcut tüm modelleri listeler"
+---
+
+## Yanıt
+
+<ResponseField name="object" type="string">
+  Her zaman `list`.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Model nesneleri dizisi.
+
+  Her model şunları içerir:
+  - `id` (string): Model tanımlayıcısı
+  - `object` (string): `model`
+  - `created` (integer): Oluşturulma zaman damgası
+  - `owned_by` (string): Model sağlayıcısı
+  - `aisonar.category` (string): Genel model kategorisi
+  - `aisonar.pricing_unit` (string veya `null`): Varsa genel fiyatlandırma birimi
+  - `aisonar.capability_flags` (object veya `null`): Genel yetenek özeti
+  - `aisonar.supported_operations` (array veya `null`): Model için genel chat dışı işlemler
+  - `aisonar.pricing_provenance` (object veya `null`): Genel fiyat kaynağı metadata'sı
+  - `aisonar.public_contract_summary` (object veya `null`): Yalnızca `public_operations` ve `request_endpoint` içeren hafif chat dışı discovery özeti
+  - `aisonar.agent_preferences` (object): Yalnızca `recommended_for` mevcut olduğunda döner
+</ResponseField>
+
+<Note>
+`GET /v1/models` keşif için optimize edilmiştir. `capability_flags`, `pricing_provenance` ve tam `public_contract` gibi yalnızca detay sayfasına ait metadata `GET /v1/models/{model}` üzerinde bulunur.
+</Note>
+
+## Query Parametreleri
+
+<ParamField query="category" type="string">
+  İsteğe bağlı genel kategori filtresi. `chat`, `image`, `video`, `audio`, `tts`, `stt`, `music`, `3d`, `embedding`, `rerank` ve `translation` desteklenir.
+</ParamField>
+
+<ParamField query="recommended_for" type="string">
+  İsteğe bağlı chat dışı öneri senaryosu. `image`, `video`, `music`, `3d`, `tts`, `stt`, `embedding`, `rerank` ve `translation` desteklenir.
+</ParamField>
+
+<ParamField query="provider" type="string">
+  `openai`, `anthropic`, `google` veya `deepseek` gibi isteğe bağlı provider filtresi.
+</ParamField>
+
+<ParamField query="tag" type="string">
+  `chat`, `image`, `video`, `embedding` veya `translation` gibi isteğe bağlı model tag filtresi.
+</ParamField>
+
+<Note>
+`recommended_for` mevcut olduğunda, `/v1/models` chat dışı modelleri en son cache'lenmiş 24 saatlik başarı oranı snapshot'una göre sıralar. `status = "insufficient_samples"` olan modeller görünür kalır ancak puanlanmış modellerin arkasına yerleşir.
+</Note>
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/models" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+models = client.models.list()
+
+for model in models.data:
+    print(f"{model.id} ({model.owned_by})")
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const models = await client.models.list();
+
+for (const model of models.data) {
+  console.log(`${model.id} (${model.owned_by})`);
+}
+```
+
+```go Go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "net/http"
+)
+
+func main() {
+    req, _ := http.NewRequest("GET", "https://api.aisonar.dev/v1/models", nil)
+    req.Header.Set("Authorization", "Bearer sk-your-api-key")
+
+    resp, _ := http.DefaultClient.Do(req)
+    defer resp.Body.Close()
+
+    var payload struct {
+        Data []struct {
+            ID      string `json:"id"`
+            OwnedBy string `json:"owned_by"`
+        } `json:"data"`
+    }
+
+    json.NewDecoder(resp.Body).Decode(&payload)
+
+    for _, model := range payload.Data {
+        fmt.Printf("%s (%s)\n", model.ID, model.OwnedBy)
+    }
+}
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/models');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer sk-your-api-key'
+    ]
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+foreach ($data['data'] as $model) {
+    echo "{$model['id']} ({$model['owned_by']})\n";
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "gpt-5.4",
+      "object": "model",
+      "created": 1706000000,
+      "owned_by": "openai"
+    },
+    {
+      "id": "claude-sonnet-4-6",
+      "object": "model",
+      "created": 1706000000,
+      "owned_by": "anthropic"
+    },
+    {
+      "id": "gemini-2.5-flash",
+      "object": "model",
+      "created": 1706000000,
+      "owned_by": "google"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## Sağlayıcıya Göre Filtreleme
+
+```python
+# Get all OpenAI models
+openai_models = [m for m in models.data if m.owned_by == "openai"]
+
+# Get all Anthropic models
+anthropic_models = [m for m in models.data if m.owned_by == "anthropic"]
+```
+
+## Model Kategorileri
+
+| Sağlayıcı | Örnek Modeller |
+|----------|----------------|
+| `openai` | gpt-5.4, gpt-5.4-mini, gpt-5-mini, gpt-4o, dall-e-3 |
+| `anthropic` | claude-opus-4-6, claude-sonnet-4-6, claude-haiku-4-5 |
+| `google` | gemini-3-pro-preview, gemini-3-flash-preview, gemini-2.5-pro |
+| `deepseek` | deepseek-r1, deepseek-v3-2 |
+| `xai` | grok-4.1 |
+| `moonshot` | kimi-k2.5 |
+| `minimax` | minimax-m2.1 |
+| `meta` | llama-3.3-70b, llama-3.1-405b |
+
+## Ajan Öneri Örneği
+
+```json Response
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "gemini-2.5-flash-image",
+      "object": "model",
+      "created": 1706000000,
+      "owned_by": "google",
+      "aisonar": {
+        "category": "image",
+        "pricing_unit": "per_request",
+        "agent_preferences": {
+          "image": {
+            "preferred_rank": 1,
+            "success_rate_24h": 0.98,
+            "sample_count_24h": 423,
+            "status": "ready",
+            "updated_at": "2026-03-28T12:00:00.000Z",
+            "basis": {
+              "score_source": "clickhouse_24h",
+              "channel_id": null,
+              "physical_model": null
+            }
+          }
+        }
+      }
+    }
+  ]
+}
+```
+
+## Ajan Öneri Örneği
+
+```json Response
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "gemini-2.5-flash-image",
+      "object": "model",
+      "created": 1706000000,
+      "owned_by": "google",
+      "aisonar": {
+        "category": "image",
+        "pricing_unit": "per_request",
+        "agent_preferences": {
+          "image": {
+            "preferred_rank": 1,
+            "success_rate_24h": 0.98,
+            "sample_count_24h": 423,
+            "status": "ready",
+            "updated_at": "2026-03-28T12:00:00.000Z",
+            "basis": {
+              "score_source": "clickhouse_24h",
+              "channel_id": null,
+              "physical_model": null
+            }
+          }
+        }
+      }
+    }
+  ]
+}
+```

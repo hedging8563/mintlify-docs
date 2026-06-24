@@ -1,0 +1,26 @@
+---
+title: "列出 API Keys"
+openapi: "GET /v1/management/api-keys"
+description: "列出当前管理令牌所属组织下的用户 API Key。"
+---
+
+## 概览
+
+返回当前管理令牌所属组织下的用户 API Key 列表。
+
+## 注意事项
+
+- 系统托管的 Key（例如 Playground 或 Claw 专用 Key）不会出现在结果中。
+
+## 示例
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/management/api-keys" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## 请求 / 响应
+
+使用上面的交互式 OpenAPI 面板获取确切的模式。

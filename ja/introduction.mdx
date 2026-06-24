@@ -1,0 +1,122 @@
+---
+title: "はじめに"
+description: "統一されたAPIで数百のAIモデルにアクセス"
+---
+
+## AI Sonarとは？
+
+AI Sonarは、OpenAI、Anthropic、Google、DeepSeek、Moonshot、MiniMaxなどのプロバイダから提供される**数百のAIモデル**へ統一的にアクセスできるAI API集約プラットフォームです。
+
+<CardGroup cols={2}>
+  <Card title="ネイティブ + 互換" icon="plug">
+    プロバイダー固有の動作が重要な場合はネイティブの Anthropic/Gemini ルートを使用し、既存の OpenAI 風ツールには OpenAI 互換の `/v1` ルートを使用してください。
+  </Card>
+  <Card title="ネイティブ形式" icon="shuffle">
+    1つのプラットフォームからOpenAI、Anthropic、Gemini、Responsesスタイルのエンドポイントを呼び出せます。
+  </Card>
+  <Card title="従量課金制" icon="coins">
+    サブスクリプションは不要。実際に使用した分だけ支払います。
+  </Card>
+  <Card title="高可用性" icon="shield-check">
+    スマートルーティング、フェイルオーバー、マルチチャネルサポートにより信頼性を向上させます。
+  </Card>
+</CardGroup>
+
+## 対応機能
+
+| 機能 | 説明 | 例示モデル |
+|------------|-------------|----------------|
+| **チャット & 推論** | テキスト生成、計画、ツール | `gpt-5.4`, `claude-sonnet-4-6`, `deepseek-r1` |
+| **ビジョン** | 画像理解とマルチモーダルチャット | `gpt-4o`, `claude-sonnet-4-6`, `gemini-2.5-flash` |
+| **画像生成** | テキスト→画像生成および画像編集 | `dall-e-3`, `flux-pro`, `midjourney` |
+| **オーディオ** | TTS（音声合成）と文字起こし | `gpt-4o-mini-tts`, `whisper-1`, `gpt-4o-transcribe` |
+| **埋め込み** | テキストのベクトル化 | `text-embedding-3-small`, `text-embedding-3-large` |
+| **音楽** | AIによる音楽生成 | `suno` |
+| **3D** | 3Dアセット生成 | `tripo3d` |
+
+## リクエスト形式を選択
+
+必要な挙動に合うルートから始めてください。provider-native 機能にはネイティブな Anthropic/Gemini ルートを使用し、既存の OpenAI 形式のチャットコードを移行する場合は OpenAI 互換 な `/v1/chat/completions` を使用してください。
+
+<CodeGroup>
+
+```bash cURL
+curl https://api.aisonar.dev/v1/chat/completions \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.4",
+    "messages": [
+      {"role": "user", "content": "Explain what AI Sonar does in one sentence."}
+    ]
+  }'
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "Explain what AI Sonar does in one sentence."}]
+)
+
+print(response.choices[0].message.content)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.chat.completions.create({
+  model: 'gpt-5.4',
+  messages: [{ role: 'user', content: 'Explain what AI Sonar does in one sentence.' }],
+});
+
+console.log(response.choices[0].message.content);
+```
+
+<Note>
+Responses 固有の動作が明示的に必要な場合にのみ `POST /v1/responses` を使用してください。これは、すべてのモデルに共通するデフォルトの互換パスではありません。
+</Note>
+
+</CodeGroup>
+
+## 主な機能
+
+<CardGroup cols={2}>
+  <Card title="複数のAPIフォーマット" icon="layers" href="/guides/api-formats">
+    1つのアカウントでOpenAI、Anthropic、Gemini、またはResponsesネイティブ形式を使用できます。
+  </Card>
+  <Card title="エージェント優先のエラー" icon="wand-magic-sparkles" href="/guides/agent-first-api">
+    構造化されたヒントによりコーディングエージェントがより速く自己修正できるようにします。
+  </Card>
+  <Card title="統合対応範囲" icon="toolbox" href="/guides/ide-sdk-compatibility">
+    プロバイダ固有の変更を減らしてIDE、SDK、フレームワーク、チャットアプリと接続します。
+  </Card>
+</CardGroup>
+
+## 次のステップ
+
+<CardGroup cols={2}>
+  <Card title="クイックスタート" icon="rocket" href="/quickstart">
+    最初のリクエストを数分で動作させましょう。
+  </Card>
+  <Card title="APIリファレンス" icon="book" href="/api-reference/introduction">
+    エンドポイントごとのリファレンスを参照してください。
+  </Card>
+  <Card title="統合" icon="puzzle-piece" href="/integrations/openai-sdk">
+    SDK、IDE、アプリの統合から始めましょう。
+  </Card>
+  <Card title="モデル" icon="robot" href="https://aisonar.dev/models">
+    現在のモデルの可用性と料金を閲覧できます。
+  </Card>
+</CardGroup>

@@ -1,0 +1,313 @@
+---
+title: "Buat Gambar"
+openapi: "POST /v1/images/generations"
+description: "Membuat gambar berdasarkan prompt"
+---
+
+## Ringkasan
+
+Untuk coding agents, cari shortlist gambar yang direkomendasikan saat ini terlebih dahulu dengan `GET /v1/models?recommended_for=image`, lalu kirim `model` yang dipilih secara eksplisit ke endpoint ini.
+
+`gpt-image-2` adalah model GPT Image dengan penagihan berbasis token. AI Sonar mengikuti rincian `usage` resmi OpenAI untuk menghitung token input teks, input gambar, input cache jika dilaporkan, dan output gambar; model ini tidak ditagih sebagai harga tetap per gambar.
+
+Untuk pembuatan gambar dengan `gpt-image-2`, parameter publik yang didukung adalah `prompt`, `n`, `size`, `quality`, `response_format`, `async`, `background`, `output_format`, `output_compression` atau `compression`, `moderation`, `partial_images`, dan `user`. Jika `size` atau `quality` tidak dikirim, AI Sonar memakai `auto`; nilai `size` kustom harus mengikuti kontrak fleksibel `WIDTHxHEIGHT` yang dijelaskan di bawah.
+
+Catatan kompatibilitas: jika permintaan `gpt-image-2` mengirim `input_fidelity`, AI Sonar menghapus kolom itu sebelum meneruskan karena GPT Image 2 sudah otomatis memproses input gambar dengan fidelitas tinggi.
+
+### Catatan perilaku model
+
+Google Gemini tidak memakai kontrak selector yang sama:
+
+- `gemini-3.1-flash-image-preview`, `gemini-3-pro-image-preview`, dan `nano-banana-pro` mendukung `aspect_ratio` plus `resolution` (`1k`, `2k`, `4k`) untuk operasi publik text-to-image dan image-edit/image-to-image.
+- `nano-banana-2` mendukung `aspect_ratio` plus `resolution` (`1k`, `2k`, `4k`) hanya untuk text-to-image dalam kontrak AI Sonar saat ini.
+- `gemini-2.5-flash-image`, `nano-banana`, dan `nano-banana-edit` mendukung `aspect_ratio` tetapi tidak menyediakan pemilihan `resolution` publik.
+- `gemini-2.0-flash-preview-image-generation` didokumentasikan di sini sebagai text-to-image yang hanya prompt.
+- Untuk request Nano Banana dengan gambar referensi, gunakan `nano-banana-edit` atau `nano-banana-pro` pada endpoint ini (`/v1/images/generations`) dengan `operation: "image-to-image"` dan `image_urls`. Jangan kirim request gambar referensi Nano Banana ke `/v1/images/edits`.
+- Untuk request Nano Banana image-to-image, `nano-banana-pro` dapat menyertakan `resolution` (`1k`, `2k`, `4k`); `nano-banana-edit` harus menghilangkannya. `nano-banana` dan `nano-banana-2` adalah model text-to-image dalam kontrak publik saat ini.
+- Gambar referensi pada endpoint ini dapat dikirim sebagai JSON `image_url` / `image_urls`, atau sebagai file multipart `image`. `/v1/images/generations` tidak menerima `images[]` atau `file_id`; referensi `/v1/files` hanya untuk model `/v1/images/edits` yang mendokumentasikan `images[].file_id`.
+
+Untuk keluarga gambar Google, utamakan `aspect_ratio` dan hanya kirim `resolution` jika model secara eksplisit mendukungnya.
+
+Model gambar xAI Grok Imagine (`grok-imagine-image`, `grok-imagine-image-quality`, dan legacy `grok-imagine-image-pro`) mendukung `aspect_ratio` plus `resolution` (`1k`, `2k`). `grok-imagine-image-pro` dipertahankan sebagai ID kompatibilitas dan dirutekan upstream ke `grok-imagine-image-quality`.
+
+## Body Request
+
+**Timeout permintaan sinkron:** beberapa penyedia gambar yang dirutekan mengembalikan gambar final secara inline dan menunggu proses generasi selesai. Permintaan resolusi tinggi atau kualitas tinggi dapat memakan waktu hampir satu menit atau lebih, jadi atur timeout HTTP client Anda minimal `120s`. Jika respons pembuatan berisi `status: "pending"`, `task_id`, atau `poll_url`, ikuti `poll_url` yang dikembalikan.
+
+<ParamField body="model" type="string" default="dall-e-3">
+  Model yang digunakan (misalnya `gpt-image-2`, `dall-e-3`, `flux-pro`, `midjourney`).
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  Deskripsi teks untuk gambar yang diinginkan.
+</ParamField>
+
+<ParamField body="image_url" type="string">
+  URL HTTPS publik gambar referensi untuk image-to-image. Untuk request Nano Banana dengan gambar referensi, set `operation` ke `image-to-image`; `nano-banana-pro` dapat menyertakan `resolution`, sedangkan `nano-banana-edit` sebaiknya menghilangkannya.
+</ParamField>
+
+<ParamField body="image_urls" type="string[]">
+  URL HTTPS publik untuk gambar referensi. Gunakan untuk satu atau beberapa gambar referensi dalam request JSON. Endpoint ini tidak mendukung `file_id` dan `images[]`.
+</ParamField>
+
+<ParamField body="reference_image_urls" type="string[]">
+  URL gambar referensi tambahan khusus model untuk provider yang membedakan gambar input utama dan referensi.
+</ParamField>
+
+<ParamField body="image" type="file">
+  File gambar referensi multipart untuk image-to-image. Gunakan saat gambar sumber bersifat privat atau membutuhkan header. Ini berbeda dari `file_id` /v1/files; endpoint ini tidak menerima `file_id`.
+</ParamField>
+
+<ParamField body="n" type="integer" default="1">
+  Jumlah gambar yang dibuat (1-10, tergantung model).
+</ParamField>
+
+<ParamField body="size" type="string" default="1024x1024">
+  Ukuran gambar. Gunakan untuk keluarga gambar bergaya OpenAI dan model lain yang menerima ukuran piksel presisi.
+
+  Untuk `gpt-image-2`, `size` menerima `auto` atau `WIDTHxHEIGHT`. Dimensi kustom harus berupa kelipatan 16 pada kedua sisi, sisi terpanjang maksimal `3840px`, rasio sisi panjang/sisi pendek maksimal `3:1`, dan total piksel harus berada antara `655,360` dan `8,294,400`. `aspect_ratio` dan `resolution` saat ini bukan bagian dari kontrak publik AI Sonar untuk `gpt-image-2`.
+
+  Untuk keluarga gambar Google Gemini, `size` diperlakukan sebagai alias kompatibilitas yang dipetakan ke kontrak publik `aspect_ratio` model dan, bila didukung, `resolution`. Untuk model tersebut, sebaiknya kirim `aspect_ratio` secara langsung.
+</ParamField>
+
+<ParamField body="aspect_ratio" type="string">
+  Pemilih rasio aspek yang bergantung pada model.
+
+  Nilai umum untuk keluarga gambar Google mencakup `1:1`, `16:9`, `9:16`, `3:2`, dan `2:3`.
+</ParamField>
+
+<ParamField body="resolution" type="string">
+  Pemilih resolusi output yang bergantung pada model.
+
+  Didukung pada `gemini-3.1-flash-image-preview` dan `gemini-3-pro-image-preview` untuk text-to-image dan image-edit, pada `nano-banana-pro` untuk text-to-image dan image-to-image, serta pada `nano-banana-2` hanya untuk text-to-image. Nilai tipikal adalah `1k`, `2k`, dan `4k`. Jangan kirim parameter ini ke keluarga gambar Gemini yang hanya menerima rasio kecuali modelnya mendokumentasikannya secara eksplisit. Untuk model gambar xAI Grok Imagine, gunakan `1k` atau `2k`.
+</ParamField>
+
+<ParamField body="quality" type="string" default="standard">
+  Kualitas gambar. Model DALL-E memakai `standard` atau `hd`; model GPT Image seperti `gpt-image-2` memakai `auto`, `low`, `medium`, atau `high`.
+</ParamField>
+
+<ParamField body="response_format" type="string" default="url">
+  Format respons: `url` atau `b64_json`. Default-nya `url`.
+
+  Untuk rute `gpt-image-2` Azure Official atau Azure-compatible, AI Sonar tidak meneruskan `response_format` ke upstream. Gateway selalu menerima data gambar upstream sebagai `b64_json`; untuk request `url`, setiap gambar diunggah ke CDN lalu `data[].url` dikembalikan. Jika storage CDN tidak tersedia atau upload gagal, request gagal alih-alih fallback ke Base64. Untuk `b64_json`, Base64 mentah dikembalikan.
+</ParamField>
+
+<ParamField body="async" type="boolean" default="false">
+  Setel ke `true` dengan `gpt-image-2` atau model gambar resmi FLUX/BFL untuk membuat task terlebih dahulu. Task gambar async yang selesai mengembalikan URL apa pun `response_format` yang diminta; gunakan request sinkron jika membutuhkan `b64_json`.
+</ParamField>
+
+<ParamField body="style" type="string" default="vivid">
+  Style untuk DALL-E 3: `vivid` atau `natural`.
+</ParamField>
+
+<ParamField body="user" type="string">
+  Identifier unik untuk end-user.
+</ParamField>
+
+## Respons
+
+### Respons Sinkron
+
+<ResponseField name="created" type="integer">
+  Unix timestamp saat pembuatan.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Array gambar yang dihasilkan.
+
+  Setiap object berisi:
+  - `url` (string): URL gambar yang dihasilkan
+  - `b64_json` (string): Gambar terenkripsi Base64 (jika diminta)
+  - `revised_prompt` (string): Prompt yang dipakai (DALL-E 3)
+</ResponseField>
+
+### Respons Task Async
+
+Setel `async: true` dengan `gpt-image-2` atau model gambar resmi FLUX/BFL untuk membuat task alih-alih menunggu gambar final di request pembuatan. Respons berisi `status: "pending"`, `task_id`, dan `poll_url`. Poll `/v1/tasks/{task_id}` hingga task menjadi `completed` atau `failed`.
+
+Task gambar async hanya mengembalikan URL gambar final. Jika membutuhkan data gambar mentah `b64_json`, gunakan request sinkron.
+
+Saat task dibuat, biaya estimasi dapat dicadangkan. Task yang selesai ditagih berdasarkan penggunaan aktual; task yang gagal atau timeout akan melepas atau mengembalikan cadangan biaya.
+
+<ResponseField name="created" type="integer">
+  Timestamp Unix saat dibuat.
+</ResponseField>
+
+<ResponseField name="task_id" type="string">
+  Pengenal tugas unik untuk polling.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Status awal: `pending`.
+</ResponseField>
+
+<ResponseField name="poll_url" type="string">
+  URL relatif untuk polling hasil, misalnya `/v1/tasks/{id}`.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Kosong saat tugas masih pending. Tugas gambar yang selesai mengembalikan URL gambar yang dihasilkan di `data[].url`.
+</ResponseField>
+
+Saat Anda menerima `status: "pending"`, gunakan `poll_url` atau `GET /v1/tasks/{task_id}` untuk mengambil hasil.
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/images/generations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gemini-3-pro-image-preview",
+    "prompt": "A cinematic portrait of a white cat sitting on a rainy windowsill",
+    "aspect_ratio": "16:9",
+    "resolution": "2k",
+    "n": 1
+  }'
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.images.generate(
+    model="gemini-3-pro-image-preview",
+    prompt="A cinematic portrait of a white cat sitting on a rainy windowsill",
+    aspect_ratio="16:9",
+    resolution="2k",
+    n=1
+)
+
+print(response.data[0].url)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.images.generate({
+  model: 'gemini-3-pro-image-preview',
+  prompt: 'A cinematic portrait of a white cat sitting on a rainy windowsill',
+  aspect_ratio: '16:9',
+  resolution: '2k',
+  n: 1
+});
+
+console.log(response.data[0].url);
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/images/generations');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Content-Type: application/json',
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => json_encode([
+        'model' => 'gemini-3-pro-image-preview',
+        'prompt' => 'A cinematic portrait of a white cat sitting on a rainy windowsill',
+        'aspect_ratio' => '16:9',
+        'resolution' => '2k',
+        'n' => 1
+    ])
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+echo $data['data'][0]['url'];
+```
+
+Contoh keluarga gambar yang hanya menerima rasio: untuk `gemini-2.5-flash-image`, `nano-banana`, atau `nano-banana-edit`, kirim `aspect_ratio` tetapi jangan kirim `resolution`:
+
+```json
+{
+  "model": "gemini-2.5-flash-image",
+  "prompt": "A clean editorial product shot of a citrus soda can",
+  "aspect_ratio": "16:9"
+}
+```
+
+Contoh Nano Banana Pro dengan gambar referensi: kirim request ke `/v1/images/generations`, bukan `/v1/images/edits`. `resolution` bersifat opsional dan dapat diisi `1k`, `2k`, atau `4k`:
+
+```json
+{
+  "model": "nano-banana-pro",
+  "prompt": "Create a clean cinematic character image based on the reference images",
+  "operation": "image-to-image",
+  "image_urls": ["https://example.com/reference-1.png"],
+  "aspect_ratio": "1:1",
+  "resolution": "2k"
+}
+```
+
+
+Untuk gambar sumber privat atau lokal, unggah langsung dengan multipart. Jangan kirim `file_id` ke `/v1/images/generations`:
+
+```bash
+curl -X POST "https://api.aisonar.dev/v1/images/generations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F "model=nano-banana-pro" \
+  -F "prompt=Create a clean cinematic character image based on this reference" \
+  -F "operation=image-to-image" \
+  -F "image=@reference.png" \
+  -F "aspect_ratio=1:1" \
+  -F "resolution=2k"
+```
+
+</RequestExample>
+
+<ResponseExample>
+```json Respons Sinkron
+{
+  "created": 1706000000,
+  "data": [
+    {
+      "url": "https://...",
+      "revised_prompt": "A fluffy white cat with bright eyes sitting peacefully on a wooden windowsill, watching raindrops stream down the glass window..."
+    }
+  ]
+}
+```
+
+```json Respons Asinkron
+{
+  "created": 1706000000,
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "pending",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "data": []
+}
+```
+</ResponseExample>
+
+## Model Tersedia
+
+| Model | Tipe | Fitur |
+|-------|------|-------|
+| `dall-e-3` | Biasanya inline | Kualitas terbaik, peningkatan prompt |
+| `dall-e-2` | Biasanya inline | Lebih cepat, lebih murah |
+| `flux-pro` | Sering berbasis task | Fotorealistik, kualitas tinggi |
+| `flux-schnell` | Biasanya inline | Sangat cepat |
+| `midjourney` | Sering berbasis task | Gaya artistik |
+| `ideogram-v3` | Sering berbasis task | Rendering teks terbaik |
+| `stable-diffusion-3` | Biasanya inline | Open source, dapat dikustomisasi |
+
+Jangan hard-code model sebagai selalu sinkron atau selalu asinkron. Jika response create mengembalikan `status: "pending"`, ikuti `poll_url` dan polling sampai selesai.
+
+## Menangani Respons Berbasis Task
+
+Untuk model gambar, selalu cek apakah respons berisi `status: "pending"`:

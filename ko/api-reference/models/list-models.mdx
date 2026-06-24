@@ -1,0 +1,231 @@
+---
+title: "모델 목록"
+openapi: "GET /v1/models"
+description: "사용 가능한 모든 모델을 나열합니다"
+---
+
+## 응답
+
+<ResponseField name="object" type="string">
+  항상 `list`입니다.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  모델 객체 배열입니다.
+
+  각 모델에는 다음이 포함됩니다:
+  - `id` (string): 모델 식별자
+  - `object` (string): `model`
+  - `created` (integer): 생성 타임스탬프
+  - `owned_by` (string): 모델 제공자
+  - `aisonar.category` (string): 공개 모델 카테고리
+  - `aisonar.pricing_unit` (string 또는 `null`): 공개 가격 단위
+  - `aisonar.capability_flags` (object 또는 `null`): 공개 기능 요약
+  - `aisonar.supported_operations` (array 또는 `null`): 공개 비채팅 작업 목록
+  - `aisonar.pricing_provenance` (object 또는 `null`): 공개 가격 출처 메타데이터
+  - `aisonar.public_contract_summary` (object 또는 `null`): `public_operations` 와 `request_endpoint` 만 포함하는 간단한 비채팅 탐색 요약
+  - `aisonar.agent_preferences` (object): `recommended_for` 가 있을 때만 반환
+</ResponseField>
+
+<Note>
+`GET /v1/models` 는 탐색에 최적화되어 있습니다. `capability_flags`, `pricing_provenance`, 전체 `public_contract` 같은 상세 전용 메타데이터는 `GET /v1/models/{model}` 에 있습니다.
+</Note>
+
+## 쿼리 파라미터
+
+<ParamField query="category" type="string">
+  선택 사항인 공개 카테고리 필터입니다. `chat`, `image`, `video`, `audio`, `tts`, `stt`, `music`, `3d`, `embedding`, `rerank`, `translation` 을 지원합니다.
+</ParamField>
+
+<ParamField query="recommended_for" type="string">
+  선택 사항인 비채팅 추천 장면입니다. `image`, `video`, `music`, `3d`, `tts`, `stt`, `embedding`, `rerank`, `translation` 을 지원합니다.
+</ParamField>
+
+<ParamField query="provider" type="string">
+  선택 사항인 공급자 필터입니다. 예: `openai`, `anthropic`, `google`, `deepseek`.
+</ParamField>
+
+<ParamField query="tag" type="string">
+  선택 사항인 모델 태그 필터입니다. 예: `chat`, `image`, `video`, `embedding`, `translation`.
+</ParamField>
+
+<Note>
+`recommended_for` 가 있을 때 `/v1/models` 는 비채팅 모델을 최신 캐시된 24시간 성공률 스냅샷 기준으로 정렬합니다. `status = "insufficient_samples"` 인 모델은 계속 보이지만 점수화된 모델 뒤에 정렬됩니다.
+</Note>
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/models" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+```bash cURL
+curl "https://api.aisonar.dev/v1/models?recommended_for=image" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+models = client.models.list()
+
+for model in models.data:
+    print(f"{model.id} ({model.owned_by})")
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const models = await client.models.list();
+
+for (const model of models.data) {
+  console.log(`${model.id} (${model.owned_by})`);
+}
+```
+
+```go Go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "net/http"
+)
+
+func main() {
+    req, _ := http.NewRequest("GET", "https://api.aisonar.dev/v1/models", nil)
+    req.Header.Set("Authorization", "Bearer sk-your-api-key")
+
+    resp, _ := http.DefaultClient.Do(req)
+    defer resp.Body.Close()
+
+    var payload struct {
+        Data []struct {
+            ID      string `json:"id"`
+            OwnedBy string `json:"owned_by"`
+        } `json:"data"`
+    }
+
+    json.NewDecoder(resp.Body).Decode(&payload)
+
+    for _, model := range payload.Data {
+        fmt.Printf("%s (%s)\n", model.ID, model.OwnedBy)
+    }
+}
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/models');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer sk-your-api-key'
+    ]
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+foreach ($data['data'] as $model) {
+    echo "{$model['id']} ({$model['owned_by']})\n";
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "gpt-5.4",
+      "object": "model",
+      "created": 1706000000,
+      "owned_by": "openai"
+    },
+    {
+      "id": "claude-sonnet-4-6",
+      "object": "model",
+      "created": 1706000000,
+      "owned_by": "anthropic"
+    },
+    {
+      "id": "gemini-2.5-flash",
+      "object": "model",
+      "created": 1706000000,
+      "owned_by": "google"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## 공급자별 필터링
+
+```python
+# Get all OpenAI models
+openai_models = [m for m in models.data if m.owned_by == "openai"]
+
+# Get all Anthropic models
+anthropic_models = [m for m in models.data if m.owned_by == "anthropic"]
+```
+
+## 모델 카테고리
+
+| 공급자 | 예시 모델 |
+|----------|----------------|
+| `openai` | gpt-5.4, gpt-5.4-mini, gpt-5-mini, gpt-4o, dall-e-3 |
+| `anthropic` | claude-opus-4-6, claude-sonnet-4-6, claude-haiku-4-5 |
+| `google` | gemini-3-pro-preview, gemini-3-flash-preview, gemini-2.5-pro |
+| `deepseek` | deepseek-r1, deepseek-v3-2 |
+| `xai` | grok-4.1 |
+| `moonshot` | kimi-k2.5 |
+| `minimax` | minimax-m2.1 |
+| `meta` | llama-3.3-70b, llama-3.1-405b |
+
+## 에이전트 추천 예시
+
+```json Response
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "gemini-2.5-flash-image",
+      "object": "model",
+      "created": 1706000000,
+      "owned_by": "google",
+      "aisonar": {
+        "category": "image",
+        "pricing_unit": "per_request",
+        "agent_preferences": {
+          "image": {
+            "preferred_rank": 1,
+            "success_rate_24h": 0.98,
+            "sample_count_24h": 423,
+            "status": "ready",
+            "updated_at": "2026-03-28T12:00:00.000Z",
+            "basis": {
+              "score_source": "clickhouse_24h",
+              "channel_id": null,
+              "physical_model": null
+            }
+          }
+        }
+      }
+    }
+  ]
+}
+```

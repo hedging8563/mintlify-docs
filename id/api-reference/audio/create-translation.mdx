@@ -1,0 +1,166 @@
+---
+title: "Buat Terjemahan"
+openapi: "POST /v1/audio/translations"
+description: "Menerjemahkan audio ke dalam teks bahasa Inggris"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Ringkasan
+
+Menerjemahkan audio dalam bahasa apa pun yang didukung ke dalam teks bahasa Inggris. Tidak seperti transcription, endpoint ini selalu menghasilkan teks bahasa Inggris terlepas dari bahasa input.
+
+## Isi Permintaan
+
+**Timeout permintaan sinkron:** endpoint non-chat ini menunggu model yang dirutekan selesai. Input besar, audio panjang, atau batch besar dapat melebihi default client umum 30s, jadi atur timeout HTTP client Anda minimal `120s`.
+
+<ParamField body="file" type="file" required>
+  File audio yang akan diterjemahkan. Format yang didukung: `flac`, `mp3`, `mp4`, `mpeg`, `mpga`, `m4a`, `ogg`, `wav`, `webm`. Ukuran file maksimum adalah 25 MB.
+</ParamField>
+
+<ParamField body="model" type="string" default="whisper-1">
+  Model yang akan digunakan. Saat ini hanya `whisper-1` yang didukung.
+</ParamField>
+
+<ParamField body="prompt" type="string">
+  Teks opsional untuk memandu gaya model atau melanjutkan segmen sebelumnya. Harus dalam bahasa Inggris.
+</ParamField>
+
+<ParamField body="response_format" type="string" default="json">
+  Format output. Opsi: `json`, `text`, `srt`, `verbose_json`, `vtt`.
+</ParamField>
+
+<ParamField body="temperature" type="number">
+  Temperature sampling, antara 0 dan 1. Nilai yang lebih tinggi seperti 0.8 menghasilkan output yang lebih acak, sedangkan nilai yang lebih rendah seperti 0.2 membuat output lebih terfokus dan deterministik.
+</ParamField>
+
+## Respons
+
+<ResponseField name="text" type="string">
+  Teks terjemahan dalam bahasa Inggris.
+</ResponseField>
+
+Untuk format `verbose_json`, response juga mencakup:
+
+<ResponseField name="language" type="string">
+  Bahasa yang terdeteksi dari audio input.
+</ResponseField>
+
+<ResponseField name="duration" type="number">
+  Durasi audio input dalam detik.
+</ResponseField>
+
+<ResponseField name="segments" type="array">
+  Segmen dari teks terjemahan beserta timestamp.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/audio/translations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F "file=@german_audio.mp3" \
+  -F "model=whisper-1"
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+with open("german_audio.mp3", "rb") as audio_file:
+    response = client.audio.translations.create(
+        model="whisper-1",
+        file=audio_file
+    )
+
+print(response.text)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+import fs from 'fs';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.audio.translations.create({
+  model: 'whisper-1',
+  file: fs.createReadStream('german_audio.mp3')
+});
+
+console.log(response.text);
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/audio/translations');
+
+$file = new CURLFile('german_audio.mp3', 'audio/mpeg', 'german_audio.mp3');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => [
+        'file' => $file,
+        'model' => 'whisper-1'
+    ]
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+echo $data['text'];
+```
+</RequestExample>
+
+<ResponseExample>
+```json json
+{
+  "text": "Hello, my name is Wolfgang and I come from Germany. Where are you from?"
+}
+```
+
+```json verbose_json
+{
+  "task": "translate",
+  "language": "german",
+  "duration": 8.470000267028809,
+  "text": "Hello, my name is Wolfgang and I come from Germany. Where are you from?",
+  "segments": [
+    {
+      "id": 0,
+      "seek": 0,
+      "start": 0.0,
+      "end": 4.0,
+      "text": " Hello, my name is Wolfgang and I come from Germany.",
+      "tokens": [50364, 2425, 11, 452, 1315, 307, 25329, 293, 286, 808, 490, 5765, 13, 50564],
+      "temperature": 0.0,
+      "avg_logprob": -0.45,
+      "compression_ratio": 1.0,
+      "no_speech_prob": 0.0
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## Terjemahan vs Transcription
+
+| Fitur | Terjemahan | Transcription |
+|---------|-------------|---------------|
+| Bahasa output | Selalu bahasa Inggris | Sama seperti input |
+| Kasus penggunaan | Mengonversi audio berbahasa asing ke bahasa Inggris | Mempertahankan bahasa asli |
+| Parameter bahasa | Tidak berlaku | Petunjuk opsional |
+
+<Note>
+  Endpoint translation secara otomatis mendeteksi bahasa sumber dan menerjemahkannya ke bahasa Inggris. Parameter `language` dari transcription diabaikan.
+</Note>

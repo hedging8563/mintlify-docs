@@ -1,0 +1,197 @@
+---
+title: "✨ Caché de prompts de proveedor (Upstream)"
+description: "Comprenda el almacenamiento en caché de prompts a nivel de proveedor y cómo reduce los costos"
+---
+
+## Resumen general
+
+<Note>
+**Dos tipos de caché**
+
+| Tipo | Ubicación | Cómo funciona | Costo |
+|------|-------|--------------|------|
+| **Caché de plataforma** | AI Sonar | Coincidencia por similitud semántica | 10% del precio normal |
+| **Caché de proveedor** | Proveedor (Anthropic/OpenAI/etc) | Coincidencia exacta de prefijos | Tarifas de tokens con descuento |
+
+Estos son **mutuamente excluyentes**: si hay un acierto en el caché de la plataforma, no se realiza ninguna llamada al proveedor, por lo que el caché del proveedor no se aplica.
+</Note>
+
+## Cómo funciona el caché de prompts de proveedor
+
+El almacenamiento en caché de prompts del proveedor guarda la representación procesada del prefijo de su prompt en los servidores del proveedor. Cuando envía una solicitud con el mismo prefijo, el proveedor puede omitir el reprocesamiento de esos tokens.
+
+### Características clave
+
+- **Basado en prefijos**: Solo se puede almacenar en caché el inicio de su prompt.
+- **Coincidencia exacta**: Requiere tokens idénticos (no similitud semántica).
+- **Limitado en el tiempo**: Las entradas del caché caducan (normalmente entre 5 y 60 minutos).
+- **Automático**: No se requiere una configuración especial.
+
+```
+Request 1: [System prompt + Context A + Question 1]
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+           Este prefijo se almacena en caché
+
+Request 2: [System prompt + Context A + Question 2]
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+           ¡Acierto de caché! Solo se procesa la Pregunta 2
+```
+
+## Proveedores compatibles
+
+| Proveedor | Descuento por lectura de caché | Costo de escritura en caché | Tokens mínimos |
+|----------|---------------------|------------------|------------|
+| **Anthropic** | 90% de descuento | 25% de prima | 1024 |
+| **OpenAI** | 50% de descuento | Igual que la entrada | 1024 |
+| **DeepSeek** | 90% de descuento | Igual que la entrada | 64 |
+| **Google** | 75% de descuento | 25% de recargo | 32768 |
+
+<Info>
+Los descuentos se aplican automáticamente. AI Sonar le transfiere los precios de caché del proveedor directamente.
+</Info>
+
+## Identificación del uso de caché
+
+### En los registros de uso
+
+Sus registros de uso muestran un desglose detallado de los tokens de caché:
+
+| Campo | Descripción |
+|-------|-------------|
+| `cacheReadTokens` | Tokens servidos desde el caché del proveedor (con descuento) |
+| `cacheWriteTokens` | Tokens escritos en el caché (para futuras solicitudes) |
+| `nonCachedPromptTokens` | Tokens procesados sin caché |
+
+### En las transacciones
+
+Las transacciones muestran una etiqueta de **Provider Cache** cuando se utilizó el almacenamiento en caché del proveedor:
+
+- **Provider Cache** (verde azulado): Acierto de caché de prompts del proveedor - tarifas con descuento.
+
+## Ejemplo de cálculo de costos
+
+Para una solicitud con 10,000 tokens de entrada a Claude (Anthropic):
+
+**Sin caché:**
+```
+10,000 tokens × $3.00/1M = $0.030
+```
+
+**Con caché de proveedor (8,000 en caché + 2,000 nuevos):**
+```
+Cache read:  8,000 tokens × $0.30/1M = $0.0024  (90% de descuento)
+Cache write: 2,000 tokens × $3.75/1M = $0.0075
+Total: $0.0099 (67% de ahorro)
+```
+
+## Mejores prácticas
+
+<AccordionGroup>
+  <Accordion title="Utilice prompts de sistema consistentes">
+    Coloque su prompt de sistema y el contexto estático al principio de sus mensajes. Esto maximiza el potencial de acierto de caché.
+  </Accordion>
+
+  <Accordion title="Agrupe solicitudes similares">
+    Envíe solicitudes con el mismo prefijo en intervalos de tiempo cercanos para beneficiarse del caché antes de que caduque.
+  </Accordion>
+
+  <Accordion title="Cumpla con los requisitos mínimos de tokens">
+    Asegúrese de que su prefijo almacenable en caché cumpla con el mínimo del proveedor (por ejemplo, 1024 tokens para Anthropic/OpenAI).
+  </Accordion>
+
+  <Accordion title="Monitoree las métricas de caché">
+    Consulte las estadísticas de uso en su panel de control para ver las tasas de acierto de caché y los ahorros.
+  </Accordion>
+</AccordionGroup>
+
+## Caché de plataforma vs. Caché de proveedor
+
+| Aspecto | Caché de plataforma | Caché de proveedor |
+|--------|----------------|----------------|
+| **Coincidencia** | Similitud semántica | Coincidencia exacta de prefijo |
+| **Costo** | 10% del precio normal | Tarifas con descuento |
+| **Latencia** | Instantánea (~1ms) | Reducida (omite el procesamiento) |
+| **Control** | Configuración del panel | Automático |
+| **Alcance** | Entre usuarios (opcional) | Por clave de API |
+
+### Cuándo se aplica cada uno
+
+```
+Llega la solicitud
+    │
+    ▼
+┌─────────────────────────────┐
+│ ¿Acierto de caché de plataf.?│
+└─────────────────────────────┘
+    │ Sí               │ No
+    ▼                  ▼
+┌───────────┐    ┌─────────────────────────────┐
+│ Devolver  │    │ Llamar a la API del prov.   │
+│ Caché     │    └─────────────────────────────┘
+│ (10%)   │            │
+└───────────┘            ▼
+                 ┌─────────────────────────────┐
+                 │ ¿Acierto de caché de prov.? │
+                 └─────────────────────────────┘
+                     │ Sí         │ No
+                     ▼            ▼
+                 Tarifa de    Tarifa de
+                 tokens con   tokens
+                 descuento    completa
+```
+
+## Comprobación del estado del caché
+
+### Encabezados de respuesta
+
+```
+X-Upstream-Cache-Read: 8000   # Tokens leídos del caché del proveedor
+X-Upstream-Cache-Write: 2000  # Tokens escritos en el caché del proveedor
+```
+
+### API de uso
+
+Consulte sus registros de uso para ver el desglose del caché:
+
+```text
+GET /v1/usage/logs is currently not a public endpoint.
+Use X-Upstream-Cache-* response headers, plus the dashboard usage page.
+```
+
+La respuesta incluye:
+```json
+{
+  "promptTokens": 10000,
+  "cacheReadTokens": 8000,
+  "cacheWriteTokens": 2000,
+  "nonCachedPromptTokens": 0,
+  "completionTokens": 500,
+  "cost": 0.0099
+}
+```
+
+## Preguntas frecuentes (FAQ)
+
+<AccordionGroup>
+  <Accordion title="¿Puedo desactivar el almacenamiento en caché del proveedor?">
+    El almacenamiento en caché del proveedor es automático y no se puede desactivar. Sin embargo, solo le beneficia (menores costos), por lo que no hay razón para desactivarlo.
+  </Accordion>
+
+  <Accordion title="¿Por qué mi solicitud no tuvo un acierto en el caché del proveedor?">
+    Razones comunes:
+    - El prefijo cambió (incluso una diferencia de un solo token).
+    - El caché caducó (normalmente entre 5 y 60 minutos).
+    - El prefijo es demasiado corto (por debajo del mínimo de tokens).
+    - Se utilizó una clave de API diferente.
+  </Accordion>
+
+  <Accordion title="¿BYOK admite el almacenamiento en caché del proveedor?">
+    ¡Sí! Al usar sus propias claves de API (BYOK), el almacenamiento en caché del proveedor funciona de la misma manera. El caché está vinculado a su clave de API del proveedor.
+  </Accordion>
+
+  <Accordion title="¿Cómo maximizo los ahorros por caché?">
+    1. Estructure los prompts con el contenido estático primero.
+    2. Mantenga los prompts de sistema consistentes en todas las solicitudes.
+    3. Envíe solicitudes relacionadas en rápida sucesión.
+  </Accordion>
+</AccordionGroup>

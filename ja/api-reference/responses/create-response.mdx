@@ -1,0 +1,292 @@
+---
+title: "レスポンスの作成"
+openapi: "POST /v1/responses"
+description: "OpenAI Responses API 形式を使用してレスポンスを作成します"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+Responses API は、OpenAI のより新しいステートフルな会話 API です。AI Sonar は、互換性のあるモデル向けの上級者向けオプション経路としてこの形式をサポートしています。Responses 固有の動作が明示的に必要でない限り、既定の OpenAI 互換 ルートとして `POST /v1/chat/completions` を使用してください。
+
+## リクエストボディ
+
+<ParamField body="model" type="string" required>
+  使用するモデルの ID。利用可能なオプションは [Models](https://aisonar.dev/models) を参照してください。
+</ParamField>
+
+<ParamField body="input" type="array" required>
+  会話を構成する入力アイテムのリスト。
+
+  各アイテムは次のいずれかになります:
+  - `message`: ロールとコンテンツを持つ会話メッセージ
+  - `function_call`: 関数呼び出しのリクエスト
+  - `function_call_output`: 関数呼び出しからの出力
+
+  マルチモーダル入力の場合、`message.content` はプレーンな文字列かコンテンツブロックの配列のいずれかになります。GPT-5.4 系列のような画像対応モデルでは、URL や Base64 文字列をプレーンテキストに直接埋め込むのではなく、`input_image` ブロックとして画像を渡してください。
+
+  例のコンテンツブロック:
+  - `{ "type": "input_text", "text": "Describe this image" }`
+  - `{ "type": "input_image", "image_url": "https://example.com/image.jpg" }`
+  - `{ "type": "input_image", "image_url": "data:image/png;base64,..." }`
+</ParamField>
+
+<ParamField body="instructions" type="string">
+  モデルへのシステム指示（system message と同等）。
+</ParamField>
+
+<ParamField body="max_output_tokens" type="integer">
+  生成する最大の token 数。
+</ParamField>
+
+<ParamField body="temperature" type="number" default="1">
+  サンプリングの温度。0 から 2 の間で指定します。
+</ParamField>
+
+<ParamField body="tools" type="array">
+  モデルが呼び出す可能性のあるツールのリスト。
+
+  デフォルトの画像ツールモデルを使う、または明示的に `model: "gpt-image-2"` を指定するホスト型 `image_generation` ツールでは、GPT Image 2 が画像入力をすでに高 fidelity として扱うため、AI Sonar は未対応の `input_fidelity` を転送前に削除します。このツールでは `background: "transparent"` を送らないでください。出力の意味が変わるため、AI Sonar はこれを黙って削除しません。
+</ParamField>
+
+<ParamField body="stream" type="boolean" default="false">
+  true の場合、イベントのストリームを返します。
+</ParamField>
+
+<ParamField body="previous_response_id" type="string">
+  会話を続けるための前回のレスポンスの ID。
+</ParamField>
+
+<ParamField body="store" type="boolean" default="true">
+  後で取得するためにレスポンスを保存するかどうか。
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  追跡目的でレスポンスに添付するメタデータ。
+</ParamField>
+
+<ParamField body="text" type="object">
+  テキスト生成の設定オプション。`text.format` の挙動は選択したモデルと経路によって異なり、すべてのモデルで一様に保証されるわけではありません。
+</ParamField>
+
+<ParamField body="parallel_tool_calls" type="boolean" default="true">
+  複数のツール呼び出しを並列で許可するかどうか。
+</ParamField>
+
+<ParamField body="top_p" type="number">
+  Nucleus サンプリングのパラメータ（0〜1）。
+</ParamField>
+
+<ParamField body="reasoning" type="object">
+  GPT-5 系列などの推論対応モデル向けの推論設定。
+
+  - `effort` (string): 推論の努力レベル（`low`、`medium`、`high`）
+</ParamField>
+
+## レスポンス
+
+<ResponseField name="id" type="string">
+  レスポンスの一意の識別子。
+</ResponseField>
+
+<ResponseField name="object" type="string">
+  常に `response` です。
+</ResponseField>
+
+<ResponseField name="created" type="integer">
+  レスポンスが作成された時刻の Unix タイムスタンプ。
+</ResponseField>
+
+<ResponseField name="output" type="array">
+  モデルが生成した出力アイテムのリスト。
+</ResponseField>
+
+<ResponseField name="usage" type="object">
+  token 使用統計。
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/responses" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o",
+    "input": [
+      {"type": "message", "role": "user", "content": "Hello!"}
+    ],
+    "max_output_tokens": 1000
+  }'
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.responses.create(
+    model="gpt-4o",
+    input=[
+        {"type": "message", "role": "user", "content": "Hello!"}
+    ],
+    max_output_tokens=1000
+)
+
+print(response.output)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.responses.create({
+  model: 'gpt-4o',
+  input: [
+    { type: 'message', role: 'user', content: 'Hello!' }
+  ],
+  max_output_tokens: 1000
+});
+
+console.log(response.output);
+```
+
+```go Go
+package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "fmt"
+    "net/http"
+)
+
+func main() {
+    payload := map[string]interface{}{
+        "model": "gpt-4o",
+        "input": []map[string]interface{}{
+            {"type": "message", "role": "user", "content": "Hello!"},
+        },
+        "max_output_tokens": 1000,
+    }
+    body, _ := json.Marshal(payload)
+
+    req, _ := http.NewRequest("POST", "https://api.aisonar.dev/v1/responses", bytes.NewBuffer(body))
+    req.Header.Set("Authorization", "Bearer sk-your-api-key")
+    req.Header.Set("Content-Type", "application/json")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+
+    var result map[string]interface{}
+    json.NewDecoder(resp.Body).Decode(&result)
+    fmt.Println(result["output"])
+}
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/responses');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Content-Type: application/json',
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => json_encode([
+        'model' => 'gpt-4o',
+        'input' => [
+            ['type' => 'message', 'role' => 'user', 'content' => 'Hello!']
+        ],
+        'max_output_tokens' => 1000
+    ])
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+print_r($data['output']);
+```
+## Vision 入力の例
+
+画像対応モデルを使用する場合は、画像を `message.content` 内の `input_image` ブロックとして配置してください。`image_url` の値は公開 URL または Base64 データ URL のいずれかにできます。
+
+```json
+{
+  "model": "gpt-5.4",
+  "input": [
+    {
+      "type": "message",
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "Please describe this image."
+        },
+        {
+          "type": "input_image",
+          "image_url": "https://example.com/demo.jpg"
+        }
+      ]
+    }
+  ]
+}
+```
+
+```json
+{
+  "model": "gpt-5.4",
+  "input": [
+    {
+      "type": "message",
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "Please describe this image."
+        },
+        {
+          "type": "input_image",
+          "image_url": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ..."
+        }
+      ]
+    }
+  ]
+}
+```
+
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "id": "resp_abc123",
+  "object": "response",
+  "created": 1706000000,
+  "model": "gpt-4o",
+  "output": [
+    {
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {"type": "text", "text": "Hello! How can I help you today?"}
+      ]
+    }
+  ],
+  "usage": {
+    "input_tokens": 10,
+    "output_tokens": 12,
+    "total_tokens": 22
+  }
+}
+```
+</ResponseExample>

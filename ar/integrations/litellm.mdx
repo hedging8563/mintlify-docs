@@ -1,0 +1,55 @@
+---
+title: "LiteLLM"
+description: "استخدم LiteLLM مع AI Sonar كمزوّد upstream أو كطبقة gateway داخلية"
+---
+
+## نظرة عامة
+
+عادةً ما يُستخدم LiteLLM مع AI Sonar بطريقتين.
+
+- استخدام AI Sonar كـ **upstream متوافق مع OpenAI** خلف LiteLLM
+- وضع LiteLLM أمام AI Sonar لإدارة المفاتيح الافتراضية أو التوجيه الإضافي أو المراقبة المركزية
+
+بالنسبة إلى AI Sonar، فإن أنظف مسار افتراضي هو استخدام وضع **custom OpenAI / متوافق مع OpenAI** في LiteLLM مع `api_base = https://api.aisonar.dev/v1`.
+
+<Note>
+إذا كنت تحتاج صراحةً إلى request shapes من نوع Claude-native أو Gemini-native، فالأفضل استخدام التكاملات الأصلية في AI Sonar بدلًا من فرض هذه التدفقات عبر طبقة LiteLLM المتوافقة مع OpenAI.
+</Note>
+
+<Note>
+**النوع**: إطار أو منصة
+
+**المسار الرئيسي**: upstream متوافق مع OpenAI
+
+**مستوى الدعم**: مسار مدعوم
+</Note>
+
+## التثبيت
+
+```bash
+pip install 'litellm[proxy]'
+```
+
+## إعداد الـ proxy
+
+```yaml
+model_list:
+  - model_name: aisonar-gpt-5.4
+    litellm_params:
+      model: custom_openai/gpt-5.4
+      api_base: https://api.aisonar.dev/v1
+      api_key: os.environ/OPENAI_API_KEY
+```
+
+التشغيل:
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+litellm --config litellm-config.yaml --port 4000
+```
+
+## أفضل الممارسات
+
+- اعتبر AI Sonar أولًا upstream من نوع `custom_openai`
+- ضع LiteLLM في المقدمة فقط عندما تحتاج فعلًا إلى طبقة gateway إضافية
+- لا تفترض تلقائيًا توافر كل التفاصيل الأصلية للمزوّد عبر المسار المتوافق مع OpenAI

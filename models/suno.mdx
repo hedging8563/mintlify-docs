@@ -1,0 +1,36 @@
+---
+title: "Suno"
+description: "Music and lyrics generation"
+---
+
+## Overview
+
+AI Sonar provides access to Suno models. Total: **2 models** available.
+
+## Music Generation
+
+| Model ID | Pricing |
+|----------|--------|
+| `suno-lyrics` | See dashboard |
+| `suno-music` | See dashboard |
+
+
+## Usage
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="suno-lyrics",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+```
+
+<Note>
+Prices shown are platform prices (~70% of official rates).
+</Note>

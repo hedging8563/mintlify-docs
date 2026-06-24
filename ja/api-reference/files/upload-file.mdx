@@ -1,0 +1,53 @@
+---
+title: "ファイルのアップロード"
+openapi: "POST /v1/files"
+description: "後でバッチ作成のためにJSONLバッチ入力ファイルをアップロードします。"
+---
+
+## 概要
+
+このエンドポイントは、AI SonarのOpenAI互換バッチAPIの一部です。バッチジョブはアップロードされたJSONLファイルを使用し、非同期で実行され、後で出力/エラーファイルを返すことができます。
+
+## 注意事項
+
+- バッチ入力ファイルは`purpose=batch`を使用する必要があります。
+- `completion_window`は現在`24h`です。
+- 出力の順序は保証されていません。常に`custom_id`で一致させてください。
+- バッチアイテム内でのストリーミングはサポートされていません。
+
+## 例
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/files" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F "purpose=batch" \
+  -F "file=@batch-input.jsonl;type=application/jsonl"
+```
+</RequestExample>
+
+## リクエスト / レスポンス
+
+正確なスキーマについては、上記のインタラクティブOpenAPIパネルを使用してください。
+
+## 操作のヒント
+
+- 冪等性のある下流の調整には`custom_id`を使用してください。
+- ワーカーがバッチを最終化した後にのみ`output_file_id`と`error_file_id`を期待してください。
+- バッチの価格は、`isBatchRequest=true`の割引ルールが適用されるため、同期価格とは異なる場合があります。
+## 画像ファイル入力
+
+同じ `/v1/files` ルートで `/v1/images/edits` 用の画像参照ファイルもアップロードできます。
+
+- `purpose=user_data` または `purpose=vision` を使用します。
+- 任意で `model` を指定して画像編集モデルを選択できます。デフォルトは `gpt-image-2` です。
+- 返された `file_id` は選択された上流画像編集チャネルにバインドされ、`images[].file_id` で再利用できます。
+
+## Anthropic Files API モード
+
+この `/v1/files` ルートは Anthropic Files API にも対応しています。
+
+- `anthropic-beta: files-api-2025-04-14` ヘッダーを追加すると、Anthropic モードに切り替わります。
+- Anthropic モードでは、元のファイルをそのままアップロードし、`purpose=batch` は送らないでください。
+- 返される `file_id` は同じ公式 Anthropic チャンネル/ワークスペースにひも付けられ、以後の `/v1/messages` リクエストで再利用する必要があります。
+- Anthropic メッセージ内容からそのファイルを参照する場合は、Anthropic ネイティブのヘッダー（`x-api-key`、`anthropic-version`、必要に応じた beta header）をそのまま使ってください。

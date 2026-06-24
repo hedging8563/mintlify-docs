@@ -1,0 +1,65 @@
+---
+title: "ByteDance (Doubao)"
+description: "Doubao, Jimeng, Seedream, Seedance"
+---
+
+## Overview
+
+AI Sonar provides access to ByteDance (Doubao) models. Total: **16 models** available.
+
+## Chat Models
+
+| Model ID | Pricing |
+|----------|--------|
+| `doubao-1.5-lite-32k` | $0.043/1M in |
+| `doubao-1.5-pro-32k` | $0.11/1M in |
+| `doubao-1.5-vision-pro` | $0.11/1M in |
+| `doubao-seed-1.6` | $0.17/1M in |
+| `doubao-seed-1.6-flash` | $0.04/1M in |
+| `doubao-seed-1.6-vision` | $0.1143/1M in |
+| `doubao-seed-1.8` | $0.1143/1M in |
+| `doubao-seed-code` | $0.17143/1M in |
+
+## Image Generation
+
+| Model ID | Pricing |
+|----------|--------|
+| `seedream-4.5` | See dashboard |
+| `seedream-5-lite-image-to-image` | See dashboard |
+| `seedream-5-lite-text-to-image` | See dashboard |
+| `seedream-5.0` | See dashboard |
+
+## Video Generation
+
+| Model ID | Pricing |
+|----------|--------|
+| `seedance-1.5-pro` | $0/1M in |
+| `seedance-2.0` | $0/1M in |
+| `seedance-2.0-fast` | $0/1M in |
+
+## Translation
+
+| Model ID | Pricing |
+|----------|--------|
+| `doubao-seed-translation` | $0.171/1M in |
+
+
+## Usage
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="doubao-1.5-lite-32k",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+```
+
+<Note>
+Prices shown are platform prices (~70% of official rates).
+</Note>

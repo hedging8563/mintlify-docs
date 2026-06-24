@@ -1,0 +1,231 @@
+---
+title: 'APIリファレンス'
+description: 'AI Sonar API の完全なリファレンス'
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## 概要
+
+AI Sonar は **native-first かつ OpenAI 互換** です。ネイティブな挙動が必要な場合は、Anthropic では `POST /v1/messages` のような provider-native のルートを、Gemini では `/v1beta/models/...:generateContent` を使用してください。既存の OpenAI 形式の SDK やツールを移行している場合は、OpenAI 互換 な `/v1` エンドポイントを使用してください。`POST /v1/responses` は、Responses 固有の動作向けの上級者向けオプション経路のままです。
+
+## ベースURL
+
+```
+https://api.aisonar.dev
+```
+
+## 認証
+
+すべてのAPIエンドポイントは Bearer トークンによる認証が必要です:
+
+```bash
+Authorization: Bearer sk-your-api-key
+```
+
+APIキーは[ダッシュボード](https://console.aisonar.dev)から取得してください。
+
+<Warning>
+**Interactive Playground について**: このドキュメントサイト上のプレイグラウンドはデモ目的のみで提供されており、APIキーの入力には対応していません。APIをテストするには、次のいずれかを使用してください:
+- **cURL** - サンプルコマンドをコピーし、`sk-your-api-key` を実際のキーに置き換えてください
+- **Postman** - 当社の[OpenAPI仕様](/openapi.json)をインポートしてください
+- **SDK** - 当社のベースURLを使用して OpenAI/Anthropic SDK を利用してください
+</Warning>
+
+## サポートされているエンドポイント
+
+### チャットとテキスト生成
+
+| エンドポイント | メソッド | 説明 |
+|----------|--------|-------------|
+| `/v1/chat/completions` | POST | OpenAI互換のチャット補完 |
+| `/v1/messages` | POST | Anthropic互換のメッセージAPI |
+| `/v1/responses` | POST | OpenAI Responses API |
+
+### 埋め込み & 再ランク
+
+| エンドポイント | メソッド | 説明 |
+|----------|--------|-------------|
+| `/v1/embeddings` | POST | テキスト埋め込みを作成 |
+| `/v1/rerank` | POST | ドキュメントを再ランク |
+
+### 画像
+
+| エンドポイント | メソッド | 説明 |
+|----------|--------|-------------|
+| `/v1/images/generations` | POST | テキストから画像を生成 |
+| `/v1/images/edits` | POST | 画像を編集 |
+| `/v1/images/generations/{id}` | GET | タスクベースの画像レスポンス向けの画像タスクステータスパス |
+
+<Info>
+一部の画像モデルは結果をインラインで返す場合があり、また別のものはタスクベースのレスポンスを返します。ルーティングされたプロバイダパスによってはどちらの挙動もあり得ます。create レスポンスに `poll_url` が含まれている場合は、それに従ってください。
+</Info>
+
+### 音声
+
+| エンドポイント | メソッド | 説明 |
+|----------|--------|-------------|
+| `/v1/audio/speech` | POST | テキスト読み上げ（TTS） |
+| `/v1/audio/transcriptions` | POST | 音声からテキスト（STT） |
+
+### リアルタイム
+
+| エンドポイント | メソッド | 説明 |
+|----------|--------|-------------|
+| `/v1/realtime?model={model}` | WS | リアルタイム WebSocket セッション |
+
+<Info>
+`/v1/realtime` は WebSocket アップグレード要求に使用します。通常の `GET /v1/realtime` は、WebSocket ルートを直接確認できないクライアント向けにエンドポイントメタデータを返します。
+</Info>
+
+### 動画
+
+| エンドポイント | メソッド | 説明 |
+|----------|--------|-------------|
+| `/v1/videos/generations` | POST | 動画生成タスクを作成 |
+| `/v1/tasks/{id}` | GET | 動画ジョブの非同期タスクステータスを取得 |
+| `/v1/videos/generations/{id}` | GET | レガシー互換の動画タスクステータスパス |
+
+<Info>
+新しいクライアントの場合は `/v1/tasks/{id}` を優先し、create レスポンスで返される `poll_url` に従ってください。`/v1/videos/generations/{id}` は後方互換性のために残してください。
+</Info>
+
+### 非同期タスク
+
+| エンドポイント | メソッド | 説明 |
+|----------|--------|-------------|
+| `/v1/tasks/{id}` | GET | 統一された非同期タスクステータスのエンドポイント。返された `poll_url` をたどる場合に推奨 |
+
+<Info>
+このエンドポイントは動画、音楽、3D に限定されません。一部の画像タスクも標準的なポーリングパスとして `/v1/tasks/{id}` を使用する場合があります。
+</Info>
+
+### 音楽
+
+| エンドポイント | メソッド | 説明 |
+|----------|--------|-------------|
+| `/v1/music/generations` | POST | 音楽生成タスクを作成 |
+| `/v1/music/generations/{id}` | GET | 音楽専用のステータスパス |
+
+<Info>
+新しいクライアントの場合は、まず返却された `poll_url` を優先してください。固定のタスクステータスエンドポイントが必要な場合は `/v1/tasks/{id}` を使用し、音楽専用の互換パスとして `/v1/music/generations/{id}` を維持してください。
+</Info>
+
+### 3D生成
+
+| エンドポイント | メソッド | 説明 |
+|----------|--------|-------------|
+| `/v1/3d/generations` | POST | 3Dモデル生成タスクを作成 |
+| `/v1/3d/generations/{id}` | GET | 3D専用のステータスパス |
+
+<Info>
+新しいクライアントの場合は、まず返却された `poll_url` を優先してください。固定のタスクステータスエンドポイントが必要な場合は `/v1/tasks/{id}` を使用し、3D専用の互換パスとして `/v1/3d/generations/{id}` を維持してください。
+</Info>
+
+### モデル
+
+| エンドポイント | メソッド | 説明 |
+|----------|--------|-------------|
+| `/v1/models` | GET | 利用可能なモデルをすべて一覧表示 |
+| `/v1/models/{model}` | GET | 特定モデルの情報を取得 |
+
+### Gemini (v1beta)
+
+ネイティブな Google Gemini API フォーマットのサポート:
+
+| エンドポイント | メソッド | 説明 |
+|----------|--------|-------------|
+| `/v1beta/models/{model}:generateContent` | POST | コンテンツを生成（Geminiフォーマット） |
+| `/v1beta/models/{model}:streamGenerateContent` | POST | ストリームでコンテンツを生成（Geminiフォーマット） |
+
+<Note>
+Gemini エンドポイントは、標準の Bearer トークンに加え `?key=` クエリパラメータによる認証をサポートします。
+</Note>
+
+## レスポンス形式
+
+すべてのレスポンスは一貫した形式に従います:
+
+### 成功レスポンス
+
+```json
+{
+  "id": "chatcmpl-abc123",
+  "object": "chat.completion",
+  "created": 1234567890,
+  "model": "gpt-4o",
+  "choices": [...],
+  "usage": {
+    "prompt_tokens": 10,
+    "completion_tokens": 20,
+    "total_tokens": 30
+  }
+}
+```
+
+### ルーティングの透明性
+
+すべてのレスポンスにはチャンネル情報を含む `_routing` フィールドが含まれます:
+
+```json
+{
+  "id": "chatcmpl-abc123",
+  ...,
+  "_routing": {
+    "channel": {
+      "id": "ch_xxx",
+      "name": "channel-name",
+      "provider": "openai",
+      "channelType": "PLATFORM"
+    },
+    "cached": false,
+    "retryCount": 0
+  }
+}
+```
+
+| フィールド | 説明 |
+|-------|-------------|
+| `channel.id` | 使用されたチャンネルの識別子 |
+| `channel.provider` | 上流プロバイダー（openai、anthropic など） |
+| `channel.channelType` | `PLATFORM`（AI Sonar）または `PRIVATE`（BYOK） |
+| `cached` | レスポンスがキャッシュから提供されたかどうか |
+| `retryCount` | リトライ試行回数（存在する場合） |
+
+### エラーレスポンス
+
+```json
+{
+  "error": {
+    "message": "Invalid API key provided",
+    "type": "invalid_api_key",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+## レート制限
+
+レート制限はロールベースで、管理者により設定可能です。デフォルト値:
+
+| ロール | リクエスト/分 |
+|------|-------------|
+| ユーザー | 60 |
+| パートナー | 300 |
+| VIP | 1,000 |
+
+<Note>
+カスタムのレート制限についてはサポートにお問い合わせください。正確な値はアカウント設定により異なる場合があります。
+</Note>
+
+レート制限を超えた場合、API は `429` ステータスコードを返し、待機時間を示す `Retry-After` ヘッダーが付与されます。
+
+## OpenAPI 仕様
+
+<Card
+  title="OpenAPI仕様"
+  icon="file-code"
+  href="/openapi.json"
+>
+  OpenAPI 3.0 の完全な仕様をダウンロード
+</Card>

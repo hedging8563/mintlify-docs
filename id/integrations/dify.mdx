@@ -1,0 +1,134 @@
+---
+title: "Dify"
+description: "Integrasikan AI Sonar dengan Dify menggunakan penyedia OpenAI dan URL dasar kustom"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Gambaran Umum
+
+Dify bekerja dengan baik bersama AI Sonar melalui alur penyedia model yang kompatibel dengan OpenAI.
+
+Untuk versi Dify saat ini, jalur yang paling aman biasanya adalah:
+- pilih penyedia bawaan **OpenAI**
+- atur API key AI Sonar Anda
+- atur URL dasar kustom ke `https://api.aisonar.dev/v1`
+
+<Note>
+Beberapa build Dify yang lebih lama menampilkan ini sebagai `OpenAI-API-compatible` alih-alih penyedia bawaan `OpenAI` dengan kolom URL dasar kustom. Jika UI Dify Anda terlihat berbeda, gunakan alur penyedia kustom yang kompatibel dengan OpenAI yang paling mendekati dan tersedia di versi tersebut.
+</Note>
+
+Ini adalah jalur integrasi yang berorientasi chat-completions. Ini tidak boleh dipahami sebagai jaminan bahwa Dify mengekspos perilaku Responses atau WebSocket yang sama seperti integrasi Codex khusus.
+
+
+<Note>
+**Jenis**: Framework atau platform
+
+**Jalur utama**: Jalur chat kompatibel OpenAI
+
+**Tingkat dukungan**: Didukung dengan batas lingkup
+</Note>
+
+## Prasyarat
+
+- Akun AI Sonar dengan akses API
+- Dify Cloud atau Dify yang di-host sendiri
+
+## Langkah Konfigurasi
+
+### Langkah 1: Dapatkan API Key Anda
+
+1. Masuk ke [AI Sonar Dashboard](https://console.aisonar.dev)
+2. Buka [API Keys](https://console.aisonar.dev/api)
+3. Buat atau salin API key yang diawali dengan `sk-`
+
+### Langkah 2: Konfigurasikan Penyedia
+
+<Steps>
+  <Step title="Buka Penyedia Model">
+    Di Dify, buka **Settings** → **Model Providers**
+  </Step>
+  <Step title="Pilih OpenAI">
+    Buka pengaturan penyedia **OpenAI**. Jika versi Dify Anda tidak menawarkan URL dasar kustom di sini, gunakan opsi penyedia kustom yang kompatibel dengan OpenAI yang tersedia di versi tersebut sebagai gantinya.
+  </Step>
+  <Step title="Masukkan Pengaturan AI Sonar">
+    Gunakan nilai berikut:
+
+    | Bidang | Nilai |
+    |-------|-------|
+    | Kunci API | `sk-your-api-key` |
+    | URL Basis API / URL Basis Kustom | `https://api.aisonar.dev/v1` |
+  </Step>
+  <Step title="Tambahkan Model">
+    Tambahkan model yang ingin Anda gunakan, misalnya:
+    - `gpt-5.4`
+    - `gpt-5-mini`
+    - `gpt-4o`
+    - `claude-sonnet-4-6`
+    - `claude-opus-4-6`
+    - `gemini-2.5-flash`
+    - `gemini-2.5-pro`
+    - `deepseek-r1`
+  </Step>
+</Steps>
+
+### Langkah 3: Uji Koneksi
+
+1. Pilih satu model seperti `gpt-5-mini` atau `gpt-4o`
+2. Kirim prompt uji
+3. Pastikan Dify menerima respons yang valid
+
+## Embeddings untuk Knowledge Base
+
+Untuk RAG dan pengindeksan knowledge base, tambahkan model embedding seperti:
+- `text-embedding-3-small`
+- `text-embedding-3-large`
+
+Lalu atur model tersebut sebagai model embedding default di knowledge base yang relevan atau pada pengaturan aplikasi.
+
+## Peran Model yang Direkomendasikan
+
+| Kasus Penggunaan | Model yang Disarankan |
+|----------|------------------|
+| Chat default | `gpt-5.4`, `gpt-5-mini`, `gpt-4o` |
+| Penalaran mendalam | `gpt-5.4`, `claude-opus-4-6`, `deepseek-r1` |
+| Cepat/murah | `gpt-5-mini`, `gemini-2.5-flash` |
+| Embeddings | `text-embedding-3-small`, `text-embedding-3-large` |
+
+## Praktik Terbaik
+
+<AccordionGroup>
+  <Accordion title="Mulai dengan penyedia OpenAI bawaan">
+    Pada versi Dify yang lebih baru, penyedia OpenAI bawaan dengan URL dasar kustom biasanya merupakan pengaturan yang paling rapi untuk AI Sonar.
+  </Accordion>
+
+  <Accordion title="Gunakan model yang lebih murah untuk iterasi">
+    Gunakan `gpt-5-mini` atau `gemini-2.5-flash` saat melakukan iterasi, lalu pindahkan alur kerja yang lebih berat ke model yang lebih kuat hanya jika diperlukan.
+  </Accordion>
+
+  <Accordion title="Ingat bahwa Dify biasanya berorientasi pada chat-completions">
+    Sebagian besar alur Dify menggunakan perilaku chat yang kompatibel dengan OpenAI. Jika Anda memerlukan Responses khusus Codex atau perilaku WebSocket, gunakan integrasi Codex khusus alih-alih Dify.
+  </Accordion>
+</AccordionGroup>
+
+## Pemecahan Masalah
+
+<AccordionGroup>
+  <Accordion title="Kesalahan Koneksi">
+    - Verifikasi bahwa URL dasar persis `https://api.aisonar.dev/v1`
+    - Hapus trailing slash jika Dify menduplikasinya
+    - Pastikan server Dify dapat menjangkau AI Sonar melalui internet publik
+  </Accordion>
+
+  <Accordion title="401 Unauthorized">
+    - Periksa kembali API key
+    - Pastikan key aktif di dashboard AI Sonar
+    - Pastikan nilai yang ditempel ke Dify tidak mengandung spasi tambahan atau baris baru
+  </Accordion>
+
+  <Accordion title="Model Tidak Ditemukan">
+    - Verifikasi nama model secara persis
+    - Tambahkan ulang entri model jika antarmuka penyedia menyimpan cache nilai yang lebih lama
+    - Periksa ketersediaan model saat ini di docs atau dashboard AI Sonar
+  </Accordion>
+</AccordionGroup>

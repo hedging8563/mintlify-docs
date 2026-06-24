@@ -1,0 +1,54 @@
+---
+title: "Realtime WebSocket"
+openapi: "GET /v1/realtime"
+description: "الاتصال بجلسات صوتية ومتعددة الوسائط فورية عبر WebSocket"
+---
+
+## نظرة عامة
+
+يستخدم هذا المسار لجلسات التعرف على الكلام، توليد الكلام، ترجمة الكلام، أو النماذج متعددة الوسائط الفورية. طلب `GET` العادي يعيد معلومات المسار؛ أما ترقية WebSocket فتُمرر إلى جلسة المزود المختارة.
+
+<Note>على الوكلاء اكتشاف النماذج التي تدعم realtime عبر `/v1/models` قبل فتح socket.</Note>
+
+## الاتصال
+
+<ParamField query="model" type="string" required>
+  معرّف نموذج realtime. استخدم نموذجاً يعلن عقده العام دعم realtime.
+</ParamField>
+
+<ParamField header="Authorization" type="string" required>
+  مفتاح API بصيغة Bearer. يجب أن يرسل عميل WebSocket ترويسة `Authorization: Bearer sk-your-api-key` أثناء طلب الترقية.
+</ParamField>
+
+<RequestExample>
+```javascript JavaScript
+import WebSocket from 'ws';
+
+const socket = new WebSocket('wss://api.aisonar.dev/v1/realtime?model=qwen-tts-realtime', {
+  headers: { Authorization: 'Bearer sk-your-api-key' }
+});
+
+socket.on('open', () => {
+  socket.send(JSON.stringify({ type: 'session.start' }));
+});
+
+socket.on('message', (data) => {
+  console.log('realtime event', data.toString());
+});
+```
+
+```bash cURL
+curl "https://api.aisonar.dev/v1/realtime" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+## الرسائل
+
+يمرر AI Sonar رسائل WebSocket بين عميلك والمزود الفوري الذي تم اختياره. احتفظ بشكل الأحداث الرسمي للنموذج المحدد ومرر `model` في query string.
+
+## الفوترة والإغلاق
+
+تستخدم جلسات realtime رصيد مفتاح API نفسه. يخصم AI Sonar تقديراً صغيراً عند فتح socket، ثم يسوي المبلغ أو يرده عند الإغلاق.
+
+أغلق socket العميل عند اكتمال الجلسة. إذا أغلق المزود أولاً، يحاول AI Sonar تمرير رمز الإغلاق إلى العميل.

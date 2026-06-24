@@ -1,0 +1,149 @@
+---
+title: "Coding Agent 模型选择"
+description: "为每种编码任务选择合适的模型——对比表格、推荐方案和配置说明"
+---
+
+## 编码模型对比
+
+| 模型 | 速度 | 代码质量 | 成本 | 上下文窗口 | 最适合 |
+|------|------|---------|------|-----------|--------|
+| `claude-opus-4-6` | 中等 | 优秀 | $$$$ | 200K | 架构设计、复杂重构 |
+| `gpt-5.4` | 中等 | 优秀 | $$$$ | 200K | 复杂推理、规划 |
+| `claude-sonnet-4-6` | 快 | 很好 | $$$ | 200K | 通用编码、审查 |
+| `gemini-3-pro-preview` | 快 | 很好 | $$$ | 1M | 大型代码库分析 |
+| `gpt-5-mini` | 很快 | 好 | $$ | 128K | 快速编辑、补全 |
+| `gemini-3-flash-preview` | 很快 | 好 | $$ | 1M | 快速迭代、搜索 |
+| `deepseek-r1` | 中等 | 很好 | $ | 64K | 推理密集型任务 |
+| `deepseek-v3.2` | 快 | 好 | $ | 128K | 批量生成、样板代码 |
+
+## 按任务推荐
+
+<AccordionGroup>
+  <Accordion title="代码生成 / 脚手架">
+    **推荐**：`claude-sonnet-4-6`、`gemini-3-pro-preview`
+
+    这些模型生成的代码结构清晰、命名规范。复杂的多文件脚手架可考虑 `claude-opus-4-6`。
+
+    经济替代：`deepseek-v3.2` 处理样板代码效果好，成本仅为前者的零头。
+  </Accordion>
+
+  <Accordion title="代码审查 / 重构">
+    **推荐**：`claude-sonnet-4-6`、`deepseek-r1`
+
+    代码审查受益于推理能力。`deepseek-r1` 在这方面性价比特别高——其思维链方法能捕捉细微问题。
+
+    安全审查：`claude-opus-4-6` 或 `gpt-5.4`。
+  </Accordion>
+
+  <Accordion title="Bug 修复 / 调试">
+    **推荐**：`claude-sonnet-4-6`、`gpt-5-mini`
+
+    Bug 修复通常范围明确——你知道什么坏了。标准档模型就能胜任。仅在复杂的跨文件 bug 时使用高端模型。
+  </Accordion>
+
+  <Accordion title="架构设计">
+    **推荐**：`claude-opus-4-6`、`gpt-5.4`
+
+    架构决策受益于最强的推理能力。这类决策不频繁但影响大，值得使用高端模型。
+  </Accordion>
+
+  <Accordion title="快速编辑 / Tab 补全">
+    **推荐**：`gpt-5-mini`、`gemini-3-flash-preview`
+
+    交互式使用中速度至关重要。响应快的经济模型提供最佳体验。不要在自动补全上浪费高端 token。
+  </Accordion>
+</AccordionGroup>
+
+## AI Sonar 路由机制
+
+AI Sonar 自动将请求路由到最佳可用提供方。
+
+### 路由策略
+
+| 策略 | 行为 | 适用场景 |
+|------|------|---------|
+| **PRIORITY** | 路由到最高优先级的可用提供方 | 注重可靠性 |
+| **COST** | 路由到最便宜的可用提供方 | 注重成本 |
+
+你可以在控制台设置偏好策略。
+
+### 自动降级
+
+如果某个提供方不可用或返回错误，AI Sonar 自动重试下一个提供方：
+
+```
+请求：claude-sonnet-4-6
+  → 提供方 A（主要）：503 错误
+  → 提供方 B（备用）：✓ 成功
+```
+
+这一切透明进行——你的 Coding Agent 看到的是正常响应。
+
+### 原生格式路由
+
+当所选模型和路由到的渠道支持时，AI Sonar 可以通过该模型系列的原生 API 格式路由请求，以获得更好的兼容性：
+
+| 模型系列 | API 格式 | Base URL |
+|---------|----------|----------|
+| Claude | Anthropic Messages | `https://api.aisonar.dev` |
+| GPT | OpenAI Responses | `https://api.aisonar.dev/v1` |
+| Gemini | Gemini Native API | `https://api.aisonar.dev` 或 `https://api.aisonar.dev/v1beta`，取决于客户端路径 |
+| DeepSeek | OpenAI Chat | `https://api.aisonar.dev/v1` |
+
+Claude Code 是一条强 Anthropic 原生路径。Gemini 原生 API 也存在，但 Gemini CLI 本身仍属于 best-effort 兼容路径，不应被视为长期稳定工作流。
+
+## 各工具配置
+
+<AccordionGroup>
+  <Accordion title="Claude Code">
+    ```bash
+    export ANTHROPIC_API_KEY="sk-your-api-key"
+    export ANTHROPIC_BASE_URL="https://api.aisonar.dev"
+    ```
+
+    选择模型：`claude --model claude-sonnet-4-6`
+
+    [完整指南 →](/zh/integrations/claude-code)
+  </Accordion>
+
+  <Accordion title="Cursor">
+    在 Settings → Models 中：
+    - API Key: `sk-your-api-key`
+    - Base URL: `https://api.aisonar.dev/v1`
+    - Model: `claude-sonnet-4-6` 或 `gpt-5-mini`
+
+    [完整指南 →](/zh/integrations/cursor)
+  </Accordion>
+
+  <Accordion title="Codex CLI">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export OPENAI_BASE_URL="https://api.aisonar.dev/v1"
+    ```
+
+    [完整指南 →](/zh/integrations/codex-cli)
+  </Accordion>
+
+  <Accordion title="Gemini CLI">
+    ```bash
+    export GEMINI_API_KEY="sk-your-api-key"
+    export GOOGLE_GEMINI_BASE_URL="https://api.aisonar.dev"
+    ```
+
+    请将此路径视为 best-effort 兼容，而不是稳定的上游契约。
+
+    [完整指南 →](/zh/integrations/gemini-cli)
+  </Accordion>
+
+  <Accordion title="OpenCode">
+    ```json
+    {
+      "provider": "openai",
+      "apiKey": "sk-your-api-key",
+      "baseURL": "https://api.aisonar.dev/v1"
+    }
+    ```
+
+    [完整指南 →](/zh/integrations/opencode)
+  </Accordion>
+</AccordionGroup>

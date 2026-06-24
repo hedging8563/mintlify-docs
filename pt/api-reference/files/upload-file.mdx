@@ -1,0 +1,53 @@
+---
+title: "Carregar Arquivo"
+openapi: "POST /v1/files"
+description: "Carrega um arquivo de entrada em lote JSONL para criação em lote posterior."
+---
+
+## Visão Geral
+
+Este endpoint faz parte da API em Lote compatível com OpenAI da AI Sonar. Os trabalhos em lote usam arquivos JSONL carregados, são executados de forma assíncrona e podem retornar arquivos de saída/erro posteriormente.
+
+## Observações
+
+- Os arquivos de entrada em lote devem usar `purpose=batch`.
+- `completion_window` é atualmente `24h`.
+- A ordenação da saída não é garantida; sempre combine pelo `custom_id`.
+- Streaming não é suportado dentro dos itens em lote.
+
+## Exemplo
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/files" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F "purpose=batch" \
+  -F "file=@batch-input.jsonl;type=application/jsonl"
+```
+</RequestExample>
+
+## Solicitação / Resposta
+
+Use o painel interativo OpenAPI acima para o esquema exato.
+
+## Dicas Operacionais
+
+- Use `custom_id` para reconciliação idempotente a montante.
+- Espere `output_file_id` e `error_file_id` somente após o trabalhador finalizar o lote.
+- A precificação em lote pode diferir da precificação síncrona porque as regras de desconto `isBatchRequest=true` se aplicam.
+## Entradas de arquivos de imagem
+
+A mesma rota `/v1/files` também pode enviar arquivos de imagem de referência para `/v1/images/edits`.
+
+- Use `purpose=user_data` ou `purpose=vision`.
+- Opcionalmente inclua `model` para selecionar o modelo de edição de imagem; o padrão é `gpt-image-2`.
+- O `file_id` retornado é vinculado ao canal upstream de edição de imagem selecionado e pode ser reutilizado em `images[].file_id`.
+
+## Modo Anthropic Files API
+
+Esta mesma rota `/v1/files` também oferece suporte ao caminho Anthropic Files API.
+
+- Adicione o cabeçalho `anthropic-beta: files-api-2025-04-14` para alternar para o modo Anthropic.
+- No modo Anthropic, envie o arquivo original diretamente e não envie `purpose=batch`.
+- O `file_id` retornado fica vinculado ao mesmo canal/workspace oficial da Anthropic e deve ser reutilizado em solicitações `/v1/messages`.
+- Se você pretende referenciar esse arquivo no conteúdo de uma mensagem Anthropic, continue usando os cabeçalhos nativos da Anthropic (`x-api-key`, `anthropic-version` e, quando necessário, o beta header).

@@ -1,0 +1,142 @@
+---
+title: "API de gerenciamento"
+description: "Gerencie saldo da organização, API Keys e uso e faturamento por chave usando um token de gerenciamento."
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Visão geral
+
+A API de gerenciamento permite consultar os totais de saldo da organização, gerenciar as API Keys da organização e consultar uso e faturamento por chave sem usar uma API Key padrão de inferência.
+
+Você pode emitir e rotacionar o token de gerenciamento na página **Settings** do Dashboard.
+
+```bash
+Authorization: Bearer mt-your-management-token
+```
+
+<Warning>
+Tokens de gerenciamento são diferentes de API Keys de inferência. Use `mt-...` para `/v1/management/*` e `sk-...` para endpoints de inferência como `/v1/responses`.
+</Warning>
+
+## Endpoints disponíveis
+
+| Endpoint | Method | Descrição |
+|----------|--------|-----------|
+| `/v1/management/balance` | GET | Retorna os totais atuais de saldo da organização |
+| `/v1/management/api-keys` | GET | Lista as API Keys de usuário da organização atual |
+| `/v1/management/api-keys` | POST | Cria uma nova API Key de usuário |
+| `/v1/management/api-keys/{keyId}` | PATCH | Atualiza nome, limite de uso, modelos permitidos, expiração ou status |
+| `/v1/management/api-keys/{keyId}/usage` | GET | Retorna o detalhamento paginado de uso para uma chave específica |
+| `/v1/management/api-keys/{keyId}/billing` | GET | Retorna o detalhamento agregado de faturamento para uma chave específica |
+
+## Contrato de filtros de uso
+
+`GET /v1/management/api-keys/{keyId}/usage` aceita os seguintes parâmetros de query.
+
+| Parâmetro | Tipo | Padrões / limites | Descrição |
+|-----------|------|-------------------|-----------|
+| `page` | integer | padrão `1`, mínimo `1` | Número da página começando em 1 |
+| `limit` | integer | padrão `50`, mínimo `1`, máximo `100` | Tamanho da página |
+| `logicalModel` | string | comprimento máximo `100` | Nome do modelo lógico solicitado |
+| `modelVendor` | string | comprimento máximo `100` | Fornecedor público do modelo |
+| `scene` | enum | - | `chat`, `image`, `audio`, `video`, `embedding`, `rerank`, `translation`, `music`, `3d` |
+| `accessChannel` | enum | - | `platform` ou `byok` |
+| `startDate` | string | - | Limite inferior inclusivo; aceita RFC3339 com fuso horário ou `YYYY-MM-DD` |
+| `endDate` | string | - | Limite superior inclusivo; aceita RFC3339 com fuso horário ou `YYYY-MM-DD` |
+
+Se `startDate` e `endDate` forem enviados juntos, `startDate` deve ser anterior ou igual a `endDate`.
+
+## Contrato do corpo da API Key
+
+### POST /v1/management/api-keys
+
+| Campo | Tipo | Padrões / limites | Descrição |
+|-------|------|-------------------|-----------|
+| `name` | string | obrigatório, padrão `Default Key`, tamanho `1-50` | Nome de exibição; o servidor remove espaços no início e no fim |
+| `limitAmount` | number \| null | mínimo `0`, máximo de entrada `1000000` | `null` ou omitido = ilimitado, `0` = quota zero. Valores positivos são normalizados para um teto armazenado que não pode exceder `100000` USD equivalente. |
+| `limitCurrency` | enum | default `USD` | Apenas USD. Enviar `CNY` retorna `400 currency_retired`. |
+| `models` | string[] | padrão `[]` | Allowlist opcional de modelos lógicos |
+| `expiresAt` | string \| null | datetime RFC3339 | `null` significa sem expiração |
+
+### PATCH /v1/management/api-keys/{keyId}
+
+| Campo | Tipo | Padrões / limites | Descrição |
+|-------|------|-------------------|-----------|
+| `status` | enum | - | `active`, `inactive`, `suspended`, `revoked` |
+| `name` | string | tamanho `1-50` | Nome de exibição atualizado |
+| `limitAmount` | number \| null | mínimo `0`, máximo de entrada `1000000` | `null` = ilimitado, `0` = quota zero. Valores positivos são normalizados para um teto armazenado que não pode exceder `100000` USD equivalente. |
+| `limitCurrency` | enum | default `USD` | Apenas USD. Enviar `CNY` retorna `400 currency_retired`. |
+| `models` | string[] | - | Allowlist atualizada de modelos lógicos |
+| `expiresAt` | string \| null | datetime RFC3339 | `null` remove a expiração |
+
+A requisição PATCH deve incluir pelo menos um campo.
+
+## Contrato monetário
+
+
+## Semântica de reporting
+
+- `logicalModel` se refere ao modelo lógico público solicitado por quem faz a chamada.
+- `modelVendor` se refere ao fornecedor público do modelo, e não à rota física oculta.
+- `scene` é a cena pública da solicitação derivada do endpoint ou do tipo de tarefa.
+- `accessChannel=platform` significa que a solicitação foi cobrada pelo canal de plataforma da AI Sonar.
+- `accessChannel=byok` significa que a solicitação usou sua própria chave do provedor upstream.
+
+As respostas expõem apenas campos públicos de faturamento e reporting. Os detalhes internos de roteamento e a metadata física do provedor permanecem ocultos.
+- Itens de `/usage` podem incluir `billing_transaction_id` assim que a requisição subjacente atingir o estado de liquidação concluída. Use `request_id` + `billing_transaction_id` para reconciliação por requisição.
+
+## Nota sobre paginação de billing
+
+`/usage` é paginado. `/billing` atualmente é um endpoint agregado e não retorna metadata de paginação no estilo `page` / `limit`. Se você precisar de registros detalhados linha a linha, use `/usage`.
+
+## Exemplo rápido
+
+Comece consultando o saldo da organização com o token de gerenciamento atual.
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/management/balance" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+Em seguida, liste as API Keys disponíveis para esse mesmo token de gerenciamento.
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/management/api-keys" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response (200)
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "key_abc123def456",
+      "name": "Backend Worker",
+      "key_prefix": "sk-abc123...",
+      "status": "active",
+      "limit_amount": 500.0,
+      "used_amount": 148.25,
+      "models": ["gpt-4o-mini", "claude-3-7-sonnet"],
+      "expires_at": "2026-04-30T00:00:00.000Z",
+      "last_used_at": "2026-03-27T08:12:45.000Z",
+      "created_at": "2026-03-01T10:00:00.000Z"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## Próximos passos
+
+- [Obter saldo da organização](/pt/api-reference/management/get-balance)
+- [Listar API Keys](/pt/api-reference/management/list-api-keys)
+- [Criar API Key](/pt/api-reference/management/create-api-key)
+- [Atualizar API Key](/pt/api-reference/management/update-api-key)
+- [Obter uso da API Key](/pt/api-reference/management/get-api-key-usage)
+- [Obter faturamento da API Key](/pt/api-reference/management/get-api-key-billing)

@@ -1,0 +1,38 @@
+---
+title: "파일 내용 가져오기"
+openapi: "GET /v1/files/{file_id}/content"
+description: "업로드된 파일의 원본 내용을 다운로드합니다."
+---
+
+## 개요
+
+이 엔드포인트는 주로 AI Sonar의 OpenAI 호환 Batch API 파일 내용 조회를 대상으로 합니다.
+
+요청이 Anthropic Files 호환 모드를 선택한 경우, 같은 경로에서 바인딩된 작업공간의 원본 저장 파일 내용을 프록시할 수 있습니다.
+
+## 참고 사항
+
+- 배치 입력 파일은 `purpose=batch`를 사용해야 합니다.
+- `completion_window`는 현재 `24h`입니다.
+- 출력 순서는 보장되지 않으므로 항상 `custom_id`로 일치시켜야 합니다.
+- 배치 항목 내에서는 스트리밍이 지원되지 않습니다.
+
+## 예시
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/files/file_abc123/content" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  --output batch-output.jsonl
+```
+</RequestExample>
+
+## 요청 / 응답
+
+정확한 스키마는 위의 대화형 OpenAPI 패널을 참고하세요.
+
+## 운영 팁
+
+- 다운스트림 조정을 멱등적으로 하려면 `custom_id`를 사용하세요.
+- 작업자가 배치를 최종화한 뒤에만 `output_file_id`와 `error_file_id`가 생깁니다.
+- 배치 가격은 `isBatchRequest=true` 할인 규칙 때문에 동기 가격과 다를 수 있습니다.

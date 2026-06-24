@@ -1,0 +1,66 @@
+---
+title: "Coding Agents"
+description: "Akıllı yönlendirme, önbellekleme ve model seçimiyle coding agent maliyetlerini %90'a kadar düşürün"
+---
+
+## Coding Agents Neden Pahalıdır
+
+Claude Code, Cursor ve Codex CLI gibi coding agents çok güçlüdür — ancak çoğu ekibi şaşırtan bir hızda token tüketirler.
+
+**İstek başına uzun bağlam.** Her çağrı bir sistem istemi, proje dosyaları ve konuşma geçmişi içerir — model düşünmeye başlamadan önce genellikle 10.000–100.000+ token.
+
+**Yüksek frekanslı çağrılar.** Tek bir coding oturumu düzinelerce API çağrısını tetikler: kod üretimi, arama, inceleme, otomatik tamamlama ve araç kullanımı. 1 saatlik bir oturum kolayca 200+ isteğe ulaşabilir.
+
+**Konuşma birikimi.** Her tur tam mesaj geçmişini yeniden gönderir. 20. turda, aynı bağlam için 20 kez ödeme yapıyorsunuz.
+
+<Info>
+Tipik bir 1 saatlik Claude Code oturumu 2–5 milyon token tüketebilir. Doğrudan API fiyatlarıyla bu, modele bağlı olarak saatte $6–30+ demektir.
+</Info>
+
+## AI Sonar Nasıl Yardımcı Olur
+
+<CardGroup cols={2}>
+  <Card title="توجيه متعدد المزوّدين" icon="route" href="/tr/guides/coding-agent-cost#smart-model-selection">
+    Her model için mevcut en ucuz sağlayıcı'a otomatik olarak yönlendirin. Aynı model, daha düşük fiyat.
+  </Card>
+  <Card title="Prompt Cache geçişi" icon="bolt" href="/tr/guides/prompt-cache">
+    Upstream prefix caching (Anthropic, OpenAI, DeepSeek) otomatik çalışır — uzun sistem istemi'lar sağlayıcı seviyesinde önbelleğe alınır.
+  </Card>
+  <Card title="Model yedeğe düşürme" icon="arrows-rotate" href="/tr/guides/coding-agent-models#how-aisonar-routing-works">
+    Bir sağlayıcı çevrimdışı veya yavaşsa, istekler otomatik olarak bir sonraki mevcut sağlayıcı'a yönlendirilir. Sıfır kesinti.
+  </Card>
+</CardGroup>
+
+## Desteklenen Coding Tool'ları
+
+<CardGroup cols={3}>
+  <Card title="Cursor" icon="text-slash" href="/tr/integrations/cursor">
+    Sekme tamamlama ve sohbet özellikli AI destekli IDE
+  </Card>
+  <Card title="Claude Code" icon="terminal" href="/tr/integrations/claude-code">
+    Anthropic'in resmi CLI coding agent'ı
+  </Card>
+  <Card title="Codex CLI" icon="code" href="/tr/integrations/codex-cli">
+    OpenAI'ın terminal tabanlı coding agent'ı
+  </Card>
+  <Card title="Gemini CLI" icon="gem" href="/tr/integrations/gemini-cli">
+    Google'ın komut satırı coding asistanı
+  </Card>
+  <Card title="OpenCode" icon="laptop-code" href="/tr/integrations/opencode">
+    Açık kaynaklı terminal coding agent
+  </Card>
+  <Card title="AI Sonar API Skill" icon="lemon" href="/tr/integrations/coding-agent-skill">
+    Paylaşılan AI Sonar API entegrasyon skill'ini kullanın
+  </Card>
+</CardGroup>
+
+## Daha Fazla Bilgi
+
+<CardGroup cols={2}>
+  <Card title="Maliyet Optimizasyon Rehberi" icon="piggy-bank" href="/tr/guides/coding-agent-cost">
+    Coding agent faturanızı düşürmek için somut stratejiler: model seçimi, önbellekleme, token yönetimi ve gerçek maliyet karşılaştırmaları.
+  </Card>
+  <Card title="Model Seçim Rehberi" icon="microchip" href="/tr/guides/coding-agent-models">
+    Hangi coding görevi için hangi model? Karşılaştırma tablosu, göreve özel öneriler ve tool başına yapılandırma.
+  </Card>
+</CardGroup>

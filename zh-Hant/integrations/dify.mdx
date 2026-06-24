@@ -1,0 +1,131 @@
+---
+title: "Dify"
+description: "使用 OpenAI 供應商與自訂 base URL 將 AI Sonar 整合至 Dify"
+---
+
+## 概覽
+
+Dify 透過其與 OpenAI 相容的模型供應商流程，可與 AI Sonar 良好搭配運作。
+
+對於目前版本的 Dify，通常最安全的做法是：
+- 選擇內建的 **OpenAI** 供應商
+- 設定你的 AI Sonar API key
+- 將自訂 base URL 設為 `https://api.aisonar.dev/v1`
+
+<Note>
+某些較舊版本的 Dify 會將此顯示為 `OpenAI-API-compatible`，而不是提供可設定自訂 base URL 欄位的內建 `OpenAI` 供應商。若你的 Dify UI 看起來不同，請使用該版本中最接近的 OpenAI 相容自訂供應商流程。
+</Note>
+
+<Note>
+**類型**: 框架或平台
+
+**主要路徑**: OpenAI 相容的聊天路徑
+
+**支援級別**: 支援，但有邊界
+</Note>
+
+這是一條以 chat-completions 為導向的整合路徑，不應被理解為 Dify 會暴露與專用 Codex 整合同樣的 Responses 或 WebSocket 行為。
+
+## 先決條件
+
+- 具有 API 存取權限的 AI Sonar 帳戶
+- Dify Cloud 或自行託管的 Dify
+
+## 設定步驟
+
+### 步驟 1：取得你的 API Key
+
+1. 登入 [AI Sonar Dashboard](https://console.aisonar.dev)
+2. 開啟 [API Keys](https://console.aisonar.dev/api)
+3. 建立或複製一個以 `sk-` 開頭的 API key
+
+### 步驟 2：設定 Provider
+
+<Steps>
+  <Step title="開啟 Model Providers">
+    在 Dify 中，前往 **Settings** → **Model Providers**
+  </Step>
+  <Step title="選擇 OpenAI">
+    開啟 **OpenAI** 供應商設定。若你的 Dify 版本無法在此提供自訂 base URL，請改用該版本提供的 OpenAI 相容自訂供應商選項。
+  </Step>
+  <Step title="輸入 AI Sonar 設定">
+    使用以下值：
+
+    | 欄位 | 值 |
+    |-------|-------|
+    | API 金鑰 | `sk-your-api-key` |
+    | API 基底 URL / 自訂基底 URL | `https://api.aisonar.dev/v1` |
+  </Step>
+  <Step title="新增模型">
+    新增你想使用的 models，例如：
+    - `gpt-5.4`
+    - `gpt-5-mini`
+    - `gpt-4o`
+    - `claude-sonnet-4-6`
+    - `claude-opus-4-6`
+    - `gemini-2.5-flash`
+    - `gemini-2.5-pro`
+    - `deepseek-r1`
+  </Step>
+</Steps>
+
+### 步驟 3：測試連線
+
+1. 選擇一個 model，例如 `gpt-5-mini` 或 `gpt-4o`
+2. 傳送測試 prompt
+3. 確認 Dify 收到有效回應
+
+## 用於 Knowledge Base 的 Embeddings
+
+對於 RAG 與 knowledge base 索引，請新增 embedding model，例如：
+- `text-embedding-3-small`
+- `text-embedding-3-large`
+
+然後在相關的 knowledge base 或應用程式設定中，將其設為預設的 embedding model。
+
+## 建議的 Model 角色
+
+| 使用案例 | 建議模型 |
+|----------|------------------|
+| 預設聊天 | `gpt-5.4`, `gpt-5-mini`, `gpt-4o` |
+| 深度推理 | `gpt-5.4`, `claude-opus-4-6`, `deepseek-r1` |
+| 快速／低成本 | `gpt-5-mini`, `gemini-2.5-flash` |
+| Embeddings | `text-embedding-3-small`, `text-embedding-3-large` |
+
+## 最佳實務
+
+<AccordionGroup>
+  <Accordion title="從內建的 OpenAI 供應商開始">
+    在較新的 Dify 版本中，使用具備自訂 base URL 的內建 OpenAI 供應商，通常是設定 AI Sonar 最簡潔的方式。
+  </Accordion>
+
+  <Accordion title="在迭代時使用較便宜的 models">
+    在迭代期間使用 `gpt-5-mini` 或 `gemini-2.5-flash`，之後僅在需要時，才將較重的工作流程切換到更強的模型。
+  </Accordion>
+
+  <Accordion title="記住 Dify 通常以 chat-completions 為導向">
+    大多數 Dify 流程使用與 OpenAI 相容的聊天行為。若你需要 Codex 專用的 Responses 或 WebSocket 行為，請使用專屬的 Codex 整合，而非 Dify。
+  </Accordion>
+</AccordionGroup>
+
+## 疑難排解
+
+<AccordionGroup>
+  <Accordion title="連線錯誤">
+    - 確認 base URL 完全為 `https://api.aisonar.dev/v1`
+    - 如果 Dify 重複附加斜線，請移除結尾斜線
+    - 確認 Dify server 可透過公開網際網路連線至 AI Sonar
+  </Accordion>
+
+  <Accordion title="401 Unauthorized">
+    - 再次確認 API key
+    - 確認該 key 在 AI Sonar dashboard 中為啟用狀態
+    - 確保貼入 Dify 的值不包含多餘空格或換行
+  </Accordion>
+
+  <Accordion title="找不到 Model">
+    - 確認 model 名稱完全正確
+    - 若供應商 UI 快取了較舊的值，請重新新增 model 項目
+    - 在 AI Sonar 文件或 dashboard 中檢查目前可用的 models
+  </Accordion>
+</AccordionGroup>

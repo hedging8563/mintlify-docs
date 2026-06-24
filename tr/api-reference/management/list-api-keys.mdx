@@ -1,0 +1,26 @@
+---
+title: "API Anahtarlarını Listele"
+openapi: "GET /v1/management/api-keys"
+description: "Geçerli kuruluş yönetim belirteci için kullanıcı tarafından yönetilen API anahtarlarını listeler."
+---
+
+## Genel Bakış
+
+Geçerli yönetim belirteciyle ilişkili kuruluştaki kullanıcı API anahtarlarını döndürür.
+
+## Notlar
+
+- Playground veya Claw anahtarları gibi sistem tarafından yönetilen anahtarlar hariç tutulur.
+
+## Örnek
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/management/api-keys" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## İstek / Yanıt
+
+Kesin şema için yukarıdaki etkileşimli OpenAPI panelini kullanın.

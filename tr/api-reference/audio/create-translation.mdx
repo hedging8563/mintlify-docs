@@ -1,0 +1,164 @@
+---
+title: "Çeviri Oluştur"
+openapi: "POST /v1/audio/translations"
+description: "Sesi İngilizce metne çevirir"
+---
+
+## Genel Bakış
+
+Desteklenen herhangi bir dildeki sesi İngilizce metne çevirir. Transkripsiyondan farklı olarak, bu endpoint girdi dilinden bağımsız olarak her zaman İngilizce metin çıktısı üretir.
+
+## İstek Gövdesi
+
+**Senkron istek zaman aşımı:** Bu chat dışı endpoint, yönlendirilen modelin tamamlanmasını bekler. Büyük girdiler, uzun sesler veya büyük batch’ler yaygın 30s istemci varsayılanlarını aşabilir; bu yüzden HTTP istemcisi zaman aşımını en az `120s` olarak ayarlayın.
+
+<ParamField body="file" type="file" required>
+  Çevrilecek ses dosyası. Desteklenen formatlar: `flac`, `mp3`, `mp4`, `mpeg`, `mpga`, `m4a`, `ogg`, `wav`, `webm`. Maksimum dosya boyutu 25 MB'dir.
+</ParamField>
+
+<ParamField body="model" type="string" default="whisper-1">
+  Kullanılacak model. Şu anda yalnızca `whisper-1` desteklenmektedir.
+</ParamField>
+
+<ParamField body="prompt" type="string">
+  Modelin stilini yönlendirmek veya önceki bir segmenti devam ettirmek için isteğe bağlı bir metin. İngilizce olmalıdır.
+</ParamField>
+
+<ParamField body="response_format" type="string" default="json">
+  Çıktının formatı. Seçenekler: `json`, `text`, `srt`, `verbose_json`, `vtt`.
+</ParamField>
+
+<ParamField body="temperature" type="number">
+  0 ile 1 arasında örnekleme temperature değeri. 0.8 gibi daha yüksek değerler daha rastgele çıktı üretirken, 0.2 gibi daha düşük değerler çıktıyı daha odaklı ve deterministik hale getirir.
+</ParamField>
+
+## Yanıt
+
+<ResponseField name="text" type="string">
+  İngilizceye çevrilmiş metin.
+</ResponseField>
+
+`verbose_json` formatı için, yanıt ayrıca şunları içerir:
+
+<ResponseField name="language" type="string">
+  Girdi sesinin algılanan dili.
+</ResponseField>
+
+<ResponseField name="duration" type="number">
+  Girdi sesinin saniye cinsinden süresi.
+</ResponseField>
+
+<ResponseField name="segments" type="array">
+  Zaman damgalarıyla birlikte çevrilmiş metin segmentleri.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/audio/translations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F "file=@german_audio.mp3" \
+  -F "model=whisper-1"
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+with open("german_audio.mp3", "rb") as audio_file:
+    response = client.audio.translations.create(
+        model="whisper-1",
+        file=audio_file
+    )
+
+print(response.text)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+import fs from 'fs';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.audio.translations.create({
+  model: 'whisper-1',
+  file: fs.createReadStream('german_audio.mp3')
+});
+
+console.log(response.text);
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/audio/translations');
+
+$file = new CURLFile('german_audio.mp3', 'audio/mpeg', 'german_audio.mp3');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => [
+        'file' => $file,
+        'model' => 'whisper-1'
+    ]
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+echo $data['text'];
+```
+</RequestExample>
+
+<ResponseExample>
+```json json
+{
+  "text": "Hello, my name is Wolfgang and I come from Germany. Where are you from?"
+}
+```
+
+```json verbose_json
+{
+  "task": "translate",
+  "language": "german",
+  "duration": 8.470000267028809,
+  "text": "Hello, my name is Wolfgang and I come from Germany. Where are you from?",
+  "segments": [
+    {
+      "id": 0,
+      "seek": 0,
+      "start": 0.0,
+      "end": 4.0,
+      "text": " Hello, my name is Wolfgang and I come from Germany.",
+      "tokens": [50364, 2425, 11, 452, 1315, 307, 25329, 293, 286, 808, 490, 5765, 13, 50564],
+      "temperature": 0.0,
+      "avg_logprob": -0.45,
+      "compression_ratio": 1.0,
+      "no_speech_prob": 0.0
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## Çeviri vs Transkripsiyon
+
+| Özellik | Çeviri | Transkripsiyon |
+|---------|-------------|---------------|
+| Çıktı dili | Her zaman İngilizce | Girdi ile aynı |
+| Kullanım durumu | Yabancı dildeki sesi İngilizceye dönüştürme | Orijinal dili koruma |
+| Dil parametresi | Uygulanamaz | İsteğe bağlı ipucu |
+
+<Note>
+  Çeviri endpoint'i kaynak dili otomatik olarak algılar ve İngilizceye çevirir. Transkripsiyondaki `language` parametresi yok sayılır.
+</Note>

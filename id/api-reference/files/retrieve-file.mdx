@@ -1,0 +1,37 @@
+---
+title: "Ambil File"
+openapi: "GET /v1/files/{file_id}"
+description: "Ambil metadata untuk satu file yang diunggah."
+---
+
+## Ikhtisar
+
+Endpoint ini terutama melayani objek file Batch API AI Sonar yang kompatibel dengan OpenAI.
+
+Ketika request memakai mode kompatibilitas Anthropic Files, route yang sama juga dapat mengembalikan metadata file bergaya Anthropic untuk workspace yang terikat.
+
+## Catatan
+
+- File input batch harus menggunakan `purpose=batch`.
+- `completion_window` saat ini adalah `24h`.
+- Urutan output tidak dijamin; selalu cocokkan berdasarkan `custom_id`.
+- Streaming tidak didukung di dalam item batch.
+
+## Contoh
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/files/file_abc123" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+## Request / Respons
+
+Gunakan panel OpenAPI interaktif di atas untuk skema yang tepat.
+
+## Tips Operasional
+
+- Gunakan `custom_id` untuk rekonsiliasi downstream yang idempotent.
+- Harapkan `output_file_id` dan `error_file_id` hanya setelah worker menyelesaikan batch.
+- Harga batch bisa berbeda dari harga sinkron karena aturan diskon `isBatchRequest=true` diterapkan.

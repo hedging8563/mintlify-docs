@@ -1,0 +1,231 @@
+---
+title: "Lister les modèles"
+openapi: "GET /v1/models"
+description: "Liste tous les modèles disponibles"
+---
+
+## Réponse
+
+<ResponseField name="object" type="string">
+  Toujours `list`.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Tableau d’objets modèle.
+
+  Chaque modèle contient :
+  - `id` (string) : Identifiant du modèle
+  - `object` (string) : `model`
+  - `created` (integer) : Horodatage de création
+  - `owned_by` (string) : Fournisseur du modèle
+  - `aisonar.category` (string) : Catégorie publique du modèle
+  - `aisonar.pricing_unit` (string ou `null`) : Unité de tarification publique lorsque disponible
+  - `aisonar.capability_flags` (object ou `null`) : Résumé public des capacités
+  - `aisonar.supported_operations` (array ou `null`) : Opérations publiques hors chat prises en charge par le modèle
+  - `aisonar.pricing_provenance` (object ou `null`) : Métadonnées publiques de provenance de la tarification
+  - `aisonar.public_contract_summary` (object ou `null`) : Résumé de découverte non-chat léger, avec uniquement `public_operations` et `request_endpoint`
+  - `aisonar.agent_preferences` (object) : Renvoyé uniquement lorsque `recommended_for` est présent
+</ResponseField>
+
+<Note>
+`GET /v1/models` est optimisé pour la découverte. Les métadonnées réservées au détail, comme `capability_flags`, `pricing_provenance` et le `public_contract` complet, se trouvent sur `GET /v1/models/{model}`.
+</Note>
+
+## Paramètres de requête
+
+<ParamField query="category" type="string">
+  Filtre facultatif sur la catégorie publique. Prend en charge `chat`, `image`, `video`, `audio`, `tts`, `stt`, `music`, `3d`, `embedding`, `rerank` et `translation`.
+</ParamField>
+
+<ParamField query="recommended_for" type="string">
+  Scène de recommandation non-chat facultative. Prend en charge `image`, `video`, `music`, `3d`, `tts`, `stt`, `embedding`, `rerank` et `translation`.
+</ParamField>
+
+<ParamField query="provider" type="string">
+  Filtre facultatif par fournisseur, par exemple `openai`, `anthropic`, `google` ou `deepseek`.
+</ParamField>
+
+<ParamField query="tag" type="string">
+  Filtre facultatif par tag de modèle, par exemple `chat`, `image`, `video`, `embedding` ou `translation`.
+</ParamField>
+
+<Note>
+Lorsque `recommended_for` est présent, `/v1/models` trie les modèles non-chat selon le plus récent snapshot de taux de réussite sur 24 heures mis en cache. Les modèles avec `status = "insufficient_samples"` restent visibles mais sont classés après les modèles scorés.
+</Note>
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/models" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+```bash cURL
+curl "https://api.aisonar.dev/v1/models?recommended_for=image" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+models = client.models.list()
+
+for model in models.data:
+    print(f"{model.id} ({model.owned_by})")
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const models = await client.models.list();
+
+for (const model of models.data) {
+  console.log(`${model.id} (${model.owned_by})`);
+}
+```
+
+```go Go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "net/http"
+)
+
+func main() {
+    req, _ := http.NewRequest("GET", "https://api.aisonar.dev/v1/models", nil)
+    req.Header.Set("Authorization", "Bearer sk-your-api-key")
+
+    resp, _ := http.DefaultClient.Do(req)
+    defer resp.Body.Close()
+
+    var payload struct {
+        Data []struct {
+            ID      string `json:"id"`
+            OwnedBy string `json:"owned_by"`
+        } `json:"data"`
+    }
+
+    json.NewDecoder(resp.Body).Decode(&payload)
+
+    for _, model := range payload.Data {
+        fmt.Printf("%s (%s)\n", model.ID, model.OwnedBy)
+    }
+}
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/models');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer sk-your-api-key'
+    ]
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+foreach ($data['data'] as $model) {
+    echo "{$model['id']} ({$model['owned_by']})\n";
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "gpt-5.4",
+      "object": "model",
+      "created": 1706000000,
+      "owned_by": "openai"
+    },
+    {
+      "id": "claude-sonnet-4-6",
+      "object": "model",
+      "created": 1706000000,
+      "owned_by": "anthropic"
+    },
+    {
+      "id": "gemini-2.5-flash",
+      "object": "model",
+      "created": 1706000000,
+      "owned_by": "google"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## Filtrage par fournisseur
+
+```python
+# Obtenir tous les modèles OpenAI
+openai_models = [m for m in models.data if m.owned_by == "openai"]
+
+# Obtenir tous les modèles Anthropic
+anthropic_models = [m for m in models.data if m.owned_by == "anthropic"]
+```
+
+## Catégories de modèles
+
+| Fournisseur | Exemples de modèles |
+|----------|----------------|
+| `openai` | gpt-5.4, gpt-5.4-mini, gpt-5-mini, gpt-4o, dall-e-3 |
+| `anthropic` | claude-opus-4-6, claude-sonnet-4-6, claude-haiku-4-5 |
+| `google` | gemini-3-pro-preview, gemini-3-flash-preview, gemini-2.5-pro |
+| `deepseek` | deepseek-r1, deepseek-v3-2 |
+| `xai` | grok-4.1 |
+| `moonshot` | kimi-k2.5 |
+| `minimax` | minimax-m2.1 |
+| `meta` | llama-3.3-70b, llama-3.1-405b |
+
+## Exemple de recommandation d’agent
+
+```json Response
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "gemini-2.5-flash-image",
+      "object": "model",
+      "created": 1706000000,
+      "owned_by": "google",
+      "aisonar": {
+        "category": "image",
+        "pricing_unit": "per_request",
+        "agent_preferences": {
+          "image": {
+            "preferred_rank": 1,
+            "success_rate_24h": 0.98,
+            "sample_count_24h": 423,
+            "status": "ready",
+            "updated_at": "2026-03-28T12:00:00.000Z",
+            "basis": {
+              "score_source": "clickhouse_24h",
+              "channel_id": null,
+              "physical_model": null
+            }
+          }
+        }
+      }
+    }
+  ]
+}
+```

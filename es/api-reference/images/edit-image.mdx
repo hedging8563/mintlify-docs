@@ -1,0 +1,237 @@
+---
+title: "Editar imagen"
+openapi: "POST /v1/images/edits"
+description: "Edita una imagen dado un prompt y una imagen de origen"
+---
+
+## Descripción general
+
+Crea una imagen editada o extendida dada una imagen original y un prompt.
+
+El endpoint admite ambos flujos:
+
+- el flujo clásico de carga `multipart/form-data` al estilo DALL-E que se documenta abajo
+- solicitudes JSON que proporcionan `image_url`, `image_urls` o referencias oficiales `images` para familias de imagen a imagen compatibles
+
+<Note>
+`gpt-image-2` es compatible aquí. Acepta uploads multipart `image`, JSON `image_url` / `image_urls` y referencias oficiales `images[]` (`image_url` o `file_id`), hasta 16 imágenes fuente. Crea los `file_id` primero con `/v1/files`. Usa `async: true` para recibir una tarea primero; los modelos de edición oficiales FLUX/BFL usan el mismo flujo de polling.
+
+Las ediciones con `gpt-image-2` no aceptan `resolution` ni `background`; usa `size` para las dimensiones de salida. Para ediciones con varias imágenes o alta latencia, prefiere `async: true` y consulta la tarea devuelta.
+
+Las solicitudes Nano Banana con imagen de referencia (`nano-banana`, `nano-banana-2` y `nano-banana-pro`) se exponen en `/v1/images/generations` con `operation: "image-to-image"` e `image_urls`, no en este endpoint `/v1/images/edits`.
+
+Los modelos de edición de imagen xAI Grok Imagine (`grok-imagine-image`, `grok-imagine-image-quality` y el legacy `grok-imagine-image-pro`) aceptan como máximo 3 imágenes fuente. Las solicitudes con más de 3 imágenes fuente fallan antes de reenviarse al upstream con `400 too_many_images`.
+
+Nota de compatibilidad: si una solicitud `gpt-image-2` incluye `input_fidelity`, AI Sonar lo elimina antes de reenviarla porque GPT Image 2 ya procesa las entradas de imagen con alta fidelidad.
+</Note>
+
+## Cuerpo de la solicitud
+
+**Tiempo de espera de solicitudes síncronas:** algunos proveedores de imagen enrutados devuelven la imagen final inline y esperan a que termine la generación. Las solicitudes de alta resolución o alta calidad pueden tardar cerca de un minuto o más, así que configura el timeout de tu cliente HTTP en al menos `120s`. Si la respuesta de creación incluye `status: "pending"`, `task_id` o `poll_url`, sigue el `poll_url` devuelto en su lugar.
+
+URLs de imagen remotas: cuando el proveedor enrutado requiere entrada multipart, AI Sonar descarga JSON `image_url`, `image_urls` o `images[].image_url` y reenvía los bytes como partes multipart `image`. Las URLs deben ser públicas `http`/`https`, sin credenciales incrustadas ni fragmentos, y no deben resolver a localhost ni a rangos IP privados o reservados; cada redirección se valida de nuevo. El contenido descargado debe ser una imagen PNG, JPEG o WebP real. Límites: `50MB` por imagen, `200MB` en total para imágenes descargadas por URL en una solicitud, timeout de `10s` y hasta `3` redirecciones.
+
+<ParamField body="image" type="file">
+  Imágenes fuente multipart. Repite `image` para enviar varias fuentes de GPT Image. Los archivos deben ser PNG, JPEG o WebP, hasta 16 imágenes fuente y `50MB` cada una. Los modelos de edición xAI Grok Imagine usan los mismos campos de entrada, pero limitan las imágenes fuente a 3. Las ediciones legacy de DALL-E 2 con máscara siguen esperando PNG con áreas transparentes, o una `mask` separada.
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  Una descripción de texto de la edición deseada.
+</ParamField>
+
+<ParamField body="mask" type="file">
+  Una imagen adicional cuyas áreas completamente transparentes indican dónde se debe editar la imagen. Debe ser un archivo PNG válido, menor de 50MB y tener las mismas dimensiones que `image`.
+</ParamField>
+
+<ParamField body="model" type="string" default="dall-e-2">
+  Modelo que se usará para editar imágenes. `gpt-image-2` es compatible; las ediciones clásicas estilo DALL-E pueden seguir usando `dall-e-2`.
+</ParamField>
+
+<ParamField body="n" type="integer" default="1">
+  El número de imágenes a generar. Debe estar entre 1 y 10.
+</ParamField>
+
+<ParamField body="size" type="string">
+  Tamaño de la imagen generada. Para `gpt-image-2`, usa `auto` o `WIDTHxHEIGHT`; las dimensiones deben ser múltiplos de 16, el lado más largo como máximo `3840px`, la relación lado largo/corto como máximo `3:1`, y el total de píxeles entre `655,360` y `8,294,400`. Las ediciones clásicas de DALL-E admiten `256x256`, `512x512` o `1024x1024`.
+</ParamField>
+
+<ParamField body="response_format" type="string" default="url">
+  Formato en el que se devuelven las imágenes generadas. Debe ser `url` o `b64_json`; el valor predeterminado es `url`.
+
+  Para rutas `gpt-image-2` de Azure Official o compatibles con Azure, AI Sonar no reenvía `response_format` al upstream. El gateway siempre recibe los datos de imagen upstream como `b64_json`; para solicitudes `url`, sube cada imagen al CDN y devuelve `data[].url`. Si el almacenamiento CDN no está disponible o la subida falla, la solicitud falla en vez de degradar a Base64. Para `b64_json`, devuelve el Base64 sin procesar.
+</ParamField>
+
+<ParamField body="async" type="boolean" default="false">
+  Establécelo en `true` con `gpt-image-2` o modelos de edición oficiales FLUX/BFL para devolver una tarea antes de que la imagen final esté lista. Las ediciones asíncronas completadas devuelven URL sin importar el `response_format` solicitado; usa solicitudes síncronas si necesitas `b64_json`.
+</ParamField>
+
+<ParamField body="user" type="string">
+  Un identificador único que representa a su usuario final para monitoreo de abuso.
+</ParamField>
+
+## Respuesta
+
+<ResponseField name="created" type="integer">
+  Marca de tiempo Unix de cuando se crearon las imágenes.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Array de imágenes generadas.
+
+  Cada objeto contiene:
+  - `url` (string): URL de la imagen editada (si response_format es `url`)
+  - `b64_json` (string): Imagen codificada en Base64 (si response_format es `b64_json`)
+</ResponseField>
+
+### Respuesta de tarea asíncrona
+
+Usa `async: true` con `gpt-image-2` o modelos de edición oficiales FLUX/BFL para crear una tarea en lugar de esperar la imagen editada en la solicitud. La respuesta incluye `status: "pending"`, `task_id` y `poll_url`. Consulta `/v1/tasks/{task_id}` hasta que la tarea llegue a `completed` o `failed`.
+
+Las tareas asíncronas de edición solo devuelven las URL finales. Si necesitas datos de imagen `b64_json` sin procesar, usa una solicitud síncrona.
+
+
+Al crear la tarea puede reservarse el importe estimado. Las tareas completadas se cobran por uso real; las fallidas o vencidas liberan o reembolsan la reserva.
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/images/edits" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F "image=@sunlit_lounge.png" \
+  -F "mask=@mask.png" \
+  -F "prompt=A sunlit indoor lounge area with a pool" \
+  -F "n=1" \
+  -F "size=1024x1024"
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.images.edit(
+    model="dall-e-2",
+    image=open("sunlit_lounge.png", "rb"),
+    mask=open("mask.png", "rb"),
+    prompt="A sunlit indoor lounge area with a pool",
+    n=1,
+    size="1024x1024"
+)
+
+print(response.data[0].url)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+import fs from 'fs';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.images.edit({
+  model: 'dall-e-2',
+  image: fs.createReadStream('sunlit_lounge.png'),
+  mask: fs.createReadStream('mask.png'),
+  prompt: 'A sunlit indoor lounge area with a pool',
+  n: 1,
+  size: '1024x1024'
+});
+
+console.log(response.data[0].url);
+```
+
+```go Go
+package main
+
+import (
+    "bytes"
+    "fmt"
+    "io"
+    "mime/multipart"
+    "net/http"
+    "os"
+)
+
+func main() {
+    body := &bytes.Buffer{}
+    writer := multipart.NewWriter(body)
+
+    image, _ := os.Open("sunlit_lounge.png")
+    defer image.Close()
+    part, _ := writer.CreateFormFile("image", "sunlit_lounge.png")
+    io.Copy(part, image)
+
+    mask, _ := os.Open("mask.png")
+    defer mask.Close()
+    maskPart, _ := writer.CreateFormFile("mask", "mask.png")
+    io.Copy(maskPart, mask)
+
+    writer.WriteField("prompt", "A sunlit indoor lounge area with a pool")
+    writer.WriteField("n", "1")
+    writer.WriteField("size", "1024x1024")
+    writer.Close()
+
+    req, _ := http.NewRequest("POST", "https://api.aisonar.dev/v1/images/edits", body)
+    req.Header.Set("Authorization", "Bearer sk-your-api-key")
+    req.Header.Set("Content-Type", writer.FormDataContentType())
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+
+    result, _ := io.ReadAll(resp.Body)
+    fmt.Println(string(result))
+}
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/images/edits');
+
+$image = new CURLFile('sunlit_lounge.png', 'image/png', 'sunlit_lounge.png');
+$mask = new CURLFile('mask.png', 'image/png', 'mask.png');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => [
+        'image' => $image,
+        'mask' => $mask,
+        'prompt' => 'A sunlit indoor lounge area with a pool',
+        'n' => 1,
+        'size' => '1024x1024'
+    ]
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+echo $data['data'][0]['url'];
+```
+</RequestExample>
+
+<ResponseExample>
+```json Respuesta
+{
+  "created": 1706000000,
+  "data": [
+    {
+      "url": "https://..."
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## Notas
+
+<Note>
+  Los fallos al descargar imágenes remotas se devuelven como errores de entrada antes de enviar la solicitud upstream. URLs inaccesibles, timeouts, respuestas 403/404, hosts privados/internos, credenciales o fragmentos en la URL, contenido que no es imagen, formatos no compatibles y excesos de tamaño devuelven `400` o `413` e identifican `image_url` / `image_urls[n]`. Para recursos privados o protegidos por headers, sube archivos multipart `image` directamente o crea referencias `/v1/files`.
+</Note>

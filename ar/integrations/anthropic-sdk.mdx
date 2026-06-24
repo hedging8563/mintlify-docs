@@ -1,0 +1,208 @@
+---
+title: "Anthropic SDK"
+description: "استخدم AI Sonar مع Anthropic SDK للتوافق الأصلي مع Claude Messages API"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## نظرة عامة
+
+يدعم AI Sonar مسار Anthropic الأصلي **Messages API**، لذا يمكنك استخدام Anthropic SDK الرسمي مباشرةً مع نماذج Claude.
+
+<Note>
+بالنسبة إلى Anthropic SDK، استخدم `https://api.aisonar.dev` كعنوان URL الأساسي، من دون إضافة `/v1` بنفسك.
+</Note>
+
+<Note>
+**النوع**: SDK أصلي
+
+**المسار الرئيسي**: Anthropic-native
+
+**مستوى الدعم**: مسار أصلي قوي
+</Note>
+
+من بين مسارات SDK الموثقة، يُعد هذا أحد أكثر مسارات AI Sonar دعماً للميزات الأصلية لـ Claude.
+
+## التثبيت
+
+<CodeGroup>
+
+```bash Python
+pip install anthropic
+```
+
+```bash JavaScript
+npm install @anthropic-ai/sdk
+```
+
+</CodeGroup>
+
+## تهيئة العميل
+
+<CodeGroup>
+
+```python Python
+from anthropic import Anthropic
+
+client = Anthropic(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev",
+)
+```
+
+```javascript JavaScript
+import Anthropic from '@anthropic-ai/sdk';
+
+const client = new Anthropic({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev',
+});
+```
+
+</CodeGroup>
+
+## الاستخدام الأساسي
+
+```python
+message = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    messages=[
+        {"role": "user", "content": "Explain AI Sonar in one sentence."}
+    ]
+)
+
+print(message.content[0].text)
+```
+
+## البث
+
+```python
+with client.messages.stream(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Write a short poem about coding."}]
+) as stream:
+    for text in stream.text_stream:
+        print(text, end="", flush=True)
+```
+
+## الرؤية
+
+```python
+import base64
+
+message = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    messages=[{
+        "role": "user",
+        "content": [
+            {"type": "text", "text": "What's in this image?"},
+            {
+                "type": "image",
+                "source": {
+                    "type": "url",
+                    "url": "https://example.com/image.jpg"
+                }
+            }
+        ]
+    }]
+)
+
+with open("image.png", "rb") as f:
+    image_data = base64.b64encode(f.read()).decode()
+
+message = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    messages=[{
+        "role": "user",
+        "content": [
+            {"type": "text", "text": "Describe this image"},
+            {
+                "type": "image",
+                "source": {
+                    "type": "base64",
+                    "media_type": "image/png",
+                    "data": image_data
+                }
+            }
+        ]
+    }]
+)
+```
+
+## استخدام الأدوات
+
+```python
+message = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    tools=[{
+        "name": "get_weather",
+        "description": "Get the weather for a location",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "location": {"type": "string"}
+            },
+            "required": ["location"]
+        }
+    }],
+    messages=[{"role": "user", "content": "What's the weather in Tokyo?"}]
+)
+
+for block in message.content:
+    if block.type == "tool_use":
+        print(block.name)
+        print(block.input)
+```
+
+## التفكير الموسّع
+
+```python
+message = client.messages.create(
+    model="claude-opus-4-6",
+    max_tokens=16000,
+    thinking={
+        "type": "enabled",
+        "budget_tokens": 10000
+    },
+    messages=[{"role": "user", "content": "Solve this complex problem step by step."}]
+)
+
+for block in message.content:
+    if block.type == "thinking":
+        print(block.thinking)
+    elif block.type == "text":
+        print(block.text)
+```
+
+## نماذج Claude الموصى بها
+
+| النموذج | الأفضل لـ |
+|-------|----------|
+| `claude-opus-4-6` | الاستدلال العميق، والتحليل المطوّل |
+| `claude-sonnet-4-6` | البرمجة، ومهام المساعد العامة |
+| `claude-haiku-4-5` | استجابات سريعة وخفيفة |
+
+## استكشاف الأخطاء وإصلاحها
+
+<AccordionGroup>
+  <Accordion title="عنوان URL أساسي غير صحيح">
+    - استخدم `https://api.aisonar.dev`
+    - لا تضف `/v1` يدويًا عند تهيئة Anthropic SDK
+  </Accordion>
+
+  <Accordion title="فشل المصادقة">
+    - تحقق من أن مفتاح AI Sonar API الخاص بك يبدأ بـ `sk-`
+    - تأكد من أن المفتاح نشط في لوحة تحكم AI Sonar
+    - دع Anthropic SDK يدير ترويسة المصادقة بدلًا من إضافة ترويسات مخصصة يدويًا
+  </Accordion>
+
+  <Accordion title="النموذج غير موجود">
+    - تحقق من اسم نموذج Claude بشكل مطابق تمامًا
+    - راجع التوفر الحالي في فهرس نماذج AI Sonar
+  </Accordion>
+</AccordionGroup>

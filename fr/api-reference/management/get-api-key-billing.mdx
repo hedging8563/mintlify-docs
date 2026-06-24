@@ -1,0 +1,26 @@
+---
+title: "Obtenir la facturation d'une clé API"
+openapi: "GET /v1/management/api-keys/{keyId}/billing"
+description: "Retourne les ventilations de facturation agrégées d'une clé API utilisateur."
+---
+
+## Aperçu
+
+Cet endpoint retourne des agrégats de facturation basés sur la consommation pour la clé API sélectionnée, y compris le coût total, le nombre total de requêtes, l'usage par unité de facturation ainsi que les ventilations par nom de modèle demandé (`model`), fournisseur, `scene`, `accessChannel`, classe de cache et tendance quotidienne des coûts.
+
+## Remarques
+
+- Les recharges, factures et autres écritures financières au niveau de l'organisation sont exclues.
+
+## Exemple
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/billing?startDate=2026-01-01&endDate=2026-01-31" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## Demande / Réponse
+
+Utilisez le panneau OpenAPI interactif ci-dessus pour le schéma exact.

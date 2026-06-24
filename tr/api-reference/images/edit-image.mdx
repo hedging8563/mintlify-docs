@@ -1,0 +1,237 @@
+---
+title: "Görsel Düzenle"
+openapi: "POST /v1/images/edits"
+description: "Bir prompt ve kaynak görsel verildiğinde görseli düzenler"
+---
+
+## Genel Bakış
+
+Bir orijinal görsel ve prompt verilince düzenlenmiş veya genişletilmiş bir görsel oluşturur.
+
+Route şunları destekler:
+
+- aşağıda belgelenen klasik `multipart/form-data` DALL-E tarzı upload akışı
+- desteklenen image-to-image aileleri için `image_url`, `image_urls` veya resmi `images` referansları sağlayan JSON istekleri
+
+<Note>
+`gpt-image-2` burada desteklenir. Multipart `image` yüklemeleri, JSON `image_url` / `image_urls` ve resmi `images[]` referanslarını (`image_url` veya `file_id`) en fazla 16 kaynak görselle kabul eder. `file_id` değerlerini önce `/v1/files` üzerinden oluşturun. Önce görev döndürmek için `async: true` kullanın; resmi FLUX/BFL düzenleme modelleri de aynı görev sorgulama akışını kullanır.
+
+`gpt-image-2` düzenlemeleri `resolution` veya `background` kabul etmez; çıktı boyutları için `size` kullanın. Çok görselli veya yüksek gecikmeli düzenlemelerde `async: true` kullanmayı tercih edin ve dönen görevi sorgulayın.
+
+Nano Banana referans görsel istekleri (`nano-banana`, `nano-banana-2` ve `nano-banana-pro`) `operation: "image-to-image"` ve `image_urls` ile `/v1/images/generations` üzerinde sunulur; bu `/v1/images/edits` endpoint'i üzerinde sunulmaz.
+
+xAI Grok Imagine görsel düzenleme modelleri (`grok-imagine-image`, `grok-imagine-image-quality` ve legacy `grok-imagine-image-pro`) en fazla 3 kaynak görsel kabul eder. 3’ten fazla kaynak görsel içeren istekler upstream’e iletilmeden önce `400 too_many_images` ile başarısız olur.
+
+Uyumluluk notu: Bir `gpt-image-2` isteği `input_fidelity` gönderirse AI Sonar bunu iletmeden önce kaldırır; çünkü GPT Image 2 görüntü girdilerini zaten otomatik olarak yüksek doğrulukta işler.
+</Note>
+
+## İstek Gövdesi
+
+**Senkron istek zaman aşımı:** Bazı yönlendirilmiş görsel sağlayıcıları son görseli inline döndürür ve üretimin tamamlanmasını bekler. Yüksek çözünürlüklü veya yüksek kaliteli istekler bir dakikaya yakın ya da daha uzun sürebilir; bu yüzden HTTP istemcisi zaman aşımını en az `120s` olarak ayarlayın. Oluşturma yanıtı `status: "pending"`, `task_id` veya `poll_url` içeriyorsa, dönen `poll_url` ile polling yapın.
+
+Uzak görüntü URL’leri: yönlendirilen sağlayıcı multipart girdi istediğinde AI Sonar, JSON `image_url`, `image_urls` veya `images[].image_url` değerlerini indirir ve baytları multipart `image` parçaları olarak iletir. URL’ler herkese açık `http`/`https` olmalı, gömülü kimlik bilgisi veya fragment içermemeli ve localhost, özel ya da ayrılmış IP aralıklarına çözülmemelidir; her redirect yeniden kontrol edilir. İndirilen payload gerçek PNG, JPEG veya WebP görüntüsü olmalıdır. Limitler: görüntü başına `50MB`, tek istekte URL’den indirilen görüntüler için toplam `200MB`, `10s` fetch timeout ve en fazla `3` redirect.
+
+<ParamField body="image" type="file">
+  Multipart kaynak görüntüler. Birden çok GPT Image kaynağı göndermek için `image` alanını tekrarlayın. Dosyalar PNG, JPEG veya WebP olmalı; en fazla 16 kaynak görüntü ve her biri `50MB` desteklenir. xAI Grok Imagine düzenleme modelleri aynı giriş alanlarını kullanır, ancak kaynak görsel sayısını 3 ile sınırlar. Eski DALL-E 2 mask düzenlemeleri hâlâ şeffaf alanları olan PNG girdileri veya ayrı bir `mask` bekler.
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  İstenen düzenlemenin metin açıklaması.
+</ParamField>
+
+<ParamField body="mask" type="file">
+  Görselin nerede düzenleneceğini gösteren tamamen transparan alanlara sahip ek bir görsel. Geçerli bir PNG dosyası olmalı, 50MB'tan küçük olmalı ve `image` ile aynı boyutta olmalıdır.
+</ParamField>
+
+<ParamField body="model" type="string" default="dall-e-2">
+  Görüntü düzenleme için kullanılacak model. `gpt-image-2` desteklenir; eski DALL-E tarzı düzenlemeler `dall-e-2` kullanmaya devam edebilir.
+</ParamField>
+
+<ParamField body="n" type="integer" default="1">
+  Oluşturulacak görsel sayısı. 1 ile 10 arasında olmalıdır.
+</ParamField>
+
+<ParamField body="size" type="string">
+  Üretilen görüntünün boyutu. `gpt-image-2` için `auto` veya `WIDTHxHEIGHT` kullanın; boyutlar 16’nın katı olmalı, en uzun kenar en fazla `3840px`, uzun/kısa kenar oranı en fazla `3:1`, toplam piksel sayısı `655,360` ile `8,294,400` arasında olmalıdır. Eski DALL-E düzenlemeleri `256x256`, `512x512` veya `1024x1024` destekler.
+</ParamField>
+
+<ParamField body="response_format" type="string" default="url">
+  Üretilen görsellerin döndürüldüğü format. `url` veya `b64_json` olmalıdır; varsayılan `url` değeridir.
+
+  Azure Official veya Azure-compatible `gpt-image-2` rotalarında AI Sonar `response_format` alanını upstream’e iletmez. Gateway, upstream görüntü verisini her zaman `b64_json` olarak alır; `url` isteklerinde her görseli CDN’e yükler ve `data[].url` döndürür. CDN depolama kullanılamıyorsa veya upload başarısız olursa istek Base64’e düşmek yerine başarısız olur. `b64_json` için ham Base64 döndürülür.
+</ParamField>
+
+<ParamField body="async" type="boolean" default="false">
+  `gpt-image-2` veya resmi FLUX/BFL düzenleme modelleriyle nihai görüntü hazır olmadan önce görev döndürmek için `true` yapın. Tamamlanan asenkron düzenlemeler, istenen `response_format` ne olursa olsun URL döndürür; `b64_json` gerekiyorsa senkron istek kullanın.
+</ParamField>
+
+<ParamField body="user" type="string">
+  Abuse izleme için son kullanıcınızı temsil eden benzersiz bir identifier.
+</ParamField>
+
+## Yanıt
+
+<ResponseField name="created" type="integer">
+  Görsellerin oluşturulduğu Unix zaman damgası.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Üretilen görsellerin dizisi.
+
+  Her object şunları içerir:
+  - `url` (string): Düzenlenmiş görselin URL'si (`response_format` `url` ise)
+  - `b64_json` (string): Base64 kodlanmış görsel (`response_format` `b64_json` ise)
+</ResponseField>
+
+### Asenkron görev yanıtı
+
+`gpt-image-2` veya resmi FLUX/BFL düzenleme modelleriyle `async: true` kullanarak istekte düzenlenmiş görüntüyü beklemek yerine bir görev oluşturun. Yanıt `status: "pending"`, `task_id` ve `poll_url` içerir. Görev `completed` veya `failed` durumuna gelene kadar `/v1/tasks/{task_id}` adresini sorgulayın.
+
+Asenkron düzenleme görevleri yalnızca nihai görüntü URL’lerini döndürür. Ham `b64_json` görüntü verisi gerekiyorsa senkron istek kullanın.
+
+
+Görev oluşturulurken tahmini tutar önce rezerve edilebilir. Tamamlanan görevler gerçek kullanıma göre ücretlendirilir; başarısız olan veya zaman aşımına uğrayan görevlerde rezervasyon serbest bırakılır ya da iade edilir.
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/images/edits" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F "image=@sunlit_lounge.png" \
+  -F "mask=@mask.png" \
+  -F "prompt=A sunlit indoor lounge area with a pool" \
+  -F "n=1" \
+  -F "size=1024x1024"
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.images.edit(
+    model="dall-e-2",
+    image=open("sunlit_lounge.png", "rb"),
+    mask=open("mask.png", "rb"),
+    prompt="A sunlit indoor lounge area with a pool",
+    n=1,
+    size="1024x1024"
+)
+
+print(response.data[0].url)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+import fs from 'fs';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.images.edit({
+  model: 'dall-e-2',
+  image: fs.createReadStream('sunlit_lounge.png'),
+  mask: fs.createReadStream('mask.png'),
+  prompt: 'A sunlit indoor lounge area with a pool',
+  n: 1,
+  size: '1024x1024'
+});
+
+console.log(response.data[0].url);
+```
+
+```go Go
+package main
+
+import (
+    "bytes"
+    "fmt"
+    "io"
+    "mime/multipart"
+    "net/http"
+    "os"
+)
+
+func main() {
+    body := &bytes.Buffer{}
+    writer := multipart.NewWriter(body)
+
+    image, _ := os.Open("sunlit_lounge.png")
+    defer image.Close()
+    part, _ := writer.CreateFormFile("image", "sunlit_lounge.png")
+    io.Copy(part, image)
+
+    mask, _ := os.Open("mask.png")
+    defer mask.Close()
+    maskPart, _ := writer.CreateFormFile("mask", "mask.png")
+    io.Copy(maskPart, mask)
+
+    writer.WriteField("prompt", "A sunlit indoor lounge area with a pool")
+    writer.WriteField("n", "1")
+    writer.WriteField("size", "1024x1024")
+    writer.Close()
+
+    req, _ := http.NewRequest("POST", "https://api.aisonar.dev/v1/images/edits", body)
+    req.Header.Set("Authorization", "Bearer sk-your-api-key")
+    req.Header.Set("Content-Type", writer.FormDataContentType())
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+
+    result, _ := io.ReadAll(resp.Body)
+    fmt.Println(string(result))
+}
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/images/edits');
+
+$image = new CURLFile('sunlit_lounge.png', 'image/png', 'sunlit_lounge.png');
+$mask = new CURLFile('mask.png', 'image/png', 'mask.png');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => [
+        'image' => $image,
+        'mask' => $mask,
+        'prompt' => 'A sunlit indoor lounge area with a pool',
+        'n' => 1,
+        'size' => '1024x1024'
+    ]
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+echo $data['data'][0]['url'];
+```
+</RequestExample>
+
+<ResponseExample>
+```json Yanıt
+{
+  "created": 1706000000,
+  "data": [
+    {
+      "url": "https://..."
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## Notlar
+
+<Note>
+  Uzak görüntü indirme hataları, upstream isteği gönderilmeden önce giriş hatası olarak döner. Erişilemeyen URL’ler, timeout, 403/404 yanıtları, private/internal hostlar, URL içindeki kimlik bilgileri veya fragmentler, görüntü olmayan içerik, desteklenmeyen formatlar ve boyut aşımı `400` veya `413` döndürür ve `image_url` / `image_urls[n]` girdisini belirtir. Private veya header korumalı varlıklar için multipart `image` dosyalarını doğrudan yükleyin ya da `/v1/files` referansları oluşturun.
+</Note>

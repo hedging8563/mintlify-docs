@@ -1,0 +1,327 @@
+---
+title: "✨ Agent-First API"
+description: "Petunjuk kesalahan terstruktur agar agen AI dapat mengoreksi diri pada percobaan ulang pertama"
+---
+
+<span data-mintlify-rebuild="2026-05-19-after-mdx-parse-fix" aria-hidden="true" />
+
+## Ikhtisar
+
+Agent-First API AI Sonar memperkaya respons kesalahan dengan petunjuk terstruktur yang dapat diurai dan ditindaklanjuti langsung oleh agen AI — tanpa pencarian web, tanpa mencari dokumentasi, tanpa tebak-tebakan.
+
+Setiap respons kesalahan menyertakan field opsional seperti `did_you_mean`, `suggestions`, `hint`, `retryable`, dan `retry_after` di dalam objek `error` standar. Field-field ini kompatibel ke belakang — klien yang tidak menggunakannya tidak akan melihat perbedaan.
+
+## Bidang Petunjuk Kesalahan
+
+Semua field petunjuk adalah ekstensi opsional di dalam objek `error`:
+
+| Bidang | Tipe | Deskripsi |
+|-------|------|-------------|
+| `did_you_mean` | `string` | Nama model yang paling mirip |
+| `suggestions` | `array` | Model yang direkomendasikan beserta metadata |
+| `alternatives` | `array` | Model alternatif yang saat ini tersedia |
+| `hint` | `string` | Panduan langkah selanjutnya yang dapat dibaca manusia/agen |
+| `retryable` | `boolean` | Apakah mengulang permintaan yang sama mungkin berhasil |
+| `retry_after` | `number` | Detik yang harus ditunggu sebelum mengulang |
+| `balance_usd` | `number` | Saldo akun saat ini dalam USD |
+| `estimated_cost_usd` | `number` | Estimasi biaya dari permintaan yang gagal |
+
+## Contoh Kode Kesalahan
+
+### model_not_found (400)
+
+Ketika nama model tidak cocok dengan model aktif manapun:
+
+```json
+{
+  "error": {
+    "message": "Model not found: please check the model name",
+    "type": "invalid_request_error",
+    "param": "model",
+    "code": "model_not_found",
+    "did_you_mean": "gpt-5.4",
+    "suggestions": [
+      {"id": "gpt-5.4"},
+      {"id": "gpt-5-mini"},
+      {"id": "claude-sonnet-4-6"}
+    ],
+    "hint": "Did you mean 'gpt-5.4'? Use GET https://api.aisonar.dev/v1/models to list all available models."
+  }
+}
+```
+
+Resolusi `did_you_mean` menggunakan:
+1. Pemetaan alias statis (dari data kesalahan produksi)
+2. Pencocokan string ternormalisasi (menghapus tanda hubung, tidak sensitif huruf)
+3. Pencocokan jarak edit (ambang ≤ 3)
+
+Rute publik tidak mengekspos kode kesalahan terpisah untuk model yang tersembunyi, ditunda, atau non-publik. Perlakukan model publik yang tidak tersedia sama seperti kesalahan pencocokan: periksa `did_you_mean`, `suggestions`, dan `hint`, lalu coba ulang dengan model publik yang didukung.
+
+### insufficient_balance (402)
+
+Saat saldo akun terlalu rendah untuk estimasi biaya:
+
+```json
+{
+  "error": {
+    "message": "Insufficient balance: need ~$0.3500 for claude-sonnet-4-6, but balance is $0.1200.",
+    "type": "insufficient_balance",
+    "code": "insufficient_balance",
+    "balance_usd": 0.12,
+    "estimated_cost_usd": 0.35,
+    "suggestions": [
+      {"id": "gpt-5-mini"},
+      {"id": "deepseek-v3-2"}
+    ],
+    "hint": "Insufficient balance: need ~$0.3500 for claude-sonnet-4-6, but balance is $0.1200. Try a cheaper model, or top up at https://console.aisonar.dev/billing."
+  }
+}
+```
+
+`suggestions` berisi model yang lebih murah daripada estimasi biaya yang dapat dipilih oleh agen.
+
+### all_channels_failed (503)
+
+Ketika semua saluran hulu untuk sebuah model tidak tersedia:
+
+```json
+{
+  "error": {
+    "message": "Model claude-opus-4-6 temporarily unavailable",
+    "code": "all_channels_failed",
+    "retryable": true,
+    "retry_after": 30,
+    "alternatives": [
+      {"id": "claude-sonnet-4-6", "status": "available", "tags": []},
+      {"id": "gpt-5-mini", "status": "available", "tags": []}
+    ],
+    "hint": "All channels for 'claude-opus-4-6' are temporarily unavailable. Retry in 30s or try an alternative model."
+  }
+}
+```
+
+<Note>
+`retryable` bernilai `false` ketika alasannya adalah `no_channels` (tidak ada saluran yang dikonfigurasi untuk model ini). Nilainya `true` hanya untuk kegagalan sementara seperti trip circuit breaker atau kehabisan kuota.
+</Note>
+
+### rate_limit_exceeded (429)
+
+```json
+{
+  "error": {
+    "message": "Rate limit: 60 rpm exceeded",
+    "type": "rate_limit_exceeded",
+    "code": "rate_limit_exceeded",
+    "retryable": true,
+    "retry_after": 8,
+    "hint": "Rate limited. Retry after 8s. Current limit: 60/min for user role."
+  }
+}
+```
+
+Nilai `retry_after` dihitung dari waktu reset jendela batas laju yang sebenarnya.
+
+<Note>
+Endpoint yang kompatibel dengan OpenAI menggunakan tipe kesalahan publik stabil AI Sonar seperti `rate_limit_exceeded`, `upstream_error`, dan `all_channels_failed`. Endpoint yang kompatibel dengan Anthropic dan Gemini menggunakan bentuk respons asli mereka sendiri.
+</Note>
+
+### context_length_exceeded (400)
+
+Ketika input melebihi jendela konteks model (kesalahan hulu, diperkaya dengan petunjuk):
+
+```json
+{
+  "error": {
+    "message": "This model's maximum context length is 128000 tokens...",
+    "type": "invalid_request_error",
+    "code": "context_length_exceeded",
+    "retryable": false,
+    "suggestions": [
+      {"id": "gemini-2.5-pro"},
+      {"id": "claude-sonnet-4-6"}
+    ],
+    "hint": "Reduce your input or switch to a model with a larger context window."
+  }
+}
+```
+
+## Header Endpoint Native
+
+Saat Anda memanggil `/v1/chat/completions` dengan model yang memiliki endpoint native (Anthropic atau Gemini), **respons sukses** menyertakan header optimisasi:
+
+
+
+| Penyedia Model | Endpoint yang Disarankan | Manfaat |
+|---------------|--------------------------|---------|
+| Anthropic (Claude) | `/v1/messages` | Tanpa konversi format, pemikiran diperpanjang, caching prompt |
+| Google (Gemini) | `/v1beta/gemini` | Tanpa konversi format, grounding, pengaturan keamanan |
+| OpenAI | — | Chat completions sudah merupakan format native |
+
+Header ini muncul pada respons streaming maupun non-streaming.
+
+## Peningkatan /v1/models
+
+`/v1/models` sekarang membawa metadata rekomendasi non-chat yang dapat digunakan agen sebelum mereka memanggil endpoint image, video, music, 3D, TTS, STT, embedding, rerank, atau translation.
+
+```json
+{
+  "id": "gemini-2.5-flash-image",
+  "aisonar": {
+    "category": "image",
+    "pricing_unit": "per_request",
+    "agent_preferences": {
+      "image": {
+        "preferred_rank": 1,
+        "success_rate_24h": 0.98,
+        "sample_count_24h": 423,
+        "status": "ready",
+        "updated_at": "2026-03-28T12:00:00.000Z",
+        "basis": {
+          "score_source": "clickhouse_24h",
+          "channel_id": null,
+          "physical_model": null
+        }
+      }
+    }
+  }
+}
+```
+
+| Bidang | Nilai | Deskripsi |
+|-------|--------|-------------|
+| `category` | `chat`, `image`, `video`, `audio`, `tts`, `stt`, `3d`, `embedding`, `rerank` | Jenis model |
+| `pricing_unit` | `per_token`, `per_image`, `per_second`, `per_request` | Cara model ditagihkan |
+| `cache_pricing` | object or `null` | Hanya dikembalikan saat model punya harga prompt cache upstream khusus model. |
+| `agent_preferences.<scene>` | object | Snapshot rekomendasi non-chat yang hanya dikembalikan pada `GET /v1/models?recommended_for=<scene>` |
+
+Saat `recommended_for` ada, `agent_preferences` diturunkan dari snapshot tingkat keberhasilan 24 jam yang di-cache:
+
+- Jendela: 24 jam
+- Cache snapshot: stale-while-revalidate
+- `status = "ready"` berarti model memiliki sampel terbaru yang cukup untuk berpartisipasi dalam perankingan
+- `status = "insufficient_samples"` berarti model tetap terlihat tetapi tidak diperingkat di atas model yang memiliki skor
+
+### Penyaringan Kategori
+
+```bash
+GET https://api.aisonar.dev/v1/models?category=chat          # Chat models only
+GET https://api.aisonar.dev/v1/models?category=image         # Image generation models
+GET https://api.aisonar.dev/v1/models?tag=coding&category=chat  # Coding-optimized chat models
+```
+
+### Penemuan Rekomendasi
+
+Untuk alur kerja non-chat, agen harus mengambil daftar singkat rekomendasi saat ini terlebih dahulu:
+
+```bash
+GET https://api.aisonar.dev/v1/models?recommended_for=image
+GET https://api.aisonar.dev/v1/models?recommended_for=translation
+GET https://api.aisonar.dev/v1/models?category=tts&recommended_for=tts
+```
+
+Nilai `recommended_for` yang valid adalah:
+
+- `image`
+- `video`
+- `music`
+- `3d`
+- `tts`
+- `stt`
+- `embedding`
+- `rerank`
+- `translation`
+
+Jika `category` dan `recommended_for` keduanya ada, keduanya harus cocok secara tepat.
+
+Alur agen yang direkomendasikan:
+
+1. `GET /v1/models?recommended_for=<scene>`
+2. Pilih model pertama dengan `agent_preferences.<scene>.status == "ready"`
+3. Panggil endpoint secara eksplisit dengan `model=<selected>`
+4. Untuk kesalahan sementara saja, coba ulang dengan model `ready` berikutnya
+
+## llms.txt
+
+Ringkasan API yang dapat dibaca mesin tersedia di:
+
+```
+GET https://api.aisonar.dev/llms.txt
+```
+
+Ini mencakup:
+- Template panggilan pertama dengan contoh yang bekerja
+- Nama model umum (dihasilkan secara dinamis dari data penggunaan)
+- Semua 12 endpoint API
+- Parameter filter untuk penemuan model
+- Panduan penanganan kesalahan
+
+Agen AI yang membaca `llms.txt` sebelum panggilan API pertama mereka biasanya dapat berhasil pada percobaan pertama.
+
+## Penggunaan dalam Kode Agen
+
+### Python (OpenAI SDK)
+
+```python
+from openai import OpenAI, BadRequestError
+
+client = OpenAI(
+    api_key="sk-your-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+def smart_chat(messages, model="gpt-4o"):
+    try:
+        return client.chat.completions.create(
+            model=model, messages=messages
+        )
+    except BadRequestError as e:
+        error = e.body.get("error", {}) if isinstance(e.body, dict) else {}
+        # Use did_you_mean for auto-correction
+        if error.get("code") == "model_not_found" and error.get("did_you_mean"):
+            return client.chat.completions.create(
+                model=error["did_you_mean"], messages=messages
+            )
+        raise
+```
+
+### JavaScript (OpenAI SDK)
+
+```javascript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+async function smartChat(messages, model = 'gpt-4o') {
+  try {
+    return await client.chat.completions.create({ model, messages });
+  } catch (error) {
+    const err = error?.error;
+    if (err?.code === 'model_not_found' && err?.did_you_mean) {
+      return client.chat.completions.create({
+        model: err.did_you_mean, messages
+      });
+    }
+    throw error;
+  }
+}
+```
+
+## Prinsip Desain
+
+<CardGroup cols={2}>
+  <Card title="Gagal cepat, berikan informasi" icon="bolt">
+    Kesalahan dikembalikan segera dengan semua data yang dibutuhkan agen untuk mengoreksi diri.
+  </Card>
+  <Card title="Tanpa pengalihan otomatis" icon="route">
+    API tidak pernah diam-diam menggantikan model dengan model lain. Agen yang memutuskan.
+  </Card>
+  <Card title="Saran berbasis data" icon="database">
+    Semua rekomendasi berasal dari data produksi, bukan daftar yang dikodekan statis.
+  </Card>
+  <Card title="Kompatibel ke belakang" icon="plug">
+    Semua field petunjuk bersifat opsional. Klien yang ada tidak melihat perbedaan.
+  </Card>
+</CardGroup>

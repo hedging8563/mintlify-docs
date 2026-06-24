@@ -1,0 +1,81 @@
+---
+title: "xAI"
+description: "Grok series models"
+---
+
+## Overview
+
+AI Sonar provides access to xAI models. Total: **27 models** available.
+
+## Chat Models
+
+| Model ID | Pricing |
+|----------|--------|
+| `grok-3` | $3/1M in |
+| `grok-3-mini` | $0.25/1M in |
+| `grok-4` | $3/1M in |
+| `grok-4-1-fast-non-reasoning` | $0.2/1M in |
+| `grok-4-1-fast-reasoning` | $0.2/1M in |
+| `grok-4-fast` | $0.2/1M in |
+| `grok-4-fast-non-reasoning` | $0.14/1M in |
+| `grok-4-fast-reasoning` | $0.14/1M in |
+| `grok-4.1-fast` | $0.3/1M in |
+| `grok-4.20` | $1.25/1M in |
+| `grok-4.20-multi-agent` | $1.25/1M in |
+| `grok-4.20-non-reasoning` | $1.25/1M in |
+| `grok-4.3` | $1.25/1M in |
+| `grok-build-0.1` | $1/1M in |
+| `grok-code-fast-1` | $0.2/1M in |
+
+## Image Generation
+
+| Model ID | Pricing |
+|----------|--------|
+| `grok-imagine` | See dashboard |
+| `grok-imagine-image` | See dashboard |
+| `grok-imagine-image-pro` | See dashboard |
+| `grok-imagine-image-quality` | See dashboard |
+
+## Video Generation
+
+| Model ID | Pricing |
+|----------|--------|
+| `grok-imagine-extend` | See dashboard |
+| `grok-imagine-image-to-video` | See dashboard |
+| `grok-imagine-text-to-video` | See dashboard |
+| `grok-imagine-upscale` | See dashboard |
+| `grok-imagine-video` | See dashboard |
+| `grok-imagine-video-1.5-preview` | See dashboard |
+
+## Text-to-Speech
+
+| Model ID | Pricing |
+|----------|--------|
+| `grok-voice-tts` | $15/character |
+
+## Speech-to-Text
+
+| Model ID | Pricing |
+|----------|--------|
+| `grok-voice-stt` | See dashboard |
+
+
+## Usage
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="grok-3",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+```
+
+<Note>
+Prices shown are platform prices (~70% of official rates).
+</Note>

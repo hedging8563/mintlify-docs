@@ -1,0 +1,53 @@
+---
+title: "رفع ملف"
+openapi: "POST /v1/files"
+description: "يرفع ملف إدخال JSONL دفعي للاستخدام لاحقًا في إنشاء دفعات."
+---
+
+## نظرة عامة
+
+هذه النقطة هي جزء من واجهة برمجة التطبيقات الدفعة المتوافقة مع OpenAI من AI Sonar. تستخدم مهام الدفعة الملفات المرفوعة بتنسيق JSONL، وتعمل بشكل غير متزامن، ويمكن أن تعيد ملفات الإخراج/الأخطاء لاحقًا.
+
+## ملاحظات
+
+- يجب أن تستخدم ملفات الإدخال الدفعي `purpose=batch`.
+- `completion_window` حاليًا `24h`.
+- ترتيب الإخراج غير مضمون؛ يجب دائمًا المطابقة بواسطة `custom_id`.
+- لا يتم دعم البث داخل عناصر الدفعة.
+
+## مثال
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/files" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F "purpose=batch" \
+  -F "file=@batch-input.jsonl;type=application/jsonl"
+```
+</RequestExample>
+
+## الطلب / الاستجابة
+
+استخدم لوحة OpenAPI التفاعلية أعلاه للحصول على المخطط الدقيق.
+
+## نصائح تشغيلية
+
+- استخدم `custom_id` للمصالحة غير القابلة للتغيير في الأسفل.
+- توقع `output_file_id` و `error_file_id` فقط بعد أن ينهي العامل الدفعة.
+- قد تختلف أسعار الدفعة عن أسعار المعالجة المتزامنة لأن قواعد الخصم لـ `isBatchRequest=true` تنطبق.
+## مدخلات ملفات الصور
+
+يمكن لنفس مسار `/v1/files` تحميل ملفات صور مرجعية لاستخدامها مع `/v1/images/edits`.
+
+- استخدم `purpose=user_data` أو `purpose=vision`.
+- يمكنك اختيارياً تمرير `model` لاختيار نموذج تحرير الصور؛ القيمة الافتراضية هي `gpt-image-2`.
+- يتم ربط `file_id` المُعاد بقناة تحرير الصور upstream المختارة، ويمكن إعادة استخدامه في `images[].file_id`.
+
+## وضع Anthropic Files API
+
+يدعم هذا المسار نفسه `/v1/files` أيضًا مسار Anthropic Files API.
+
+- أضف ترويسة `anthropic-beta: files-api-2025-04-14` للتبديل إلى وضع Anthropic.
+- في وضع Anthropic، ارفع الملف الأصلي مباشرة ولا ترسل `purpose=batch`.
+- سيتم ربط `file_id` المُعاد بالقناة/مساحة العمل الرسمية نفسها الخاصة بـ Anthropic ويجب إعادة استخدامه في طلبات `/v1/messages`.
+- إذا كنت تنوي الإشارة إلى هذا الملف داخل محتوى رسالة Anthropic، فاستمر في استخدام الترويسات الأصلية لـ Anthropic (`x-api-key` و`anthropic-version` وترويسة beta عند الحاجة).

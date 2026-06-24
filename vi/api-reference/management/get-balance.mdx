@@ -1,0 +1,27 @@
+---
+title: "Lấy số dư tổ chức"
+openapi: "GET /v1/management/balance"
+description: "Trả về các tổng số dư hiện tại của tổ chức cho management token."
+---
+
+## Tổng Quan
+
+Endpoint này trả về các tổng số dư hiện tại của tổ chức gắn với management token. Nó dùng cùng nguồn sự thật số dư tổ chức như billing và settlement.
+
+## Ghi Chú
+
+- Các trường tiền tệ chuẩn được trả về bằng USD: `balance`, `total_recharge`, và `total_used`.
+- `preferred_currency` phản ánh tùy chọn hiển thị trên Dashboard của tổ chức; nó không thay đổi các trường chuẩn USD.
+
+## Ví Dụ
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/management/balance" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## Yêu Cầu / Phản Hồi
+
+Sử dụng bảng điều khiển OpenAPI tương tác ở trên để xem schema chính xác.

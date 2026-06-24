@@ -1,0 +1,127 @@
+---
+title: "LiteLLM"
+description: "Use AI Sonar with LiteLLM as either an upstream provider or an internal gateway layer"
+---
+
+## Overview
+
+LiteLLM fits AI Sonar in two common ways:
+
+- use AI Sonar as an **OpenAI-compatible upstream** behind LiteLLM
+- put LiteLLM in front of AI Sonar when your team wants one more internal gateway layer for routing, virtual keys, or centralized observability
+
+For AI Sonar, the cleanest default is LiteLLM's **custom OpenAI / OpenAI-compatible** path pointed at `https://api.aisonar.dev/v1`.
+
+<Note>
+If you specifically need Claude-native or Gemini-native request shapes, prefer AI Sonar's dedicated native integrations instead of forcing those workflows through LiteLLM's OpenAI-compatible abstraction.
+</Note>
+
+<Note>
+**Type**: Framework or Platform
+
+**Primary Path**: OpenAI-compatible upstream
+
+**Support Confidence**: Supported path
+</Note>
+
+## Install
+
+```bash
+pip install 'litellm[proxy]'
+```
+
+## Proxy Configuration
+
+Create a `litellm-config.yaml` like this:
+
+```yaml
+model_list:
+  - model_name: aisonar-gpt-5.4
+    litellm_params:
+      model: custom_openai/gpt-5.4
+      api_base: https://api.aisonar.dev/v1
+      api_key: os.environ/OPENAI_API_KEY
+
+  - model_name: aisonar-claude-sonnet
+    litellm_params:
+      model: custom_openai/claude-sonnet-4-6
+      api_base: https://api.aisonar.dev/v1
+      api_key: os.environ/OPENAI_API_KEY
+```
+
+Start the proxy:
+
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+litellm --config litellm-config.yaml --port 4000
+```
+
+## Call LiteLLM Through OpenAI SDK
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="anything",
+    base_url="http://127.0.0.1:4000"
+)
+
+response = client.chat.completions.create(
+    model="aisonar-gpt-5.4",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+
+print(response.choices[0].message.content)
+```
+
+## Direct Python Usage
+
+If you are using LiteLLM as a Python library instead of the proxy, keep the same AI Sonar base URL:
+
+```python
+import litellm
+
+response = litellm.completion(
+    model="custom_openai/gpt-5.4",
+    api_base="https://api.aisonar.dev/v1",
+    api_key="sk-your-api-key",
+    messages=[{"role": "user", "content": "Summarize this repo."}]
+)
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Prefer custom_openai for AI Sonar">
+    Treat AI Sonar as an OpenAI-compatible upstream unless you have a very specific reason to build a more complex provider mapping.
+  </Accordion>
+
+  <Accordion title="Use LiteLLM when you need one more gateway layer">
+    LiteLLM makes sense when your own platform wants virtual keys, extra routing policy, or centralized logs in front of AI Sonar.
+  </Accordion>
+
+  <Accordion title="Keep native-provider expectations realistic">
+    OpenAI-compatible translation layers are great for broad compatibility, but they are not the right place to promise every provider-native feature.
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Connection errors">
+    - Verify `api_base` is exactly `https://api.aisonar.dev/v1`
+    - Make sure LiteLLM can reach AI Sonar over the public internet
+    - If you run the proxy locally, verify the OpenAI client points to your LiteLLM port instead of AI Sonar directly
+  </Accordion>
+
+  <Accordion title="Authentication errors">
+    - Check that LiteLLM is reading the right `OPENAI_API_KEY`
+    - Confirm the AI Sonar key starts with `sk-`
+    - Confirm the key is active in AI Sonar dashboard
+  </Accordion>
+
+  <Accordion title="Model not found">
+    - Verify the AI Sonar model name in `custom_openai/<model>`
+    - Keep your LiteLLM `model_name` alias separate from the real AI Sonar model id
+  </Accordion>
+</AccordionGroup>

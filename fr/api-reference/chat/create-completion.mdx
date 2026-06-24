@@ -1,0 +1,279 @@
+---
+title: "Créer une complétion de chat"
+openapi: "POST /v1/chat/completions"
+description: "Crée une complétion pour le message de chat"
+---
+
+## Corps de la requête
+
+<ParamField body="model" type="string" required>
+  ID du modèle à utiliser. Voir [Modèles](https://aisonar.dev/models) pour les options disponibles.
+</ParamField>
+
+<ParamField body="messages" type="array" required>
+  Une liste de messages constituant la conversation.
+
+  Chaque objet message contient :
+  - `role` (string) : `system`, `user`, ou `assistant`
+  - `content` (string | array) : Le contenu du message
+
+  Lorsque `content` est un tableau, AI Sonar prend en charge des blocs multimodaux structurés pour les modèles compatibles :
+  - text: `{ "type": "text", "text": "..." }`
+  - image: `{ "type": "image_url", "image_url": { "url": "https://..." } }`
+  - vidéo: `{ "type": "video_url", "video_url": { "url": "https://..." } }`
+  - audio: `{ "type": "audio_url", "audio_url": { "url": "https://..." } }`
+
+  Pour le trafic multimodal en production, privilégiez des URLs publiques en `https`. AI Sonar traduira ces blocs médias dans la forme de requête spécifique au fournisseur requise par le modèle physique routé.
+</ParamField>
+
+<ParamField body="temperature" type="number" default="1">
+  Température d'échantillonnage entre 0 et 2. Des valeurs plus élevées rendent la sortie plus aléatoire.
+</ParamField>
+
+<ParamField body="max_tokens" type="integer">
+  Nombre maximal de tokens à générer.
+</ParamField>
+
+<ParamField body="stream" type="boolean" default="false">
+  Si true, des deltas de message partiels seront envoyés comme événements SSE.
+</ParamField>
+
+<ParamField body="stream_options" type="object">
+  Options pour le streaming. Définissez `include_usage: true` pour recevoir l'utilisation des tokens dans les fragments de stream.
+</ParamField>
+
+<ParamField body="top_p" type="number" default="1">
+  Paramètre de sampling nucleus. Nous recommandons de modifier celui-ci ou la température, pas les deux.
+</ParamField>
+
+<ParamField body="frequency_penalty" type="number" default="0">
+  Nombre entre -2.0 et 2.0. Les valeurs positives pénalisent les tokens répétés.
+</ParamField>
+
+<ParamField body="presence_penalty" type="number" default="0">
+  Nombre entre -2.0 et 2.0. Les valeurs positives pénalisent les tokens déjà présents dans le texte.
+</ParamField>
+
+<ParamField body="stop" type="string | array">
+  Jusqu'à 4 séquences où l'API arrêtera de générer des tokens.
+</ParamField>
+
+<ParamField body="tools" type="array">
+  Une liste d'outils que le modèle peut appeler (appel de fonctions).
+</ParamField>
+
+<ParamField body="tool_choice" type="string | object">
+  Contrôle la manière dont le modèle utilise les outils. Options : `auto`, `none`, `required`, ou un objet outil spécifique.
+</ParamField>
+
+<ParamField body="parallel_tool_calls" type="boolean" default="true">
+  Permet d'activer l'appel de fonctions en parallèle. Définir sur false pour appeler les fonctions séquentiellement.
+</ParamField>
+
+<ParamField body="max_completion_tokens" type="integer">
+  Nombre maximal de tokens pour la complétion. Alternative à `max_tokens`, utile pour les familles de modèles plus récentes activées pour le raisonnement.
+</ParamField>
+
+<ParamField body="reasoning_effort" type="string">
+  Effort de raisonnement pour les modèles activés pour le raisonnement. Options : `low`, `medium`, `high`.
+</ParamField>
+
+<ParamField body="seed" type="integer">
+  Seed aléatoire pour un échantillonnage déterministe.
+</ParamField>
+
+<ParamField body="n" type="integer" default="1">
+  Nombre de complétions à générer (1-128).
+</ParamField>
+
+<ParamField body="logprobs" type="boolean">
+  Indique s'il faut retourner les log-probabilités.
+</ParamField>
+
+<ParamField body="top_logprobs" type="integer">
+  Nombre de log-probabilités les plus élevées à retourner (0-20). Nécessite `logprobs: true`.
+</ParamField>
+
+<ParamField body="top_k" type="integer">
+  Paramètre d’échantillonnage Top-K (pour les modèles Anthropic/Gemini).
+</ParamField>
+
+<ParamField body="response_format" type="object">
+  Spécification du format de réponse. Utiliser `{"type": "json_object"}` pour le mode JSON. Considérez `{"type": "json_schema", "json_schema": {...}}` comme une approche best-effort qui dépend du modèle sélectionné et du comportement routé.
+</ParamField>
+
+<ParamField body="logit_bias" type="object">
+  Modifier la probabilité d'apparition de tokens spécifiés. Mappez les IDs de tokens (comme des chaînes) à des valeurs de biais entre -100 et 100.
+</ParamField>
+
+<ParamField body="user" type="string">
+  Identifiant unique représentant votre utilisateur final pour la surveillance des abus.
+</ParamField>
+
+
+## Réponse
+
+<ResponseField name="id" type="string">
+  Identifiant unique de la complétion.
+</ResponseField>
+
+<ResponseField name="object" type="string">
+  Toujours `chat.completion`.
+</ResponseField>
+
+<ResponseField name="created" type="integer">
+  Timestamp Unix du moment où la complétion a été créée.
+</ResponseField>
+
+<ResponseField name="model" type="string">
+  Le modèle utilisé pour la complétion.
+</ResponseField>
+
+<ResponseField name="choices" type="array">
+  Liste des choix de complétion.
+
+  Chaque choix contient :
+  - `index` (integer) : Index du choix
+  - `message` (object) : Le message généré
+  - `finish_reason` (string) : Pourquoi le modèle s'est arrêté (`stop`, `length`, `tool_calls`)
+</ResponseField>
+
+<ResponseField name="usage" type="object">
+  Statistiques d'utilisation des tokens.
+
+  - `prompt_tokens` (integer) : Tokens dans le prompt
+  - `completion_tokens` (integer) : Tokens dans la complétion
+  - `total_tokens` (integer) : Total des tokens utilisés
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/chat/completions" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4o",
+    "messages": [
+      {"role": "system", "content": "You are a helpful assistant."},
+      {"role": "user", "content": "Hello!"}
+    ],
+    "temperature": 0.7,
+    "max_tokens": 1000
+  }'
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "Hello!"}
+    ],
+    temperature=0.7,
+    max_tokens=1000
+)
+
+print(response.choices[0].message.content)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.chat.completions.create({
+  model: 'gpt-4o',
+  messages: [
+    { role: 'system', content: 'You are a helpful assistant.' },
+    { role: 'user', content: 'Hello!' }
+  ],
+  temperature: 0.7,
+  max_tokens: 1000
+});
+
+console.log(response.choices[0].message.content);
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/chat/completions');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Content-Type: application/json',
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => json_encode([
+        'model' => 'gpt-4o',
+        'messages' => [
+            ['role' => 'system', 'content' => 'You are a helpful assistant.'],
+            ['role' => 'user', 'content' => 'Hello!']
+        ],
+        'temperature' => 0.7,
+        'max_tokens' => 1000
+    ])
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+echo $data['choices'][0]['message']['content'];
+```
+</RequestExample>
+
+## Exemple multimodal
+
+```json
+{
+  "model": "gemini-2.5-pro",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        { "type": "text", "text": "Describe this video briefly." },
+        { "type": "video_url", "video_url": { "url": "https://example.com/demo.mp4" } }
+      ]
+    }
+  ],
+  "max_tokens": 64
+}
+```
+
+<ResponseExample>
+```json Response
+{
+  "id": "chatcmpl-abc123",
+  "object": "chat.completion",
+  "created": 1706000000,
+  "model": "gpt-4o",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "Hello! How can I help you today?"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 20,
+    "completion_tokens": 9,
+    "total_tokens": 29
+  }
+}
+```
+</ResponseExample>

@@ -1,0 +1,27 @@
+---
+title: "組織残高を取得"
+openapi: "GET /v1/management/balance"
+description: "管理トークンに紐づく組織の現在の残高合計を返します。"
+---
+
+## 概要
+
+このエンドポイントは、管理トークンに紐づく組織の現在の残高合計を返します。請求と決済で使う組織残高の同じ信頼できる情報源を参照します。
+
+## 注意事項
+
+- 金額の真値フィールドは USD で返されます: `balance`, `total_recharge`, `total_used`。
+- `preferred_currency` は組織 Dashboard の表示設定を示します。USD の真値フィールドは変わりません。
+
+## 例
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/management/balance" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## リクエスト / レスポンス
+
+正確なスキーマについては、上記のインタラクティブな OpenAPI パネルを使用してください。

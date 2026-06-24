@@ -1,0 +1,166 @@
+---
+title: "AI Sohbet Uygulamaları"
+description: "Popüler AI sohbet uygulamalarını AI Sonar'nın OpenAI uyumlu API'sini kullanacak şekilde yapılandırın"
+---
+
+## Genel Bakış
+
+Çoğu genel AI sohbet uygulaması, standart OpenAI uyumlu sohbet yolu üzerinden AI Sonar'ya bağlanır.
+
+Pratikte bu şu anlama gelir:
+- uygulama açıkça tam bir uç nokta URL’si istemediği sürece temel URL olarak `https://api.aisonar.dev/v1` kullanın
+- OpenAI tarzı API anahtarı olarak AI Sonar API anahtarınızı kullanın
+- uygulamanın standart bir sohbet akışında kullanabileceği modelleri seçin
+
+<Note>
+Genel sohbet uygulamaları genellikle **chat-completions odaklıdır**, Codex Responses WebSocket istemcileri değildir. Responses'a özgü davranış gerektiren Codex CLI/App, Cursor veya diğer kodlama araçları için bunun yerine özel entegrasyon kılavuzlarını kullanın.
+</Note>
+
+<Note>
+**Tür**: Sohbet uygulaması
+
+**Birincil yol**: OpenAI uyumlu chat-completions yolu
+
+**Destek seviyesi**: Desteklenen yol
+</Note>
+
+## Desteklenen Uygulamalar
+
+| Uygulama | Platform | Notlar |
+|-------------|----------|-------|
+| Open WebUI | Web, kendin barındırılan | OpenAI uyumlu bağlantıları destekleyen popüler kendin barındırılan istemci |
+| LibreChat | Web, kendin barındırılan | Özel OpenAI uç noktası desteğine sahip çok sağlayıcılı sohbet arayüzü |
+| LobeChat | Web, Desktop, kendin barındırılan | Güçlü özel sağlayıcı desteği |
+| Cherry Studio | Windows, macOS, Linux | İyi OpenAI uyumlu sağlayıcı akışı |
+| Chatbox | Windows, macOS, Linux | Basit OpenAI uyumlu kurulum |
+| TypingMind | Web, Desktop | Özel uç nokta biçimi kullanır |
+| NextChat | Web, kendin barındırılan | Base URL geçersiz kılma destekli hafif ChatGPT tarzı istemci |
+| ChatWise | Windows, macOS | Standart özel sağlayıcı deseni |
+
+## Varsayılan Bağlantı Değerleri
+
+| Alan | Değer |
+|-------|-------|
+| Temel URL | `https://api.aisonar.dev/v1` |
+| API Anahtarı | `sk-your-api-key` |
+| API tipi | OpenAI ile uyumlu |
+
+Bir uygulama temel URL yerine **tam bir uç nokta URL’si** isterse, şunu kullanın:
+- Chat Completions: `https://api.aisonar.dev/v1/chat/completions`
+
+## Örnek Uygulama Kurulumları
+
+<Tabs>
+  <Tab title="LobeChat">
+    **Kendin barındırılan LobeChat**
+
+    ```bash
+    OPENAI_API_KEY=sk-your-api-key
+    OPENAI_PROXY_URL=https://api.aisonar.dev/v1
+    ```
+
+    **LobeChat Cloud**
+    1. **Settings** → **AI Hizmet Sağlayıcısı** bölümünü açın
+    2. **OpenAI** seçin
+    3. AI Sonar API anahtarınızı girin
+    4. Özel uç noktayı `https://api.aisonar.dev/v1` olarak ayarlayın
+  </Tab>
+
+  <Tab title="Cherry Studio">
+    1. **Settings** → **Model Sağlayıcısı** bölümünü açın
+    2. Bir **OpenAI ile uyumlu** sağlayıcı ekleyin
+    3. Şunları girin:
+       - **Name**: AI Sonar
+       - **API Base URL**: `https://api.aisonar.dev/v1`
+       - **API Key**: `sk-your-api-key`
+    4. Kullanmak istediğiniz modelleri ekleyin
+  </Tab>
+
+  <Tab title="Chatbox">
+    1. **Settings** → **AI Model** bölümünü açın
+    2. **OpenAI API ile uyumlu** seçin
+    3. Şunları girin:
+       - **API Host**: `https://api.aisonar.dev/v1`
+       - **API Key**: `sk-your-api-key`
+       - **Model**: `gpt-5-mini` veya `gpt-4o`
+  </Tab>
+
+  <Tab title="TypingMind">
+    1. **Settings** bölümünü açın
+    2. **Özel Uç Nokta** seçin
+    3. Şunları girin:
+       - **Uç Nokta URL’si**: `https://api.aisonar.dev/v1/chat/completions`
+       - **API Key**: `sk-your-api-key`
+    4. Görünür yapmak istediğiniz modelleri yapılandırın
+  </Tab>
+
+  <Tab title="Open WebUI">
+    1. **Yönetici Ayarları** → **Connections** bölümünü açın
+    2. Bir **OpenAI ile uyumlu** bağlantı ekleyin
+    3. Şunları girin:
+       - **Base URL**: `https://api.aisonar.dev/v1`
+       - **API Key**: `sk-your-api-key`
+    4. Kaydedin ve görünür yapmak istediğiniz modelleri seçin
+  </Tab>
+
+  <Tab title="LibreChat">
+    LibreChat sağlayıcı yapılandırmasına OpenAI ile uyumlu bir uç nokta ekleyin ve şuraya yönlendirin:
+
+    ```yaml
+    customEndpoints:
+      - name: AI Sonar
+        apiKey: '${OPENAI_API_KEY}'
+        baseURL: 'https://api.aisonar.dev/v1'
+        models:
+          default: ['gpt-5-mini', 'gpt-5.4', 'claude-sonnet-4-6']
+          fetch: false
+    ```
+  </Tab>
+</Tabs>
+
+## Daha Güvenli Varsayılan Modeller
+
+| Kategori | Önerilen Modeller |
+|----------|------------------|
+| Genel varsayılan | `gpt-5.4`, `gpt-5-mini`, `gpt-4o` |
+| Anthropic | `claude-sonnet-4-6`, `claude-opus-4-6` |
+| Google | `gemini-2.5-flash`, `gemini-2.5-pro` |
+| DeepSeek | `deepseek-r1`, `deepseek-v3-2` |
+
+## İpuçları
+
+<AccordionGroup>
+  <Accordion title="Uygulama destekliyorsa temel URL'yi tercih edin">
+    Çoğu uygulama, tam bir uç nokta URL’si yerine temel URL olarak `https://api.aisonar.dev/v1` verdiğinizde yapılandırması daha kolay olur ve daha az kırılgandır.
+  </Accordion>
+
+  <Accordion title="Önce daha küçük modeller kullanın">
+    Günlük sohbet için `gpt-5-mini` veya `gpt-4o` ile başlayın, ardından daha ağır muhakeme görevlerini `gpt-5.4` veya `claude-opus-4-6` modellerine taşıyın.
+  </Accordion>
+
+  <Accordion title="Kodlama araçlarını ayrı tutun">
+    Genel sohbet uygulamaları ve kodlama ajanları genellikle farklı uç nokta davranışlarına ihtiyaç duyar. Codex/Cursor tarzı araçları kendi özel entegrasyon sayfalarında tutun.
+  </Accordion>
+</AccordionGroup>
+
+## Sorun Giderme
+
+<AccordionGroup>
+  <Accordion title="Bağlantı Hatası">
+    - Base URL'nin tam olarak `https://api.aisonar.dev/v1` olduğunu doğrulayın
+    - Uygulama yolları otomatik olarak ekliyorsa sondaki eğik çizgileri kaldırın
+    - Uygulama tam bir uç nokta URL’si istiyorsa `https://api.aisonar.dev/v1/chat/completions` kullanın
+  </Accordion>
+
+  <Accordion title="401 Unauthorized">
+    - API anahtarınızı yeniden kontrol edin
+    - Anahtarın AI Sonar dashboard içinde etkin olduğunu doğrulayın
+    - Fazladan boşluk veya satır sonu olmadığından emin olun
+  </Accordion>
+
+  <Accordion title="Model Kullanılamıyor">
+    - Model adını birebir doğrulayın
+    - `gpt-5-mini`, `gpt-4o` veya `claude-sonnet-4-6` gibi geniş desteklenen bir varsayılan deneyin
+    - AI Sonar dokümantasyonunda veya dashboard'da güncel kullanılabilirliği kontrol edin
+  </Accordion>
+</AccordionGroup>

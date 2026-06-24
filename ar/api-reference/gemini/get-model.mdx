@@ -1,0 +1,107 @@
+---
+title: "الحصول على النموذج"
+openapi: "GET /v1beta/models/{model}"
+description: "الحصول على البيانات الوصفية للنموذج باستخدام تنسيق Google Gemini API"
+---
+
+إرجاع البيانات الوصفية لنموذج محدد بتنسيق Google Gemini API.
+
+## معلمات المسار
+
+<ParamField path="model" type="string" required>
+  اسم النموذج (على سبيل المثال، `gemini-2.5-pro` ،`gemini-2.5-flash`). تُقبل الأسماء المستعارة (Aliases) أيضاً.
+</ParamField>
+
+## المصادقة
+
+لا يلزم التوثيق لنقطة قراءة بيانات النموذج العامة.
+
+## الاستجابة
+
+<ResponseField name="name" type="string">
+  اسم مورد النموذج بتنسيق `models/{model}`.
+</ResponseField>
+
+<ResponseField name="displayName" type="string">
+  اسم النموذج المقروء بشرياً.
+</ResponseField>
+
+<ResponseField name="inputTokenLimit" type="integer">
+  الحد الأقصى لرموز الإدخال `input tokens` (نافذة السياق).
+</ResponseField>
+
+<ResponseField name="outputTokenLimit" type="integer">
+  الحد الأقصى لرموز الإخراج `output tokens`.
+</ResponseField>
+
+<ResponseField name="supportedGenerationMethods" type="array">
+  قائمة بطرق التوليد المدعومة (على سبيل المثال، `generateContent` ،`countTokens` ،`embedContent`).
+</ResponseField>
+
+<ResponseField name="version" type="string">
+  سلسلة الإصدار العام عندما تكون متاحة.
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  وصف مقروء للنموذج عندما يكون متاحًا.
+</ResponseField>
+
+<ResponseField name="temperature" type="number">
+  درجة الحرارة الافتراضية عندما يكشفها upstream.
+</ResponseField>
+
+<ResponseField name="topP" type="number">
+  قيمة top-p الافتراضية عندما تكون متاحة.
+</ResponseField>
+
+<ResponseField name="topK" type="integer">
+  قيمة top-k الافتراضية عندما تكون متاحة.
+</ResponseField>
+
+<ResponseField name="maxTemperature" type="number">
+  أعلى درجة حرارة مدعومة عندما تكون متاحة.
+</ResponseField>
+
+## الأخطاء
+
+- تعود الطلبات GET غير الصالحة التي تتضمن بالخطأ `:generateContent` أو `:streamGenerateContent` بـ `405 METHOD_NOT_ALLOWED`.
+- تعود النماذج غير الموجودة بـ `404 NOT_FOUND`.
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1beta/models/gemini-2.5-pro"
+```
+
+```python Python
+import google.generativeai as genai
+
+genai.configure(
+    api_key="sk-your-api-key",
+    transport="rest",
+    client_options={"api_endpoint": "api.aisonar.dev"}
+)
+
+model = genai.get_model("models/gemini-2.5-pro")
+print(f"Name: {model.name}")
+print(f"Input limit: {model.input_token_limit}")
+print(f"Output limit: {model.output_token_limit}")
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "name": "models/gemini-2.5-pro",
+  "version": "1.0",
+  "displayName": "gemini-2.5-pro",
+  "description": "gemini-2.5-pro model available via AI Sonar",
+  "inputTokenLimit": 1048576,
+  "outputTokenLimit": 65536,
+  "supportedGenerationMethods": ["generateContent", "countTokens"],
+  "temperature": 1.0,
+  "topP": 0.95,
+  "topK": 40,
+  "maxTemperature": 2.0
+}
+```
+</ResponseExample>

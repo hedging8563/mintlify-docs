@@ -1,0 +1,99 @@
+---
+title: "Cursor"
+description: "Gunakan AI Sonar dengan editor kode AI Cursor"
+---
+
+## Gambaran Umum
+
+[Cursor](https://cursor.sh) mendukung penyedia bring-your-own-key (BYOK), tetapi API key kustom hanya berfungsi dengan model chat standar. Gunakan AI Sonar di sini sebagai titik akhir yang kompatibel dengan OpenAI untuk alur editor bergaya chat, bukan sebagai pengganti penuh untuk setiap fitur model Cursor.
+
+
+<Note>
+**Jenis**: Alat coding
+
+**Jalur utama**: kompatibel OpenAI
+
+**Tingkat dukungan**: Didukung dengan batasan
+</Note>
+
+## Konfigurasi
+
+1. Buka Cursor Settings (`Cmd/Ctrl + ,`)
+2. Navigasikan ke **Models** di sidebar kiri
+3. Gulir ke bawah ke bagian **OpenAI API Key**
+4. Masukkan API key AI Sonar Anda
+5. Aktifkan **Override OpenAI Base URL**
+6. Atur Base URL ke:
+
+```
+https://api.aisonar.dev/v1
+```
+
+<Warning>
+API key kustom Cursor hanya berlaku untuk model chat standar. Tab Completion dan fitur khusus lain yang dikelola Cursor akan tetap menggunakan penyedia bawaan Cursor.
+</Warning>
+
+<Warning>
+Alur API key kustom Cursor hanya berlaku untuk model chat standar. Fitur yang memerlukan model khusus yang dikelola Cursor, seperti Tab Completion dan beberapa alur khusus reasoning, akan tetap menggunakan penyedia bawaan Cursor. Cursor juga mencatat bahwa request tetap melewati backend mereka untuk perakitan prompt akhir.
+</Warning>
+
+## Pemilihan Model
+
+Setelah konfigurasi, utamakan model chat standar yang diekspos melalui AI Sonar:
+
+### Model yang Direkomendasikan untuk Coding
+
+| Model | Paling Cocok Untuk |
+|-------|----------|
+| `gpt-5.4` | Coding umum, debugging, chat |
+| `gpt-5-mini` | Edit cepat dan prompt ringan |
+
+## Yang Bekerja Paling Baik
+
+### Alur chat dan editor
+
+Gunakan AI Sonar melalui Cursor untuk:
+
+- Penjelasan kode
+- Perbaikan bug
+- Saran refactoring
+- Pembuatan dokumentasi
+
+### Yang tetap berada pada model yang dikelola Cursor
+
+Fitur-fitur ini tidak secara andal beralih ke titik akhir AI Sonar Anda:
+
+- Pelengkapan Tab
+- Model chat non-standar khusus
+- Fitur khusus penyedia yang hanya diaktifkan Cursor pada model bawaan
+
+## Pemecahan Masalah
+
+<AccordionGroup>
+  <Accordion title="Model tidak muncul">
+    Cursor menyimpan cache status model dan penyedia. Restart Cursor setelah mengonfigurasi API key dan URL dasar.
+  </Accordion>
+
+  <Accordion title="Model tidak didukung dalam mode BYOK">
+    API key kustom hanya berfungsi dengan model chat standar. Jika sebuah model menggunakan infrastruktur khusus Cursor, beralihlah ke model chat standar seperti `gpt-5.4`.
+  </Accordion>
+
+  <Accordion title="Error autentikasi">
+    Verifikasi bahwa API key Anda benar dan memiliki saldo yang cukup.
+  </Accordion>
+
+  <Accordion title="Penyedia lain berhenti bekerja setelah mengaktifkan AI Sonar">
+    Konfigurasi BYOK Cursor dapat memengaruhi alur penyedia lain. Jika jalur model lain rusak setelah mengaktifkan override OpenAI base URL, nonaktifkan override tersebut dan restart Cursor.
+  </Accordion>
+</AccordionGroup>
+
+## Tips
+
+<CardGroup cols={2}>
+  <Card title="Gunakan model yang sesuai" icon="gauge-high">
+    Gunakan `gpt-5-mini` untuk tugas cepat bergaya chat dan `gpt-5.4` untuk pekerjaan coding yang lebih berat.
+  </Card>
+  <Card title="Periksa saldo Anda" icon="wallet">
+    Pantau penggunaan di dashboard AI Sonar Anda.
+  </Card>
+</CardGroup>

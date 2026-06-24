@@ -1,0 +1,39 @@
+---
+title: "DeepSeek"
+description: "DeepSeek R1, V3 reasoning and chat models"
+---
+
+## Overview
+
+AI Sonar provides access to DeepSeek models. Total: **5 models** available.
+
+## Chat Models
+
+| Model ID | Pricing |
+|----------|--------|
+| `deepseek-r1` | $1.35/1M in |
+| `deepseek-v3` | $1.14/1M in |
+| `deepseek-v3-2` | $0.28/1M in |
+| `deepseek-v4-flash` | $0.14/1M in |
+| `deepseek-v4-pro` | $0.435/1M in |
+
+
+## Usage
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.chat.completions.create(
+    model="deepseek-r1",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+```
+
+<Note>
+Prices shown are platform prices (~70% of official rates).
+</Note>

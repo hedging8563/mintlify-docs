@@ -1,0 +1,359 @@
+---
+title: "IDE & SDKの互換性"
+description: "AIコーディングツール、SDK、およびフレームワーク向けの証拠に基づく互換性ガイダンス"
+---
+
+## 概要
+
+AI Sonar は複数の API フォーマットを公開しており、一般的なコーディングツール、SDK、およびフレームワークが最小限の接着コードで統合できるようにしています。
+
+このページはマーケティングのマトリックスより意図的に範囲を狭めています：
+
+- **Supported（サポート）** は、具体的なセットアップ手順を文書化しており、AI Sonar がそのパスが期待するプロトコル形状を公開していることを意味します。
+- **強力なネイティブパス** は、リポジトリにもそのプロトコルファミリ向けの直接的なアダプタまたはリクエスト形式の証拠があることを意味します。
+- **ベストエフォート（ベストエフォート）** は、統合は機能する可能性があるが、上流クライアントがこのカスタムゲートウェイワークフローを安定した契約として扱っていないことを意味します。
+
+<Note>
+  サポートされていないフィールドは一様に扱われるわけではありません。互換性ルートでは、一部のフィールドが無視されたり正規化されたりします。`/v1/responses` では、要求された動作を保証できない場合にサポートされていないフィールドが明示的に `400` または `503` エラーを返すことがあります。
+</Note>
+
+## サポートされているAPIフォーマット
+
+| エンドポイント | フォーマット | ユースケース |
+|----------|--------|----------|
+| `/v1/chat/completions` | OpenAI Chat | ユニバーサル互換性 |
+| `/v1/responses` | OpenAI Responses | ステートフルな会話 |
+| `/v1/messages` | Anthropic Messages | Claude ネイティブ機能 |
+| `/v1beta/models/:model:generateContent` | Google Gemini | Gemini ネイティブ機能 |
+
+## IDE と CLI の互換性
+
+### 文書化されたツールパス
+
+| ツール | サポートレベル | フォーマット | 備考 |
+|------|---------------|--------|-------|
+| **Cursor** | 制限付きサポート | OpenAI 互換 | BYOK 標準のチャット/エディタフローでは動作しますが、Tab Completion のような Cursor 管理の機能の代替にはなりません |
+| **Claude Code CLI** | 強力なネイティブパス | Anthropic | thinking と `tool_choice` に対するアダプタのカバレッジを持つネイティブの `/v1/messages` ルート |
+| **Codex CLI** | モデル/パス制限ありでサポート | OpenAI Responses | Codex 固有のワークフローに対する高度なパスとして `/v1/responses` を扱ってください。Responses 専用の一部フィールドはすべてのモデルやルーティングパスで保証されるわけではありません |
+| **Gemini CLI** | ベストエフォート / 実験的 | Gemini | カスタム AI Sonar base URL フローは上流の安定した契約ではありません |
+| **OpenCode** | Supported（サポート） | OpenAI 互換 | デフォルトで OpenAI 互換プロバイダを使用してください。明示的に Responses ベースのプロバイダが必要な場合のみ移行してください |
+
+<Note>
+  他の OpenAI 互換エディタやエージェントツールも同じ base URL パターンで動作することが多いですが、このリポジトリは現時点で Windsurf、Aider、Continue.dev、Cline/Roo Code、GitHub Copilot などのクライアントに対するツール固有の回帰カバレッジは維持していません。
+</Note>
+
+### 設定例
+
+<Tabs>
+  <Tab title="Cursor">
+    ```
+    Base URL: https://api.aisonar.dev/v1
+    API Key: sk-your-api-key
+    ```
+    Cursor は内部的に Anthropic スタイルのツール形式を使用します。AI Sonar は両方をサポートします：
+    - OpenAI 形式: `{ type: "function", function: { name, parameters } }`
+    - Anthropic 形式: `{ name, input_schema }`（type フィールドは無し）
+  </Tab>
+  <Tab title="Claude Code">
+    ```bash
+    export ANTHROPIC_BASE_URL="https://api.aisonar.dev"
+    export ANTHROPIC_API_KEY="sk-your-api-key"
+    ```
+  </Tab>
+  <Tab title="OpenCode">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export LOCAL_ENDPOINT="https://api.aisonar.dev/v1"
+    ```
+  </Tab>
+  <Tab title="Aider">
+    ```bash
+    export OPENAI_API_KEY="sk-your-api-key"
+    export OPENAI_BASE_URL="https://api.aisonar.dev/v1"
+    aider --model gpt-5.4
+    ```
+  </Tab>
+</Tabs>
+
+## SDK の互換性
+
+### 文書化された SDK とフレームワークのパス
+
+| SDK / フレームワーク | 言語 | サポートレベル | 備考 |
+|-----------------|----------|---------------|-------|
+| **OpenAI SDK** | Python/JS/Go | サポート対象のコアパス | Chat Completions と Embeddings がデフォルトの文書化パスです。Responses 専用の一部フィールドはすべてのモデルやルーティングパスで保証されるわけではありません |
+| **Anthropic SDK** | Python/JS | 強力なネイティブパス | ツール、thinking、プロンプトキャッシュに対する直接的な証拠を持つネイティブの Messages ルート |
+| **Vercel AI SDK** | TypeScript | 推奨統合パターン | `@ai-sdk/openai-compatible` を優先してください。Responses ネイティブの振る舞いが明示的に必要な場合にのみ `@ai-sdk/openai` を使用してください |
+| **LangChain** | Python/JS | サポート対象の標準インターフェイス | `ChatOpenAI` と `OpenAIEmbeddings` が想定される範囲です。ベンダーネイティブの拡張は範囲外です |
+| **LlamaIndex** | Python | `OpenAILike` 経由でサポート | AI Sonar のようなサードパーティゲートウェイには組み込みの OpenAI クラスではなく `OpenAILike` を使用してください |
+| **Dify** | - | 範囲制限付きでサポート | OpenAI プロバイダおよび chat-completions 指向フローが想定経路です。Codex 固有の Responses や WebSocket 挙動には適していません |
+
+## Chat Completions パラメータ
+
+### コアパラメータ
+
+| パラメータ | 型 | 説明 |
+|-----------|------|-------------|
+| `model` | string | モデル識別子（必須） |
+| `messages` | array | 会話メッセージ（必須） |
+| `max_tokens` | integer | 出力の最大トークン数 |
+| `temperature` | number | サンプリング温度（0-2） |
+| `top_p` | number | Nucleus サンプリング（0-1） |
+| `stream` | boolean | ストリーミングを有効にする |
+
+### ツール呼び出し
+
+```json
+{
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_weather",
+        "description": "Get weather for a location",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "location": { "type": "string" }
+          }
+        },
+        "strict": true
+      }
+    }
+  ],
+  "tool_choice": "auto",
+  "parallel_tool_calls": true
+}
+```
+
+### Tool Choice オプション
+
+| フォーマット | 例 | 説明 |
+|--------|---------|-------------|
+| String | `"auto"`, `"none"`, `"required"` | 単純な選択 |
+| OpenAI Object | `{ "type": "function", "function": { "name": "fn" } }` | 特定の関数を強制 |
+| Anthropic Object | `{ "type": "tool", "name": "fn", "disable_parallel_tool_use": true }` | Anthropic ネイティブ形式 |
+
+### 高度なパラメータ
+
+| パラメータ | 型 | 説明 |
+|-----------|------|-------------|
+| `stream_options` | object | トークン数のために `{ include_usage: true }` |
+| `reasoning_effort` | string | reasoning 対応の GPT-5 モデル向けに `"low"`, `"medium"`, `"high"` |
+| `service_tier` | string | `"auto"` または `"default"` |
+| `seed` | integer | 再現性のある出力 |
+| `logprobs` | boolean | ログ確率を返す |
+| `top_logprobs` | integer | 上位ロg確率の数（0-20） |
+| `logit_bias` | object | トークンバイアスマップ（-100〜100） |
+| `frequency_penalty` | number | 繰り返しのペナルティ（-2〜2） |
+| `presence_penalty` | number | トピック出現のペナルティ（-2〜2） |
+| `stop` | string/array | ストップシーケンス |
+| `n` | integer | 生成完了数（1-128） |
+| `user` | string | トラッキング用のユーザ識別子 |
+
+### OpenAI の高度機能
+
+| パラメータ | 型 | 説明 |
+|-----------|------|-------------|
+| `modalities` | array | マルチモーダルのために `["text", "audio"]` |
+| `audio` | object | 音声出力設定（voice、format） |
+| `prediction` | object | より高速な完了のための予測出力 |
+| `metadata` | object | トラッキング用のキー・バリュー |
+| `store` | boolean | 後での取得のために保存する |
+
+### プロバイダ固有のオプション
+
+```json
+{
+  "anthropic_options": {
+    "thinking": {
+      "type": "enabled",
+      "budget_tokens": 10000
+    },
+    "prompt_caching": true
+  },
+  "google_options": {
+    "safety_settings": [...],
+    "google_search": true,
+    "code_execution": true
+  }
+}
+```
+
+## Anthropic Messages パラメータ
+
+### コアパラメータ
+
+| パラメータ | 型 | 説明 |
+|-----------|------|-------------|
+| `model` | string | モデル識別子 |
+| `messages` | array | 会話メッセージ |
+| `max_tokens` | integer | 最大出力（最大 128000） |
+| `system` | string/array | システムプロンプト |
+| `stream` | boolean | ストリーミングを有効にする |
+
+### ツール呼び出し
+
+```json
+{
+  "tools": [
+    {
+      "name": "get_weather",
+      "description": "Get weather",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "location": { "type": "string" }
+        }
+      }
+    }
+  ],
+  "tool_choice": {
+    "type": "auto",
+    "disable_parallel_tool_use": false
+  }
+}
+```
+
+### Extended Thinking（拡張思考）
+
+```json
+{
+  "model": "claude-opus-4-6",
+  "thinking": {
+    "type": "enabled",
+    "budget_tokens": 10000
+  }
+}
+```
+
+## Responses API パラメータ
+
+### コアパラメータ
+
+| パラメータ | 型 | 説明 |
+|-----------|------|-------------|
+| `model` | string | モデル識別子 |
+| `input` | string/array | 入力コンテンツ |
+| `instructions` | string | システム指示 |
+| `max_output_tokens` | integer | 出力の最大トークン数 |
+| `previous_response_id` | string | 会話を継続するため |
+
+### 高度なパラメータ
+
+| パラメータ | 型 | 説明 |
+|-----------|------|-------------|
+| `truncation_strategy` | string | `"auto"` または `"disabled"` |
+| `include` | array | `["reasoning.encrypted_content"]` |
+| `reasoning_effort` | string | reasoning モデル向け |
+| `service_tier` | string | 優先度のティア |
+
+### ツール形式
+
+OpenAI と Anthropic 両方のツール形式をサポートします：
+
+```json
+// OpenAI format
+{ "type": "function", "name": "fn", "parameters": {...} }
+
+// Anthropic format (Cursor compatibility)
+{ "name": "fn", "input_schema": {...} }
+```
+
+## Gemini API パラメータ
+
+### コアパラメータ
+
+| パラメータ | 型 | 説明 |
+|-----------|------|-------------|
+| `contents` | array | 会話コンテンツ |
+| `systemInstruction` | object | システムプロンプト |
+| `generationConfig` | object | 生成設定 |
+
+### ツール
+
+```json
+{
+  "tools": [{
+    "functionDeclarations": [{
+      "name": "search",
+      "description": "Search the web",
+      "parameters": {...}
+    }],
+    "codeExecution": {},
+    "googleSearch": {}
+  }],
+  "toolConfig": {
+    "functionCallingConfig": {
+      "mode": "AUTO"
+    }
+  }
+}
+```
+
+### セーフティ設定
+
+```json
+{
+  "safetySettings": [
+    {
+      "category": "HARM_CATEGORY_HARASSMENT",
+      "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+    }
+  ]
+}
+```
+
+### 追加パラメータ
+
+| パラメータ | 型 | 説明 |
+|-----------|------|-------------|
+| `cachedContent` | string | キャッシュ済みコンテンツ参照 |
+| `responseMimeType` | string | `"text/plain"` または `"application/json"` |
+| `responseSchema` | object | 構造化出力のための JSON スキーマ |
+
+## ストリーミング
+
+すべてのエンドポイントは Server-Sent Events（SSE）ストリーミングをサポートします：
+
+```bash
+# Chat Completions
+curl https://api.aisonar.dev/v1/chat/completions \
+  -H "Authorization: Bearer sk-xxx" \
+  -d '{"model": "gpt-4o", "messages": [...], "stream": true}'
+
+# With usage tracking
+-d '{"...", "stream_options": {"include_usage": true}}'
+```
+
+## エラーハンドリング
+
+AI Sonar は OpenAI 互換のエラー応答を返します：
+
+```json
+{
+  "error": {
+    "message": "Invalid API key",
+    "type": "invalid_api_key",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+詳細は [エラー処理ガイド](/guides/error-handling) を参照してください。
+
+## ベストプラクティス
+
+<AccordionGroup>
+  <Accordion title="不明なパラメータには passthrough を使う">
+    すべてのスキーマは `.passthrough()` を使用しています — 不明なパラメータは上流プロバイダへ転送されます。
+  </Accordion>
+
+  <Accordion title="正確な請求のために stream_options を推奨">
+    ストリーミングレスポンスで正確なトークン数を得るには `stream_options.include_usage` を有効にしてください。
+  </Accordion>
+
+  <Accordion title="適切な tool_choice 形式を使う">
+    SDK が期待する形式に合わせてください。AI Sonar は OpenAI と Anthropic の両方の形式を受け入れます。
+  </Accordion>
+</AccordionGroup>

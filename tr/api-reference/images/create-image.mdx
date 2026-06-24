@@ -1,0 +1,313 @@
+---
+title: "Görsel Oluştur"
+openapi: "POST /v1/images/generations"
+description: "Bir prompt verildiğinde bir görsel oluşturur"
+---
+
+## Genel Bakış
+
+Kod üreten ajanlar için önce `GET /v1/models?recommended_for=image` ile mevcut önerilen görsel shortlist’ini keşfedin, ardından seçilen `model`i bu endpoint’e açıkça gönderin.
+
+`gpt-image-2`, token bazlı ücretlendirilen bir GPT Image modelidir. AI Sonar; metin girdisi, görsel girdisi, raporlandığında önbellek girdisi ve görsel çıktı token’ları için OpenAI’ın resmi `usage` dökümünü izler; sabit görüntü başı fiyat olarak faturalandırılmaz.
+
+`gpt-image-2` görüntü oluşturma için desteklenen herkese açık parametreler `prompt`, `n`, `size`, `quality`, `response_format`, `async`, `background`, `output_format`, `output_compression` veya `compression`, `moderation`, `partial_images` ve `user` alanlarıdır. `size` veya `quality` gönderilmezse AI Sonar `auto` kullanır; özel `size` değerleri aşağıda belgelenen esnek `WIDTHxHEIGHT` sözleşmesini izlemelidir.
+
+Uyumluluk notu: Bir `gpt-image-2` isteği `input_fidelity` gönderirse AI Sonar bunu iletmeden önce kaldırır; çünkü GPT Image 2 görüntü girdilerini zaten otomatik olarak yüksek doğrulukta işler.
+
+### Model davranışı notları
+
+Google Gemini görsel aileleri aynı selector sözleşmesini paylaşmaz:
+
+- `gemini-3.1-flash-image-preview`, `gemini-3-pro-image-preview` ve `nano-banana-pro`, public text-to-image ve image-edit/image-to-image işlemlerinde `aspect_ratio` ile birlikte `resolution` (`1k`, `2k`, `4k`) destekler.
+- `nano-banana-2`, mevcut AI Sonar sözleşmesinde yalnızca text-to-image için `aspect_ratio` ile birlikte `resolution` (`1k`, `2k`, `4k`) destekler.
+- `gemini-2.5-flash-image`, `nano-banana` ve `nano-banana-edit`, `aspect_ratio` destekler fakat public `resolution` seçimi sunmaz.
+- `gemini-2.0-flash-preview-image-generation` burada yalnızca prompt alan text-to-image olarak belgelenmiştir.
+- Nano Banana referans görsel istekleri için bu endpointte (`/v1/images/generations`) `nano-banana-edit` veya `nano-banana-pro` kullanın ve `operation: "image-to-image"` ile `image_urls` gönderin. Nano Banana referans görsel isteklerini `/v1/images/edits` endpointine göndermeyin.
+- Nano Banana image-to-image isteklerinde `nano-banana-pro`, `resolution` (`1k`, `2k`, `4k`) içerebilir; `nano-banana-edit` bunu atlamalıdır. `nano-banana` ve `nano-banana-2` mevcut public sözleşmede text-to-image modelleridir.
+- Bu endpointte referans görseller JSON `image_url` / `image_urls` olarak veya multipart `image` dosyası olarak gönderilebilir. `/v1/images/generations`, `images[]` ya da `file_id` kabul etmez; `/v1/files` referansları yalnızca `images[].file_id` dokümante eden `/v1/images/edits` modelleri için kullanılır.
+
+Google görsel aileleri için `aspect_ratio` kullanmayı tercih edin ve `resolution`'ı yalnızca model açıkça destekliyorsa gönderin.
+
+xAI Grok Imagine görsel modelleri (`grok-imagine-image`, `grok-imagine-image-quality` ve legacy `grok-imagine-image-pro`) `aspect_ratio` ile birlikte `resolution` (`1k`, `2k`) destekler. `grok-imagine-image-pro` uyumluluk ID’si olarak korunur ve upstream’de `grok-imagine-image-quality` modeline yönlendirilir.
+
+## İstek Gövdesi
+
+**Senkron istek zaman aşımı:** Bazı yönlendirilmiş görsel sağlayıcıları son görseli inline döndürür ve üretimin tamamlanmasını bekler. Yüksek çözünürlüklü veya yüksek kaliteli istekler bir dakikaya yakın ya da daha uzun sürebilir; bu yüzden HTTP istemcisi zaman aşımını en az `120s` olarak ayarlayın. Oluşturma yanıtı `status: "pending"`, `task_id` veya `poll_url` içeriyorsa, dönen `poll_url` ile polling yapın.
+
+<ParamField body="model" type="string" default="dall-e-3">
+  Kullanılacak model (ör. `gpt-image-2`, `dall-e-3`, `flux-pro`, `midjourney`).
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  İstenen görselin metin açıklaması.
+</ParamField>
+
+<ParamField body="image_url" type="string">
+  Image-to-image üretim için herkese açık HTTPS referans görsel URL'si. Nano Banana referans görsel isteklerinde `operation` değerini `image-to-image` yapın; `nano-banana-pro` `resolution` içerebilir, `nano-banana-edit` ise bunu atlamalıdır.
+</ParamField>
+
+<ParamField body="image_urls" type="string[]">
+  Herkese açık HTTPS referans görsel URL'leri. JSON isteklerinde bir veya daha fazla referans görsel için kullanın. Bu endpoint `file_id` ve `images[]` desteklemez.
+</ParamField>
+
+<ParamField body="reference_image_urls" type="string[]">
+  Ana giriş görselleri ile referansları ayıran sağlayıcılar için ek modele özgü referans görsel URL'leri.
+</ParamField>
+
+<ParamField body="image" type="file">
+  Image-to-image üretim için multipart referans görsel dosyası. Kaynak görsel özel veya header gerektiriyorsa bunu kullanın. Bu, /v1/files `file_id` değildir; bu endpoint `file_id` kabul etmez.
+</ParamField>
+
+<ParamField body="n" type="integer" default="1">
+  Üretilecek görsel sayısı (1-10, modele bağlı).
+</ParamField>
+
+<ParamField body="size" type="string" default="1024x1024">
+  Görüntü boyutu. OpenAI tarzı görüntü aileleri ve kesin piksel boyutlarını kabul eden diğer modeller için kullanın.
+
+  `gpt-image-2` için `size`, `auto` veya `WIDTHxHEIGHT` kabul eder. Özel boyutlarda her iki kenar da 16’nın katı olmalı, en uzun kenar en fazla `3840px` olmalı, uzun/kısa kenar oranı en fazla `3:1` olmalı ve toplam piksel sayısı `655,360` ile `8,294,400` arasında olmalıdır. `aspect_ratio` ve `resolution`, AI Sonar’nın `gpt-image-2` için mevcut genel sözleşmesine dahil değildir.
+
+  Google Gemini görüntü ailelerinde `size`, modelin genel `aspect_ratio` sözleşmesine ve desteklendiğinde `resolution` sözleşmesine eşlenen bir uyumluluk alias’ı olarak değerlendirilir. Bu modellerde doğrudan `aspect_ratio` göndermeyi tercih edin.
+</ParamField>
+
+<ParamField body="aspect_ratio" type="string">
+  Modele bağlı en-boy oranı seçici.
+
+  Google görsel ailelerinde yaygın değerler `1:1`, `16:9`, `9:16`, `3:2` ve `2:3`'tür.
+</ParamField>
+
+<ParamField body="resolution" type="string">
+  Modele bağlı çıktı çözünürlüğü seçici.
+
+  `gemini-3.1-flash-image-preview` ve `gemini-3-pro-image-preview` için text-to-image ve image-edit işlemlerinde, `nano-banana-pro` için text-to-image ve image-to-image işlemlerinde, `nano-banana-2` için yalnızca text-to-image işleminde desteklenir. Tipik değerler `1k`, `2k` ve `4k`'tür. Model bunu açıkça belgelemiyorsa bu parametreyi yalnızca oran seçimi destekleyen Gemini image ailelerine göndermeyin. xAI Grok Imagine görsel modelleri için `1k` veya `2k` kullanın.
+</ParamField>
+
+<ParamField body="quality" type="string" default="standard">
+  Görüntü kalitesi. DALL-E modelleri `standard` veya `hd` kullanır; `gpt-image-2` gibi GPT Image modelleri `auto`, `low`, `medium` veya `high` kullanır.
+</ParamField>
+
+<ParamField body="response_format" type="string" default="url">
+  Yanıt formatı: `url` veya `b64_json`. Varsayılan `url` değeridir.
+
+  Azure Official veya Azure-compatible `gpt-image-2` rotalarında AI Sonar `response_format` alanını upstream’e iletmez. Gateway, upstream görüntü verisini her zaman `b64_json` olarak alır; `url` isteklerinde her görseli CDN’e yükler ve `data[].url` döndürür. CDN depolama kullanılamıyorsa veya upload başarısız olursa istek Base64’e düşmek yerine başarısız olur. `b64_json` için ham Base64 döndürülür.
+</ParamField>
+
+<ParamField body="async" type="boolean" default="false">
+  `gpt-image-2` veya resmi FLUX/BFL görüntü modelleriyle önce bir görev oluşturmak için `true` yapın. Tamamlanan asenkron görüntü görevleri, istenen `response_format` ne olursa olsun URL döndürür; `b64_json` gerekiyorsa senkron istek kullanın.
+</ParamField>
+
+<ParamField body="style" type="string" default="vivid">
+  DALL-E 3 için stil: `vivid` veya `natural`.
+</ParamField>
+
+<ParamField body="user" type="string">
+  Son kullanıcı için benzersiz bir identifier.
+</ParamField>
+
+## Yanıt
+
+### Senkron Yanıt
+
+<ResponseField name="created" type="integer">
+  Oluşturulma zamanının Unix timestamp'i.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Üretilen görsellerin dizisi.
+
+  Her object şunları içerir:
+  - `url` (string): Üretilen görselin URL'si
+  - `b64_json` (string): Base64 kodlanmış görsel (istenirse)
+  - `revised_prompt` (string): Kullanılan prompt (DALL-E 3)
+</ResponseField>
+
+### Asenkron görev yanıtı
+
+`gpt-image-2` veya resmi FLUX/BFL görüntü modelleriyle `async: true` kullanarak oluşturma isteğinde nihai görüntüyü beklemek yerine bir görev oluşturun. Yanıt `status: "pending"`, `task_id` ve `poll_url` içerir. Görev `completed` veya `failed` durumuna gelene kadar `/v1/tasks/{task_id}` adresini sorgulayın.
+
+Asenkron görüntü görevleri yalnızca nihai görüntü URL’lerini döndürür. Ham `b64_json` görüntü verisi gerekiyorsa senkron istek kullanın.
+
+Görev oluşturulurken tahmini tutar rezerve edilebilir. Tamamlanan görevler gerçek kullanıma göre ücretlendirilir; başarısız olan veya zaman aşımına uğrayan görevlerin rezervi serbest bırakılır veya iade edilir.
+
+<ResponseField name="created" type="integer">
+  Oluşturma zamanının Unix zaman damgası.
+</ResponseField>
+
+<ResponseField name="task_id" type="string">
+  Sorgulama için benzersiz görev kimliği.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  İlk durum: `pending`.
+</ResponseField>
+
+<ResponseField name="poll_url" type="string">
+  Sonuçları sorgulamak için göreli URL, örneğin `/v1/tasks/{id}`.
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Görev beklemedeyken boştur. Tamamlanan görsel görevleri, `data[].url` içinde oluşturulan görsel URL'lerini döndürür.
+</ResponseField>
+
+`status: "pending"` aldığınızda, sonucu almak için `poll_url` veya `GET /v1/tasks/{task_id}` kullanın.
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/images/generations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gemini-3-pro-image-preview",
+    "prompt": "A cinematic portrait of a white cat sitting on a rainy windowsill",
+    "aspect_ratio": "16:9",
+    "resolution": "2k",
+    "n": 1
+  }'
+```
+
+```python Python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.images.generate(
+    model="gemini-3-pro-image-preview",
+    prompt="A cinematic portrait of a white cat sitting on a rainy windowsill",
+    aspect_ratio="16:9",
+    resolution="2k",
+    n=1
+)
+
+print(response.data[0].url)
+```
+
+```javascript JavaScript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: 'sk-your-api-key',
+  baseURL: 'https://api.aisonar.dev/v1'
+});
+
+const response = await client.images.generate({
+  model: 'gemini-3-pro-image-preview',
+  prompt: 'A cinematic portrait of a white cat sitting on a rainy windowsill',
+  aspect_ratio: '16:9',
+  resolution: '2k',
+  n: 1
+});
+
+console.log(response.data[0].url);
+```
+
+```php PHP
+<?php
+$ch = curl_init('https://api.aisonar.dev/v1/images/generations');
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => [
+        'Content-Type: application/json',
+        'Authorization: Bearer sk-your-api-key'
+    ],
+    CURLOPT_POSTFIELDS => json_encode([
+        'model' => 'gemini-3-pro-image-preview',
+        'prompt' => 'A cinematic portrait of a white cat sitting on a rainy windowsill',
+        'aspect_ratio' => '16:9',
+        'resolution' => '2k',
+        'n' => 1
+    ])
+]);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$data = json_decode($response, true);
+echo $data['data'][0]['url'];
+```
+
+Yalnızca oran seçimi destekleyen image ailesi örneği: `gemini-2.5-flash-image`, `nano-banana` veya `nano-banana-edit` için `aspect_ratio` gönderin ancak `resolution`'ı atlayın:
+
+```json
+{
+  "model": "gemini-2.5-flash-image",
+  "prompt": "A clean editorial product shot of a citrus soda can",
+  "aspect_ratio": "16:9"
+}
+```
+
+Nano Banana Pro referans görsel örneği: isteği `/v1/images/generations` endpointine gönderin, `/v1/images/edits` endpointine göndermeyin. `resolution` opsiyoneldir ve `1k`, `2k` veya `4k` olabilir:
+
+```json
+{
+  "model": "nano-banana-pro",
+  "prompt": "Create a clean cinematic character image based on the reference images",
+  "operation": "image-to-image",
+  "image_urls": ["https://example.com/reference-1.png"],
+  "aspect_ratio": "1:1",
+  "resolution": "2k"
+}
+```
+
+
+Özel veya yerel kaynak görseller için doğrudan multipart upload kullanın. `/v1/images/generations` endpointine `file_id` göndermeyin:
+
+```bash
+curl -X POST "https://api.aisonar.dev/v1/images/generations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -F "model=nano-banana-pro" \
+  -F "prompt=Create a clean cinematic character image based on this reference" \
+  -F "operation=image-to-image" \
+  -F "image=@reference.png" \
+  -F "aspect_ratio=1:1" \
+  -F "resolution=2k"
+```
+
+</RequestExample>
+
+<ResponseExample>
+```json Senkron Yanıt
+{
+  "created": 1706000000,
+  "data": [
+    {
+      "url": "https://...",
+      "revised_prompt": "A fluffy white cat with bright eyes sitting peacefully on a wooden windowsill, watching raindrops stream down the glass window..."
+    }
+  ]
+}
+```
+
+```json Asenkron Yanıt
+{
+  "created": 1706000000,
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "pending",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "data": []
+}
+```
+</ResponseExample>
+
+## Kullanılabilir Modeller
+
+| Model | Tip | Özellikler |
+|-------|-----|------------|
+| `dall-e-3` | Genelde inline | En iyi kalite, prompt iyileştirme |
+| `dall-e-2` | Genelde inline | Daha hızlı, daha uygun maliyetli |
+| `flux-pro` | Sıklıkla task tabanlı | Fotogerçekçi, yüksek kalite |
+| `flux-schnell` | Genelde inline | Çok hızlı |
+| `midjourney` | Sıklıkla task tabanlı | Sanatsal stil |
+| `ideogram-v3` | Sıklıkla task tabanlı | En iyi metin oluşturma |
+| `stable-diffusion-3` | Genelde inline | Açık kaynak, özelleştirilebilir |
+
+Bir modeli her zaman senkron ya da her zaman asenkron olarak hard-code etmeyin. Create yanıtı `status: "pending"` döndürürse, `poll_url`'ı takip edin ve tamamlanana kadar polling yapın.
+
+## Task Tabanlı Yanıtları İşleme
+
+Görsel modeller için, yanıtın `status: "pending"` içerip içermediğini her zaman kontrol edin:

@@ -1,0 +1,26 @@
+---
+title: "عرض مفاتيح API"
+openapi: "GET /v1/management/api-keys"
+description: "يعرض مفاتيح API المُدارة من المستخدم لرمز إدارة المؤسسة الحالي."
+---
+
+## نظرة عامة
+
+يعيد مفاتيح API الخاصة بالمستخدم في المؤسسة المرتبطة برمز الإدارة الحالي.
+
+## ملاحظات
+
+- يتم استبعاد المفاتيح المُدارة من النظام مثل مفاتيح Playground وClaw.
+
+## مثال
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/management/api-keys" \
+  -H "Authorization: Bearer mt-your-management-token"
+```
+</RequestExample>
+
+## الطلب / الاستجابة
+
+استخدم لوحة OpenAPI التفاعلية أعلاه للحصول على المخطط الدقيق.

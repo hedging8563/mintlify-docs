@@ -1,0 +1,114 @@
+---
+title: "SDK 및 라이브러리"
+description: "AI Sonar 통합을 위한 권장 SDK 및 라이브러리"
+---
+
+## 개요
+
+AI Sonar는 필요한 동작에 맞는 SDK를 선택하면 가장 쉽게 통합할 수 있습니다:
+- Claude 기본 `/v1/messages` 동작을 위한 공식 **Anthropic SDKs**
+- Gemini 기본 요청 형식에 대한 공식 **Gemini / Google AI** 도구
+- OpenAI 호환 `/v1` 경로와 Responses 스타일 사용을 위한 공식 **OpenAI SDKs**
+
+지원 범위는 통합 페이지를 참고하세요. 이 문서 세트에서 "recommended" 또는 "supported"는 문서화된 설정 경로가 존재함을 의미하며, 그것이 곧 이 저장소에서 모든 프레임워크 헬퍼나 공급자별 기능이 종단간 회귀 테스트되었음을 자동으로 의미하지는 않습니다.
+
+## 권장 SDK
+
+<CardGroup cols={2}>
+  <Card title="OpenAI Python" icon="python" href="https://github.com/openai/openai-python">
+    `pip install openai`
+  </Card>
+  <Card title="OpenAI Node" icon="node-js" href="https://github.com/openai/openai-node">
+    `npm install openai`
+  </Card>
+  <Card title="OpenAI Go" icon="golang" href="https://github.com/openai/openai-go">
+    `go get github.com/openai/openai-go/v3`
+  </Card>
+  <Card title="Anthropic SDK" icon="robot" href="https://github.com/anthropics/anthropic-sdk-python">
+    Native Claude Messages API 지원
+  </Card>
+</CardGroup>
+
+## OpenAI SDK 예제
+
+기존 OpenAI 호환 클라이언트를 마이그레이션하거나 `/v1` 호환 경로를 원할 때 이 경로를 사용하세요. Claude 네이티브 또는 Gemini 네이티브 기능에는 아래의 해당 네이티브 SDK를 대신 사용하세요.
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1"
+)
+
+response = client.responses.create(
+    model="gpt-5.4",
+    input="Explain AI Sonar in one sentence."
+)
+
+print(response.output_text)
+```
+
+## OpenAI Go 예제
+
+```go
+package main
+
+import (
+    openai "github.com/openai/openai-go/v3"
+    "github.com/openai/openai-go/v3/option"
+)
+
+func main() {
+    client := openai.NewClient(
+        option.WithAPIKey("sk-your-api-key"),
+        option.WithBaseURL("https://api.aisonar.dev/v1"),
+    )
+
+    _ = client
+}
+```
+
+## Anthropic SDK 예제
+
+```python
+from anthropic import Anthropic
+
+client = Anthropic(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev"
+)
+
+message = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+```
+
+## 어떤 SDK를 사용해야 하나요?
+
+| 목표 | 권장 경로 |
+|------|------------------|
+| 공급자 네이티브 동작 | 네이티브 공급자 SDK 또는 경로 |
+| 기존 OpenAI 호환 클라이언트 | AI Sonar `/v1`의 OpenAI SDK |
+| 이식 가능한 chat / embeddings | OpenAI 호환 `/v1` 경로 |
+| Claude 네이티브 기능 | Anthropic SDK |
+| Gemini 네이티브 요청 형식 | Gemini 네이티브 API / SDK |
+| LangChain / LlamaIndex / Vercel AI SDK | 전용 통합 페이지를 사용 |
+
+## 모범 사례
+
+<AccordionGroup>
+  <Accordion title="동작이 중요할 때는 네이티브 경로를 선택하세요">
+    공급자별 필드, 도구, 스트리밍 세부 정보, 그리고 다른 형식을 통해 변환되어서는 안 되는 기타 동작에는 Anthropic 또는 Gemini 네이티브 경로를 사용하세요.
+  </Accordion>
+
+  <Accordion title="마이그레이션에는 OpenAI 호환 `/v1` 사용">
+    OpenAI 호환 SDK는 기존 OpenAI 스타일 클라이언트, 이식 가능한 채팅, 임베딩에 가장 적합한 경로입니다. 이를 유일한 AI Sonar API 표면으로 보지 말고 호환 경로로 간주하세요.
+  </Accordion>
+
+  <Accordion title="Base URL을 명시적으로 유지하세요">
+    이전 환경 변수 별칭에 의존하지 말고 클라이언트 설정에 AI Sonar base URL을 직접 전달하세요.
+  </Accordion>
+</AccordionGroup>

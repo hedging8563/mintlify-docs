@@ -1,0 +1,37 @@
+---
+title: "استرجاع الملف"
+openapi: "GET /v1/files/{file_id}"
+description: "يسترجع البيانات الوصفية لملف مرفوع واحد."
+---
+
+## نظرة عامة
+
+يخدم هذا الـ endpoint أساسًا كائنات ملفات AI Sonar المتوافقة مع OpenAI Batch API.
+
+عندما يفعّل الطلب وضع التوافق مع Anthropic Files، يمكن لنفس المسار أيضًا إرجاع بيانات وصفية لملفات على نمط Anthropic مرتبطة بمساحة العمل المرتبطة.
+
+## ملاحظات
+
+- يجب أن تستخدم ملفات إدخال الدفعات `purpose=batch`.
+- `completion_window` حاليًا `24h`.
+- ترتيب الإخراج غير مضمون؛ طابِق دائمًا بواسطة `custom_id`.
+- لا يتم دعم البث داخل عناصر الدفعة.
+
+## مثال
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.aisonar.dev/v1/files/file_abc123" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+</RequestExample>
+
+## الطلب / الاستجابة
+
+استخدم لوحة OpenAPI التفاعلية أعلاه للحصول على المخطط الدقيق.
+
+## نصائح تشغيلية
+
+- استخدم `custom_id` للتسوية اللاحقة غير المتكررة.
+- توقع `output_file_id` و `error_file_id` فقط بعد أن ينهي العامل الدفعة.
+- قد تختلف أسعار الدفعة عن الأسعار المتزامنة لأن قواعد خصم `isBatchRequest=true` تنطبق.
