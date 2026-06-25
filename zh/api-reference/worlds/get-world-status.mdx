@@ -1,69 +1,69 @@
 ---
-title: "Get World Status"
+title: "获取 World 状态"
 openapi: "GET /v1/worlds/generations/{id}"
-description: "Retrieves the status and result of a World Labs Marble world generation task"
+description: "获取 World Labs Marble 世界生成任务的状态和结果"
 ---
 
-Poll this endpoint to check the status of a World Labs Marble generation task. If the create response included `poll_url`, prefer calling that exact URL.
+轮询此端点以检查 World Labs Marble 生成任务的状态。如果创建响应中包含 `poll_url`，请优先调用该完整 URL。
 
-## Path Parameters
+## 路径参数
 
 <ParamField path="id" type="string" required>
-  World generation task ID.
+  世界生成任务 ID。
 </ParamField>
 
-## Response
+## 响应
 
 <ResponseField name="id" type="string">
-  Public task ID.
+  公开任务 ID。
 </ResponseField>
 
 <ResponseField name="task_id" type="string">
-  Async task identifier alias.
+  异步任务标识别名。
 </ResponseField>
 
 <ResponseField name="operation_id" type="string">
-  Upstream World Labs operation ID.
+  上游 World Labs operation ID。
 </ResponseField>
 
 <ResponseField name="status" type="string">
-  Task status: `pending`, `processing`, `completed`, `failed`, or `timeout`.
+  任务状态：`pending`、`processing`、`completed`、`failed` 或 `timeout`。
 </ResponseField>
 
 <ResponseField name="world_id" type="string">
-  Upstream World Labs world ID when completed.
+  生成完成后的上游 World Labs world ID。
 </ResponseField>
 
 <ResponseField name="world_marble_url" type="string">
-  URL for the generated Marble world when completed.
+  生成完成后返回的 Marble 世界 URL。
 </ResponseField>
 
 <ResponseField name="model_url" type="string">
-  Alias for the primary generated world/model URL.
+  主要生成世界或模型 URL 的别名。
 </ResponseField>
 
 <ResponseField name="glb_url" type="string">
-  Collider mesh GLB URL when available.
+  可用时返回的碰撞网格 GLB URL。
 </ResponseField>
 
 <ResponseField name="pano_url" type="string">
-  Panorama image URL when available.
+  可用时返回的全景图 URL。
 </ResponseField>
 
 <ResponseField name="thumbnail_url" type="string">
-  Thumbnail image URL when available.
+  可用时返回的缩略图 URL。
 </ResponseField>
 
 <ResponseField name="caption" type="string">
-  Upstream caption for the generated world.
+  上游为生成世界返回的 caption。
 </ResponseField>
 
 <ResponseField name="cost" type="object">
-  Upstream operation cost details when available, including `total_credits`.
+  可用时返回的上游 operation 费用详情，包括 `total_credits`。
 </ResponseField>
 
 <ResponseField name="error" type="string">
-  Error message when the task failed.
+  任务失败时的错误消息。
 </ResponseField>
 
 <RequestExample>

@@ -1,69 +1,69 @@
 ---
-title: "Get World Status"
+title: "الحصول على حالة World"
 openapi: "GET /v1/worlds/generations/{id}"
-description: "Retrieves the status and result of a World Labs Marble world generation task"
+description: "يجلب حالة ونتيجة مهمة توليد عالم World Labs Marble"
 ---
 
-Poll this endpoint to check the status of a World Labs Marble generation task. If the create response included `poll_url`, prefer calling that exact URL.
+استخدم polling لهذا endpoint للتحقق من حالة مهمة توليد World Labs Marble. إذا تضمنت استجابة الإنشاء `poll_url`، فاستخدم هذا الرابط كما هو.
 
-## Path Parameters
+## معلمات المسار
 
 <ParamField path="id" type="string" required>
-  World generation task ID.
+  معرف مهمة توليد العالم.
 </ParamField>
 
-## Response
+## الاستجابة
 
 <ResponseField name="id" type="string">
-  Public task ID.
+  معرف مهمة عام.
 </ResponseField>
 
 <ResponseField name="task_id" type="string">
-  Async task identifier alias.
+  اسم بديل لمعرف المهمة غير المتزامنة.
 </ResponseField>
 
 <ResponseField name="operation_id" type="string">
-  Upstream World Labs operation ID.
+  معرف operation في World Labs upstream.
 </ResponseField>
 
 <ResponseField name="status" type="string">
-  Task status: `pending`, `processing`, `completed`, `failed`, or `timeout`.
+  حالة المهمة: `pending` أو `processing` أو `completed` أو `failed` أو `timeout`.
 </ResponseField>
 
 <ResponseField name="world_id" type="string">
-  Upstream World Labs world ID when completed.
+  معرف world في World Labs upstream عند الاكتمال.
 </ResponseField>
 
 <ResponseField name="world_marble_url" type="string">
-  URL for the generated Marble world when completed.
+  رابط عالم Marble الناتج عند الاكتمال.
 </ResponseField>
 
 <ResponseField name="model_url" type="string">
-  Alias for the primary generated world/model URL.
+  اسم بديل لرابط العالم/النموذج الأساسي الناتج.
 </ResponseField>
 
 <ResponseField name="glb_url" type="string">
-  Collider mesh GLB URL when available.
+  رابط GLB لشبكة collider عند توفره.
 </ResponseField>
 
 <ResponseField name="pano_url" type="string">
-  Panorama image URL when available.
+  رابط صورة بانورامية عند توفرها.
 </ResponseField>
 
 <ResponseField name="thumbnail_url" type="string">
-  Thumbnail image URL when available.
+  رابط صورة مصغرة عند توفره.
 </ResponseField>
 
 <ResponseField name="caption" type="string">
-  Upstream caption for the generated world.
+  Caption من upstream للعالم الناتج.
 </ResponseField>
 
 <ResponseField name="cost" type="object">
-  Upstream operation cost details when available, including `total_credits`.
+  تفاصيل تكلفة operation من upstream عند توفرها، بما في ذلك `total_credits`.
 </ResponseField>
 
 <ResponseField name="error" type="string">
-  Error message when the task failed.
+  رسالة الخطأ عند فشل المهمة.
 </ResponseField>
 
 <RequestExample>

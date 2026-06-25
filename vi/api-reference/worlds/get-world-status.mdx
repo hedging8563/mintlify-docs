@@ -1,69 +1,69 @@
 ---
-title: "Get World Status"
+title: "Lấy trạng thái World"
 openapi: "GET /v1/worlds/generations/{id}"
-description: "Retrieves the status and result of a World Labs Marble world generation task"
+description: "Lấy trạng thái và kết quả của tác vụ sinh world World Labs Marble"
 ---
 
-Poll this endpoint to check the status of a World Labs Marble generation task. If the create response included `poll_url`, prefer calling that exact URL.
+Polling endpoint này để kiểm tra trạng thái tác vụ World Labs Marble. Nếu phản hồi tạo có `poll_url`, hãy ưu tiên gọi đúng URL đó.
 
-## Path Parameters
+## Tham số đường dẫn
 
 <ParamField path="id" type="string" required>
-  World generation task ID.
+  ID tác vụ world generation.
 </ParamField>
 
-## Response
+## Phản hồi
 
 <ResponseField name="id" type="string">
-  Public task ID.
+  ID tác vụ công khai.
 </ResponseField>
 
 <ResponseField name="task_id" type="string">
-  Async task identifier alias.
+  Alias của định danh tác vụ bất đồng bộ.
 </ResponseField>
 
 <ResponseField name="operation_id" type="string">
-  Upstream World Labs operation ID.
+  ID operation upstream của World Labs.
 </ResponseField>
 
 <ResponseField name="status" type="string">
-  Task status: `pending`, `processing`, `completed`, `failed`, or `timeout`.
+  Trạng thái tác vụ: `pending`, `processing`, `completed`, `failed` hoặc `timeout`.
 </ResponseField>
 
 <ResponseField name="world_id" type="string">
-  Upstream World Labs world ID when completed.
+  World ID upstream của World Labs khi hoàn tất.
 </ResponseField>
 
 <ResponseField name="world_marble_url" type="string">
-  URL for the generated Marble world when completed.
+  URL world Marble đã sinh khi hoàn tất.
 </ResponseField>
 
 <ResponseField name="model_url" type="string">
-  Alias for the primary generated world/model URL.
+  Alias cho URL world/model chính đã sinh.
 </ResponseField>
 
 <ResponseField name="glb_url" type="string">
-  Collider mesh GLB URL when available.
+  URL GLB của collider mesh nếu có.
 </ResponseField>
 
 <ResponseField name="pano_url" type="string">
-  Panorama image URL when available.
+  URL ảnh panorama nếu có.
 </ResponseField>
 
 <ResponseField name="thumbnail_url" type="string">
-  Thumbnail image URL when available.
+  URL thumbnail nếu có.
 </ResponseField>
 
 <ResponseField name="caption" type="string">
-  Upstream caption for the generated world.
+  Caption upstream cho world đã sinh.
 </ResponseField>
 
 <ResponseField name="cost" type="object">
-  Upstream operation cost details when available, including `total_credits`.
+  Chi tiết chi phí operation upstream khi có, bao gồm `total_credits`.
 </ResponseField>
 
 <ResponseField name="error" type="string">
-  Error message when the task failed.
+  Thông báo lỗi khi tác vụ thất bại.
 </ResponseField>
 
 <RequestExample>

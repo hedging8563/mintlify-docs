@@ -1,69 +1,69 @@
 ---
-title: "Get World Status"
+title: "Obter status do World"
 openapi: "GET /v1/worlds/generations/{id}"
-description: "Retrieves the status and result of a World Labs Marble world generation task"
+description: "Recupera o status e o resultado de uma tarefa de geração de mundo World Labs Marble"
 ---
 
-Poll this endpoint to check the status of a World Labs Marble generation task. If the create response included `poll_url`, prefer calling that exact URL.
+Faça polling deste endpoint para verificar o status de uma tarefa World Labs Marble. Se a resposta de criação incluiu `poll_url`, prefira chamar essa URL exata.
 
-## Path Parameters
+## Parâmetros de caminho
 
 <ParamField path="id" type="string" required>
-  World generation task ID.
+  ID da tarefa de geração de mundo.
 </ParamField>
 
-## Response
+## Resposta
 
 <ResponseField name="id" type="string">
-  Public task ID.
+  ID público da tarefa.
 </ResponseField>
 
 <ResponseField name="task_id" type="string">
-  Async task identifier alias.
+  Alias do identificador de tarefa assíncrona.
 </ResponseField>
 
 <ResponseField name="operation_id" type="string">
-  Upstream World Labs operation ID.
+  ID de operation upstream da World Labs.
 </ResponseField>
 
 <ResponseField name="status" type="string">
-  Task status: `pending`, `processing`, `completed`, `failed`, or `timeout`.
+  Status da tarefa: `pending`, `processing`, `completed`, `failed` ou `timeout`.
 </ResponseField>
 
 <ResponseField name="world_id" type="string">
-  Upstream World Labs world ID when completed.
+  World ID upstream da World Labs quando concluído.
 </ResponseField>
 
 <ResponseField name="world_marble_url" type="string">
-  URL for the generated Marble world when completed.
+  URL do mundo Marble gerado quando concluído.
 </ResponseField>
 
 <ResponseField name="model_url" type="string">
-  Alias for the primary generated world/model URL.
+  Alias da URL principal do mundo/modelo gerado.
 </ResponseField>
 
 <ResponseField name="glb_url" type="string">
-  Collider mesh GLB URL when available.
+  URL GLB da malha collider quando disponível.
 </ResponseField>
 
 <ResponseField name="pano_url" type="string">
-  Panorama image URL when available.
+  URL da imagem panorâmica quando disponível.
 </ResponseField>
 
 <ResponseField name="thumbnail_url" type="string">
-  Thumbnail image URL when available.
+  URL da miniatura quando disponível.
 </ResponseField>
 
 <ResponseField name="caption" type="string">
-  Upstream caption for the generated world.
+  Caption upstream do mundo gerado.
 </ResponseField>
 
 <ResponseField name="cost" type="object">
-  Upstream operation cost details when available, including `total_credits`.
+  Detalhes de custo da operation upstream quando disponíveis, incluindo `total_credits`.
 </ResponseField>
 
 <ResponseField name="error" type="string">
-  Error message when the task failed.
+  Mensagem de erro quando a tarefa falhar.
 </ResponseField>
 
 <RequestExample>

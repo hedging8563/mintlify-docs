@@ -1,69 +1,69 @@
 ---
-title: "Get World Status"
+title: "Ambil Status World"
 openapi: "GET /v1/worlds/generations/{id}"
-description: "Retrieves the status and result of a World Labs Marble world generation task"
+description: "Mengambil status dan hasil tugas pembuatan world World Labs Marble"
 ---
 
-Poll this endpoint to check the status of a World Labs Marble generation task. If the create response included `poll_url`, prefer calling that exact URL.
+Polling endpoint ini untuk memeriksa status tugas World Labs Marble. Jika respons create menyertakan `poll_url`, gunakan URL tersebut.
 
-## Path Parameters
+## Parameter Path
 
 <ParamField path="id" type="string" required>
-  World generation task ID.
+  ID tugas world generation.
 </ParamField>
 
-## Response
+## Respons
 
 <ResponseField name="id" type="string">
-  Public task ID.
+  ID tugas publik.
 </ResponseField>
 
 <ResponseField name="task_id" type="string">
-  Async task identifier alias.
+  Alias identifier tugas asinkron.
 </ResponseField>
 
 <ResponseField name="operation_id" type="string">
-  Upstream World Labs operation ID.
+  ID operation World Labs upstream.
 </ResponseField>
 
 <ResponseField name="status" type="string">
-  Task status: `pending`, `processing`, `completed`, `failed`, or `timeout`.
+  Status tugas: `pending`, `processing`, `completed`, `failed`, atau `timeout`.
 </ResponseField>
 
 <ResponseField name="world_id" type="string">
-  Upstream World Labs world ID when completed.
+  World ID upstream World Labs saat selesai.
 </ResponseField>
 
 <ResponseField name="world_marble_url" type="string">
-  URL for the generated Marble world when completed.
+  URL dunia Marble yang dihasilkan saat selesai.
 </ResponseField>
 
 <ResponseField name="model_url" type="string">
-  Alias for the primary generated world/model URL.
+  Alias untuk URL world/model utama yang dihasilkan.
 </ResponseField>
 
 <ResponseField name="glb_url" type="string">
-  Collider mesh GLB URL when available.
+  URL GLB collider mesh jika tersedia.
 </ResponseField>
 
 <ResponseField name="pano_url" type="string">
-  Panorama image URL when available.
+  URL gambar panorama jika tersedia.
 </ResponseField>
 
 <ResponseField name="thumbnail_url" type="string">
-  Thumbnail image URL when available.
+  URL thumbnail jika tersedia.
 </ResponseField>
 
 <ResponseField name="caption" type="string">
-  Upstream caption for the generated world.
+  Caption upstream untuk world yang dihasilkan.
 </ResponseField>
 
 <ResponseField name="cost" type="object">
-  Upstream operation cost details when available, including `total_credits`.
+  Detail biaya operation upstream jika tersedia, termasuk `total_credits`.
 </ResponseField>
 
 <ResponseField name="error" type="string">
-  Error message when the task failed.
+  Pesan error saat tugas gagal.
 </ResponseField>
 
 <RequestExample>

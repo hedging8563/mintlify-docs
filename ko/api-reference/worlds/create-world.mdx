@@ -1,104 +1,104 @@
 ---
-title: "Create World"
+title: "World 생성"
 openapi: "POST /v1/worlds/generations"
-description: "Creates a World Labs Marble world generation task"
+description: "World Labs Marble 월드 생성 작업을 만듭니다"
 ---
 
-Generate explorable 3D worlds with World Labs Marble. This is an asynchronous API: create responses return a task identity and a `poll_url` for status checks.
+World Labs Marble로 탐색 가능한 3D 월드를 생성합니다. 이 API는 비동기 방식이며, 생성 응답에는 작업 식별자와 상태 확인용 `poll_url`이 포함됩니다.
 
-Supported models are `marble-1.0`, `marble-1.1`, and `marble-1.1-plus`. World Labs documents `marble-1.0-draft`, but AI Sonar does not expose draft generation in this endpoint yet.
+지원 모델은 `marble-1.0`, `marble-1.1`, `marble-1.1-plus`입니다. World Labs 문서에는 `marble-1.0-draft`도 있지만, AI Sonar은 아직 이 엔드포인트에서 draft 생성을 노출하지 않습니다.
 
-## Request Body
+## 요청 본문
 
 <ParamField body="model" type="string" default="marble-1.0">
-  Marble model to use: `marble-1.0`, `marble-1.1`, or `marble-1.1-plus`.
+  사용할 Marble 모델: `marble-1.0`, `marble-1.1`, `marble-1.1-plus`.
 </ParamField>
 
 <ParamField body="prompt" type="string">
-  Text prompt for text-only generation or as guidance with image/video inputs.
+  텍스트 전용 생성 또는 이미지/비디오 입력의 가이드로 사용할 텍스트 프롬프트입니다.
 </ParamField>
 
 <ParamField body="world_prompt" type="object">
-  Native World Labs `world_prompt` object for advanced callers. Supported prompt types are `text`, `image`, `multi-image`, and `video`.
+  고급 호출자를 위한 네이티브 World Labs `world_prompt` 객체입니다. 지원 타입은 `text`, `image`, `multi-image`, `video`입니다.
 </ParamField>
 
 <ParamField body="image" type="string">
-  Base64 or data URL image prompt.
+  Base64 또는 data URL 이미지 프롬프트입니다.
 </ParamField>
 
 <ParamField body="image_url" type="string">
-  Image URL prompt.
+  이미지 URL 프롬프트입니다.
 </ParamField>
 
 <ParamField body="images" type="array">
-  Multiple image prompts for shortcut multi-image generation. Provide up to 4 images. For native World Labs reconstruction mode, pass `world_prompt.type="multi-image"` with `reconstruct_images: true` and up to 8 images.
+  간편 multi-image 생성을 위한 여러 이미지 프롬프트입니다. 최대 4장까지 제공할 수 있습니다. 네이티브 World Labs 재구성 모드에서는 `world_prompt.type="multi-image"`, `reconstruct_images: true`와 함께 최대 8장을 전달하세요.
 </ParamField>
 
 <ParamField body="video_url" type="string">
-  Video URL prompt.
+  비디오 URL 프롬프트입니다.
 </ParamField>
 
 <ParamField body="is_pano" type="boolean | string">
-  For image inputs, set `true` for an existing panorama, `false` for a normal single image, or `auto`.
+  이미지 입력에서 기존 파노라마는 `true`, 일반 단일 이미지는 `false`, 또는 `auto`를 설정합니다.
 </ParamField>
 
 <ParamField body="seed" type="integer">
-  Optional seed from 0 through 4294967295.
+  선택적 시드입니다. 0부터 4294967295까지 가능합니다.
 </ParamField>
 
 <ParamField body="display_name" type="string">
-  Optional display name for the upstream world, up to 64 characters.
+  선택적 업스트림 월드 표시 이름입니다. 최대 64자입니다.
 </ParamField>
 
 <ParamField body="tags" type="array">
-  Optional upstream tags. Provide up to 10 tags, each up to 32 characters.
+  선택적 업스트림 태그입니다. 최대 10개, 각 태그는 최대 32자입니다.
 </ParamField>
 
 <ParamField body="permission" type="object">
-  Optional World Labs permission object.
+  선택적 World Labs permission 객체입니다.
 </ParamField>
 
-## Response
+## 응답
 
 <ResponseField name="id" type="string">
-  Public task ID for polling.
+  폴링에 사용할 공개 작업 ID입니다.
 </ResponseField>
 
 <ResponseField name="task_id" type="string">
-  Async task identifier alias.
+  비동기 작업 식별자 별칭입니다.
 </ResponseField>
 
 <ResponseField name="operation_id" type="string">
-  Upstream World Labs operation ID.
+  업스트림 World Labs operation ID입니다.
 </ResponseField>
 
 <ResponseField name="poll_url" type="string">
-  Preferred polling URL for this task.
+  이 작업의 권장 폴링 URL입니다.
 </ResponseField>
 
 <ResponseField name="status" type="string">
-  Task status: `pending`, `processing`, `completed`, or `failed`.
+  작업 상태: `pending`, `processing`, `completed`, `failed`.
 </ResponseField>
 
 <ResponseField name="world_marble_url" type="string">
-  URL for the generated Marble world when completed.
+  완료 시 생성된 Marble 월드 URL입니다.
 </ResponseField>
 
 <ResponseField name="glb_url" type="string">
-  Collider mesh GLB URL when available.
+  사용 가능한 경우 collider mesh GLB URL입니다.
 </ResponseField>
 
 <ResponseField name="pano_url" type="string">
-  Panorama image URL when available.
+  사용 가능한 경우 파노라마 이미지 URL입니다.
 </ResponseField>
 
-## Pricing
+## 가격
 
-World Labs bills in credits. AI Sonar pre-deducts the request-type maximum and settles from the completed operation's `cost.total_credits` when available. Standard Marble requests are up to 1,600 credits. `marble-1.1-plus` requests are up to 3,100 credits.
+World Labs는 credits 단위로 과금합니다. AI Sonar은 요청 유형별 최대치를 먼저 차감하고, 완료된 operation에서 `cost.total_credits`를 받을 수 있으면 실제 credits 기준으로 정산합니다. 표준 Marble 요청은 최대 1,600 credits, `marble-1.1-plus` 요청은 최대 3,100 credits입니다.
 
-## Scope
+## 범위
 
-This endpoint covers world generation and polling. AI Sonar does not currently proxy World Labs media asset upload, world listing, world deletion, or standalone pano tools.
+이 엔드포인트는 월드 생성과 폴링을 다룹니다. AI Sonar은 현재 World Labs 미디어 자산 업로드, 월드 목록, 월드 삭제, 독립 pano 도구를 프록시하지 않습니다.
 
 <RequestExample>
 ```bash cURL
@@ -107,7 +107,7 @@ curl -X POST "https://api.aisonar.dev/v1/worlds/generations" \
   -H "Content-Type: application/json" \
   -d '{
     "model": "marble-1.1",
-    "prompt": "A quiet coastal town at sunset with narrow alleys and warm lights"
+    "prompt": "해 질 녘 조용한 해안 마을, 좁은 골목과 따뜻한 불빛"
   }'
 ```
 
@@ -119,7 +119,7 @@ response = requests.post(
     headers={"Authorization": "Bearer sk-your-api-key"},
     json={
         "model": "marble-1.1",
-        "prompt": "A quiet coastal town at sunset with narrow alleys and warm lights",
+        "prompt": "해 질 녘 조용한 해안 마을, 좁은 골목과 따뜻한 불빛",
     },
 )
 
@@ -136,7 +136,7 @@ const response = await fetch('https://api.aisonar.dev/v1/worlds/generations', {
   },
   body: JSON.stringify({
     model: 'marble-1.1',
-    prompt: 'A quiet coastal town at sunset with narrow alleys and warm lights'
+    prompt: '해 질 녘 조용한 해안 마을, 좁은 골목과 따뜻한 불빛'
   })
 });
 

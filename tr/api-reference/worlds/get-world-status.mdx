@@ -1,69 +1,69 @@
 ---
-title: "Get World Status"
+title: "World Durumunu Al"
 openapi: "GET /v1/worlds/generations/{id}"
-description: "Retrieves the status and result of a World Labs Marble world generation task"
+description: "World Labs Marble dünya üretim görevinin durumunu ve sonucunu alır"
 ---
 
-Poll this endpoint to check the status of a World Labs Marble generation task. If the create response included `poll_url`, prefer calling that exact URL.
+World Labs Marble üretim görevinin durumunu kontrol etmek için bu endpointi poll edin. Oluşturma yanıtı `poll_url` içeriyorsa tam olarak o URLyi kullanmayı tercih edin.
 
-## Path Parameters
+## Yol Parametreleri
 
 <ParamField path="id" type="string" required>
-  World generation task ID.
+  Dünya üretim görevi IDsi.
 </ParamField>
 
-## Response
+## Yanıt
 
 <ResponseField name="id" type="string">
-  Public task ID.
+  Genel görev IDsi.
 </ResponseField>
 
 <ResponseField name="task_id" type="string">
-  Async task identifier alias.
+  Asenkron görev tanımlayıcı aliası.
 </ResponseField>
 
 <ResponseField name="operation_id" type="string">
-  Upstream World Labs operation ID.
+  Upstream World Labs operation IDsi.
 </ResponseField>
 
 <ResponseField name="status" type="string">
-  Task status: `pending`, `processing`, `completed`, `failed`, or `timeout`.
+  Görev durumu: `pending`, `processing`, `completed`, `failed` veya `timeout`.
 </ResponseField>
 
 <ResponseField name="world_id" type="string">
-  Upstream World Labs world ID when completed.
+  Tamamlandığında upstream World Labs world IDsi.
 </ResponseField>
 
 <ResponseField name="world_marble_url" type="string">
-  URL for the generated Marble world when completed.
+  Tamamlandığında oluşturulan Marble dünya URLsi.
 </ResponseField>
 
 <ResponseField name="model_url" type="string">
-  Alias for the primary generated world/model URL.
+  Birincil oluşturulan dünya/model URLsi için alias.
 </ResponseField>
 
 <ResponseField name="glb_url" type="string">
-  Collider mesh GLB URL when available.
+  Varsa collider mesh GLB URLsi.
 </ResponseField>
 
 <ResponseField name="pano_url" type="string">
-  Panorama image URL when available.
+  Varsa panorama görüntü URLsi.
 </ResponseField>
 
 <ResponseField name="thumbnail_url" type="string">
-  Thumbnail image URL when available.
+  Varsa thumbnail görüntü URLsi.
 </ResponseField>
 
 <ResponseField name="caption" type="string">
-  Upstream caption for the generated world.
+  Oluşturulan dünya için upstream caption.
 </ResponseField>
 
 <ResponseField name="cost" type="object">
-  Upstream operation cost details when available, including `total_credits`.
+  Varsa `total_credits` dahil upstream operation maliyet ayrıntıları.
 </ResponseField>
 
 <ResponseField name="error" type="string">
-  Error message when the task failed.
+  Görev başarısız olduğunda hata mesajı.
 </ResponseField>
 
 <RequestExample>

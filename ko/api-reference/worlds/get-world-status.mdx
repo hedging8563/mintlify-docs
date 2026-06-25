@@ -1,69 +1,69 @@
 ---
-title: "Get World Status"
+title: "World 상태 가져오기"
 openapi: "GET /v1/worlds/generations/{id}"
-description: "Retrieves the status and result of a World Labs Marble world generation task"
+description: "World Labs Marble 월드 생성 작업의 상태와 결과를 가져옵니다"
 ---
 
-Poll this endpoint to check the status of a World Labs Marble generation task. If the create response included `poll_url`, prefer calling that exact URL.
+이 엔드포인트를 폴링하여 World Labs Marble 생성 작업 상태를 확인합니다. 생성 응답에 `poll_url`이 있으면 해당 URL을 우선 사용하세요.
 
-## Path Parameters
+## 경로 매개변수
 
 <ParamField path="id" type="string" required>
-  World generation task ID.
+  월드 생성 작업 ID입니다.
 </ParamField>
 
-## Response
+## 응답
 
 <ResponseField name="id" type="string">
-  Public task ID.
+  공개 작업 ID입니다.
 </ResponseField>
 
 <ResponseField name="task_id" type="string">
-  Async task identifier alias.
+  비동기 작업 식별자 별칭입니다.
 </ResponseField>
 
 <ResponseField name="operation_id" type="string">
-  Upstream World Labs operation ID.
+  업스트림 World Labs operation ID입니다.
 </ResponseField>
 
 <ResponseField name="status" type="string">
-  Task status: `pending`, `processing`, `completed`, `failed`, or `timeout`.
+  작업 상태: `pending`, `processing`, `completed`, `failed`, `timeout`.
 </ResponseField>
 
 <ResponseField name="world_id" type="string">
-  Upstream World Labs world ID when completed.
+  완료 시 업스트림 World Labs world ID입니다.
 </ResponseField>
 
 <ResponseField name="world_marble_url" type="string">
-  URL for the generated Marble world when completed.
+  완료 시 생성된 Marble 월드 URL입니다.
 </ResponseField>
 
 <ResponseField name="model_url" type="string">
-  Alias for the primary generated world/model URL.
+  기본 생성 월드/모델 URL의 별칭입니다.
 </ResponseField>
 
 <ResponseField name="glb_url" type="string">
-  Collider mesh GLB URL when available.
+  사용 가능한 경우 collider mesh GLB URL입니다.
 </ResponseField>
 
 <ResponseField name="pano_url" type="string">
-  Panorama image URL when available.
+  사용 가능한 경우 파노라마 이미지 URL입니다.
 </ResponseField>
 
 <ResponseField name="thumbnail_url" type="string">
-  Thumbnail image URL when available.
+  사용 가능한 경우 썸네일 이미지 URL입니다.
 </ResponseField>
 
 <ResponseField name="caption" type="string">
-  Upstream caption for the generated world.
+  생성된 월드에 대해 업스트림이 반환한 caption입니다.
 </ResponseField>
 
 <ResponseField name="cost" type="object">
-  Upstream operation cost details when available, including `total_credits`.
+  `total_credits`를 포함한 업스트림 operation 비용 세부 정보입니다.
 </ResponseField>
 
 <ResponseField name="error" type="string">
-  Error message when the task failed.
+  작업 실패 시 오류 메시지입니다.
 </ResponseField>
 
 <RequestExample>

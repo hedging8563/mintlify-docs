@@ -1,69 +1,69 @@
 ---
-title: "Get World Status"
+title: "World 状態を取得"
 openapi: "GET /v1/worlds/generations/{id}"
-description: "Retrieves the status and result of a World Labs Marble world generation task"
+description: "World Labs Marble ワールド生成タスクの状態と結果を取得します"
 ---
 
-Poll this endpoint to check the status of a World Labs Marble generation task. If the create response included `poll_url`, prefer calling that exact URL.
+このエンドポイントをポーリングして World Labs Marble 生成タスクの状態を確認します。作成レスポンスに `poll_url` が含まれる場合は、その URL を優先してください。
 
-## Path Parameters
+## パスパラメータ
 
 <ParamField path="id" type="string" required>
-  World generation task ID.
+  ワールド生成タスク ID です。
 </ParamField>
 
-## Response
+## レスポンス
 
 <ResponseField name="id" type="string">
-  Public task ID.
+  公開タスク ID です。
 </ResponseField>
 
 <ResponseField name="task_id" type="string">
-  Async task identifier alias.
+  非同期タスク識別子の別名です。
 </ResponseField>
 
 <ResponseField name="operation_id" type="string">
-  Upstream World Labs operation ID.
+  上流 World Labs の operation ID です。
 </ResponseField>
 
 <ResponseField name="status" type="string">
-  Task status: `pending`, `processing`, `completed`, `failed`, or `timeout`.
+  タスク状態：`pending`、`processing`、`completed`、`failed`、`timeout`。
 </ResponseField>
 
 <ResponseField name="world_id" type="string">
-  Upstream World Labs world ID when completed.
+  完了時の上流 World Labs world ID です。
 </ResponseField>
 
 <ResponseField name="world_marble_url" type="string">
-  URL for the generated Marble world when completed.
+  完了時の生成済み Marble ワールド URL です。
 </ResponseField>
 
 <ResponseField name="model_url" type="string">
-  Alias for the primary generated world/model URL.
+  主要な生成ワールドまたはモデル URL の別名です。
 </ResponseField>
 
 <ResponseField name="glb_url" type="string">
-  Collider mesh GLB URL when available.
+  利用可能な場合のコライダーメッシュ GLB URL です。
 </ResponseField>
 
 <ResponseField name="pano_url" type="string">
-  Panorama image URL when available.
+  利用可能な場合のパノラマ画像 URL です。
 </ResponseField>
 
 <ResponseField name="thumbnail_url" type="string">
-  Thumbnail image URL when available.
+  利用可能な場合のサムネイル画像 URL です。
 </ResponseField>
 
 <ResponseField name="caption" type="string">
-  Upstream caption for the generated world.
+  生成ワールドに対して上流が返す caption です。
 </ResponseField>
 
 <ResponseField name="cost" type="object">
-  Upstream operation cost details when available, including `total_credits`.
+  `total_credits` を含む上流 operation のコスト詳細です。
 </ResponseField>
 
 <ResponseField name="error" type="string">
-  Error message when the task failed.
+  タスク失敗時のエラーメッセージです。
 </ResponseField>
 
 <RequestExample>
