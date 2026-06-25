@@ -1,0 +1,93 @@
+---
+title: "列出 Worlds"
+openapi: "POST /v1/worlds/list"
+description: "列出透過 AI Sonar 建立的已完成 World Labs Marble 世界"
+---
+
+列出透過 AI Sonar 建立的已完成 World Labs Marble 世界。結果依你的組織隔離；AI Sonar 不會暴露共享上游帳號的完整列表。
+
+待處理或失敗的生成任務請使用 `/v1/worlds/generations/{id}`。此列表只返回生成完成後已由 AI Sonar 索引的世界。
+
+## 請求體
+
+<ParamField body="page_size" type="integer" default="20">
+  返回的 world 數量，範圍 1 到 100。
+</ParamField>
+
+<ParamField body="page_token" type="string">
+  上一頁回應返回的分頁 token。
+</ParamField>
+
+<ParamField body="status" type="string">
+  可選狀態篩選。AI Sonar 對 `SUCCEEDED` 返回已完成 worlds；其他狀態屬於生成任務端點。
+</ParamField>
+
+<ParamField body="model" type="string">
+  可選 Marble 模型篩選。
+</ParamField>
+
+<ParamField body="tags" type="array">
+  可選標籤篩選。
+</ParamField>
+
+<ParamField body="is_public" type="boolean">
+  可選可見性篩選。
+</ParamField>
+
+<ParamField body="created_after" type="string">
+  只返回晚於該時間建立的 worlds。
+</ParamField>
+
+<ParamField body="created_before" type="string">
+  只返回早於該時間建立的 worlds。
+</ParamField>
+
+<ParamField body="sort_by" type="string" default="created_at">
+  依 `created_at` 或 `updated_at` 排序。
+</ParamField>
+
+<ParamField body="sort_order" type="string" default="desc">
+  排序方向：`asc` 或 `desc`。
+</ParamField>
+
+## 回應
+
+<ResponseField name="worlds" type="array">
+  World 記錄陣列。
+</ResponseField>
+
+<ResponseField name="next_page_token" type="string">
+  下一頁 token，或 `null`。
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/worlds/list" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{"page_size": 20, "status": "SUCCEEDED", "model": "marble-1.1"}'
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    "https://api.aisonar.dev/v1/worlds/list",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+    json={"page_size": 20, "status": "SUCCEEDED", "model": "marble-1.1"},
+)
+print(response.json()["worlds"])
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.aisonar.dev/v1/worlds/list', {
+  method: 'POST',
+  headers: {
+    Authorization: 'Bearer sk-your-api-key',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({ page_size: 20, status: 'SUCCEEDED', model: 'marble-1.1' })
+});
+console.log((await response.json()).worlds);
+```
+</RequestExample>

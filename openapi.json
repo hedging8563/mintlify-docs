@@ -3715,13 +3715,237 @@
         "security": []
       }
     },
+    "/v1/worlds/media-assets/prepare-upload": {
+      "post": {
+        "tags": [
+          "Worlds"
+        ],
+        "summary": "Prepare World Labs media asset upload",
+        "description": "Creates a World Labs media asset record and returns a signed upload URL. Use the returned media_asset_id from native world_prompt objects with source=media_asset. AI Sonar stores the media asset ownership mapping and rejects cross-organization references.",
+        "operationId": "prepareWorldMediaAssetUpload",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file_name",
+                  "kind"
+                ],
+                "properties": {
+                  "file_name": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "description": "File name, such as landscape.jpg."
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "image",
+                      "video"
+                    ],
+                    "description": "High-level media type."
+                  },
+                  "extension": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "File extension without dot, such as jpg, png, or mp4."
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "nullable": true,
+                    "description": "Optional application metadata."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Upload prepared",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "media_asset",
+                    "upload_info"
+                  ],
+                  "properties": {
+                    "media_asset": {
+                      "type": "object",
+                      "required": [
+                        "media_asset_id",
+                        "file_name"
+                      ],
+                      "properties": {
+                        "created_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "file_name": {
+                          "type": "string"
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "image",
+                            "video"
+                          ]
+                        },
+                        "media_asset_id": {
+                          "type": "string"
+                        },
+                        "extension": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "metadata": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "nullable": true
+                        },
+                        "updated_at": {
+                          "type": "string",
+                          "format": "date-time",
+                          "nullable": true
+                        }
+                      },
+                      "additionalProperties": true
+                    },
+                    "upload_info": {
+                      "type": "object",
+                      "required": [
+                        "upload_url"
+                      ],
+                      "properties": {
+                        "upload_method": {
+                          "type": "string"
+                        },
+                        "upload_url": {
+                          "type": "string",
+                          "format": "uri"
+                        },
+                        "curl_example": {
+                          "type": "string"
+                        },
+                        "required_headers": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/worlds/media-assets/{id}": {
+      "get": {
+        "tags": [
+          "Worlds"
+        ],
+        "summary": "Get World Labs media asset",
+        "description": "Retrieves metadata for a World Labs media asset prepared through AI Sonar. The media asset must belong to the authenticated organization.",
+        "operationId": "getWorldMediaAsset",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Media asset ID."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Media asset metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "media_asset_id",
+                    "file_name"
+                  ],
+                  "properties": {
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "file_name": {
+                      "type": "string"
+                    },
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "image",
+                        "video"
+                      ]
+                    },
+                    "media_asset_id": {
+                      "type": "string"
+                    },
+                    "extension": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "metadata": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "nullable": true
+                    },
+                    "updated_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
     "/v1/worlds/generations": {
       "post": {
         "tags": [
           "Worlds"
         ],
         "summary": "Create world generation task",
-        "description": "Creates a World Labs Marble world generation task for AI Sonar-supported Marble models. Returns a task ID for polling. AI Sonar does not currently expose draft generation, media asset management, world listing/deletion, or standalone pano tools.",
+        "description": "Creates a World Labs Marble world generation task for AI Sonar-supported Marble models. Returns a task ID for polling. AI Sonar supports native world_prompt media_asset references when the media asset was prepared through AI Sonar.",
         "operationId": "createWorld",
         "requestBody": {
           "required": true,
@@ -3753,7 +3977,7 @@
                   "world_prompt": {
                     "type": "object",
                     "additionalProperties": true,
-                    "description": "Native World Labs world_prompt object for advanced callers. Supported prompt types are text, image, multi-image, and video."
+                    "description": "Native World Labs world_prompt object for advanced callers. Supported prompt types are text, image, multi-image, and video. Content references may use source=media_asset with a media_asset_id prepared by /v1/worlds/media-assets/prepare-upload."
                   },
                   "image": {
                     "type": "string",
@@ -4029,6 +4253,329 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/v1/worlds/list": {
+      "post": {
+        "tags": [
+          "Worlds"
+        ],
+        "summary": "List World Labs worlds",
+        "description": "Lists World Labs worlds owned by the authenticated AI Sonar organization. AI Sonar does not expose the raw upstream account-wide list to avoid cross-tenant asset disclosure; this endpoint lists indexed worlds generated through AI Sonar.",
+        "operationId": "listWorlds",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "page_size": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100,
+                    "default": 20
+                  },
+                  "page_token": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "SUCCEEDED",
+                      "PENDING",
+                      "FAILED",
+                      "RUNNING"
+                    ],
+                    "nullable": true
+                  },
+                  "model": {
+                    "type": "string",
+                    "enum": [
+                      "marble-1.0",
+                      "marble-1.1",
+                      "marble-1.1-plus",
+                      "marble-1.0-draft"
+                    ],
+                    "nullable": true
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "nullable": true
+                  },
+                  "is_public": {
+                    "type": "boolean",
+                    "nullable": true
+                  },
+                  "created_after": {
+                    "type": "string",
+                    "format": "date-time",
+                    "nullable": true
+                  },
+                  "created_before": {
+                    "type": "string",
+                    "format": "date-time",
+                    "nullable": true
+                  },
+                  "sort_by": {
+                    "type": "string",
+                    "enum": [
+                      "created_at",
+                      "updated_at"
+                    ],
+                    "default": "created_at"
+                  },
+                  "sort_order": {
+                    "type": "string",
+                    "enum": [
+                      "asc",
+                      "desc"
+                    ],
+                    "default": "desc",
+                    "description": "AI Sonar extension for ascending or descending order."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "World list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "worlds"
+                  ],
+                  "properties": {
+                    "worlds": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "world_id"
+                        ],
+                        "properties": {
+                          "display_name": {
+                            "type": "string"
+                          },
+                          "world_id": {
+                            "type": "string"
+                          },
+                          "world_marble_url": {
+                            "type": "string",
+                            "format": "uri"
+                          },
+                          "assets": {
+                            "type": "object",
+                            "additionalProperties": true
+                          },
+                          "created_at": {
+                            "type": "string",
+                            "format": "date-time",
+                            "nullable": true
+                          },
+                          "model": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "permission": {
+                            "type": "object",
+                            "additionalProperties": true
+                          },
+                          "tags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "nullable": true
+                          },
+                          "updated_at": {
+                            "type": "string",
+                            "format": "date-time",
+                            "nullable": true
+                          },
+                          "world_prompt": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "additionalProperties": true
+                      }
+                    },
+                    "next_page_token": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/worlds/{id}": {
+      "get": {
+        "tags": [
+          "Worlds"
+        ],
+        "summary": "Get World Labs world",
+        "description": "Retrieves a World Labs world generated through AI Sonar. The world ID must be owned by the authenticated organization.",
+        "operationId": "getWorld",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "World ID."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "World details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "world_id"
+                  ],
+                  "properties": {
+                    "display_name": {
+                      "type": "string"
+                    },
+                    "world_id": {
+                      "type": "string"
+                    },
+                    "world_marble_url": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "assets": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "model": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "permission": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "tags": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "nullable": true
+                    },
+                    "updated_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    },
+                    "world_prompt": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Worlds"
+        ],
+        "summary": "Delete World Labs world",
+        "description": "Deletes a World Labs world generated through AI Sonar. This permanently deletes the upstream world and associated assets when World Labs accepts the deletion. AI Sonar keeps task status records for billing reconciliation.",
+        "operationId": "deleteWorld",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "World ID."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "World deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "deleted",
+                    "world_id"
+                  ],
+                  "properties": {
+                    "deleted": {
+                      "type": "boolean"
+                    },
+                    "world_id": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
           }
         }
       }

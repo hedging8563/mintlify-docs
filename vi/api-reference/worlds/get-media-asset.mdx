@@ -1,0 +1,55 @@
+---
+title: "Lấy media asset"
+openapi: "GET /v1/worlds/media-assets/{id}"
+description: "Lấy media asset World Labs đã chuẩn bị qua AI Sonar"
+---
+
+Lấy metadata của media asset đã chuẩn bị qua AI Sonar. Quyền truy cập chỉ dành cho tổ chức đã tạo asset.
+
+## Tham số đường dẫn
+
+<ParamField path="id" type="string" required>
+  ID media asset World Labs.
+</ParamField>
+
+## Phản hồi
+
+<ResponseField name="media_asset_id" type="string">
+  ID media asset World Labs.
+</ResponseField>
+
+<ResponseField name="file_name" type="string">
+  Tên tệp gốc, tối đa 64 ký tự.
+</ResponseField>
+
+<ResponseField name="kind" type="string">
+  Loại media: `image` hoặc `video`.
+</ResponseField>
+
+<ResponseField name="metadata" type="object">
+  Đối tượng metadata tùy chọn lưu cùng media asset upstream.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/worlds/media-assets/media_asset_123" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+```python Python
+import requests
+
+response = requests.get(
+    "https://api.aisonar.dev/v1/worlds/media-assets/media_asset_123",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+)
+print(response.json())
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.aisonar.dev/v1/worlds/media-assets/media_asset_123', {
+  headers: { Authorization: 'Bearer sk-your-api-key' }
+});
+console.log(await response.json());
+```
+</RequestExample>

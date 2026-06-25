@@ -1,0 +1,55 @@
+---
+title: "Obter mídia"
+openapi: "GET /v1/worlds/media-assets/{id}"
+description: "Obtém uma mídia World Labs preparada via AI Sonar"
+---
+
+Obtenha metadados de uma mídia preparada via AI Sonar. O acesso é limitado à organização que criou a mídia.
+
+## Parâmetros de caminho
+
+<ParamField path="id" type="string" required>
+  ID da mídia World Labs.
+</ParamField>
+
+## Resposta
+
+<ResponseField name="media_asset_id" type="string">
+  ID da mídia World Labs.
+</ResponseField>
+
+<ResponseField name="file_name" type="string">
+  Nome de arquivo original, até 64 caracteres.
+</ResponseField>
+
+<ResponseField name="kind" type="string">
+  Tipo de mídia: `image` ou `video`.
+</ResponseField>
+
+<ResponseField name="metadata" type="object">
+  Objeto opcional de metadados salvo com a mídia upstream.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/worlds/media-assets/media_asset_123" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+```python Python
+import requests
+
+response = requests.get(
+    "https://api.aisonar.dev/v1/worlds/media-assets/media_asset_123",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+)
+print(response.json())
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.aisonar.dev/v1/worlds/media-assets/media_asset_123', {
+  headers: { Authorization: 'Bearer sk-your-api-key' }
+});
+console.log(await response.json());
+```
+</RequestExample>

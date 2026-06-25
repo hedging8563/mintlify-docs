@@ -1,0 +1,50 @@
+---
+title: "刪除 World"
+openapi: "DELETE /v1/worlds/{id}"
+description: "刪除 World Labs Marble 世界"
+---
+
+刪除透過 AI Sonar 建立的 Marble 世界。AI Sonar 會將刪除請求轉發給 World Labs，並把本地 world 記錄標記為已刪除。
+
+刪除是永久操作。
+
+## 路徑參數
+
+<ParamField path="id" type="string" required>
+  World Labs world ID。
+</ParamField>
+
+## 回應
+
+<ResponseField name="deleted" type="boolean">
+  刪除是否已被接受。
+</ResponseField>
+
+<ResponseField name="world_id" type="string">
+  World Labs world ID。
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X DELETE "https://api.aisonar.dev/v1/worlds/world_123" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+```python Python
+import requests
+
+response = requests.delete(
+    "https://api.aisonar.dev/v1/worlds/world_123",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+)
+print(response.json())
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.aisonar.dev/v1/worlds/world_123', {
+  method: 'DELETE',
+  headers: { Authorization: 'Bearer sk-your-api-key' }
+});
+console.log(await response.json());
+```
+</RequestExample>

@@ -1,0 +1,51 @@
+---
+title: "World al"
+openapi: "GET /v1/worlds/{id}"
+description: "Tamamlanan World Labs Marble world kaydını alır"
+---
+
+AI Sonar ile oluşturulmuş tamamlanan Marble World kaydını alın. world, API anahtarıyla aynı organizasyona ait olmalıdır.
+
+## Yol parametreleri
+
+<ParamField path="id" type="string" required>
+  World Labs world ID.
+</ParamField>
+
+## Yanıt
+
+<ResponseField name="world_id" type="string">
+  World Labs world ID.
+</ResponseField>
+
+<ResponseField name="world_marble_url" type="string">
+  World Labs Marble URL.
+</ResponseField>
+
+<ResponseField name="assets" type="object">
+  Generated world assets when available.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/worlds/world_123" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+```python Python
+import requests
+
+response = requests.get(
+    "https://api.aisonar.dev/v1/worlds/world_123",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+)
+print(response.json()["world_id"])
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.aisonar.dev/v1/worlds/world_123', {
+  headers: { Authorization: 'Bearer sk-your-api-key' }
+});
+console.log(await response.json());
+```
+</RequestExample>

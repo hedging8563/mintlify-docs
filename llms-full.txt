@@ -2,7 +2,7 @@
 
 > Unified AI API Gateway - Access hundreds of AI models through a single API
 
-Generated: 2026-06-20
+Generated: 2026-06-25
 Source: https://docs.aisonar.dev
 
 ---
@@ -4664,6 +4664,120 @@ def wait_for_video(task_id, max_wait=600, interval=5):
 
     raise TimeoutError("Video generation timed out")
 ```
+
+---
+
+### Prepare Media Asset Upload
+
+> Creates a World Labs media asset upload target
+
+URL: https://docs.aisonar.dev/api-reference/worlds/prepare-media-asset-upload
+
+Create a World Labs media asset record and receive an upload URL for an image or video. Upload the binary file to `upload_info.upload_url`, then reference the returned `media_asset.media_asset_id` from `world_prompt` with `source: "media_asset"`.
+
+AI Sonar records the asset owner. Only the same organization can retrieve or use this media asset in world generation.
+
+## Request Body
+
+## Response
+
+---
+
+### Get Media Asset
+
+> Retrieves a World Labs media asset prepared through AI Sonar
+
+URL: https://docs.aisonar.dev/api-reference/worlds/get-media-asset
+
+Retrieve metadata for a media asset prepared through AI Sonar. Access is limited to the organization that created the asset.
+
+## Path Parameters
+
+## Response
+
+---
+
+### Create World
+
+> Creates a World Labs Marble world generation task
+
+URL: https://docs.aisonar.dev/api-reference/worlds/create-world
+
+Generate explorable 3D worlds with World Labs Marble. This is an asynchronous API: create responses return a task identity and a `poll_url` for status checks.
+
+Supported models are `marble-1.0`, `marble-1.1`, and `marble-1.1-plus`. World Labs documents `marble-1.0-draft`, but AI Sonar does not expose draft generation in this endpoint yet.
+
+## Request Body
+
+## Response
+
+## Pricing
+
+World Labs bills in credits. AI Sonar pre-deducts the request-type maximum and settles from the completed operation's `cost.total_credits` when available. Standard Marble requests are up to 1,600 credits. `marble-1.1-plus` requests are up to 3,100 credits.
+
+## Scope
+
+These management endpoints cover AI Sonar-owned media assets and completed generated worlds. AI Sonar still does not expose `marble-1.0-draft` generation or standalone pano/depth tools.
+
+---
+
+### Get World Status
+
+> Retrieves the status and result of a World Labs Marble world generation task
+
+URL: https://docs.aisonar.dev/api-reference/worlds/get-world-status
+
+Poll this endpoint to check the status of a World Labs Marble generation task. If the create response included `poll_url`, prefer calling that exact URL.
+
+## Path Parameters
+
+## Response
+
+---
+
+### List Worlds
+
+> Lists completed World Labs Marble worlds created through AI Sonar
+
+URL: https://docs.aisonar.dev/api-reference/worlds/list-worlds
+
+List completed World Labs Marble worlds created through AI Sonar. Results are scoped to your organization; AI Sonar does not expose the shared upstream account-wide list.
+
+Use `/v1/worlds/generations/{id}` for pending or failed generation tasks. This list returns completed worlds that AI Sonar has indexed after generation.
+
+## Request Body
+
+## Response
+
+---
+
+### Get World
+
+> Retrieves a completed World Labs Marble world
+
+URL: https://docs.aisonar.dev/api-reference/worlds/get-world
+
+Retrieve a completed Marble world created through AI Sonar. The world must belong to the same organization as the API key.
+
+## Path Parameters
+
+## Response
+
+---
+
+### Delete World
+
+> Deletes a World Labs Marble world
+
+URL: https://docs.aisonar.dev/api-reference/worlds/delete-world
+
+Delete a Marble world created through AI Sonar. AI Sonar forwards the deletion to World Labs and marks the local world record as deleted.
+
+Deletion is permanent.
+
+## Path Parameters
+
+## Response
 
 ---
 

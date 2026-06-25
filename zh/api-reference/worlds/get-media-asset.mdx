@@ -1,0 +1,55 @@
+---
+title: "获取媒体资产"
+openapi: "GET /v1/worlds/media-assets/{id}"
+description: "获取通过 AI Sonar 准备的 World Labs 媒体资产"
+---
+
+获取通过 AI Sonar 准备的媒体资产元数据。访问权限限制为创建该资产的组织。
+
+## 路径参数
+
+<ParamField path="id" type="string" required>
+  World Labs 媒体资产 ID。
+</ParamField>
+
+## 响应
+
+<ResponseField name="media_asset_id" type="string">
+  World Labs 媒体资产 ID。
+</ResponseField>
+
+<ResponseField name="file_name" type="string">
+  原始文件名，最多 64 个字符。
+</ResponseField>
+
+<ResponseField name="kind" type="string">
+  媒体类型：`image` 或 `video`。
+</ResponseField>
+
+<ResponseField name="metadata" type="object">
+  随上游媒体资产保存的可选元数据对象。
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/worlds/media-assets/media_asset_123" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+```python Python
+import requests
+
+response = requests.get(
+    "https://api.aisonar.dev/v1/worlds/media-assets/media_asset_123",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+)
+print(response.json())
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.aisonar.dev/v1/worlds/media-assets/media_asset_123', {
+  headers: { Authorization: 'Bearer sk-your-api-key' }
+});
+console.log(await response.json());
+```
+</RequestExample>

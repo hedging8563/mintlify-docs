@@ -1,0 +1,50 @@
+---
+title: "World sil"
+openapi: "DELETE /v1/worlds/{id}"
+description: "World Labs Marble world kaydını siler"
+---
+
+AI Sonar ile oluşturulmuş Marble World kaydını silin. AI Sonar silme isteğini World Labs’e iletir ve yerel world kaydını silinmiş olarak işaretler.
+
+Silme işlemi kalıcıdır.
+
+## Yol parametreleri
+
+<ParamField path="id" type="string" required>
+  World Labs world ID.
+</ParamField>
+
+## Yanıt
+
+<ResponseField name="deleted" type="boolean">
+  Silmenin kabul edilip edilmediği.
+</ResponseField>
+
+<ResponseField name="world_id" type="string">
+  World Labs world ID.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X DELETE "https://api.aisonar.dev/v1/worlds/world_123" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+```python Python
+import requests
+
+response = requests.delete(
+    "https://api.aisonar.dev/v1/worlds/world_123",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+)
+print(response.json())
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.aisonar.dev/v1/worlds/world_123', {
+  method: 'DELETE',
+  headers: { Authorization: 'Bearer sk-your-api-key' }
+});
+console.log(await response.json());
+```
+</RequestExample>

@@ -1,0 +1,55 @@
+---
+title: "جلب أصل وسائط"
+openapi: "GET /v1/worlds/media-assets/{id}"
+description: "يجلب أصل وسائط World Labs تم تحضيره عبر AI Sonar"
+---
+
+اجلب بيانات أصل وسائط تم تحضيره عبر AI Sonar. يقتصر الوصول على المؤسسة التي أنشأت الأصل.
+
+## معلمات المسار
+
+<ParamField path="id" type="string" required>
+  معرف أصل وسائط World Labs.
+</ParamField>
+
+## الاستجابة
+
+<ResponseField name="media_asset_id" type="string">
+  معرف أصل وسائط World Labs.
+</ResponseField>
+
+<ResponseField name="file_name" type="string">
+  اسم الملف الأصلي، حتى 64 حرفا.
+</ResponseField>
+
+<ResponseField name="kind" type="string">
+  نوع الوسائط: `image` أو `video`.
+</ResponseField>
+
+<ResponseField name="metadata" type="object">
+  كائن بيانات وصفية اختياري يحفظ مع أصل الوسائط upstream.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/worlds/media-assets/media_asset_123" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+```python Python
+import requests
+
+response = requests.get(
+    "https://api.aisonar.dev/v1/worlds/media-assets/media_asset_123",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+)
+print(response.json())
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.aisonar.dev/v1/worlds/media-assets/media_asset_123', {
+  headers: { Authorization: 'Bearer sk-your-api-key' }
+});
+console.log(await response.json());
+```
+</RequestExample>

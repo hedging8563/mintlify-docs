@@ -96,9 +96,9 @@ World Labs Marble で探索可能な 3D ワールドを生成します。この 
 
 World Labs は credits で課金します。AI Sonar はリクエスト種別の最大値を事前控除し、完了した operation から `cost.total_credits` が得られる場合は実 credits で精算します。標準 Marble リクエストは最大 1,600 credits、`marble-1.1-plus` は最大 3,100 credits です。
 
-## 対象範囲
+## スコープ
 
-このエンドポイントはワールド生成とポーリングを対象とします。AI Sonar は現時点で World Labs のメディアアセットアップロード、ワールド一覧、ワールド削除、単体 pano ツールはプロキシしません。
+これらの管理エンドポイントは AI Sonar 所有のメディアアセットと完了済み world を対象にします。`marble-1.0-draft` 生成および単独の pano/depth ツールはまだ公開していません。
 
 <RequestExample>
 ```bash cURL

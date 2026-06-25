@@ -1,0 +1,50 @@
+---
+title: "حذف World"
+openapi: "DELETE /v1/worlds/{id}"
+description: "يحذف World Labs Marble world"
+---
+
+احذف Marble World تم إنشاؤه عبر AI Sonar. يمرر AI Sonar الحذف إلى World Labs ويضع علامة حذف على سجل world المحلي.
+
+الحذف دائم.
+
+## معلمات المسار
+
+<ParamField path="id" type="string" required>
+  معرف World Labs world.
+</ParamField>
+
+## الاستجابة
+
+<ResponseField name="deleted" type="boolean">
+  ما إذا تم قبول الحذف.
+</ResponseField>
+
+<ResponseField name="world_id" type="string">
+  معرف World Labs world.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X DELETE "https://api.aisonar.dev/v1/worlds/world_123" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+```python Python
+import requests
+
+response = requests.delete(
+    "https://api.aisonar.dev/v1/worlds/world_123",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+)
+print(response.json())
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.aisonar.dev/v1/worlds/world_123', {
+  method: 'DELETE',
+  headers: { Authorization: 'Bearer sk-your-api-key' }
+});
+console.log(await response.json());
+```
+</RequestExample>

@@ -1,0 +1,51 @@
+---
+title: "Obter World"
+openapi: "GET /v1/worlds/{id}"
+description: "Obtém um World World Labs Marble concluído"
+---
+
+Obtenha um Marble World concluído criado via AI Sonar. O world deve pertencer à mesma organização da chave de API.
+
+## Parâmetros de caminho
+
+<ParamField path="id" type="string" required>
+  ID do World Labs world.
+</ParamField>
+
+## Resposta
+
+<ResponseField name="world_id" type="string">
+  ID do World Labs world.
+</ResponseField>
+
+<ResponseField name="world_marble_url" type="string">
+  World Labs Marble URL.
+</ResponseField>
+
+<ResponseField name="assets" type="object">
+  Generated world assets when available.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl "https://api.aisonar.dev/v1/worlds/world_123" \
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+```python Python
+import requests
+
+response = requests.get(
+    "https://api.aisonar.dev/v1/worlds/world_123",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+)
+print(response.json()["world_id"])
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.aisonar.dev/v1/worlds/world_123', {
+  headers: { Authorization: 'Bearer sk-your-api-key' }
+});
+console.log(await response.json());
+```
+</RequestExample>

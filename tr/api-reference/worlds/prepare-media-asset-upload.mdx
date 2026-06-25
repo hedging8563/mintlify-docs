@@ -1,0 +1,76 @@
+---
+title: "Medya varlığı yüklemeyi hazırla"
+openapi: "POST /v1/worlds/media-assets/prepare-upload"
+description: "World Labs medya varlığı için yükleme hedefi oluşturur"
+---
+
+World Labs medya varlığı kaydı oluşturun ve görüntü ya da video için yükleme URL’si alın. İkili dosyayı `upload_info.upload_url` adresine yükledikten sonra `world_prompt` içinde `source: "media_asset"` ile dönen `media_asset.media_asset_id` değerini kullanın.
+
+AI Sonar varlığın sahibini kaydeder. Bu medya varlığını yalnızca aynı organizasyon alabilir veya World üretiminde kullanabilir.
+
+## İstek gövdesi
+
+<ParamField body="file_name" type="string" required>
+  Orijinal dosya adı, en fazla 64 karakter.
+</ParamField>
+
+<ParamField body="kind" type="string" required>
+  Medya türü: `image` veya `video`.
+</ParamField>
+
+<ParamField body="extension" type="string">
+  `png`, `jpg` veya `mp4` gibi isteğe bağlı uzantı.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Upstream medya varlığıyla saklanan isteğe bağlı metadata nesnesi.
+</ParamField>
+
+## Yanıt
+
+<ResponseField name="media_asset" type="object">
+  Hazırlanan World Labs medya varlığı metadatası.
+</ResponseField>
+
+<ResponseField name="upload_info.upload_url" type="string">
+  İkili dosyanın yükleneceği imzalı upstream URL.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.aisonar.dev/v1/worlds/media-assets/prepare-upload" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "file_name": "reference.png",
+    "kind": "image",
+    "extension": "png"
+  }'
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    "https://api.aisonar.dev/v1/worlds/media-assets/prepare-upload",
+    headers={"Authorization": "Bearer sk-your-api-key"},
+    json={"file_name": "reference.png", "kind": "image", "extension": "png"},
+)
+
+print(response.json()["media_asset"]["media_asset_id"])
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.aisonar.dev/v1/worlds/media-assets/prepare-upload', {
+  method: 'POST',
+  headers: {
+    Authorization: 'Bearer sk-your-api-key',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({ file_name: 'reference.png', kind: 'image', extension: 'png' })
+});
+
+const prepared = await response.json();
+console.log(prepared.media_asset.media_asset_id, prepared.upload_info.upload_url);
+```
+</RequestExample>
