@@ -1,74 +1,74 @@
 ---
-title: "إنشاء الصور"
-description: "أنشئ تدفقات تحويل النص إلى صورة والصور المرجعية والتحرير باستخدام واجهات صور AI Sonar."
+title: "توليد الصور"
+description: "بناء سير عمل تحويل النص إلى صورة، وتحويل الصورة إلى صورة، وتحرير الصور ضد عقود الصور العامة من AI Sonar."
 ---
-## التدفق الموصى به
 
-1. استدعِ [قائمة النماذج](/ar/api-reference/models/list-models) مع `recommended_for=image`.
-2. افتح [جلب النموذج](/ar/api-reference/models/get-model) للنموذج المختار واتبع عقده العام.
-3. استخدم [إنشاء صورة](/ar/api-reference/images/create-image) لتحويل النص إلى صورة وتدفقات الصور المرجعية المدعومة، أو [تحرير صورة](/ar/api-reference/images/edit-image) لتدفقات التحرير.
-4. إذا احتوى الرد على `poll_url`، فاستطلع هذا الرابط حتى تصل المهمة إلى حالة نهائية.
+تغطي واجهات برمجة التطبيقات الخاصة بصور AI Sonar عدة عائلات من النماذج بأشكال طلبات مختلفة. استخدم عقد النموذج العام ومرجع واجهة برمجة التطبيقات المحدد لكل نقطة نهاية قبل افتراض أن حقلًا ما يعمل عبر كل نموذج صورة.
 
-## اكتشاف النماذج
+## اختر نقطة النهاية
 
-لا تتشابه نماذج الصور في شكل الطلب. بعضها يعيد نتيجة مباشرة، وبعضها ينشئ مهمة غير متزامنة. يحدد عقد النموذج المختار ما إذا كانت الحقول مثل `size` و `quality` و `aspect_ratio` و `resolution` و `async` مقبولة.
+| الهدف | نقطة النهاية | ملاحظات |
+|------|----------|-------|
+| تحويل النص إلى صورة | `POST /v1/images/generations` | استخدم `prompt` و`model` صريح |
+| تحويل الصورة إلى صورة / صورة مرجعية | `POST /v1/images/generations` | استخدم `operation: "image-to-image"` بالإضافة إلى `image_url` أو `image_urls` أو `reference_image_urls` عندما يدعم النموذج ذلك |
+| تحرير صورة GPT | `POST /v1/images/edits` | يدعم `image` متعدد الأجزاء، و`image_url` / `image_urls` بتنسيق JSON، والمراجع الرسمية لـ `images[]` للنماذج المدعومة للتحرير |
+| تنويعة قديمة | `POST /v1/images/variations` | يفضل استخدام طرق الجيل أو التحرير الحالية للعمل الجديد |
+| حالة غير متزامنة | `GET /v1/tasks/{id}` | استخدم `poll_url` أولاً عند وجوده |
+
+## اكتشاف النموذج
 
 ```bash
-curl "https://api.aisonar.dev/v1/models?recommended_for=image" \
+curl "https://api.aisonar.dev/v1/models?recommended_for=image" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-## نص إلى صورة
+تختلف معلمات نموذج الصورة كثيرًا. اقرأ عقد النموذج المحدد قبل إرسال `size` أو `quality` أو `aspect_ratio` أو `resolution` أو `async` أو `background` أو `output_format`.
 
-في نماذج عائلة GPT Image، استخدم `size` عندما يتيحه عقد النموذج. في نماذج Google أو Nano Banana، استخدم `aspect_ratio` و `resolution` فقط عندما يذكرهما عقد النموذج.
+## المدخلات والحقول الخاصة بالنموذج
+
+- يستخدم `gpt-image-2` أسلوب OpenAI لـ `size` و`quality`؛ احذف `size` أو `quality` لترك AI Sonar يستخدم `auto` حيثما كان مدعومًا.
+- تستخدم عائلات صور Gemini وNano Banana عمومًا `aspect_ratio`؛ أرسل `resolution` فقط عندما يكشف النموذج المحدد عنه.
+- تنتمي طلبات صورة Nano Banana المرجعية إلى `/v1/images/generations` مع `operation: "image-to-image"` و`image_urls`، وليس إلى `/v1/images/edits`.
+- لا يقبل `/v1/images/generations` `images[]` أو `file_id` على المستوى الأعلى؛ تلك هي أشكال تدفق التحرير.
+- يجب أن تكون عناوين URL للصور البعيدة عناوين URL عامة من نوع `http`/`https`. تجنب الشبكات الخاصة، والاعتمادات المدمجة، والقطع، وعناوين URL الموقعة قصيرة العمر.
+
+## إنشاء الطلب
 
 ```bash
-curl https://api.aisonar.dev/v1/images/generations \
-  -H "Authorization: Bearer sk-your-api-key" \
-  -H "Content-Type: application/json" \
+curl https://api.aisonar.dev/v1/images/generations \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
   -d '{
     "model": "gpt-image-2",
-    "prompt": "A clean product photo of a ceramic coffee cup on a walnut desk",
+    "prompt": "صورة منتج نظيفة لفنجان قهوة خزفي على مكتب من الجوز",
     "size": "1024x1024",
     "response_format": "url"
   }'
 ```
 
-## الصور المرجعية والتحرير
+## استعلام النتائج
 
-لإنشاء صورة مرجعية على `/v1/images/generations`، أرسل `operation: "image-to-image"` مع `image_url` أو `image_urls` أو `reference_image_urls` أو ملف multipart باسم `image` عندما يدعمه النموذج. استخدم `/v1/images/edits` لنماذج التحرير التي تقبل صور multipart أو روابط الصور أو `images[].image_url` / `images[].file_id`.
-
-لا ترسل `images[]` أو `file_id` في المستوى الأعلى إلى `/v1/images/generations`؛ هذه الأشكال تخص تدفقات التحرير التي توثقها صراحة.
+تُرجع بعض طرق الصور `data[].url` أو `data[].b64_json` في السطر. تُرجع طرق أخرى `status: "pending"` و`task_id` و`poll_url`. إذا طلبت توليد صورة غير متزامنة أو تحريرها، فإن نتائج المهام المكتملة تُرجع عناوين URL؛ استخدم الطلبات المتزامنة عندما تحتاج تحديدًا إلى `b64_json`.
 
 ```bash
-curl https://api.aisonar.dev/v1/images/generations \
-  -H "Authorization: Bearer sk-your-api-key" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "nano-banana-pro",
-    "operation": "image-to-image",
-    "prompt": "Keep the same product, place it in a bright studio scene",
-    "image_urls": ["https://example.com/reference.png"],
-    "aspect_ratio": "1:1"
-  }'
-```
-
-## استطلاع النتائج
-
-يرجع رد الصورة المتزامن `data[].url` أو `data[].b64_json`. ويرجع رد المهمة `status` و `task_id` وغالباً `poll_url`. فضّل `poll_url`؛ ونقطة fallback الثابتة هي [حالة المهمة](/ar/api-reference/tasks/get-task-status). مهام الصور غير المتزامنة تعيد روابط URL، لذلك اطلب base64 inline فقط في التدفقات المتزامنة التي تدعمه.
-
-```bash
-curl "https://api.aisonar.dev/v1/tasks/$TASK_ID" \
+curl "https://api.aisonar.dev/v1/tasks/$TASK_ID" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-## مرجع API
+## الأخطاء الشائعة
+
+- لا تفترض أن كل نموذج صورة متزامن.
+- لا تطلب `b64_json` من مهام الصور غير المتزامنة؛ النتائج غير المتزامنة موجهة نحو URL.
+- لا ترسل `resolution` إلى نماذج صور Gemini التي تعتمد فقط على النسبة.
+- لا تستخدم `/v1/images/edits` لتدفقات Nano Banana من صورة إلى صورة.
+- اضبط مهلات عميل HTTP على الأقل إلى `120s` لطلبات الصور عالية الدقة المتزامنة.
+
+## مرجع واجهة برمجة التطبيقات
 
 | الموضوع | المرجع |
 |-------|-----------|
 | إنشاء صورة | [إنشاء صورة](/ar/api-reference/images/create-image) |
 | تحرير صورة | [تحرير صورة](/ar/api-reference/images/edit-image) |
-| حالة الصورة | [حالة الصورة](/ar/api-reference/images/get-image-status) |
-| حالة المهمة | [حالة المهمة](/ar/api-reference/tasks/get-task-status) |
-| قائمة النماذج | [قائمة النماذج](/ar/api-reference/models/list-models) |
-| جلب النموذج | [جلب النموذج](/ar/api-reference/models/get-model) |
+| إنشاء تنويعة صورة | [إنشاء تنويعة صورة](/ar/api-reference/images/create-variation) |
+| الحصول على حالة الصورة | [الحصول على حالة الصورة](/ar/api-reference/images/get-image-status) |
+| الحصول على حالة المهمة | [الحصول على حالة المهمة](/ar/api-reference/tasks/get-task-status) |

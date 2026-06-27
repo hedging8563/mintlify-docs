@@ -1,29 +1,74 @@
 ---
 title: "Structured Outputs & Tool Calling"
-description: "Production guide for Structured Outputs & Tool Calling."
+description: "Use JSON mode, function tools, and native tool routes without assuming every model supports the same contract."
 ---
 
-## Overview
+Structured outputs and tools are real AI Sonar API paths, but they are not one universal capability across every model and route. Choose the route that owns the behavior you need.
 
-This guide explains how to use Structured Outputs & Tool Calling in production without binding your application to provider implementation details.
+## JSON And Structured Output
 
-Use AI Sonar public APIs, model metadata, and documented response fields as the contract.
+For portable structured responses, start with Chat Completions `response_format: {"type":"json_object"}` and validate the output in your application. This is the stable public request shape in AI Sonar shared validation.
 
-## Current behavior
+```json
+{
+  "model": "gpt-5.4",
+  "messages": [{"role": "user", "content": "Return a JSON object with city and weather."}],
+  "response_format": {"type": "json_object"}
+}
+```
 
-- Review these values before release: JSON schema, tools, function declarations.
-- Do not depend on provider-specific status URLs, routing identifiers, or private execution metadata.
-- Make retries idempotent and avoid creating duplicate billable work.
+`json_schema` and `strict` structured output paths exist in some upstream and conversion code, but they are model- and route-dependent. Treat them as a capability to verify with the selected model, not as a blanket promise across every AI Sonar route.
 
-## Production checklist
+## Tool Calling Boundary
 
-- Keep logs useful for support without storing secrets, private files, prompts, or user media.
-- Support tickets should include sanitized request shape, endpoint, model, timestamp, and public identifiers.
-- Verify the flow in staging before moving production traffic.
+| Tool shape | Route to prefer | Production note |
+|------------|-----------------|-----------------|
+| OpenAI function tools | `/v1/chat/completions` | Portable for user-defined function calls |
+| OpenAI Responses tools | `/v1/responses` | Use for Responses-specific built-in or hosted tools |
+| Anthropic tools | `/v1/messages` | Use for Claude-native tool use and thinking flows |
+| Gemini function declarations / built-in tools | `/v1beta/models/:model:generateContent` | Keep Gemini-native tool fields on the Gemini route |
 
-## Related pages
+AI Sonar does not execute your function for you. When a model returns `tool_calls`, `function_call`, `tool_use`, or Gemini function call parts, your application must run the tool, append the tool result in the format required by the route, and continue the conversation.
 
-- [✨ Multi-Format API](/guides/api-formats)
-- [Create Chat Completion](/api-reference/chat/create-completion)
-- [Create Response](/api-reference/responses/create-response)
-- [Create Message](/api-reference/messages/create-message)
+## Common Pitfalls
+
+- Do not send provider-native built-in tools through Chat Completions and expect them to be silently translated.
+- Do not rely on strict JSON Schema unless the selected route and model have been tested.
+- Keep schemas small and explicit; large schemas add tokens and can reduce reliability.
+- Validate model output server-side even when JSON mode is enabled.
+- Treat unsupported-field errors as contract feedback. Remove the field or use the native route that owns it.
+
+## Example
+
+```bash
+curl https://api.aisonar.dev/v1/chat/completions \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "gpt-5.4",
+    "messages": [{"role":"user","content":"Extract name and email as JSON."}],
+    "response_format": {"type":"json_object"},
+    "tools": [{
+      "type": "function",
+      "function": {
+        "name": "lookup_customer",
+        "description": "Look up a customer by email",
+        "parameters": {
+          "type": "object",
+          "properties": {"email": {"type": "string"}},
+          "required": ["email"]
+        }
+      }
+    }]
+  }'
+```
+
+## API Reference
+
+| Topic | Reference |
+|-------|-----------|
+| Multi-Format API | [Multi-Format API](/guides/api-formats) |
+| Create Chat Completion | [Create Chat Completion](/api-reference/chat/create-completion) |
+| Create Response | [Create Response](/api-reference/responses/create-response) |
+| Create Message | [Create Message](/api-reference/messages/create-message) |
+| Generate Gemini Content | [Generate Gemini Content](/api-reference/gemini/generate-content) |

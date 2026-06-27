@@ -1,29 +1,90 @@
 ---
-title: "Hướng dẫn di chuyển"
-description: "Hướng dẫn production cho Hướng dẫn di chuyển."
+title: "Hướng Dẫn Di Chuyển"
+description: "Di chuyển OpenAI, Anthropic, Gemini và các khối lượng công việc truyền thông sang AI Sonar với những thay đổi an toàn cho sản xuất nhỏ nhất."
 ---
 
-## Tổng quan
+AI Sonar là nền tảng đầu tiên và tương thích với OpenAI. Chọn lộ trình phù hợp với hành vi của khách hàng mà bạn cần thay vì chuyển đổi mọi khối lượng công việc sang một định dạng.
 
-Hướng dẫn này giải thích cách dùng Hướng dẫn di chuyển trong production mà không gắn ứng dụng vào chi tiết triển khai của provider.
+## Chọn Định Dạng
 
-Dùng API công khai của AI Sonar, metadata mô hình và field phản hồi đã tài liệu hóa làm hợp đồng.
+| Khối lượng công việc hiện có | URL cơ sở AI Sonar | Điểm cuối chính | Ghi chú |
+|-------------------------------|--------------------|------------------|---------|
+| OpenAI Chat Completions       | `https://api.aisonar.dev/v1` | `/chat/completions` | Thay đổi nhỏ nhất cho các khách hàng tương thích với OpenAI |
+| OpenAI Responses              | `https://api.aisonar.dev/v1` | `/responses` | Chỉ sử dụng cho hành vi cụ thể của Responses |
+| Anthropic SDK                 | `https://api.aisonar.dev` | `/v1/messages` | Không thêm `/v1` vào URL cơ sở của SDK |
+| Gemini REST                   | `https://api.aisonar.dev` | `/v1beta/models/:model:generateContent` | Giữ các trường gốc Gemini trên lộ trình gốc |
+| Tạo phương tiện               | `https://api.aisonar.dev/v1` | `/images`, `/videos`, `/music`, `/3d` | Khám phá các mô hình với `recommended_for` và mong đợi việc polling bất đồng bộ nơi có tài liệu |
 
-## Hành vi hiện tại
+## Di Chuyển Tương Thích Với OpenAI
 
-- Kiểm tra các giá trị này trước khi phát hành: base URL, API key, model ID.
-- Không phụ thuộc URL trạng thái riêng của provider, định danh routing hoặc metadata thực thi riêng tư.
-- Làm retry có tính idempotent và tránh tạo công việc bị tính phí trùng lặp.
+```python
+from openai import OpenAI
 
-## Checklist production
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1",
+)
 
-- Log cần hữu ích cho support nhưng không lưu secret, file riêng tư, prompt hoặc media người dùng.
-- Ticket support nên có request shape đã làm sạch, endpoint, model, timestamp và định danh công khai.
-- Xác minh flow ở staging trước khi chuyển traffic production.
+response = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "Hello from AI Sonar"}],
+)
+```
 
-## Trang liên quan
+Giữ lại mã retry, timeout và streaming hiện có của bạn, nhưng xác thực ID mô hình với `GET /v1/models`. Đối với việc tạo hình ảnh, gửi `model` một cách rõ ràng và đọc hướng dẫn hình ảnh vì các mô hình hình ảnh khác nhau nhiều hơn các mô hình chat.
 
-- [✨ API Đa Định dạng](/vi/guides/api-formats)
-- [OpenAI SDK](/vi/integrations/openai-sdk)
-- [Anthropic SDK](/vi/integrations/anthropic-sdk)
-- [Routing provider và độ tin cậy](/vi/guides/provider-routing-reliability)
+## Di Chuyển Anthropic
+
+```python
+from anthropic import Anthropic
+
+client = Anthropic(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev",
+)
+
+message = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Explain AI Sonar in one sentence."}],
+)
+```
+
+Sử dụng lộ trình này cho hành vi gốc Claude như sử dụng công cụ Messages và tư duy mở rộng. Nếu một tính năng là gốc Anthropic, giữ nó trên `/v1/messages` thay vì chuyển đổi nó qua Chat Completions.
+
+## Di Chuyển Gemini
+
+```bash
+curl "https://api.aisonar.dev/v1beta/models/gemini-3.5-flash:generateContent" \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
+  -d '{"contents":[{"parts":[{"text":"Hello"}]}]}'
+```
+
+Các công cụ tích hợp sẵn của Gemini, tài nguyên API File, nội dung được lưu trữ và khai báo chức năng nên giữ trên `/v1beta` khi bạn cần hành vi gốc Gemini.
+
+## Di Chuyển Phương Tiện
+
+1. Truy vấn `GET /v1/models?recommended_for=image|video|music|3d` trước khi chọn một mô hình.
+2. Đọc `aisonar.public_contract_summary` và, trên các trang chi tiết, toàn bộ `aisonar.public_contract`.
+3. Gửi một `model` rõ ràng. Không dựa vào các mặc định cũ cho lưu lượng sản xuất.
+4. Lưu trữ `task_id` và `poll_url` cho các công việc bất đồng bộ.
+5. Đối chiếu chi phí thông qua các bản ghi sử dụng, không thông qua các ID tác vụ của nhà cung cấp.
+
+## Triển Khai Sản Xuất
+
+- Bắt đầu với một điểm cuối và một gia đình mô hình.
+- Đặt thời gian chờ HTTP đủ cao cho các lộ trình hình ảnh đồng bộ; sử dụng chế độ bất đồng bộ khi có sẵn cho công việc dài.
+- Ghi lại các định danh công khai và hình dạng yêu cầu đã được làm sạch trước khi gửi lưu lượng sản xuất.
+- So sánh một mẫu phản hồi, bản ghi sử dụng và đầu ra có thể nhìn thấy của khách hàng.
+- Giữ việc quay lại đơn giản: bảo tồn khách hàng nhà cung cấp trước đó cho đến khi lưu lượng AI Sonar ổn định.
+
+## Tài Liệu API
+
+| Chủ đề | Tài liệu tham khảo |
+|--------|--------------------|
+| API Đa Định Dạng | [API Đa Định Dạng](/vi/guides/api-formats) |
+| OpenAI SDK | [OpenAI SDK](/vi/integrations/openai-sdk) |
+| Anthropic SDK | [Anthropic SDK](/vi/integrations/anthropic-sdk) |
+| Tạo Hình Ảnh | [Tạo Hình Ảnh](/vi/guides/image-generation) |
+| Công Việc Bất Đồng Bộ & Polling | [Công Việc Bất Đồng Bộ & Polling](/vi/guides/async-jobs-polling) |

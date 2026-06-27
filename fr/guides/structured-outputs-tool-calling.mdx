@@ -1,29 +1,74 @@
 ---
-title: "Sorties structurées et appels d’outils"
-description: "Guide de production pour Sorties structurées et appels d’outils."
+title: "Sorties Structurées & Appel d'Outils"
+description: "Utilisez le mode JSON, les outils de fonction et les routes d'outils natifs sans supposer que chaque modèle prend en charge le même contrat."
 ---
 
-## Aperçu
+Les sorties structurées et les outils sont de véritables chemins d'API AI Sonar, mais ils ne constituent pas une capacité universelle à travers chaque modèle et route. Choisissez la route qui possède le comportement dont vous avez besoin.
 
-Ce guide explique comment utiliser Sorties structurées et appels d’outils en production sans lier votre application aux détails d’implémentation fournisseur.
+## JSON Et Sortie Structurée
 
-Utilisez les API publiques AI Sonar, les métadonnées de modèle et les champs de réponse documentés comme contrat.
+Pour des réponses structurées portables, commencez par les Complétions de Chat `response_format: {"type":"json_object"}` et validez la sortie dans votre application. C'est la forme de demande publique stable dans la validation partagée de AI Sonar.
 
-## Comportement actuel
+```json
+{
+  "model": "gpt-5.4",
+  "messages": [{"role": "user", "content": "Return a JSON object with city and weather."}],
+  "response_format": {"type": "json_object"}
+}
+```
 
-- Vérifiez ces valeurs avant la mise en production : JSON schema, tools, function declarations.
-- Ne dépendez pas des URL d’état propres aux fournisseurs, des identifiants de routage ou des métadonnées privées d’exécution.
-- Rendez les retries idempotents et évitez de créer du travail facturable en double.
+Les chemins de sortie structurée `json_schema` et `strict` existent dans certains codes en amont et de conversion, mais ils dépendent du modèle et de la route. Traitez-les comme une capacité à vérifier avec le modèle sélectionné, et non comme une promesse générale à travers chaque route AI Sonar.
 
-## Checklist de production
+## Limite d'Appel d'Outils
 
-- Les logs doivent aider le support sans stocker de secrets, fichiers privés, prompts ou médias utilisateur.
-- Les tickets support doivent inclure une forme de requête assainie, endpoint, modèle, horodatage et identifiants publics.
-- Validez le flux en staging avant de déplacer le trafic de production.
+| Forme d'outil | Route à privilégier | Remarque de production |
+|----------------|---------------------|-----------------------|
+| Outils de fonction OpenAI | `/v1/chat/completions` | Portable pour les appels de fonction définis par l'utilisateur |
+| Outils de réponses OpenAI | `/v1/responses` | À utiliser pour les outils intégrés ou hébergés spécifiques aux réponses |
+| Outils Anthropic | `/v1/messages` | À utiliser pour l'utilisation d'outils natifs Claude et les flux de réflexion |
+| Déclarations de fonction Gemini / outils intégrés | `/v1beta/models/:model:generateContent` | Conservez les champs d'outil natifs Gemini sur la route Gemini |
 
-## Pages liées
+AI Sonar n'exécute pas votre fonction pour vous. Lorsque un modèle retourne `tool_calls`, `function_call`, `tool_use`, ou des parties d'appel de fonction Gemini, votre application doit exécuter l'outil, ajouter le résultat de l'outil dans le format requis par la route, et continuer la conversation.
 
-- [✨ API Multi-Formats](/fr/guides/api-formats)
-- [Créer une complétion de chat](/fr/api-reference/chat/create-completion)
-- [Créer une réponse](/fr/api-reference/responses/create-response)
-- [Créer un message](/fr/api-reference/messages/create-message)
+## Pièges Courants
+
+- Ne pas envoyer d'outils intégrés natifs au fournisseur via les Complétions de Chat et s'attendre à ce qu'ils soient traduits silencieusement.
+- Ne pas compter sur le schéma JSON strict à moins que la route et le modèle sélectionnés aient été testés.
+- Gardez les schémas petits et explicites ; de grands schémas ajoutent des tokens et peuvent réduire la fiabilité.
+- Validez la sortie du modèle côté serveur même lorsque le mode JSON est activé.
+- Traitez les erreurs de champ non pris en charge comme un retour d'information sur le contrat. Supprimez le champ ou utilisez la route native qui le possède.
+
+## Exemple
+
+```bash
+curl https://api.aisonar.dev/v1/chat/completions \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "gpt-5.4",
+    "messages": [{"role":"user","content":"Extract name and email as JSON."}],
+    "response_format": {"type":"json_object"},
+    "tools": [{
+      "type": "function",
+      "function": {
+        "name": "lookup_customer",
+        "description": "Look up a customer by email",
+        "parameters": {
+          "type": "object",
+          "properties": {"email": {"type": "string"}},
+          "required": ["email"]
+        }
+      }
+    }]
+  }'
+```
+
+## Référence API
+
+| Sujet | Référence |
+|-------|-----------|
+| API Multi-Format | [API Multi-Format](/fr/guides/api-formats) |
+| Créer une Complétion de Chat | [Créer une Complétion de Chat](/fr/api-reference/chat/create-completion) |
+| Créer une Réponse | [Créer une Réponse](/fr/api-reference/responses/create-response) |
+| Créer un Message | [Créer un Message](/fr/api-reference/messages/create-message) |
+| Générer du Contenu Gemini | [Générer du Contenu Gemini](/fr/api-reference/gemini/generate-content) |

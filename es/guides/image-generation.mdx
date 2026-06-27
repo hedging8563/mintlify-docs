@@ -1,74 +1,74 @@
 ---
-title: "Generación de imágenes"
-description: "Crea flujos de texto a imagen, imagen de referencia y edición con las API de imágenes de AI Sonar."
+title: "Generación de Imágenes"
+description: "Crea flujos de trabajo de texto a imagen, imagen a imagen y edición de imágenes contra los contratos públicos de imagen de AI Sonar."
 ---
-## Flujo recomendado
 
-1. Llama a [Listar modelos](/es/api-reference/models/list-models) con `recommended_for=image`.
-2. Abre [Obtener modelo](/es/api-reference/models/get-model) para el modelo elegido y sigue su contrato público.
-3. Usa [Crear imagen](/es/api-reference/images/create-image) para texto a imagen y flujos de imagen de referencia compatibles, o [Editar imagen](/es/api-reference/images/edit-image) para flujos de edición.
-4. Si la respuesta incluye `poll_url`, consulta esa URL hasta que la tarea llegue a un estado final.
+Las API de imagen de AI Sonar cubren varias familias de modelos con diferentes formas de solicitud. Utiliza el contrato de modelo público y la referencia API específica del endpoint antes de asumir que un campo funciona en todos los modelos de imagen.
 
-## Descubrir modelos
+## Elegir El Endpoint
 
-Los modelos de imagen no comparten siempre la misma forma de solicitud. Algunos devuelven resultados directos y otros crean tareas asíncronas. El contrato del modelo elegido determina si se aceptan `size`, `quality`, `aspect_ratio`, `resolution` y `async`.
+| Objetivo | Endpoint | Notas |
+|----------|----------|-------|
+| Texto a imagen | `POST /v1/images/generations` | Usa `prompt` y un `model` explícito |
+| Imagen a imagen / imagen de referencia | `POST /v1/images/generations` | Usa `operation: "image-to-image"` más `image_url`, `image_urls` o `reference_image_urls` cuando el modelo lo soporte |
+| Edición de imagen GPT | `POST /v1/images/edits` | Soporta `image` multipart, `image_url` / `image_urls` en JSON, y referencias oficiales `images[]` para modelos de edición soportados |
+| Variación heredada | `POST /v1/images/variations` | Prefiere las rutas de generación o edición actuales para nuevo trabajo |
+| Estado asíncrono | `GET /v1/tasks/{id}` | Usa `poll_url` primero cuando esté presente |
+
+## Descubrimiento de Modelos
 
 ```bash
-curl "https://api.aisonar.dev/v1/models?recommended_for=image" \
+curl "https://api.aisonar.dev/v1/models?recommended_for=image" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-## Texto a imagen
+Los parámetros del modelo de imagen difieren mucho. Lee el contrato del modelo seleccionado antes de enviar `size`, `quality`, `aspect_ratio`, `resolution`, `async`, `background` o `output_format`.
 
-Para modelos de la familia GPT Image, usa `size` cuando el contrato lo exponga. Para modelos Google o Nano Banana, usa `aspect_ratio` y `resolution` solo cuando el contrato del modelo los liste.
+## Entradas Y Campos Específicos Del Modelo
+
+- `gpt-image-2` utiliza `size` y `quality` al estilo de OpenAI; omite `size` o `quality` para permitir que AI Sonar use `auto` donde sea soportado.
+- Las familias de imágenes Gemini y Nano Banana generalmente utilizan `aspect_ratio`; solo envía `resolution` cuando el modelo seleccionado lo exponga.
+- Las solicitudes de imagen de referencia de Nano Banana pertenecen a `/v1/images/generations` con `operation: "image-to-image"` y `image_urls`, no a `/v1/images/edits`.
+- `/v1/images/generations` no acepta `images[]` de nivel superior o `file_id`; esos son formatos de flujo de edición.
+- Las URL de imágenes remotas deben ser URL públicas `http`/`https`. Evita redes privadas, credenciales incrustadas, fragmentos y URL firmadas de corta duración.
+
+## Crear Solicitud
 
 ```bash
-curl https://api.aisonar.dev/v1/images/generations \
-  -H "Authorization: Bearer sk-your-api-key" \
-  -H "Content-Type: application/json" \
+curl https://api.aisonar.dev/v1/images/generations \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
   -d '{
     "model": "gpt-image-2",
-    "prompt": "A clean product photo of a ceramic coffee cup on a walnut desk",
+    "prompt": "Una foto de producto limpia de una taza de café de cerámica sobre un escritorio de nogal",
     "size": "1024x1024",
     "response_format": "url"
   }'
 ```
 
-## Imágenes de referencia y ediciones
+## Consultar Resultados
 
-Para generación con imagen de referencia en `/v1/images/generations`, envía `operation: "image-to-image"` con `image_url`, `image_urls`, `reference_image_urls` o un archivo multipart `image` cuando el modelo lo soporte. Usa `/v1/images/edits` para modelos de edición que acepten imágenes multipart, URLs de imagen o `images[].image_url` / `images[].file_id`.
-
-No envíes `images[]` ni `file_id` de nivel superior a `/v1/images/generations`; esas formas pertenecen a flujos de edición que las documentan explícitamente.
+Algunas rutas de imagen devuelven `data[].url` o `data[].b64_json` en línea. Otras rutas devuelven `status: "pending"`, `task_id` y `poll_url`. Si solicitas generación o edición de imagen asíncrona, los resultados de tareas completadas devuelven URL; usa solicitudes sincrónicas cuando necesites específicamente `b64_json`.
 
 ```bash
-curl https://api.aisonar.dev/v1/images/generations \
-  -H "Authorization: Bearer sk-your-api-key" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "nano-banana-pro",
-    "operation": "image-to-image",
-    "prompt": "Keep the same product, place it in a bright studio scene",
-    "image_urls": ["https://example.com/reference.png"],
-    "aspect_ratio": "1:1"
-  }'
-```
-
-## Sondear resultados
-
-Una respuesta de imagen síncrona devuelve `data[].url` o `data[].b64_json`. Una respuesta de tarea devuelve `status`, `task_id` y normalmente `poll_url`. Prefiere `poll_url`; el fallback fijo es [Estado de tarea](/es/api-reference/tasks/get-task-status). Las tareas de imagen asíncronas devuelven URLs, así que solicita base64 inline solo en flujos síncronos compatibles.
-
-```bash
-curl "https://api.aisonar.dev/v1/tasks/$TASK_ID" \
+curl "https://api.aisonar.dev/v1/tasks/$TASK_ID" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
+
+## Errores Comunes
+
+- No asumas que cada modelo de imagen es sincrónico.
+- No solicites `b64_json` de tareas de imagen asíncronas; los resultados asíncronos están orientados a URL.
+- No envíes `resolution` a modelos de imagen Gemini solo de relación.
+- No uses `/v1/images/edits` para flujos de imagen a imagen de Nano Banana.
+- Establece los tiempos de espera del cliente HTTP a al menos `120s` para solicitudes de imagen de alta resolución sincrónicas.
 
 ## Referencia API
 
 | Tema | Referencia |
-|-------|-----------|
-| Crear imagen | [Crear imagen](/es/api-reference/images/create-image) |
-| Editar imagen | [Editar imagen](/es/api-reference/images/edit-image) |
-| Estado de imagen | [Estado de imagen](/es/api-reference/images/get-image-status) |
-| Estado de tarea | [Estado de tarea](/es/api-reference/tasks/get-task-status) |
-| Listar modelos | [Listar modelos](/es/api-reference/models/list-models) |
-| Obtener modelo | [Obtener modelo](/es/api-reference/models/get-model) |
+|------|------------|
+| Crear Imagen | [Crear Imagen](/es/api-reference/images/create-image) |
+| Editar Imagen | [Editar Imagen](/es/api-reference/images/edit-image) |
+| Crear Variación de Imagen | [Crear Variación de Imagen](/es/api-reference/images/create-variation) |
+| Obtener Estado de Imagen | [Obtener Estado de Imagen](/es/api-reference/images/get-image-status) |
+| Obtener Estado de Tarea | [Obtener Estado de Tarea](/es/api-reference/tasks/get-task-status) |

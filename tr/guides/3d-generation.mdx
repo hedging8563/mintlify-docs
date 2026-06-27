@@ -1,54 +1,60 @@
 ---
-title: "3D üretimi"
-description: "AI Sonar 3D API’leri ve asenkron görev yoklamasıyla metin veya görsellerden 3D varlıklar oluşturun."
+title: "3D Üretimi"
+description: "Metin veya görsellerden 3D varlıklar oluşturun ve tamamlanmış model dosyalarını asenkron görev sonuçlarından indirin."
 ---
-## Önerilen akış
 
-1. [Modelleri listele](/tr/api-reference/models/list-models) çağrısını `recommended_for=3d` ile yapın.
-2. Metin `prompt` ile [3D oluştur](/tr/api-reference/3d/create-3d) kullanın; `image` veya `image_url` yalnızca image-to-3D destekleyen modellerde eklenmelidir.
-3. `format`, `quality`, `style` veya `seed` gibi isteğe bağlı alanları seçilen model sözleşmesine göre seçin.
-4. Varlık hazır olana kadar `poll_url` yoklayın, sonra `model_url` veya `glb_url` / `fbx_url` gibi format URL’lerini indirin.
+3D üretimi asenkron bir işlemdir. `POST /v1/3d/generations` bir görev oluşturur; tamamlanmış durum yanıtları indirilebilir model varlık URL'leri döner.
 
-## Modelleri keşfet
-
-3D üretimi görev tabanlıdır. Tek bir sağlayıcı veya sabit model varsaymak yerine model kataloğunu doğruluk kaynağı kabul edin.
+## Model Keşfi
 
 ```bash
-curl "https://api.aisonar.dev/v1/models?recommended_for=3d" \
+curl "https://api.aisonar.dev/v1/models?recommended_for=3d" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-## 3D görevi oluştur
+Her 3D modelin hem metin-to-3D hem de görsel-to-3D'yi desteklediğini varsaymayın. `image`, `image_url`, `format`, `quality`, `style` veya `seed` göndermeden önce seçilen model sözleşmesini kontrol edin.
 
-Text-to-3D istekleri `prompt` gerektirir. Image-to-3D istekleri base64 `image` veya `image_url` ekler. `format` ve `quality` yalnızca model sözleşmesi sunuyorsa kullanılmalıdır.
+## İstek Oluşturma
 
 ```bash
-curl https://api.aisonar.dev/v1/3d/generations \
-  -H "Authorization: Bearer sk-your-api-key" \
-  -H "Content-Type: application/json" \
+curl https://api.aisonar.dev/v1/3d/generations \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
   -d '{
     "model": "tripo3d-v2.5",
-    "prompt": "A stylized low-poly robot mascot with clean topology",
+    "prompt": "Temiz topolojiye sahip stilize edilmiş düşük poligonlu robot maskotu",
     "format": "glb",
     "quality": "standard"
   }'
 ```
 
-## Sonuçları yokla
+Metin-to-3D bir `prompt` gerektirir. Görsel-to-3D, model tarafından destekleniyorsa `image` veya `image_url` kullanır. Kaynak görsel özel değilse ve istemciniz kasıtlı olarak base64 verisi yüklemiyorsa, üretim girdileri için genel URL'leri tercih edin.
 
-Önce dönen `poll_url` değerini kullanın. Kararlı fallback [Görev durumu](/tr/api-reference/tasks/get-task-status) endpointidir. Tamamlanan 3D görevleri `model_url` döndürür ve `glb_url` veya `fbx_url` içerebilir.
+## Çıktı Seçenekleri
 
-```bash
-curl "https://api.aisonar.dev/v1/tasks/$TASK_ID" \
-  -H "Authorization: Bearer sk-your-api-key"
-```
+- `format`, destekleniyorsa `glb`, `fbx`, `obj` veya `usdz` gibi çıktı paketleme taleplerinde bulunabilir.
+- `quality` değerleri, model bunları sunduğunda gecikme ve maliyeti etkileyen `draft`, `standard` veya `high` gibi seçeneklerdir.
+- `style` ve `seed` model bağımlıdır; seçilen sözleşme bunları belgelemiyorsa atlayın.
+
+## Sonuçları Anket Etme
+
+Öncelikle döndürülen `poll_url`'u kullanın. Sabit bir uç noktaya ihtiyacınız varsa, oluşturma yanıtındaki aynı `id` / `task_id` ile `GET /v1/tasks/{id}` kullanın.
+
+Tamamlanan görevler `model_url` döner ve `glb_url`, `fbx_url`, `obj_url` veya `usdz_url` gibi format spesifik URL'leri içerebilir. Kullanıcıların tekrar erişim ihtiyacı varsa varlığı kendi ürününüzde indirin ve önbelleğe alın.
+
+## Yaygın Hatalar
+
+- Oluşturma yanıtında bir 3D varlık beklemeyin; terminal duruma kadar anket yapın.
+- Her model için her formatı vaat etmeyin.
+- Görev zaten mevcut değilse, istemci zaman aşımından sonra oluşturma isteklerini tekrar denemeyin.
+- Sağlayıcı görev kimliklerini UI'nizde açığa çıkarmayın.
 
 ## API Referansı
 
 | Konu | Referans |
 |-------|-----------|
-| 3D oluştur | [3D oluştur](/tr/api-reference/3d/create-3d) |
-| 3D durumu | [3D durumu](/tr/api-reference/3d/get-3d-status) |
-| Görev durumu | [Görev durumu](/tr/api-reference/tasks/get-task-status) |
-| Modelleri listele | [Modelleri listele](/tr/api-reference/models/list-models) |
-| Modeli getir | [Modeli getir](/tr/api-reference/models/get-model) |
+| 3D Oluştur | [3D Oluştur](/tr/api-reference/3d/create-3d) |
+| 3D Durumunu Al | [3D Durumunu Al](/tr/api-reference/3d/get-3d-status) |
+| Görev Durumunu Al | [Görev Durumunu Al](/tr/api-reference/tasks/get-task-status) |
+| Modelleri Listele | [Modelleri Listele](/tr/api-reference/models/list-models) |
+| Faturalama & Fiyatlandırma | [Faturalama & Fiyatlandırma](/tr/guides/billing) |

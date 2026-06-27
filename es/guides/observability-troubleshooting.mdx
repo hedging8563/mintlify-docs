@@ -1,29 +1,61 @@
 ---
-title: "Observabilidad y solución de problemas"
-description: "Guía de producción para Observabilidad y solución de problemas."
+title: "Observabilidad y Solución de Problemas"
+description: "Captura los identificadores públicos que AI Sonar expone para soporte, conciliación de uso y depuración de tareas asíncronas."
 ---
 
-## Descripción general
+Esta página está escrita para equipos de aplicación que operan AI Sonar en producción. Se centra en identificadores públicos y registros seguros para el usuario, no en los internos de enrutamiento del proveedor.
 
-Esta guía explica cómo usar Observabilidad y solución de problemas en producción sin vincular la aplicación a detalles de implementación del proveedor.
+## Identificadores Públicos
 
-Usa las API públicas de AI Sonar, los metadatos de modelos y los campos de respuesta documentados como contrato.
+| Identificador | Dónde aparece | Usarlo para |
+|---------------|---------------|-------------|
+| `request_id` | Cuerpos de error, registros de uso de la API de gestión, registros del panel de control | Soporte y conciliación a nivel de solicitud |
+| `task_id` / `id` | Respuestas de creación y estado asíncronas | Sondeo de trabajos de imagen, video, música y 3D |
+| `poll_url` | Respuestas de creación asíncronas | URL de estado preferida |
+| `billing_transaction_id` | Respuestas no en streaming cuando se liquidan, respuestas de estado de tareas, registros de uso de la API de gestión, encabezado `X-Billing-Transaction-ID` | Conciliación de facturación |
+| `X-Task-ID` | Respuestas de tareas asíncronas | Correlación de tareas a nivel de encabezado |
 
-## Comportamiento actual
+## Qué Registrar
 
-- Revisa estos valores antes del lanzamiento: `request_id`, `task_id`, `billing_transaction_id`.
-- No dependas de URL de estado específicas del proveedor, identificadores de enrutamiento ni metadatos privados de ejecución.
-- Haz que los reintentos sean idempotentes y evita trabajo facturable duplicado.
+1. Registra el endpoint, modelo, código de estado, marca de tiempo e identificadores públicos.
+2. Redacta `Authorization`, claves de API, URLs firmadas, URLs de medios privados y prompts completos por defecto.
+3. Para trabajos asíncronos, registra la respuesta de creación y cada respuesta de estado terminal.
+4. Para preguntas de uso, llama a la API de gestión con el ID de clave de API y filtros de fecha.
+5. Usa `type`, `code` y `param` de la respuesta en lugar de analizar el texto del proveedor.
 
-## Checklist de producción
+## Lista de Verificación para Solución de Problemas
 
-- Los logs deben ayudar al soporte sin almacenar secretos, archivos privados, prompts ni medios de usuario.
-- Los tickets de soporte deben incluir forma de solicitud saneada, endpoint, modelo, timestamp e identificadores públicos.
-- Verifica el flujo en staging antes de mover tráfico de producción.
+| Síntoma | Primera verificación | Página útil |
+|---------|---------------------|-------------|
+| `401` o `403` | Clave de API, token de gestión, acceso a la organización | [Autenticación](/es/authentication) |
+| `429` | Nivel de límite de tasa y comportamiento de reintento del cliente | [Límites de Tasa](/es/guides/rate-limits) |
+| `400 invalid_request_error` | Campo no soportado, endpoint incorrecto o desajuste de contrato específico del modelo | [Manejo de Errores](/es/guides/error-handling) |
+| La tarea asíncrona nunca termina | Sondea `poll_url`, inspecciona el `status` final, evita la creación duplicada de tareas | [Trabajos Asíncronos y Sondeo](/es/guides/async-jobs-polling) |
+| El costo no coincide con la UI | Compara `request_id` y `billing_transaction_id` en los registros de uso | [Facturación y Precios](/es/guides/billing) |
 
-## Páginas relacionadas
+## Conciliación de Uso
 
-- [Manejo de errores](/es/guides/error-handling)
-- [Facturación y Precios](/es/guides/billing)
-- [Trabajos asíncronos y sondeo](/es/guides/async-jobs-polling)
-- [Obtener uso de API Key](/es/api-reference/management/get-api-key-usage)
+`GET /v1/management/api-keys/{keyId}/usage` devuelve el uso a nivel de clave paginado. Puede filtrar por `scene`, `accessChannel`, `logicalModel`, `modelVendor`, `startDate` y `endDate`. Úsalo para conciliación del lado del servidor en lugar de raspar el panel de control.
+
+```bash
+curl "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/usage?page=1&limit=20&scene=video" \\
+  -H "Authorization: Bearer mt-your-management-token"
+```
+
+Las respuestas en streaming pueden liquidarse después de que se envía el stream, por lo que el encabezado de facturación puede estar ausente incluso cuando el uso se registra más tarde. Para tareas de medios asíncronas, la liquidación puede aparecer después del sondeo terminal.
+
+## Paquete de Soporte
+
+Al contactar con soporte, incluye `request_id`, `task_id`, `billing_transaction_id` cuando estén presentes, endpoint, modelo, marca de tiempo y una forma de solicitud saneada. No incluyas claves de API, medios privados o prompts completos a menos que el soporte pida una muestra redactada.
+
+No incluyas nombres de proveedores, IDs de canal, identificadores de enrutamiento, claves de Redis o URLs de tareas ascendentes en los registros de clientes o tickets de soporte a menos que el soporte de AI Sonar lo pida explícitamente.
+
+## Referencia de API
+
+| Tema | Referencia |
+|------|------------|
+| Manejo de Errores | [Manejo de Errores](/es/guides/error-handling) |
+| Límites de Tasa | [Límites de Tasa](/es/guides/rate-limits) |
+| Facturación y Precios | [Facturación y Precios](/es/guides/billing) |
+| Obtener Uso de Clave de API | [Obtener Uso de Clave de API](/es/api-reference/management/get-api-key-usage) |
+| Obtener Estado de Tarea | [Obtener Estado de Tarea](/es/api-reference/tasks/get-task-status) |

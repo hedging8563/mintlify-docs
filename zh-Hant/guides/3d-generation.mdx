@@ -1,54 +1,60 @@
 ---
 title: "3D 生成"
-description: "使用 AI Sonar 3D 生成 API 和非同步任務輪詢，從文字或圖片建立 3D 資產。"
+description: "從文本或圖像創建 3D 資產，並從異步任務結果中下載完成的模型文件。"
 ---
-## 建議流程
 
-1. 调用 [模型列表](/zh-Hant/api-reference/models/list-models)，带上 `recommended_for=3d`。
-2. 用 [创建 3D](/zh-Hant/api-reference/3d/create-3d) 发送文本 `prompt`；只有支持图生 3D 的模型才传 `image` 或 `image_url`。
-3. 按模型契约选择 `format`、`quality`、`style`、`seed` 等可选字段。
-4. 轮询 `poll_url` 到资产就绪，然后下载 `model_url` 或 `glb_url` / `fbx_url` 等格式化 URL。
+3D 生成是異步的。 `POST /v1/3d/generations` 創建一個任務；完成狀態響應返回可下載的模型資產 URL。
 
 ## 模型發現
 
-3D 生成是任务型 API。应以模型目录为真值，不要假设只有某一个供应商或固定模型。
-
 ```bash
-curl "https://api.aisonar.dev/v1/models?recommended_for=3d" \
+curl "https://api.aisonar.dev/v1/models?recommended_for=3d" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-## 建立 3D 任務
+不要假設每個 3D 模型都支持文本到 3D 和圖像到 3D。在發送 `image`、`image_url`、`format`、`quality`、`style` 或 `seed` 之前，請檢查所選模型的合約。
 
-文生 3D 请求需要 `prompt`。图生 3D 请求再增加 `image` base64 或 `image_url`。`format` 和 `quality` 只在模型契约列出时使用。
+## 創建請求
 
 ```bash
-curl https://api.aisonar.dev/v1/3d/generations \
-  -H "Authorization: Bearer sk-your-api-key" \
-  -H "Content-Type: application/json" \
+curl https://api.aisonar.dev/v1/3d/generations \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
   -d '{
     "model": "tripo3d-v2.5",
-    "prompt": "A stylized low-poly robot mascot with clean topology",
+    "prompt": "一個風格化的低多邊形機器人吉祥物，具有乾淨的拓撲結構",
     "format": "glb",
     "quality": "standard"
   }'
 ```
 
+文本到 3D 需要一個 `prompt`。圖像到 3D 在模型支持的情況下使用 `image` 或 `image_url`。除非源圖像是私有的，並且您的客戶故意上傳 base64 數據，否則在生產輸入中優先使用公共 URL。
+
+## 輸出選擇
+
+- `format` 可以請求支持的輸出包裝，例如 `glb`、`fbx`、`obj` 或 `usdz`。
+- `quality` 值如 `draft`、`standard` 或 `high` 會影響延遲和成本，當模型公開這些選項時。
+- `style` 和 `seed` 依賴於模型；除非所選合約有記錄，否則請省略它們。
+
 ## 輪詢結果
 
-优先使用返回的 `poll_url`。稳定兜底入口是 [查询任务状态](/zh-Hant/api-reference/tasks/get-task-status)。完成后的 3D 任务返回 `model_url`，也可能包含 `glb_url` 或 `fbx_url` 等格式字段。
+首先使用返回的 `poll_url`。如果您需要固定的端點，請使用 `GET /v1/tasks/{id}`，並使用創建響應中的相同 `id` / `task_id`。
 
-```bash
-curl "https://api.aisonar.dev/v1/tasks/$TASK_ID" \
-  -H "Authorization: Bearer sk-your-api-key"
-```
+完成的任務返回 `model_url`，並可能包括格式特定的 URL，例如 `glb_url`、`fbx_url`、`obj_url` 或 `usdz_url`。如果用戶需要重複訪問，請下載並緩存資產到您的產品中。
+
+## 常見陷阱
+
+- 不要期望在創建響應中獲得 3D 資產；請輪詢直到終端狀態。
+- 不要承諾每個模型的每種格式。
+- 在客戶超時後，不要在未檢查任務是否已存在的情況下重試創建請求。
+- 不要在您的 UI 中暴露提供者任務 ID。
 
 ## API 參考
 
 | 主題 | 參考 |
 |-------|-----------|
-| 创建 3D | [创建 3D](/zh-Hant/api-reference/3d/create-3d) |
-| 查询 3D 状态 | [查询 3D 状态](/zh-Hant/api-reference/3d/get-3d-status) |
-| 查询任务状态 | [查询任务状态](/zh-Hant/api-reference/tasks/get-task-status) |
-| 模型列表 | [模型列表](/zh-Hant/api-reference/models/list-models) |
-| 模型详情 | [模型详情](/zh-Hant/api-reference/models/get-model) |
+| 創建 3D | [創建 3D](/zh-Hant/api-reference/3d/create-3d) |
+| 獲取 3D 狀態 | [獲取 3D 狀態](/zh-Hant/api-reference/3d/get-3d-status) |
+| 獲取任務狀態 | [獲取任務狀態](/zh-Hant/api-reference/tasks/get-task-status) |
+| 列出模型 | [列出模型](/zh-Hant/api-reference/models/list-models) |
+| 計費與定價 | [計費與定價](/zh-Hant/guides/billing) |

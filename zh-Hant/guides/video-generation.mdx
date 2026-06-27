@@ -1,250 +1,77 @@
 ---
-title: "影片生成"
-description: "透過統一的公開影片契約接入文生影片、圖生影片、參考圖生影片、首尾幀控制、動作控制與影片轉影片。"
+title: "視頻生成"
+description: "生成具有明確公共操作、異步輪詢和模型特定媒體輸入的視頻。"
 ---
 
-## 概覽
+視頻生成是異步的。 `POST /v1/videos/generations` 返回一個公共任務身份，通常還會返回一個 `poll_url`；最終視頻會在後續的狀態響應中出現。
 
-AI Sonar 透過單一統一 API 提供影片生成能力。影片生成是**非同步**流程：提交請求後，會回傳 `task_id` 與 `poll_url`，之後再輪詢任務狀態以取得最終結果。
+## 公共合約
 
-### 可用性與輪詢
+在生產中使用明確的 `operation`。AI Sonar 可以從輸入中推斷某些操作，但明確的操作值使得驗證、支持和重試更加清晰。
 
-如果建立回應有返回 `poll_url`，請優先直接呼叫該網址。若它指向 `/v1/tasks/{id}`，就把它視為公開影片任務的規範狀態入口；`/v1/videos/generations/{id}` 只保留相容用途。
+| 操作 | 必需或典型輸入 | 使用案例 |
+|------|----------------|----------|
+| `text-to-video` | `prompt` | 僅從文本生成 |
+| `image-to-video` | `image_url` 或兼容的 `image` | 動畫化起始圖像 |
+| `reference-to-video` | `reference_images` 和可選的 `video_urls` / `audio_urls` 在支持的模型上 | 保持身份、風格或資產參考 |
+| `start-end-to-video` | `start_image`, `end_image` | 控制第一幀和最後一幀 |
+| `video-to-video` | `video_url` 或模型特定的 `task_id` | 轉換或升級現有片段 |
+| `motion-control` | `image_url` 加上 `video_url` | 將運動參考應用於主題 |
+| `audio-to-video` | `audio_url` | 音頻條件視頻流 |
+| `video-extension` | `task_id`, `extend_at` 或模型特定的擴展字段 | 繼續生成的視頻 |
 
-模型庫存會持續變化。若要取得最新的公開影片模型可用性，請使用 [Models API](/zh-Hant/api-reference/models/list-models) 或造訪[模型頁面](https://aisonar.dev/models)。
-
-### 模型與媒體行為
-
-音訊行為取決於具體模型。在 AI Sonar 中，Veo 3 家族在省略 `output_audio` 時預設按有聲處理；部分公開模型預設無聲，或僅提供無聲版本。
-
-在生產環境中，建議優先使用公網可存取的 `https` URL 作為圖片、影片與音訊輸入。相容模型仍支援內嵌 `data:` URL，但 URL 在重試、觀測與除錯時通常更容易處理。
-
-### 非同步工作流程
-
-```mermaid
-sequenceDiagram
-    participant Client
-    participant AI Sonar
-    participant Provider
-
-    Client->>AI Sonar: POST /v1/videos/generations
-    AI Sonar->>Provider: 轉發規範化後的請求
-    Provider-->>AI Sonar: task_id + pending
-    AI Sonar-->>Client: { task_id, poll_url, status: "pending" }
-
-    loop 每 5-10 秒輪詢
-        Client->>AI Sonar: GET poll_url
-        AI Sonar->>Provider: 查詢狀態
-        Provider-->>AI Sonar: 狀態更新
-        AI Sonar-->>Client: { status, video_url? }
-    end
-```
-
-## 目前公開操作
-
-AI Sonar 公開影片契約接受以下操作值。支援情況與具體模型有關，並會隨供應商新增或下線能力而變化；依賴某個專用操作前，請先讀取所選模型契約。
-
-- `text-to-video`
-- `image-to-video`
-- `reference-to-video`
-- `start-end-to-video`
-- `video-to-video`
-- `motion-control`
-- `audio-to-video`
-- `video-extension`
-
-## 操作定義
-
-- **T2V（Text-to-Video）**：根據文字 prompt 生成影片。
-- **I2V（Image-to-Video）**：根據起始圖片生成影片；為了獲得更好的相容性，建議傳入 `image_url`。
-- **Reference**：透過 `reference_images` 傳入一張或多張參考圖進行條件控制；部分模型也透過 `video_urls` 接受參考影片、透過 `audio_urls` 接受參考音訊。
-- **Start-End**：透過 `start_image` 與 `end_image` 控制首幀與尾幀。
-- **V2V（Video-to-Video）**：以現有影片、已生成任務或供應商特定衍生流程作為來源。
-- **Motion**：同時使用主體圖片與動作參考影片。
-- **Audio-to-Video**：透過音訊條件控制的模型流程生成影片。
-- **Video Extension**：繼續或延展既有影片生成任務。
-
-## 模型探索
-
-影片模型可用性變化很快。選擇模型前，先取得目前公開影片推薦清單：
+## 模型發現
 
 ```bash
-curl "https://api.aisonar.dev/v1/models?recommended_for=video" \
+curl "https://api.aisonar.dev/v1/models?recommended_for=video" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-送出模型特定欄位前，先讀取所選模型：
+在依賴於專用字段如 `reference_images`、`kling_elements`、`output_audio`、`duration`、`resolution` 或 `aspect_ratio` 之前，請閱讀所選模型的詳細信息。
+
+## 創建請求
 
 ```bash
-curl "https://api.aisonar.dev/v1/models/veo3.1" \
-  -H "Authorization: Bearer sk-your-api-key"
+curl https://api.aisonar.dev/v1/videos/generations \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "veo3.1",
+    "operation": "text-to-video",
+    "prompt": "一隻貓在陽光明媚的花園中漫步的平靜電影鏡頭",
+    "duration": 4,
+    "aspect_ratio": "16:9"
+  }'
 ```
 
-請以 `aisonar.capabilities`、`aisonar.supported_operations`、`aisonar.public_contract_summary` 與 `aisonar.public_contract` 作為真值來源。以下範例是工作流模式，不是完整模型庫存。
+對於生產媒體輸入，優先使用公共的 `https` URL 而不是內聯的 `data:` URL。如果您使用簽名的 URL，請確保它們在任務創建和提供方端的提取重試期間保持有效。
 
-## 使用範例
+## 輸入和模型特定字段
 
-### 文生影片
+- Veo 3 系列請求默認為音頻開啟，當 `output_audio` 被省略時。當模型支持切換且您的用戶體驗依賴於聲音時，請明確設置它。
+- `kling_elements` 用於 `kling-3.0-video` 圖像條件請求。在 `prompt` 中引用每個元素為 `@name`；不要將其與 `output_audio=true` 結合使用。
+- 對於 `seedance-2.0` 和 `seedance-2.0-fast`，reference-to-video 可以根據當前公共合約接受多個參考圖像以及參考視頻/音頻輸入。
+- 對於 `grok-imagine-video`，video-to-video 使用公共的 `.mp4` `video_url`；模型特定的限制如 `duration` 和 `resolution` 必須來自模型合約。
 
-```python
-response = requests.post(f"{BASE}/videos/generations",
-    headers=headers,
-    json={
-        "model": "veo3.1",
-        "prompt": "A calm cinematic shot of a cat walking through a sunlit garden.",
-        "operation": "text-to-video",
-        "duration": 4,
-        "aspect_ratio": "16:9"
-    }
-)
-```
+## 輪詢結果
 
-### 圖生影片
+首先使用返回的 `poll_url`。如果您需要固定端點，請使用 `GET /v1/tasks/{id}`，並使用來自創建響應的相同 `id` / `task_id`。
 
-```python
-response = requests.post(f"{BASE}/videos/generations",
-    headers=headers,
-    json={
-        "model": "hailuo-2.3-standard",
-        "prompt": "The scene begins from the provided image and adds gentle natural motion.",
-        "operation": "image-to-video",
-        "image_url": "https://example.com/portrait.jpg",
-        "duration": 6,
-        "aspect_ratio": "16:9"
-    }
-)
-```
+已完成的視頻任務可能根據提供者和輸出數量返回 `video_url`、`video` 或 `videos`。將 `billing_transaction_id` 視為計費標識符，而不是任務標識符。
 
-### Kling 3.0 元素引用
+## 常見陷阱
 
-需要元素引用時，請在 `kling-3.0-video` 請求中傳入 `kling_elements`。請求需要包含圖片條件輸入（`image_url`、`image_urls`、`start_image` 或 `end_image`），並在提示詞中用 `@name` 引用對應元素。
+- 不要硬編碼舊的視頻狀態路徑；優先使用 `poll_url`。
+- 除非模型合約允許，否則不要將第一幀字段與專用的參考圖像流結合使用。
+- 不要假設 `duration` 描述輸入參考視頻的長度；它通常控制生成的輸出長度。
+- 在超時後不要重試創建請求，而不檢查任務是否已經創建。
 
-```python
-response = requests.post(f"{BASE}/videos/generations",
-    headers=headers,
-    json={
-        "model": "kling-3.0-video",
-        "prompt": "Place @hero_bag on a studio turntable with soft product lighting.",
-        "operation": "image-to-video",
-        "image_url": "https://example.com/studio-start.png",
-        "duration": 5,
-        "resolution": "720p",
-        "kling_elements": [
-            {
-                "name": "hero_bag",
-                "description": "black leather handbag",
-                "element_input_urls": [
-                    "https://example.com/bag-front.png",
-                    "https://example.com/bag-side.png"
-                ]
-            }
-        ]
-    }
-)
-```
+## API 參考
 
-### 參考圖生影片
-
-對於 `seedance-2.0` 與 `seedance-2.0-fast`，AI Sonar 目前支援最多 9 張參考圖，外加最多 3 段參考影片與 3 段參考音訊。`duration` 只控制生成輸出時長，不單獨限制參考影片輸入時長。 對於 `grok-imagine-video`，reference-to-video 最多接受 7 個圖片參考（`reference_images` 或 `image_urls`），且 `duration` 最高為 10 秒。不要把參考圖片與 `image_url` / `image` 首幀輸入混用。`grok-imagine-video-1.5-preview` 僅支援圖生影片。
-
-```python
-response = requests.post(f"{BASE}/videos/generations",
-    headers=headers,
-    json={
-        "model": "veo3.1",
-        "prompt": "Keep the same subject identity and palette while adding subtle motion.",
-        "operation": "reference-to-video",
-        "reference_images": [
-            "https://example.com/ref-a.jpg",
-            "https://example.com/ref-b.jpg"
-        ],
-        "duration": 8,
-        "resolution": "720p",
-        "aspect_ratio": "9:16"
-    }
-)
-```
-
-### 首尾幀控制
-
-```python
-response = requests.post(f"{BASE}/videos/generations",
-    headers=headers,
-    json={
-        "model": "viduq2-pro",
-        "prompt": "Smooth transition from day to night.",
-        "operation": "start-end-to-video",
-        "start_image": "https://example.com/city-day.jpg",
-        "end_image": "https://example.com/city-night.jpg",
-        "duration": 5,
-        "resolution": "720p",
-        "aspect_ratio": "16:9"
-    }
-)
-```
-
-### 影片轉影片
-
-對於 `grok-imagine-video` 的 video-to-video，請在 `video_url` 中傳入公開 HTTPS `.mp4` URL。AI Sonar 會把它轉換為 xAI REST 的 `video.url` 請求體。你可以將 `resolution` 設為 `480p` 或 `720p`；此編輯流程不接受 `duration` 與 `aspect_ratio`。
-
-```python
-response = requests.post(f"{BASE}/videos/generations",
-    headers=headers,
-    json={
-        "model": "grok-imagine-video",
-        "operation": "video-to-video",
-        "video_url": "https://example.com/source.mp4",
-        "prompt": "Upscale this clip while preserving the original motion."
-    }
-)
-```
-
-### 動作控制
-
-```python
-response = requests.post(f"{BASE}/videos/generations",
-    headers=headers,
-    json={
-        "model": "kling-3.0-motion-control",
-        "operation": "motion-control",
-        "prompt": "Keep the subject stable while following the motion reference.",
-        "image_url": "https://example.com/subject.png",
-        "video_url": "https://example.com/motion.mp4",
-        "resolution": "720p"
-    }
-)
-```
-
-## 參數說明
-
-| 參數 | 型別 | 說明 |
-|------|------|------|
-| `operation` | string | 在生產環境中，建議顯式傳入 `operation`。 |
-| `image_url` | string | 相容性最好的圖片輸入形式。 |
-| `image` | string | 內嵌 data URL，適合本地除錯或小體積整合。 |
-| `reference_images` | string[] | 用於參考圖條件控制的公開規範欄位。 |
-| `reference_image_type` | string | 可選的 `asset` / `style` 角色選擇器。 |
-| `video_url` | string | 基於影片 URL 的 `video-to-video` 流程與 `motion-control` 需要此欄位；部分衍生流程改用 `task_id`。 |
-| `audio_url` | string | 用於模型特定音訊條件流程。 |
-| `output_audio` | boolean | Veo 3 家族在省略時預設按 `true` 處理。`kling-3.0-video` 接受此 selector 用於上游 sound 控制，省略時預設無聲。 |
-
-## 模型選擇建議
-
-<CardGroup cols={2}>
-  <Card title="最高品質" icon="crown">
-    若品質優先於速度，可優先考慮 **veo3.1**、**kling-video-o1-pro** 或 **viduq3-pro**。
-  </Card>
-  <Card title="更快迭代" icon="bolt">
-    若需要更快出結果，可先嘗試 **veo3.1-fast**、**hailuo-2.3-fast** 或 **viduq3-turbo**。
-  </Card>
-  <Card title="參考圖條件控制" icon="images">
-    若需要專門的參考圖條件控制，可優先考慮 **veo3.1**、**veo3.1-fast**、**wan-2.6** 或 **kling-video-o1-pro / std**。
-  </Card>
-  <Card title="影片轉影片" icon="film">
-    先呼叫 `GET /v1/models?recommended_for=video`；目前 V2V 類範例包括 **grok-imagine-video**、**seedance-2.0**、**veo3.1** 與 **kling-video-o1-pro / std**。
-  </Card>
-</CardGroup>
-
-## 計費
-
-影片計費會依模型而異。有些公開影片模型實際上偏向按次計費，有些則偏向按秒計費。請以[模型頁面](https://aisonar.dev/models)或 [Pricing API](/zh-Hant/api-reference/pricing/get-pricing) 的即時公開價格為準。
+| 主題 | 參考 |
+|------|------|
+| 創建視頻 | [創建視頻](/zh-Hant/api-reference/video/create-video) |
+| 獲取視頻狀態 | [獲取視頻狀態](/zh-Hant/api-reference/video/get-video-status) |
+| 獲取任務狀態 | [獲取任務狀態](/zh-Hant/api-reference/tasks/get-task-status) |
+| 取消任務 | [取消任務](/zh-Hant/api-reference/tasks/cancel-task) |
+| 計費與定價 | [計費與定價](/zh-Hant/guides/billing) |

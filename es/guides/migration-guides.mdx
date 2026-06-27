@@ -1,29 +1,90 @@
 ---
-title: "Guías de migración"
-description: "Guía de producción para Guías de migración."
+title: "Guías de Migración"
+description: "Mueva OpenAI, Anthropic, Gemini y cargas de trabajo de medios a AI Sonar con los cambios más pequeños y seguros para producción."
 ---
 
-## Descripción general
+AI Sonar es nativo-prioritario y compatible con OpenAI. Elija la ruta que coincida con el comportamiento del cliente que necesita en lugar de convertir cada carga de trabajo en un formato.
 
-Esta guía explica cómo usar Guías de migración en producción sin vincular la aplicación a detalles de implementación del proveedor.
+## Elija El Formato
 
-Usa las API públicas de AI Sonar, los metadatos de modelos y los campos de respuesta documentados como contrato.
+| Carga de trabajo existente | URL base de AI Sonar | Endpoint principal | Notas |
+|----------------------------|----------------------|--------------------|-------|
+| OpenAI Chat Completions    | `https://api.aisonar.dev/v1` | `/chat/completions` | Cambio más pequeño para clientes compatibles con OpenAI |
+| OpenAI Responses           | `https://api.aisonar.dev/v1` | `/responses`       | Usar solo para comportamiento específico de Responses |
+| Anthropic SDK              | `https://api.aisonar.dev` | `/v1/messages`     | No agregue `/v1` en la URL base del SDK |
+| Gemini REST                | `https://api.aisonar.dev` | `/v1beta/models/:model:generateContent` | Mantenga los campos nativos de Gemini en la ruta nativa |
+| Generación de medios       | `https://api.aisonar.dev/v1` | `/images`, `/videos`, `/music`, `/3d` | Descubra modelos con `recommended_for` y espere sondeos asíncronos donde esté documentado |
 
-## Comportamiento actual
+## Migración Compatible con OpenAI
 
-- Revisa estos valores antes del lanzamiento: base URL, API key, model ID.
-- No dependas de URL de estado específicas del proveedor, identificadores de enrutamiento ni metadatos privados de ejecución.
-- Haz que los reintentos sean idempotentes y evita trabajo facturable duplicado.
+```python
+from openai import OpenAI
 
-## Checklist de producción
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1",
+)
 
-- Los logs deben ayudar al soporte sin almacenar secretos, archivos privados, prompts ni medios de usuario.
-- Los tickets de soporte deben incluir forma de solicitud saneada, endpoint, modelo, timestamp e identificadores públicos.
-- Verifica el flujo en staging antes de mover tráfico de producción.
+response = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "Hello from AI Sonar"}],
+)
+```
 
-## Páginas relacionadas
+Mantenga su código existente de reintentos, tiempo de espera y transmisión, pero valide los IDs de modelo contra `GET /v1/models`. Para la generación de imágenes, envíe `model` explícitamente y lea la guía de imágenes porque los modelos de imagen difieren más que los modelos de chat.
 
-- [✨ API Multi-Formato](/es/guides/api-formats)
-- [SDK de OpenAI](/es/integrations/openai-sdk)
-- [SDK de Anthropic](/es/integrations/anthropic-sdk)
-- [Enrutamiento de proveedores y fiabilidad](/es/guides/provider-routing-reliability)
+## Migración de Anthropic
+
+```python
+from anthropic import Anthropic
+
+client = Anthropic(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev",
+)
+
+message = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Explain AI Sonar in one sentence."}],
+)
+```
+
+Utilice esta ruta para el comportamiento nativo de Claude, como el uso de la herramienta Messages y el pensamiento extendido. Si una función es nativa de Anthropic, manténgala en `/v1/messages` en lugar de traducirla a través de Chat Completions.
+
+## Migración de Gemini
+
+```bash
+curl "https://api.aisonar.dev/v1beta/models/gemini-3.5-flash:generateContent" \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
+  -d '{"contents":[{"parts":[{"text":"Hello"}]}]}'
+```
+
+Las herramientas integradas de Gemini, los recursos de la API de archivos, los contenidos en caché y las declaraciones de funciones deben permanecer en `/v1beta` cuando necesite un comportamiento nativo de Gemini.
+
+## Migración de Medios
+
+1. Consulte `GET /v1/models?recommended_for=image|video|music|3d` antes de elegir un modelo.
+2. Lea `aisonar.public_contract_summary` y, en las páginas de detalles, el `aisonar.public_contract` completo.
+3. Envíe un `model` explícito. No confíe en los valores predeterminados heredados para el tráfico de producción.
+4. Almacene `task_id` y `poll_url` para trabajos asíncronos.
+5. Reconciliar costos a través de registros de uso, no a través de IDs de tarea del proveedor.
+
+## Implementación en Producción
+
+- Comience con un endpoint y una familia de modelos.
+- Establezca tiempos de espera HTTP lo suficientemente altos para rutas de imagen sincrónicas; use modo asíncrono cuando esté disponible para trabajos largos.
+- Registre identificadores públicos y la forma de solicitud saneada antes de enviar tráfico de producción.
+- Compare una muestra de respuestas, registros de uso y salidas visibles para el cliente.
+- Mantenga la reversión simple: preserve el cliente del proveedor anterior hasta que el tráfico de AI Sonar sea estable.
+
+## Referencia de API
+
+| Tema                     | Referencia                             |
+|--------------------------|---------------------------------------|
+| API Multi-Formato        | [API Multi-Formato](/es/guides/api-formats) |
+| OpenAI SDK               | [OpenAI SDK](/es/integrations/openai-sdk) |
+| Anthropic SDK            | [Anthropic SDK](/es/integrations/anthropic-sdk) |
+| Generación de Imágenes   | [Generación de Imágenes](/es/guides/image-generation) |
+| Trabajos Asíncronos & Polling | [Trabajos Asíncronos & Polling](/es/guides/async-jobs-polling) |

@@ -1,250 +1,77 @@
 ---
-title: "Generación de video"
-description: "Accede mediante un contrato público unificado a texto a video, imagen a video, referencia a video, control de fotogramas inicial/final, control de movimiento y video a video."
+title: "Generación de Video"
+description: "Genera videos con operaciones públicas explícitas, sondeo asíncrono y entradas de medios específicas del modelo."
 ---
 
-## Resumen
+La generación de video es asíncrona. `POST /v1/videos/generations` devuelve una identidad de tarea pública y, por lo general, un `poll_url`; el video final aparece en respuestas de estado posteriores.
 
-AI Sonar ofrece generación de video mediante una API unificada. La generación es **asíncrona**: envías una solicitud, recibes `task_id` y `poll_url`, y después consultas hasta obtener el resultado final.
+## Contrato Público
 
-### Disponibilidad y sondeo
+Utiliza `operation` explícito en producción. AI Sonar puede inferir algunas operaciones a partir de las entradas, pero los valores de operación explícitos hacen que la validación, el soporte y los reintentos sean más claros.
 
-Puedes ver el inventario público actual de modelos de video a través de la [Models API](/es/api-reference/models/list-models) o en la [página de modelos](https://aisonar.dev/models).
+| Operación | Entrada requerida o típica | Caso de uso |
+|-----------|---------------------------|-------------|
+| `text-to-video` | `prompt` | Generar solo a partir de texto |
+| `image-to-video` | `image_url` o `image` compatible | Animar una imagen inicial |
+| `reference-to-video` | `reference_images` y opcionalmente `video_urls` / `audio_urls` en modelos compatibles | Mantener identidad, estilo o referencias de activos |
+| `start-end-to-video` | `start_image`, `end_image` | Controlar los primeros y últimos fotogramas |
+| `video-to-video` | `video_url` o `task_id` específico del modelo | Transformar o mejorar un clip existente |
+| `motion-control` | `image_url` más `video_url` | Aplicar referencia de movimiento a un sujeto |
+| `audio-to-video` | `audio_url` | Flujos de video condicionados por audio |
+| `video-extension` | `task_id`, `extend_at`, o campos de extensión específicos del modelo | Continuar un video generado |
 
-Si una respuesta de creación devuelve `poll_url`, llama exactamente a esa URL. Cuando apunte a `/v1/tasks/{id}`, trátala como el endpoint fijo canónico de estado.
-
-### Comportamiento de modelos y medios
-
-El comportamiento del audio depende del modelo. En AI Sonar, la familia Veo 3 se trata por defecto como audio activado cuando se omite `output_audio`. Otros modelos públicos son silenciosos por defecto o no exponen un interruptor de audio estable.
-
-En producción, es mejor usar URLs `https` públicas para imágenes, videos y audio. Los modelos compatibles siguen aceptando URLs `data:`, pero las URLs son más robustas para reintentos, observabilidad y depuración.
-
-### Flujo asíncrono
-
-```mermaid
-sequenceDiagram
-    participant Client
-    participant AI Sonar
-    participant Provider
-
-    Client->>AI Sonar: POST /v1/videos/generations
-    AI Sonar->>Provider: Reenvía la solicitud normalizada
-    Provider-->>AI Sonar: task_id + pending
-    AI Sonar-->>Client: { task_id, poll_url, status: "pending" }
-
-    loop Consultar cada 5-10 s
-        Client->>AI Sonar: GET poll_url
-        AI Sonar->>Provider: Consulta el estado
-        Provider-->>AI Sonar: Actualización de estado
-        AI Sonar-->>Client: { status, video_url? }
-    end
-```
-
-## Operaciones públicas actuales
-
-El contrato público de video de AI Sonar acepta estos valores de operación. El soporte depende del modelo y cambia cuando los proveedores agregan o retiran capacidades; revisa el contrato del modelo elegido antes de depender de una operación especializada.
-
-- `text-to-video`
-- `image-to-video`
-- `reference-to-video`
-- `start-end-to-video`
-- `video-to-video`
-- `motion-control`
-- `audio-to-video`
-- `video-extension`
-
-## Definiciones de operaciones
-
-- **T2V (Text-to-Video)**: genera video desde un prompt de texto.
-- **I2V (Image-to-Video)**: anima una imagen inicial. Para la compatibilidad más amplia, usa `image_url`.
-- **Reference**: condiciona la generación con una o varias imágenes mediante `reference_images`; algunos modelos también aceptan videos de referencia mediante `video_urls` y audio de referencia mediante `audio_urls`.
-- **Start-End**: controla el primer y último fotograma con `start_image` y `end_image`.
-- **V2V (Video-to-Video)**: usa un video existente, una tarea generada o un flujo derivado específico del proveedor como fuente.
-- **Motion**: combina una imagen del sujeto con un video de referencia de movimiento.
-- **Audio-to-Video**: genera video desde un flujo de modelo condicionado por audio.
-- **Video Extension**: continúa o extiende una tarea de video generada previamente.
-
-## Descubrimiento de modelos
-
-La disponibilidad de modelos de video cambia con frecuencia. Obtén la shortlist pública actual antes de elegir un modelo:
+## Descubrimiento de Modelos
 
 ```bash
-curl "https://api.aisonar.dev/v1/models?recommended_for=video" \
+curl "https://api.aisonar.dev/v1/models?recommended_for=video" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-Lee el modelo seleccionado antes de enviar campos específicos del modelo:
+Lee los detalles del modelo seleccionado antes de confiar en campos especializados como `reference_images`, `kling_elements`, `output_audio`, `duration`, `resolution`, o `aspect_ratio`.
+
+## Crear Solicitud
 
 ```bash
-curl "https://api.aisonar.dev/v1/models/veo3.1" \
-  -H "Authorization: Bearer sk-your-api-key"
+curl https://api.aisonar.dev/v1/videos/generations \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "veo3.1",
+    "operation": "text-to-video",
+    "prompt": "Una toma cinematográfica tranquila de un gato caminando por un jardín iluminado por el sol",
+    "duration": 4,
+    "aspect_ratio": "16:9"
+  }'
 ```
 
-Usa `aisonar.capabilities`, `aisonar.supported_operations`, `aisonar.public_contract_summary` y `aisonar.public_contract` como fuente de verdad. Los ejemplos siguientes son patrones de flujo, no un inventario exhaustivo.
+Para la entrada de medios en producción, prefiere URLs públicas `https` sobre URLs `data:` en línea. Si utilizas URLs firmadas, mantenlas válidas durante la creación de la tarea y los reintentos de recuperación del lado del proveedor.
 
-## Ejemplos de uso
+## Entradas Y Campos Específicos del Modelo
 
-### Texto a video
+- Las solicitudes de la familia Veo 3 predeterminan el audio activado cuando se omite `output_audio`. Establece esto explícitamente cuando el modelo soporte el interruptor y tu experiencia de usuario dependa del sonido.
+- `kling_elements` es para solicitudes condicionadas por imagen de `kling-3.0-video`. Referencia cada elemento en `prompt` como `@name`; no lo combines con `output_audio=true`.
+- Para `seedance-2.0` y `seedance-2.0-fast`, reference-to-video puede aceptar múltiples imágenes de referencia más entradas de video/audio de referencia de acuerdo con el contrato público actual.
+- Para `grok-imagine-video`, video-to-video utiliza un `.mp4` público `video_url`; los límites específicos del modelo como `duration` y `resolution` deben provenir del contrato del modelo.
 
-```python
-response = requests.post(f"{BASE}/videos/generations",
-    headers=headers,
-    json={
-        "model": "veo3.1",
-        "prompt": "A calm cinematic shot of a cat walking through a sunlit garden.",
-        "operation": "text-to-video",
-        "duration": 4,
-        "aspect_ratio": "16:9"
-    }
-)
-```
+## Resultados de Sondeo
 
-### Imagen a video
+Utiliza primero el `poll_url` devuelto. Si necesitas un punto final fijo, utiliza `GET /v1/tasks/{id}` con el mismo `id` / `task_id` de la respuesta de creación.
 
-```python
-response = requests.post(f"{BASE}/videos/generations",
-    headers=headers,
-    json={
-        "model": "hailuo-2.3-standard",
-        "prompt": "The scene begins from the provided image and adds gentle natural motion.",
-        "operation": "image-to-video",
-        "image_url": "https://example.com/portrait.jpg",
-        "duration": 6,
-        "aspect_ratio": "16:9"
-    }
-)
-```
+Las tareas de video completadas pueden devolver `video_url`, `video`, o `videos` dependiendo del proveedor y la cantidad de salida. Trata `billing_transaction_id` como un identificador de facturación, no como un identificador de tarea.
 
-### Kling 3.0 Elements
+## Errores Comunes
 
-Usa `kling_elements` con `kling-3.0-video` cuando necesites referencias de elementos. Proporciona una solicitud condicionada por imagen (`image_url`, `image_urls`, `start_image` o `end_image`) y referencia cada elemento en el prompt con `@name`. No combines `kling_elements` con `output_audio=true`; omite `output_audio` o ponlo en `false` para solicitudes con referencias de elementos.
+- No codifiques en duro rutas de estado de video antiguas; prefiere `poll_url`.
+- No combines campos de primer fotograma con flujos de imagen de referencia dedicados a menos que el contrato del modelo lo permita.
+- No asumas que `duration` describe la longitud del video de referencia de entrada; generalmente controla la longitud de salida generada.
+- No reintentes solicitudes de creación después de un tiempo de espera sin verificar si ya se creó una tarea.
 
-```python
-response = requests.post(f"{BASE}/videos/generations",
-    headers=headers,
-    json={
-        "model": "kling-3.0-video",
-        "prompt": "Place @hero_bag on a studio turntable with soft product lighting.",
-        "operation": "image-to-video",
-        "image_url": "https://example.com/studio-start.png",
-        "duration": 5,
-        "resolution": "720p",
-        "kling_elements": [
-            {
-                "name": "hero_bag",
-                "description": "black leather handbag",
-                "element_input_urls": [
-                    "https://example.com/bag-front.png",
-                    "https://example.com/bag-side.png"
-                ]
-            }
-        ]
-    }
-)
-```
+## Referencia de API
 
-### Referencia a video
-
-Para `seedance-2.0` y `seedance-2.0-fast`, AI Sonar admite actualmente hasta 9 imágenes de referencia, además de hasta 3 videos de referencia y 3 audios de referencia. `duration` solo controla la duración del resultado generado; no define un límite independiente para la duración del video de referencia de entrada. Para `grok-imagine-video`, reference-to-video acepta hasta 7 referencias de imagen (`reference_images` o `image_urls`) y `duration` está limitada a 10 segundos. No combines referencias de imagen con entradas de primer fotograma `image_url` / `image`. `grok-imagine-video-1.5-preview` solo admite image-to-video.
-
-```python
-response = requests.post(f"{BASE}/videos/generations",
-    headers=headers,
-    json={
-        "model": "veo3.1",
-        "prompt": "Keep the same subject identity and palette while adding subtle motion.",
-        "operation": "reference-to-video",
-        "reference_images": [
-            "https://example.com/ref-a.jpg",
-            "https://example.com/ref-b.jpg"
-        ],
-        "duration": 8,
-        "resolution": "720p",
-        "aspect_ratio": "9:16"
-    }
-)
-```
-
-### Control de fotograma inicial y final
-
-```python
-response = requests.post(f"{BASE}/videos/generations",
-    headers=headers,
-    json={
-        "model": "viduq2-pro",
-        "prompt": "Smooth transition from day to night.",
-        "operation": "start-end-to-video",
-        "start_image": "https://example.com/city-day.jpg",
-        "end_image": "https://example.com/city-night.jpg",
-        "duration": 5,
-        "resolution": "720p",
-        "aspect_ratio": "16:9"
-    }
-)
-```
-
-### Video a video
-
-Para video-to-video con `grok-imagine-video`, envía una URL HTTPS pública `.mp4` en `video_url`. AI Sonar la traduce al cuerpo REST de xAI `video.url`. Puedes definir `resolution` como `480p` o `720p`; `duration` y `aspect_ratio` no se aceptan en ese flujo de edición.
-
-```python
-response = requests.post(f"{BASE}/videos/generations",
-    headers=headers,
-    json={
-        "model": "grok-imagine-video",
-        "operation": "video-to-video",
-        "video_url": "https://example.com/source.mp4",
-        "prompt": "Upscale this clip while preserving the original motion."
-    }
-)
-```
-
-### Control de movimiento
-
-```python
-response = requests.post(f"{BASE}/videos/generations",
-    headers=headers,
-    json={
-        "model": "kling-3.0-motion-control",
-        "operation": "motion-control",
-        "prompt": "Keep the subject stable while following the motion reference.",
-        "image_url": "https://example.com/subject.png",
-        "video_url": "https://example.com/motion.mp4",
-        "resolution": "720p"
-    }
-)
-```
-
-## Referencia de parámetros
-
-| Parámetro | Tipo | Nota |
-|-----------|------|------|
-| `operation` | string | En producción conviene enviarlo explícitamente |
-| `image_url` | string | Forma más robusta de entrada de imagen |
-| `image` | string | URL `data:` útil para pruebas locales e integraciones pequeñas |
-| `reference_images` | string[] | Campo público canónico para condicionamiento con referencias |
-| `reference_image_type` | string | Selector opcional `asset` / `style` |
-| `video_url` | string | Obligatorio para flujos `video-to-video` basados en URL de video y para `motion-control`; algunos flujos derivados usan `task_id` en su lugar. |
-| `audio_url` | string | Para flujos específicos de audio a video |
-| `output_audio` | boolean | La familia Veo 3 trata la omisión como `true`. `kling-3.0-video` acepta este selector para el control `sound` upstream y queda silencioso por defecto si se omite. |
-
-## Guía rápida de selección de modelo
-
-<CardGroup cols={2}>
-  <Card title="Máxima calidad" icon="crown">
-    Si la calidad importa más que la velocidad, **veo3.1**, **kling-video-o1-pro** y **viduq3-pro** son opciones fuertes.
-  </Card>
-  <Card title="Iteración rápida" icon="bolt">
-    Para ciclos rápidos, **veo3.1-fast**, **hailuo-2.3-fast** y **viduq3-turbo** son buenos puntos de partida.
-  </Card>
-  <Card title="Flujos con referencias" icon="images">
-    Si necesitas control dedicado por imágenes de referencia, empieza con **veo3.1**, **veo3.1-fast**, **wan-2.6** o **kling-video-o1-pro / std**.
-  </Card>
-  <Card title="Video a video" icon="film">
-    Empieza con `GET /v1/models?recommended_for=video`; los ejemplos actuales de estilo V2V incluyen **grok-imagine-video**, **seedance-2.0**, **veo3.1** y **kling-video-o1-pro / std**.
-  </Card>
-</CardGroup>
-
-## Facturación
-
-La facturación depende del modelo. Algunos modelos públicos de video se comportan en la práctica como modelos cobrados por solicitud, mientras que otros se asemejan más a un cobro por segundo. Para la superficie pública de precios actual, consulta la [página de modelos](https://aisonar.dev/models) o la [Pricing API](/es/api-reference/pricing/get-pricing).
+| Tema | Referencia |
+|------|------------|
+| Crear Video | [Crear Video](/es/api-reference/video/create-video) |
+| Obtener Estado del Video | [Obtener Estado del Video](/es/api-reference/video/get-video-status) |
+| Obtener Estado de la Tarea | [Obtener Estado de la Tarea](/es/api-reference/tasks/get-task-status) |
+| Cancelar Tarea | [Cancelar Tarea](/es/api-reference/tasks/cancel-task) |
+| Facturación y Precios | [Facturación y Precios](/es/guides/billing) |

@@ -1,29 +1,73 @@
 ---
-title: "Pekerjaan asinkron dan polling"
-description: "Panduan produksi untuk Pekerjaan asinkron dan polling."
+title: "Pekerjaan Async & Polling"
+description: "Buat pekerjaan generasi async, polling status tugas publik, dan rekonsiliasi hasil akhir tanpa rincian tugas spesifik penyedia."
 ---
 
-## Ikhtisar
+Halaman ini mencerminkan kontrak tugas async publik AI Sonar. Ini tidak memperlakukan URL tugas penyedia, ID routing, atau perilaku callback upstream sebagai kontrak integrasi yang dihadapi pengguna.
 
-Panduan ini menjelaskan cara memakai Pekerjaan asinkron dan polling di produksi tanpa mengikat aplikasi ke detail implementasi provider.
+## Kontrak Publik
 
-Gunakan API publik AI Sonar, metadata model, dan field respons terdokumentasi sebagai kontrak.
+AI Sonar mengekspos satu kontrak tugas async publik untuk media yang dihasilkan. Endpoint pembuatan dapat mengembalikan `id`, `task_id`, `status`, dan `poll_url`. Perlakukan `id` dan `task_id` sebagai identitas tugas publik yang sama dan simpan baik ID tugas maupun `poll_url` dengan catatan pekerjaan Anda sendiri.
 
-## Perilaku saat ini
+Gunakan `poll_url` yang dikembalikan terlebih dahulu. Jika Anda memerlukan endpoint tetap, gunakan `GET /v1/tasks/{id}` dengan `id` / `task_id` yang sama dari respons pembuatan.
 
-- Periksa nilai berikut sebelum rilis: `task_id`, `poll_url`, `/v1/tasks/{id}`.
-- Jangan bergantung pada URL status khusus provider, identifier routing, atau metadata eksekusi privat.
-- Buat retry idempotent dan hindari membuat pekerjaan billable ganda.
+Tugas generasi publik saat ini berbasis polling. AI Sonar memiliki penerima callback upstream secara internal, tetapi mereka bukan webhook pelanggan dan tidak boleh digunakan sebagai kontrak integrasi.
 
-## Checklist produksi
+## Alur yang Direkomendasikan
 
-- Log harus membantu support tanpa menyimpan secret, file privat, prompt, atau media pengguna.
-- Ticket support sebaiknya menyertakan request shape yang sudah disanitasi, endpoint, model, timestamp, dan identifier publik.
-- Verifikasi flow di staging sebelum memindahkan traffic produksi.
+1. Kirim permintaan pembuatan dengan `model` yang eksplisit.
+2. Jika respons inline, baca hasil akhir segera.
+3. Jika respons berisi `status: "pending"`, `task_id`, atau `poll_url`, simpan tugas dan mulai polling.
+4. Poll setiap `5-10s` untuk tugas media yang panjang. Hentikan hanya pada status terminal.
+5. Pada `completed`, baca bidang hasil untuk jenis media tersebut. Pada `failed`, simpan kesalahan publik dan tampilkan tindakan coba lagi hanya ketika mencoba lagi akan membuat pekerjaan baru yang terlihat oleh pengguna.
 
-## Halaman terkait
+```json
+{
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "pending",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "model": "veo3.1"
+}
+```
 
-- [Dapatkan Status Task](/id/api-reference/tasks/get-task-status)
-- [Batalkan task](/id/api-reference/tasks/cancel-task)
-- [Observability dan pemecahan masalah](/id/guides/observability-troubleshooting)
-- [Generasi video](/id/guides/video-generation)
+## Hasil Polling
+
+```bash
+curl "https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \\
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+Status publik yang diharapkan adalah `pending`, `processing`, `completed`, dan `failed`. Tugas yang dibatalkan diwakili sebagai `failed` dengan `cancelled: true` dan `cancellation_status: "cancelled"` sehingga penanganan status yang lebih lama tetap berfungsi.
+
+Jangan polling URL spesifik penyedia, ID tugas upstream, ID routing, atau metadata eksekusi pribadi. Mereka bukan kontrak publik yang stabil.
+
+## Penagihan Dan Rekonsiliasi
+
+- Respons pembuatan dapat memesan jumlah yang diperkirakan untuk pekerjaan asinkron.
+- Penyelesaian akhir terjadi setelah tugas mencapai status terminal.
+- Ketika penyelesaian tersedia, respons status tugas dapat mengekspos `billing_transaction_id` dan header `X-Billing-Transaction-ID`.
+- Jika terjadi timeout klien setelah pembuatan tugas, jangan buat ulang pekerjaan secara membabi buta. Lanjutkan dari `task_id` / `poll_url` yang disimpan.
+
+## Pembatalan
+
+`DELETE /v1/tasks/{id}` sengaja dibuat sempit. Saat ini mendukung tugas video Volcengine Seedance yang antre seperti `seedance-1.5-pro`, `seedance-2.0`, dan `seedance-2.0-fast`. Tugas yang tidak didukung mengembalikan `400 unsupported_task_cancel`; tugas yang sudah berjalan atau terminal mengembalikan `409 task_not_cancellable`.
+
+## Daftar Periksa Pemecahan Masalah
+
+- `async_task_not_found`: tugas tidak dikenal, kedaluwarsa, tidak dapat diakses dengan kunci API ini, atau bukan bagian dari kontrak tugas async publik.
+- URL media akhir yang hilang: terus polling hingga terminal; jangan menganggap respons `pending` menyertakan output.
+- Pekerjaan duplikat: periksa apakah jalur coba lagi Anda membuat tugas kedua setelah timeout HTTP.
+- Ketidaksesuaian penagihan: bandingkan `request_id`, `task_id`, dan `billing_transaction_id` di dasbor atau Management API.
+
+Saat menghubungi dukungan, sertakan `request_id`, `task_id`, `billing_transaction_id` jika ada, endpoint, model, timestamp, dan bentuk permintaan yang telah disanitasi. Jangan sertakan kunci API, media pribadi, atau prompt lengkap kecuali dukungan meminta contoh yang telah disunting.
+
+## Referensi API
+
+| Topik | Referensi |
+|-------|-----------|
+| Dapatkan Status Tugas | [Dapatkan Status Tugas](/id/api-reference/tasks/get-task-status) |
+| Batalkan Tugas | [Batalkan Tugas](/id/api-reference/tasks/cancel-task) |
+| Generasi Gambar | [Generasi Gambar](/id/guides/image-generation) |
+| Generasi Video | [Generasi Video](/id/guides/video-generation) |
+| Penagihan & Harga | [Penagihan & Harga](/id/guides/billing) |

@@ -1,29 +1,90 @@
 ---
 title: "遷移指南"
-description: "遷移指南 的生產使用指南。"
+description: "將 OpenAI、Anthropic、Gemini 和媒體工作負載以最小的生產安全變更移動到 AI Sonar。"
 ---
 
-## 概述
+AI Sonar 是原生優先且與 OpenAI 兼容的。選擇符合您所需客戶行為的路徑，而不是將每個工作負載轉換為一種格式。
 
-本指南說明如何在生產環境中使用遷移指南，同時避免把應用綁定到供應商實作細節。
+## 選擇格式
 
-以 AI Sonar 公開 API、模型中繼資料和已文件化回應欄位作為契約。
+| 現有工作負載 | AI Sonar 基本 URL | 主要端點 | 備註 |
+|-------------------|-------------------|------------------|-------|
+| OpenAI 聊天完成 | `https://api.aisonar.dev/v1` | `/chat/completions` | 對於與 OpenAI 兼容的客戶端的最小變更 |
+| OpenAI 回應 | `https://api.aisonar.dev/v1` | `/responses` | 僅用於特定於回應的行為 |
+| Anthropic SDK | `https://api.aisonar.dev` | `/v1/messages` | 不要在 SDK 基本 URL 中附加 `/v1` |
+| Gemini REST | `https://api.aisonar.dev` | `/v1beta/models/:model:generateContent` | 在原生路徑上保留 Gemini 原生字段 |
+| 媒體生成 | `https://api.aisonar.dev/v1` | `/images`, `/videos`, `/music`, `/3d` | 使用 `recommended_for` 發現模型，並在文檔中預期異步輪詢 |
 
-## 目前行為
+## OpenAI 兼容遷移
 
-- 上線前重點檢查這些值：base URL, API key, model ID。
-- 不要依賴供應商專有狀態 URL、路由識別符或私有執行中繼資料。
-- 讓重試保持冪等，避免建立重複計費工作。
+```python
+from openai import OpenAI
 
-## 生產檢查清單
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1",
+)
 
-- 日誌要便於支援排障，但不要儲存密鑰、私有檔案、prompt 或使用者媒體。
-- 支援工單應包含脫敏請求結構、端點、模型、時間戳和公開識別符。
-- 生產流量切換前先在預發環境驗證流程。
+response = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "Hello from AI Sonar"}],
+)
+```
 
-## 相關頁面
+保留您現有的重試、超時和流式代碼，但要對 `GET /v1/models` 驗證模型 ID。對於圖像生成，明確發送 `model` 並閱讀圖像指南，因為圖像模型與聊天模型的差異更大。
 
-- [✨ 多格式 API](/zh-Hant/guides/api-formats)
-- [OpenAI SDK](/zh-Hant/integrations/openai-sdk)
-- [Anthropic SDK](/zh-Hant/integrations/anthropic-sdk)
-- [供應商路由與可靠性](/zh-Hant/guides/provider-routing-reliability)
+## Anthropic 遷移
+
+```python
+from anthropic import Anthropic
+
+client = Anthropic(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev",
+)
+
+message = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Explain AI Sonar in one sentence."}],
+)
+```
+
+對於 Claude 原生行為，例如消息工具使用和擴展思考，使用此路徑。如果某個功能是 Anthropic 原生的，請將其保留在 `/v1/messages` 上，而不是通過聊天完成進行翻譯。
+
+## Gemini 遷移
+
+```bash
+curl "https://api.aisonar.dev/v1beta/models/gemini-3.5-flash:generateContent" \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
+  -d '{"contents":[{"parts":[{"text":"Hello"}]}]}'
+```
+
+當您需要 Gemini 原生行為時，Gemini 內置工具、文件 API 資源、緩存內容和函數聲明應保留在 `/v1beta` 上。
+
+## 媒體遷移
+
+1. 在選擇模型之前，查詢 `GET /v1/models?recommended_for=image|video|music|3d`。
+2. 閱讀 `aisonar.public_contract_summary`，並在詳細頁面上查看完整的 `aisonar.public_contract`。
+3. 明確發送 `model`。不要依賴舊的默認值來處理生產流量。
+4. 儲存 `task_id` 和 `poll_url` 以便於異步作業。
+5. 通過使用記錄而不是提供者任務 ID 來調整成本。
+
+## 生產推出
+
+- 從一個端點和一個模型系列開始。
+- 對於同步圖像路徑，設置足夠高的 HTTP 超時；在可用時對於長時間工作使用異步模式。
+- 在發送生產流量之前，記錄公共標識符和清理過的請求形狀。
+- 比較一組回應、使用記錄和客戶可見的輸出。
+- 保持回滾簡單：在 AI Sonar 流量穩定之前，保留之前的提供者客戶端。
+
+## API 參考
+
+| 主題 | 參考 |
+|-------|-----------|
+| 多格式 API | [多格式 API](/zh-Hant/guides/api-formats) |
+| OpenAI SDK | [OpenAI SDK](/zh-Hant/integrations/openai-sdk) |
+| Anthropic SDK | [Anthropic SDK](/zh-Hant/integrations/anthropic-sdk) |
+| 圖像生成 | [圖像生成](/zh-Hant/guides/image-generation) |
+| 異步作業與輪詢 | [異步作業與輪詢](/zh-Hant/guides/async-jobs-polling) |

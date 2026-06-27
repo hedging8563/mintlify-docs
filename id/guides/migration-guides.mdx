@@ -1,29 +1,90 @@
 ---
-title: "Panduan migrasi"
-description: "Panduan produksi untuk Panduan migrasi."
+title: "Panduan Migrasi"
+description: "Pindahkan OpenAI, Anthropic, Gemini, dan beban kerja media ke AI Sonar dengan perubahan terkecil yang aman untuk produksi."
 ---
 
-## Ikhtisar
+AI Sonar adalah native-first dan kompatibel dengan OpenAI. Pilih rute yang sesuai dengan perilaku klien yang Anda butuhkan alih-alih mengonversi setiap beban kerja menjadi satu format.
 
-Panduan ini menjelaskan cara memakai Panduan migrasi di produksi tanpa mengikat aplikasi ke detail implementasi provider.
+## Pilih Format
 
-Gunakan API publik AI Sonar, metadata model, dan field respons terdokumentasi sebagai kontrak.
+| Beban kerja yang ada | URL dasar AI Sonar | Endpoint utama | Catatan |
+|----------------------|--------------------|----------------|---------|
+| OpenAI Chat Completions | `https://api.aisonar.dev/v1` | `/chat/completions` | Perubahan terkecil untuk klien yang kompatibel dengan OpenAI |
+| OpenAI Responses | `https://api.aisonar.dev/v1` | `/responses` | Gunakan hanya untuk perilaku khusus Responses |
+| Anthropic SDK | `https://api.aisonar.dev` | `/v1/messages` | Jangan tambahkan `/v1` di URL dasar SDK |
+| Gemini REST | `https://api.aisonar.dev` | `/v1beta/models/:model:generateContent` | Pertahankan bidang native Gemini di rute native |
+| Generasi media | `https://api.aisonar.dev/v1` | `/images`, `/videos`, `/music`, `/3d` | Temukan model dengan `recommended_for` dan harapkan polling async di mana didokumentasikan |
 
-## Perilaku saat ini
+## Migrasi Kompatibel OpenAI
 
-- Periksa nilai berikut sebelum rilis: base URL, API key, model ID.
-- Jangan bergantung pada URL status khusus provider, identifier routing, atau metadata eksekusi privat.
-- Buat retry idempotent dan hindari membuat pekerjaan billable ganda.
+```python
+from openai import OpenAI
 
-## Checklist produksi
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1",
+)
 
-- Log harus membantu support tanpa menyimpan secret, file privat, prompt, atau media pengguna.
-- Ticket support sebaiknya menyertakan request shape yang sudah disanitasi, endpoint, model, timestamp, dan identifier publik.
-- Verifikasi flow di staging sebelum memindahkan traffic produksi.
+response = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "Hello from AI Sonar"}],
+)
+```
 
-## Halaman terkait
+Pertahankan kode retry, timeout, dan streaming yang ada, tetapi validasi ID model terhadap `GET /v1/models`. Untuk generasi gambar, kirim `model` secara eksplisit dan baca panduan gambar karena model gambar berbeda lebih dari model chat.
 
-- [✨ Multi-Format API](/id/guides/api-formats)
-- [OpenAI SDK](/id/integrations/openai-sdk)
-- [Anthropic SDK](/id/integrations/anthropic-sdk)
-- [Routing provider dan keandalan](/id/guides/provider-routing-reliability)
+## Migrasi Anthropic
+
+```python
+from anthropic import Anthropic
+
+client = Anthropic(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev",
+)
+
+message = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Explain AI Sonar in one sentence."}],
+)
+```
+
+Gunakan rute ini untuk perilaku native Claude seperti penggunaan alat Messages dan pemikiran yang diperluas. Jika suatu fitur adalah native Anthropic, pertahankan di `/v1/messages` alih-alih menerjemahkannya melalui Chat Completions.
+
+## Migrasi Gemini
+
+```bash
+curl "https://api.aisonar.dev/v1beta/models/gemini-3.5-flash:generateContent" \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
+  -d '{"contents":[{"parts":[{"text":"Hello"}]}]}'
+```
+
+Alat bawaan Gemini, sumber daya API File, konten yang di-cache, dan deklarasi fungsi harus tetap di `/v1beta` ketika Anda memerlukan perilaku native Gemini.
+
+## Migrasi Media
+
+1. Kuery `GET /v1/models?recommended_for=image|video|music|3d` sebelum memilih model.
+2. Baca `aisonar.public_contract_summary` dan, di halaman detail, `aisonar.public_contract` lengkap.
+3. Kirim `model` secara eksplisit. Jangan bergantung pada default lama untuk lalu lintas produksi.
+4. Simpan `task_id` dan `poll_url` untuk pekerjaan async.
+5. Rekonsiliasi biaya melalui catatan penggunaan, bukan melalui ID tugas penyedia.
+
+## Peluncuran Produksi
+
+- Mulailah dengan satu endpoint dan satu keluarga model.
+- Atur timeout HTTP cukup tinggi untuk rute gambar sinkron; gunakan mode async saat tersedia untuk pekerjaan panjang.
+- Catat pengenal publik dan bentuk permintaan yang disanitasi sebelum mengirim lalu lintas produksi.
+- Bandingkan sampel respons, catatan penggunaan, dan keluaran yang terlihat oleh pelanggan.
+- Pertahankan rollback sederhana: simpan klien penyedia sebelumnya sampai lalu lintas AI Sonar stabil.
+
+## Referensi API
+
+| Topik | Referensi |
+|-------|-----------|
+| API Multi-Format | [API Multi-Format](/id/guides/api-formats) |
+| OpenAI SDK | [OpenAI SDK](/id/integrations/openai-sdk) |
+| Anthropic SDK | [Anthropic SDK](/id/integrations/anthropic-sdk) |
+| Generasi Gambar | [Generasi Gambar](/id/guides/image-generation) |
+| Pekerjaan Async & Polling | [Pekerjaan Async & Polling](/id/guides/async-jobs-polling) |

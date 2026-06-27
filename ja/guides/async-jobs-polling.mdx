@@ -1,29 +1,73 @@
 ---
 title: "非同期ジョブとポーリング"
-description: "非同期ジョブとポーリングの本番利用ガイド。"
+description: "非同期生成ジョブを作成し、公開タスクのステータスをポーリングし、プロバイダー固有のタスク詳細なしで最終結果を調整します。"
 ---
 
-## 概要
+このページはAI Sonarの公開非同期タスク契約を反映しています。プロバイダーのタスクURL、ルーティングID、または上流のコールバック動作は、ユーザー向けの統合契約として扱われません。
 
-このガイドでは、「非同期ジョブとポーリング」を本番で使う方法を説明します。アプリケーションをプロバイダー実装詳細に結び付けません。
+## 公開契約
 
-AI Sonar の公開 API、モデルメタデータ、文書化されたレスポンスフィールドを契約として扱います。
+AI Sonarは生成されたメディアのために1つの公開非同期タスク契約を公開しています。作成エンドポイントは`id`、`task_id`、`status`、および`poll_url`を返す場合があります。`id`と`task_id`は同じ公開タスクの識別子として扱い、タスクIDと`poll_url`の両方を自分のジョブレコードに保存してください。
 
-## 現在の動作
+返された`poll_url`を最初に使用してください。固定エンドポイントが必要な場合は、作成応答から同じ`id` / `task_id`を使用して`GET /v1/tasks/{id}`を使用してください。
 
-- リリース前に次の値を確認します: `task_id`, `poll_url`, `/v1/tasks/{id}`。
-- プロバイダー固有の状態 URL、ルーティング識別子、非公開の実行メタデータには依存しないでください。
-- リトライは冪等にし、重複課金される作業を作らないでください。
+公開生成タスクは現在ポーリングベースです。AI Sonarは内部に上流のコールバック受信者を持っていますが、顧客のWebhookではなく、統合契約として使用すべきではありません。
 
-## 本番チェックリスト
+## 推奨フロー
 
-- ログはサポートに役立つ範囲に留め、秘密情報、私有ファイル、prompt、ユーザーメディアは保存しません。
-- サポート依頼には、秘匿化したリクエスト形状、エンドポイント、モデル、時刻、公開識別子を含めます。
-- 本番トラフィックを移す前にステージングでフローを検証します。
+1. 明示的な`model`を指定して作成リクエストを送信します。
+2. 応答がインラインの場合、最終結果をすぐに読み取ります。
+3. 応答に`status: "pending"`、`task_id`、または`poll_url`が含まれている場合、タスクを保持し、ポーリングを開始します。
+4. 長いメディアタスクの場合、毎`5-10秒`ポーリングします。端末ステータスになるまで停止しないでください。
+5. `completed`の場合、そのメディアタイプの結果フィールドを読み取ります。`failed`の場合、公開エラーを保存し、再試行が新しいユーザー可視ジョブを作成する場合のみ再試行アクションを表示します。
 
-## 関連ページ
+```json
+{
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "pending",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "model": "veo3.1"
+}
+```
 
-- [タスクのステータスを取得](/ja/api-reference/tasks/get-task-status)
-- [タスクをキャンセル](/ja/api-reference/tasks/cancel-task)
-- [可観測性とトラブルシューティング](/ja/guides/observability-troubleshooting)
-- [動画生成](/ja/guides/video-generation)
+## ポーリング結果
+
+```bash
+curl "https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \\
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+期待される公開ステータスは`pending`、`processing`、`completed`、および`failed`です。キャンセルされたタスクは`failed`として表され、`cancelled: true`および`cancellation_status: "cancelled"`が含まれているため、古いステータス処理が引き続き機能します。
+
+プロバイダー固有のURL、上流タスクID、ルーティングID、またはプライベート実行メタデータをポーリングしないでください。これらは安定した公開契約ではありません。
+
+## 請求と調整
+
+- 作成応答は非同期作業のための推定額を予約できます。
+- 最終的な決済はタスクが端末状態に達した後に行われます。
+- 決済が可能になると、タスクステータス応答は`billing_transaction_id`および`X-Billing-Transaction-ID`ヘッダーを公開できます。
+- タスク作成後にクライアントタイムアウトが発生した場合、ジョブを盲目的に再作成しないでください。保存された`task_id` / `poll_url`から再開してください。
+
+## キャンセル
+
+`DELETE /v1/tasks/{id}`は意図的に狭いです。現在、`seedance-1.5-pro`、`seedance-2.0`、および`seedance-2.0-fast`などのキューに入ったVolcengine Seedanceビデオタスクをサポートしています。サポートされていないタスクは`400 unsupported_task_cancel`を返し、すでに実行中または端末のタスクは`409 task_not_cancellable`を返します。
+
+## トラブルシューティングチェックリスト
+
+- `async_task_not_found`: タスクが不明、期限切れ、このAPIキーにアクセスできない、または公開非同期タスク契約の一部ではありません。
+- 最終メディアURLが欠落: 端末になるまでポーリングを続けてください。`pending`応答に出力が含まれていると仮定しないでください。
+- 重複ジョブ: 再試行パスがHTTPタイムアウト後に2つ目のタスクを作成したかどうかを確認してください。
+- 請求の不一致: ダッシュボードまたは管理APIで`request_id`、`task_id`、および`billing_transaction_id`を比較してください。
+
+サポートに連絡する際は、`request_id`、`task_id`、`billing_transaction_id`（存在する場合）、エンドポイント、モデル、タイムスタンプ、およびサニタイズされたリクエスト形状を含めてください。サポートが修正されたサンプルを要求しない限り、APIキー、プライベートメディア、または完全なプロンプトを含めないでください。
+
+## APIリファレンス
+
+| トピック | リファレンス |
+|-------|-----------|
+| タスクステータスの取得 | [タスクステータスの取得](/ja/api-reference/tasks/get-task-status) |
+| タスクのキャンセル | [タスクのキャンセル](/ja/api-reference/tasks/cancel-task) |
+| 画像生成 | [画像生成](/ja/guides/image-generation) |
+| ビデオ生成 | [ビデオ生成](/ja/guides/video-generation) |
+| 請求と価格設定 | [請求と価格設定](/ja/guides/billing) |

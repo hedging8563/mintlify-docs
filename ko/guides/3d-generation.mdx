@@ -1,54 +1,60 @@
 ---
 title: "3D 생성"
-description: "AI Sonar 3D 생성 API와 비동기 작업 폴링으로 텍스트나 이미지에서 3D 자산을 만듭니다."
+description: "텍스트 또는 이미지에서 3D 자산을 생성하고 비동기 작업 결과에서 완료된 모델 파일을 다운로드합니다."
 ---
-## 권장 흐름
 
-1. [모델 목록](/ko/api-reference/models/list-models)을 `recommended_for=3d`와 함께 호출합니다.
-2. 텍스트 `prompt`로 [3D 생성](/ko/api-reference/3d/create-3d)을 사용합니다. `image` 또는 `image_url`은 이미지-3D 모델이 지원할 때만 추가합니다.
-3. `format`, `quality`, `style`, `seed` 같은 선택 필드는 선택한 모델 계약에 맞춰 사용합니다.
-4. 자산이 준비될 때까지 `poll_url`을 폴링한 다음 `model_url` 또는 `glb_url` / `fbx_url` 같은 형식별 URL을 다운로드합니다.
+3D 생성은 비동기입니다. `POST /v1/3d/generations`는 작업을 생성하며, 완료된 상태 응답은 다운로드 가능한 모델 자산 URL을 반환합니다.
 
-## 모델 찾기
-
-3D 생성은 작업 기반입니다. 하나의 제공자나 고정 모델을 가정하지 말고 모델 카탈로그를 기준으로 삼으세요.
+## 모델 검색
 
 ```bash
-curl "https://api.aisonar.dev/v1/models?recommended_for=3d" \
+curl "https://api.aisonar.dev/v1/models?recommended_for=3d" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-## 3D 작업 생성
+모든 3D 모델이 텍스트-투-3D 및 이미지-투-3D를 지원한다고 가정하지 마십시오. `image`, `image_url`, `format`, `quality`, `style`, 또는 `seed`를 전송하기 전에 선택한 모델 계약을 확인하십시오.
 
-텍스트-3D 요청에는 `prompt`가 필요합니다. 이미지-3D 요청은 base64 `image` 또는 `image_url`을 추가합니다. `format`과 `quality`는 모델 계약에 있을 때만 사용합니다.
+## 요청 생성
 
 ```bash
-curl https://api.aisonar.dev/v1/3d/generations \
-  -H "Authorization: Bearer sk-your-api-key" \
-  -H "Content-Type: application/json" \
+curl https://api.aisonar.dev/v1/3d/generations \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
   -d '{
     "model": "tripo3d-v2.5",
-    "prompt": "A stylized low-poly robot mascot with clean topology",
+    "prompt": "정확한 토폴로지를 가진 스타일화된 로우 폴리 로봇 마스코트",
     "format": "glb",
     "quality": "standard"
   }'
 ```
 
+텍스트-투-3D는 `prompt`가 필요합니다. 이미지-투-3D는 모델이 지원할 경우 `image` 또는 `image_url`을 사용합니다. 소스 이미지가 비공개가 아닌 한, 프로덕션 입력에는 공개 URL을 사용하는 것이 좋습니다.
+
+## 출력 선택
+
+- `format`은 지원되는 경우 `glb`, `fbx`, `obj`, 또는 `usdz`와 같은 출력 패키징을 요청할 수 있습니다.
+- `quality` 값은 `draft`, `standard`, 또는 `high`와 같이 모델이 노출할 경우 지연 시간 및 비용에 영향을 미칩니다.
+- `style` 및 `seed`는 모델에 따라 다르므로 선택한 계약서에 문서화되어 있지 않은 한 생략하십시오.
+
 ## 결과 폴링
 
-먼저 반환된 `poll_url`을 사용하세요. 안정적인 대체 엔드포인트는 [작업 상태 조회](/ko/api-reference/tasks/get-task-status)입니다. 완료된 3D 작업은 `model_url`을 반환하며 `glb_url` 또는 `fbx_url`을 포함할 수 있습니다.
+반환된 `poll_url`을 먼저 사용하십시오. 고정 엔드포인트가 필요한 경우, 생성 응답에서 동일한 `id` / `task_id`를 사용하여 `GET /v1/tasks/{id}`를 사용하십시오.
 
-```bash
-curl "https://api.aisonar.dev/v1/tasks/$TASK_ID" \
-  -H "Authorization: Bearer sk-your-api-key"
-```
+완료된 작업은 `model_url`을 반환하며, `glb_url`, `fbx_url`, `obj_url`, 또는 `usdz_url`과 같은 형식별 URL을 포함할 수 있습니다. 사용자가 반복적으로 접근해야 하는 경우 자산을 다운로드하여 자신의 제품에 캐시하십시오.
 
-## API 레퍼런스
+## 일반적인 함정
 
-| 항목 | 레퍼런스 |
+- 생성 응답에서 3D 자산을 기대하지 마십시오; 최종 상태가 될 때까지 폴링하십시오.
+- 모든 모델에 대해 모든 형식을 약속하지 마십시오.
+- 클라이언트 타임아웃 후 작업이 이미 존재하는지 확인하지 않고 생성 요청을 재시도하지 마십시오.
+- UI에서 공급자 작업 ID를 노출하지 마십시오.
+
+## API 참조
+
+| 주제 | 참조 |
 |-------|-----------|
 | 3D 생성 | [3D 생성](/ko/api-reference/3d/create-3d) |
-| 3D 상태 조회 | [3D 상태 조회](/ko/api-reference/3d/get-3d-status) |
-| 작업 상태 조회 | [작업 상태 조회](/ko/api-reference/tasks/get-task-status) |
+| 3D 상태 가져오기 | [3D 상태 가져오기](/ko/api-reference/3d/get-3d-status) |
+| 작업 상태 가져오기 | [작업 상태 가져오기](/ko/api-reference/tasks/get-task-status) |
 | 모델 목록 | [모델 목록](/ko/api-reference/models/list-models) |
-| 모델 조회 | [모델 조회](/ko/api-reference/models/get-model) |
+| 청구 및 가격 | [청구 및 가격](/ko/guides/billing) |

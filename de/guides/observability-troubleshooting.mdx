@@ -1,29 +1,61 @@
 ---
-title: "Observability & Fehlersuche"
-description: "Produktionsleitfaden für Observability & Fehlersuche."
+title: "Beobachtbarkeit & Fehlersuche"
+description: "Erfassen Sie die öffentlichen Identifikatoren, die AI Sonar für Unterstützung, Nutzungsausgleich und Debugging asynchroner Aufgaben bereitstellt."
 ---
 
-## Übersicht
+Diese Seite ist für Anwendungsteams geschrieben, die AI Sonar in der Produktion betreiben. Sie konzentriert sich auf öffentliche Identifikatoren und benutzersichere Protokolle, nicht auf interne Anbieter-Routing-Details.
 
-Dieser Leitfaden erklärt, wie Sie Observability & Fehlersuche in Produktion nutzen, ohne Ihre Anwendung an Provider-Implementierungsdetails zu binden.
+## Öffentliche Identifikatoren
 
-Nutzen Sie öffentliche AI Sonar-APIs, Modellmetadaten und dokumentierte Antwortfelder als Vertrag.
+| Identifikator | Wo er erscheint | Verwendung |
+|---------------|----------------|------------|
+| `request_id` | Fehlertexte, Nutzungseinträge der Management-API, Dashboard-Protokolle | Unterstützung und Anforderungsabgleich |
+| `task_id` / `id` | Antworten auf asynchrone Erstellung und Status | Abfragen von Bild-, Video-, Musik- und 3D-Jobs |
+| `poll_url` | Antworten auf asynchrone Erstellung | Bevorzugte Status-URL |
+| `billing_transaction_id` | Nicht-Streaming-Antworten, wenn abgerechnet, Antworten auf Aufgabenstatus, Nutzungseinträge der Management-API, `X-Billing-Transaction-ID`-Header | Abrechnungsausgleich |
+| `X-Task-ID` | Antworten auf asynchrone Aufgaben | Header-Level-Aufgaben-Korrelation |
 
-## Aktuelles Verhalten
+## Was zu protokollieren ist
 
-- Prüfen Sie diese Werte vor dem Release: `request_id`, `task_id`, `billing_transaction_id`.
-- Verlassen Sie sich nicht auf provider-spezifische Status-URLs, Routing-Kennungen oder private Ausführungsmetadaten.
-- Machen Sie Wiederholungen idempotent und vermeiden Sie doppelt abrechenbare Arbeit.
+1. Protokollieren Sie den Endpunkt, das Modell, den Statuscode, den Zeitstempel und die öffentlichen Identifikatoren.
+2. Redigieren Sie standardmäßig `Authorization`, API-Schlüssel, signierte URLs, private Medien-URLs und vollständige Eingabeaufforderungen.
+3. Protokollieren Sie für asynchrone Jobs die Antwort auf die Erstellung und jede endgültige Statusantwort.
+4. Bei Fragen zur Nutzung rufen Sie die Management-API mit der API-Schlüssel-ID und Datumsfiltern auf.
+5. Verwenden Sie den Fehler `type`, `code` und `param` aus dem Antworttext anstelle des Parsens von Anbietertexten.
 
-## Produktions-Checkliste
+## Fehlersuche-Checkliste
 
-- Logs sollen Support ermöglichen, aber keine Secrets, privaten Dateien, Prompts oder Nutzermedien speichern.
-- Support-Tickets sollten bereinigte Anfrageform, Endpoint, Modell, Zeitstempel und öffentliche Kennungen enthalten.
-- Prüfen Sie den Ablauf in Staging, bevor Sie Produktionsverkehr umstellen.
+| Symptom | Zuerst überprüfen | Nützliche Seite |
+|---------|------------------|-----------------|
+| `401` oder `403` | API-Schlüssel, Management-Token, Organisationszugriff | [Authentifizierung](/de/authentication) |
+| `429` | Rate-Limit-Stufe und Client-Wiederholverhalten | [Rate Limits](/de/guides/rate-limits) |
+| `400 invalid_request_error` | Nicht unterstütztes Feld, falscher Endpunkt oder modell-spezifische Vertragsabweichung | [Fehlerbehandlung](/de/guides/error-handling) |
+| Asynchrone Aufgabe wird nie beendet | Abfragen von `poll_url`, endgültigen `status` überprüfen, doppelte Aufgabenerstellung vermeiden | [Asynchrone Jobs & Abfragen](/de/guides/async-jobs-polling) |
+| Kosten stimmen nicht mit UI überein | Vergleichen Sie `request_id` und `billing_transaction_id` in den Nutzungseinträgen | [Abrechnung & Preisgestaltung](/de/guides/billing) |
 
-## Verwandte Seiten
+## Nutzungsausgleich
 
-- [Fehlerbehandlung](/de/guides/error-handling)
-- [Abrechnung & Preise](/de/guides/billing)
-- [Asynchrone Jobs & Polling](/de/guides/async-jobs-polling)
-- [API-Key-Nutzung abrufen](/de/api-reference/management/get-api-key-usage)
+`GET /v1/management/api-keys/{keyId}/usage` gibt paginierte Nutzung auf Schlüssel-Ebene zurück. Es kann nach `scene`, `accessChannel`, `logicalModel`, `modelVendor`, `startDate` und `endDate` filtern. Verwenden Sie es für den serverseitigen Ausgleich anstelle des Scraping des Dashboards.
+
+```bash
+curl "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/usage?page=1&limit=20&scene=video" \\
+  -H "Authorization: Bearer mt-your-management-token"
+```
+
+Streaming-Antworten können nach dem Senden des Streams abgerechnet werden, sodass der Abrechnungsheader fehlen kann, selbst wenn die Nutzung später aufgezeichnet wird. Bei asynchronen Medienaufgaben kann die Abrechnung nach der endgültigen Abfrage erscheinen.
+
+## Support-Paket
+
+Wenn Sie den Support kontaktieren, fügen Sie `request_id`, `task_id`, `billing_transaction_id` (wenn vorhanden), Endpunkt, Modell, Zeitstempel und eine bereinigte Anforderungsform hinzu. Fügen Sie keine API-Schlüssel, privaten Medien oder vollständige Eingabeaufforderungen hinzu, es sei denn, der Support fordert ein redigiertes Beispiel an.
+
+Fügen Sie keine Anbieternamen, Kanal-IDs, Routing-Identifikatoren, Redis-Schlüssel oder übergeordnete Aufgaben-URLs in Kundenprotokollen oder Support-Tickets hinzu, es sei denn, der AI Sonar-Support fordert ausdrücklich danach.
+
+## API-Referenz
+
+| Thema | Referenz |
+|-------|----------|
+| Fehlerbehandlung | [Fehlerbehandlung](/de/guides/error-handling) |
+| Rate Limits | [Rate Limits](/de/guides/rate-limits) |
+| Abrechnung & Preisgestaltung | [Abrechnung & Preisgestaltung](/de/guides/billing) |
+| API-Schlüssel-Nutzung abrufen | [API-Schlüssel-Nutzung abrufen](/de/api-reference/management/get-api-key-usage) |
+| Aufgabenstatus abrufen | [Aufgabenstatus abrufen](/de/api-reference/tasks/get-task-status) |

@@ -1,250 +1,77 @@
 ---
-title: "Generasi video"
-description: "Akses lewat kontrak publik terpadu untuk alur teks ke video, image-to-video, reference-to-video, kontrol frame awal/akhir, motion control, dan video-to-video."
+title: "Generasi Video"
+description: "Hasilkan video dengan operasi publik eksplisit, polling asinkron, dan input media spesifik model."
 ---
 
-## Ringkasan
+Generasi video bersifat asinkron. `POST /v1/videos/generations` mengembalikan identitas tugas publik dan biasanya `poll_url`; video akhir muncul pada respons status selanjutnya.
 
-AI Sonar menyediakan generasi video melalui satu API terpadu. Prosesnya **asinkron**: Anda mengirim permintaan, menerima `task_id` dan `poll_url`, lalu memeriksa status secara berkala sampai hasil akhir tersedia.
+## Kontrak Publik
 
-### Ketersediaan dan polling
+Gunakan `operation` eksplisit dalam produksi. AI Sonar dapat menyimpulkan beberapa operasi dari input, tetapi nilai operasi eksplisit membuat validasi, dukungan, dan pengulangan lebih jelas.
 
-Inventaris model video publik terbaru dapat dilihat melalui [Models API](/id/api-reference/models/list-models) atau [halaman model](https://aisonar.dev/models).
+| Operasi | Input yang Diperlukan atau Tipikal | Kasus Penggunaan |
+|---------|------------------------------------|------------------|
+| `text-to-video` | `prompt` | Menghasilkan dari teks saja |
+| `image-to-video` | `image_url` atau `image` yang kompatibel | Menganimasi gambar awal |
+| `reference-to-video` | `reference_images` dan opsional `video_urls` / `audio_urls` pada model yang didukung | Menjaga identitas, gaya, atau referensi aset |
+| `start-end-to-video` | `start_image`, `end_image` | Mengontrol frame pertama dan terakhir |
+| `video-to-video` | `video_url` atau `task_id` spesifik model | Mengubah atau meningkatkan klip yang ada |
+| `motion-control` | `image_url` ditambah `video_url` | Menerapkan referensi gerakan pada subjek |
+| `audio-to-video` | `audio_url` | Aliran video yang dikondisikan oleh audio |
+| `video-extension` | `task_id`, `extend_at`, atau bidang ekstensi spesifik model | Melanjutkan video yang dihasilkan |
 
-Jika respons create mengembalikan `poll_url`, panggil URL tersebut secara persis. Saat URL itu mengarah ke `/v1/tasks/{id}`, perlakukan itu sebagai endpoint status tetap yang kanonik.
-
-### Perilaku model dan media
-
-Perilaku audio bergantung pada model. Di AI Sonar, keluarga Veo 3 diperlakukan sebagai audio aktif secara default ketika `output_audio` dihilangkan. Model publik lainnya bisa saja diam secara default atau tidak mengekspos sakelar audio yang stabil.
-
-Untuk integrasi produksi, lebih baik gunakan URL `https` publik untuk gambar, video, dan audio. Model yang kompatibel masih menerima URL `data:`, tetapi URL publik biasanya lebih andal untuk coba ulang, observabilitas, dan debugging.
-
-### Alur asinkron
-
-```mermaid
-sequenceDiagram
-    participant Client
-    participant AI Sonar
-    participant Provider
-
-    Client->>AI Sonar: POST /v1/videos/generations
-    AI Sonar->>Provider: Teruskan permintaan yang sudah dinormalisasi
-    Provider-->>AI Sonar: task_id + pending
-    AI Sonar-->>Client: { task_id, poll_url, status: "pending" }
-
-    loop Cek tiap 5-10 detik
-        Client->>AI Sonar: GET poll_url
-        AI Sonar->>Provider: Periksa status
-        Provider-->>AI Sonar: Pembaruan status
-        AI Sonar-->>Client: { status, video_url? }
-    end
-```
-
-## Operasi publik saat ini
-
-Kontrak video publik AI Sonar menerima nilai operasi berikut. Dukungan bersifat spesifik per model dan berubah saat penyedia menambah atau menghentikan kemampuan, jadi baca kontrak model yang dipilih sebelum bergantung pada operasi khusus.
-
-- `text-to-video`
-- `image-to-video`
-- `reference-to-video`
-- `start-end-to-video`
-- `video-to-video`
-- `motion-control`
-- `audio-to-video`
-- `video-extension`
-
-## Definisi operasi
-
-- **T2V (Text-to-Video)**: menghasilkan video dari prompt teks.
-- **I2V (Image-to-Video)**: menganimasikan gambar awal. Untuk kompatibilitas terluas, gunakan `image_url`.
-- **Reference**: mengondisikan generasi dengan satu atau beberapa gambar referensi melalui `reference_images`; beberapa model juga menerima video referensi melalui `video_urls` dan audio referensi melalui `audio_urls`.
-- **Start-End**: mengontrol frame pertama dan terakhir dengan `start_image` dan `end_image`.
-- **V2V (Video-to-Video)**: menggunakan video yang sudah ada, task yang telah dibuat, atau alur turunan khusus penyedia sebagai sumber.
-- **Motion**: menggabungkan gambar subjek dengan video referensi gerakan.
-- **Audio-to-Video**: menghasilkan video dari alur model yang dikondisikan oleh audio.
-- **Video Extension**: melanjutkan atau memperpanjang task pembuatan video yang sudah ada.
-
-## Penemuan model
-
-Ketersediaan model video sering berubah. Ambil shortlist publik terbaru sebelum memilih model:
+## Penemuan Model
 
 ```bash
-curl "https://api.aisonar.dev/v1/models?recommended_for=video" \
+curl "https://api.aisonar.dev/v1/models?recommended_for=video" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-Baca model yang dipilih sebelum mengirim field khusus model:
+Baca detail model yang dipilih sebelum bergantung pada bidang khusus seperti `reference_images`, `kling_elements`, `output_audio`, `duration`, `resolution`, atau `aspect_ratio`.
+
+## Buat Permintaan
 
 ```bash
-curl "https://api.aisonar.dev/v1/models/veo3.1" \
-  -H "Authorization: Bearer sk-your-api-key"
+curl https://api.aisonar.dev/v1/videos/generations \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "veo3.1",
+    "operation": "text-to-video",
+    "prompt": "Sebuah pengambilan sinematik tenang dari seekor kucing yang berjalan melalui taman yang diterangi sinar matahari",
+    "duration": 4,
+    "aspect_ratio": "16:9"
+  }'
 ```
 
-Gunakan `aisonar.capabilities`, `aisonar.supported_operations`, `aisonar.public_contract_summary`, dan `aisonar.public_contract` sebagai sumber kebenaran. Contoh di bawah adalah pola workflow, bukan inventaris model lengkap.
+Untuk input media produksi, lebih baik menggunakan URL publik `https` daripada URL inline `data:`. Jika Anda menggunakan URL yang ditandatangani, pastikan mereka tetap valid selama pembuatan tugas dan pengulangan pengambilan di sisi penyedia.
 
-## Contoh penggunaan
+## Input Dan Bidang Spesifik Model
 
-### Text-to-video
+- Permintaan keluarga Veo 3 secara default mengaktifkan audio ketika `output_audio` dihilangkan. Atur secara eksplisit ketika model mendukung toggle dan UX Anda bergantung pada suara.
+- `kling_elements` digunakan untuk permintaan yang dikondisikan oleh gambar `kling-3.0-video`. Referensikan setiap elemen dalam `prompt` sebagai `@name`; jangan menggabungkannya dengan `output_audio=true`.
+- Untuk `seedance-2.0` dan `seedance-2.0-fast`, reference-to-video dapat menerima beberapa gambar referensi ditambah input video/audio referensi sesuai dengan kontrak publik saat ini.
+- Untuk `grok-imagine-video`, video-to-video menggunakan `.mp4` `video_url` publik; batasan spesifik model seperti `duration` dan `resolution` harus berasal dari kontrak model.
 
-```python
-response = requests.post(f"{BASE}/videos/generations",
-    headers=headers,
-    json={
-        "model": "veo3.1",
-        "prompt": "A calm cinematic shot of a cat walking through a sunlit garden.",
-        "operation": "text-to-video",
-        "duration": 4,
-        "aspect_ratio": "16:9"
-    }
-)
-```
+## Memantau Hasil
 
-### Gambar ke video
+Gunakan `poll_url` yang dikembalikan terlebih dahulu. Jika Anda memerlukan endpoint tetap, gunakan `GET /v1/tasks/{id}` dengan `id` / `task_id` yang sama dari respons pembuatan.
 
-```python
-response = requests.post(f"{BASE}/videos/generations",
-    headers=headers,
-    json={
-        "model": "hailuo-2.3-standard",
-        "prompt": "The scene begins from the provided image and adds gentle natural motion.",
-        "operation": "image-to-video",
-        "image_url": "https://example.com/portrait.jpg",
-        "duration": 6,
-        "aspect_ratio": "16:9"
-    }
-)
-```
+Tugas video yang selesai dapat mengembalikan `video_url`, `video`, atau `videos` tergantung pada penyedia dan jumlah output. Perlakukan `billing_transaction_id` sebagai pengidentifikasi penagihan, bukan sebagai pengidentifikasi tugas.
 
-### Kling 3.0 Elements
+## Kesalahan Umum
 
-Gunakan `kling_elements` dengan `kling-3.0-video` saat memerlukan referensi elemen. Sertakan request yang dikondisikan gambar (`image_url`, `image_urls`, `start_image`, atau `end_image`) dan referensikan setiap elemen di prompt dengan `@name`. Jangan gabungkan `kling_elements` dengan `output_audio=true`; hilangkan `output_audio` atau set ke `false` saat memakai referensi elemen.
+- Jangan mengkodekan jalur status video lama secara keras; lebih baik menggunakan `poll_url`.
+- Jangan menggabungkan bidang frame pertama dengan aliran gambar referensi khusus kecuali kontrak model mengizinkannya.
+- Jangan menganggap `duration` menggambarkan panjang video referensi input; biasanya mengontrol panjang output yang dihasilkan.
+- Jangan mencoba ulang permintaan pembuatan setelah waktu habis tanpa memeriksa apakah tugas sudah dibuat.
 
-```python
-response = requests.post(f"{BASE}/videos/generations",
-    headers=headers,
-    json={
-        "model": "kling-3.0-video",
-        "prompt": "Place @hero_bag on a studio turntable with soft product lighting.",
-        "operation": "image-to-video",
-        "image_url": "https://example.com/studio-start.png",
-        "duration": 5,
-        "resolution": "720p",
-        "kling_elements": [
-            {
-                "name": "hero_bag",
-                "description": "black leather handbag",
-                "element_input_urls": [
-                    "https://example.com/bag-front.png",
-                    "https://example.com/bag-side.png"
-                ]
-            }
-        ]
-    }
-)
-```
+## Referensi API
 
-### Reference-to-video
-
-Untuk `seedance-2.0` dan `seedance-2.0-fast`, AI Sonar saat ini mendukung hingga 9 gambar referensi, ditambah hingga 3 video referensi dan 3 audio referensi. `duration` hanya mengatur panjang output yang dihasilkan; field ini tidak mendefinisikan batas terpisah untuk durasi input video referensi. Untuk `grok-imagine-video`, reference-to-video menerima hingga 7 referensi gambar (`reference_images` atau `image_urls`) dan `duration` dibatasi maksimal 10 detik. Jangan gabungkan referensi gambar dengan input frame awal `image_url` / `image`. `grok-imagine-video-1.5-preview` hanya mendukung image-to-video.
-
-```python
-response = requests.post(f"{BASE}/videos/generations",
-    headers=headers,
-    json={
-        "model": "veo3.1",
-        "prompt": "Keep the same subject identity and palette while adding subtle motion.",
-        "operation": "reference-to-video",
-        "reference_images": [
-            "https://example.com/ref-a.jpg",
-            "https://example.com/ref-b.jpg"
-        ],
-        "duration": 8,
-        "resolution": "720p",
-        "aspect_ratio": "9:16"
-    }
-)
-```
-
-### Start-end-to-video
-
-```python
-response = requests.post(f"{BASE}/videos/generations",
-    headers=headers,
-    json={
-        "model": "viduq2-pro",
-        "prompt": "Smooth transition from day to night.",
-        "operation": "start-end-to-video",
-        "start_image": "https://example.com/city-day.jpg",
-        "end_image": "https://example.com/city-night.jpg",
-        "duration": 5,
-        "resolution": "720p",
-        "aspect_ratio": "16:9"
-    }
-)
-```
-
-### Video ke video
-
-Untuk video-to-video dengan `grok-imagine-video`, kirim URL HTTPS publik `.mp4` di `video_url`. AI Sonar menerjemahkannya menjadi body REST xAI `video.url`. Anda dapat mengatur `resolution` ke `480p` atau `720p`; `duration` dan `aspect_ratio` tidak diterima untuk alur edit ini.
-
-```python
-response = requests.post(f"{BASE}/videos/generations",
-    headers=headers,
-    json={
-        "model": "grok-imagine-video",
-        "operation": "video-to-video",
-        "video_url": "https://example.com/source.mp4",
-        "prompt": "Upscale this clip while preserving the original motion."
-    }
-)
-```
-
-### Motion control
-
-```python
-response = requests.post(f"{BASE}/videos/generations",
-    headers=headers,
-    json={
-        "model": "kling-3.0-motion-control",
-        "operation": "motion-control",
-        "prompt": "Keep the subject stable while following the motion reference.",
-        "image_url": "https://example.com/subject.png",
-        "video_url": "https://example.com/motion.mp4",
-        "resolution": "720p"
-    }
-)
-```
-
-## Referensi parameter
-
-| Parameter | Tipe | Catatan |
-|-----------|------|---------|
-| `operation` | string | Di produksi, sebaiknya dikirim eksplisit |
-| `image_url` | string | Bentuk input gambar yang paling stabil |
-| `image` | string | URL `data:` untuk pengujian lokal dan integrasi kecil |
-| `reference_images` | string[] | Field publik kanonis untuk conditioning berbasis referensi |
-| `reference_image_type` | string | Pemilih opsional `asset` / `style` |
-| `video_url` | string | Wajib untuk alur `video-to-video` berbasis URL video dan untuk `motion-control`; beberapa alur turunan menggunakan `task_id` sebagai gantinya. |
-| `audio_url` | string | Dipakai oleh alur audio-conditioned tertentu jika tersedia |
-| `output_audio` | boolean | Keluarga Veo 3 memperlakukan field yang dihilangkan sebagai `true`. `kling-3.0-video` menerima selector ini untuk kontrol upstream `sound` dan default-nya senyap jika dihilangkan. |
-
-## Panduan cepat memilih model
-
-<CardGroup cols={2}>
-  <Card title="Kualitas tertinggi" icon="crown">
-    Jika kualitas lebih penting daripada kecepatan, **veo3.1**, **kling-video-o1-pro**, dan **viduq3-pro** adalah pilihan yang kuat.
-  </Card>
-  <Card title="Iterasi cepat" icon="bolt">
-    Untuk iterasi cepat, **veo3.1-fast**, **hailuo-2.3-fast**, dan **viduq3-turbo** adalah titik awal yang bagus.
-  </Card>
-  <Card title="Alur berbasis referensi" icon="images">
-    Jika Anda membutuhkan conditioning khusus dengan gambar referensi, mulai dari **veo3.1**, **veo3.1-fast**, **wan-2.6**, atau **kling-video-o1-pro / std**.
-  </Card>
-  <Card title="Video ke video" icon="film">
-    Mulai dari `GET /v1/models?recommended_for=video`; contoh bergaya V2V saat ini mencakup **grok-imagine-video**, **seedance-2.0**, **veo3.1**, dan **kling-video-o1-pro / std**.
-  </Card>
-</CardGroup>
-
-## Penagihan
-
-Penagihan bergantung pada model. Beberapa model video publik secara efektif berperilaku seperti model berbasis permintaan, sedangkan yang lain lebih mirip model berbasis durasi. Untuk informasi harga publik terbaru, lihat [halaman model](https://aisonar.dev/models) atau [Pricing API](/id/api-reference/pricing/get-pricing).
+| Topik | Referensi |
+|-------|-----------|
+| Buat Video | [Buat Video](/id/api-reference/video/create-video) |
+| Dapatkan Status Video | [Dapatkan Status Video](/id/api-reference/video/get-video-status) |
+| Dapatkan Status Tugas | [Dapatkan Status Tugas](/id/api-reference/tasks/get-task-status) |
+| Batalkan Tugas | [Batalkan Tugas](/id/api-reference/tasks/cancel-task) |
+| Penagihan & Harga | [Penagihan & Harga](/id/guides/billing) |

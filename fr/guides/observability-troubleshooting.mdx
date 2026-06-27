@@ -1,29 +1,61 @@
 ---
-title: "Observabilité et dépannage"
-description: "Guide de production pour Observabilité et dépannage."
+title: "Observabilité & Dépannage"
+description: "Capturez les identifiants publics que AI Sonar expose pour le support, la réconciliation d'utilisation et le débogage des tâches asynchrones."
 ---
 
-## Aperçu
+Cette page est rédigée pour les équipes d'application exploitant AI Sonar en production. Elle se concentre sur les identifiants publics et les journaux sécurisés pour les utilisateurs, et non sur les détails internes de routage des fournisseurs.
 
-Ce guide explique comment utiliser Observabilité et dépannage en production sans lier votre application aux détails d’implémentation fournisseur.
+## Identifiants Publics
 
-Utilisez les API publiques AI Sonar, les métadonnées de modèle et les champs de réponse documentés comme contrat.
+| Identifiant | Où il apparaît | Utilisez-le pour |
+|-------------|----------------|------------------|
+| `request_id` | Corps d'erreur, enregistrements d'utilisation de l'API de gestion, journaux de tableau de bord | Support et réconciliation au niveau de la demande |
+| `task_id` / `id` | Réponses de création asynchrone et de statut | Polling d'images, vidéos, musique et travaux 3D |
+| `poll_url` | Réponses de création asynchrone | URL de statut préférée |
+| `billing_transaction_id` | Réponses non diffusées lorsqu'elles sont réglées, réponses de statut de tâche, enregistrements d'utilisation de l'API de gestion, en-tête `X-Billing-Transaction-ID` | Réconciliation de facturation |
+| `X-Task-ID` | Réponses de tâche asynchrone | Corrélation de tâche au niveau de l'en-tête |
 
-## Comportement actuel
+## Ce Qu'il Faut Journaliser
 
-- Vérifiez ces valeurs avant la mise en production : `request_id`, `task_id`, `billing_transaction_id`.
-- Ne dépendez pas des URL d’état propres aux fournisseurs, des identifiants de routage ou des métadonnées privées d’exécution.
-- Rendez les retries idempotents et évitez de créer du travail facturable en double.
+1. Journalisez l'endpoint, le modèle, le code d'état, l'horodatage et les identifiants publics.
+2. Rédigez par défaut `Authorization`, les clés API, les URLs signées, les URLs de médias privés et les prompts complets.
+3. Pour les travaux asynchrones, journalisez la réponse de création et chaque réponse de statut terminal.
+4. Pour les questions d'utilisation, appelez l'API de gestion avec l'ID de clé API et les filtres de date.
+5. Utilisez le `type`, le `code` et le `param` d'erreur du corps de réponse au lieu d'analyser le texte du fournisseur.
 
-## Checklist de production
+## Liste de Vérification pour le Dépannage
 
-- Les logs doivent aider le support sans stocker de secrets, fichiers privés, prompts ou médias utilisateur.
-- Les tickets support doivent inclure une forme de requête assainie, endpoint, modèle, horodatage et identifiants publics.
-- Validez le flux en staging avant de déplacer le trafic de production.
+| Symptôme | Première vérification | Page utile |
+|----------|----------------------|------------|
+| `401` ou `403` | Clé API, jeton de gestion, accès à l'organisation | [Authentification](/fr/authentication) |
+| `429` | Niveau de limite de taux et comportement de réessai du client | [Limites de Taux](/fr/guides/rate-limits) |
+| `400 invalid_request_error` | Champ non pris en charge, mauvais endpoint ou incompatibilité de contrat spécifique au modèle | [Gestion des Erreurs](/fr/guides/error-handling) |
+| La tâche asynchrone ne se termine jamais | Poll `poll_url`, inspectez le `status` final, évitez la création de tâches en double | [Travaux Asynchrones & Polling](/fr/guides/async-jobs-polling) |
+| Le coût ne correspond pas à l'UI | Comparez `request_id` et `billing_transaction_id` dans les enregistrements d'utilisation | [Facturation & Tarification](/fr/guides/billing) |
 
-## Pages liées
+## Réconciliation d'Utilisation
 
-- [Gestion des erreurs](/fr/guides/error-handling)
-- [Facturation et Tarification](/fr/guides/billing)
-- [Tâches asynchrones et polling](/fr/guides/async-jobs-polling)
-- [Obtenir l’usage d’une API Key](/fr/api-reference/management/get-api-key-usage)
+`GET /v1/management/api-keys/{keyId}/usage` renvoie l'utilisation au niveau de la clé paginée. Il peut filtrer par `scene`, `accessChannel`, `logicalModel`, `modelVendor`, `startDate` et `endDate`. Utilisez-le pour la réconciliation côté serveur au lieu de scraper le tableau de bord.
+
+```bash
+curl "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/usage?page=1&limit=20&scene=video" \\
+  -H "Authorization: Bearer mt-your-management-token"
+```
+
+Les réponses de streaming peuvent se régler après l'envoi du flux, donc l'en-tête de facturation peut être absent même lorsque l'utilisation est enregistrée ultérieurement. Pour les tâches de médias asynchrones, le règlement peut apparaître après le polling terminal.
+
+## Paquet de Support
+
+Lors de la prise de contact avec le support, incluez `request_id`, `task_id`, `billing_transaction_id` lorsqu'ils sont présents, l'endpoint, le modèle, l'horodatage et une forme de demande assainie. N'incluez pas les clés API, les médias privés ou les prompts complets à moins que le support ne demande un échantillon rédigé.
+
+N'incluez pas les noms de fournisseurs, les IDs de canal, les identifiants de routage, les clés Redis ou les URLs de tâches en amont dans les journaux clients ou les tickets de support à moins que le support AI Sonar ne le demande explicitement.
+
+## Référence API
+
+| Sujet | Référence |
+|-------|-----------|
+| Gestion des Erreurs | [Gestion des Erreurs](/fr/guides/error-handling) |
+| Limites de Taux | [Limites de Taux](/fr/guides/rate-limits) |
+| Facturation & Tarification | [Facturation & Tarification](/fr/guides/billing) |
+| Obtenir l'Utilisation de la Clé API | [Obtenir l'Utilisation de la Clé API](/fr/api-reference/management/get-api-key-usage) |
+| Obtenir le Statut de la Tâche | [Obtenir le Statut de la Tâche](/fr/api-reference/tasks/get-task-status) |

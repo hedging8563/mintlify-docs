@@ -1,29 +1,73 @@
 ---
-title: "Tâches asynchrones et polling"
-description: "Guide de production pour Tâches asynchrones et polling."
+title: "Travaux Asynchrones & Polling"
+description: "Créez des travaux de génération asynchrone, interrogez l'état des tâches publiques et réconciliez les résultats finaux sans détails spécifiques au fournisseur."
 ---
 
-## Aperçu
+Cette page reflète le contrat public de tâche asynchrone de AI Sonar. Elle ne traite pas des URL de tâches des fournisseurs, des ID de routage ou du comportement de rappel en amont comme des contrats d'intégration destinés aux utilisateurs.
 
-Ce guide explique comment utiliser Tâches asynchrones et polling en production sans lier votre application aux détails d’implémentation fournisseur.
+## Contrat Public
 
-Utilisez les API publiques AI Sonar, les métadonnées de modèle et les champs de réponse documentés comme contrat.
+AI Sonar expose un contrat public de tâche asynchrone pour les médias générés. Les points de terminaison de création peuvent renvoyer `id`, `task_id`, `status` et `poll_url`. Traitez `id` et `task_id` comme la même identité de tâche publique et conservez à la fois l'ID de tâche et `poll_url` avec votre propre enregistrement de travail.
 
-## Comportement actuel
+Utilisez d'abord le `poll_url` retourné. Si vous avez besoin d'un point de terminaison fixe, utilisez `GET /v1/tasks/{id}` avec le même `id` / `task_id` de la réponse de création.
 
-- Vérifiez ces valeurs avant la mise en production : `task_id`, `poll_url`, `/v1/tasks/{id}`.
-- Ne dépendez pas des URL d’état propres aux fournisseurs, des identifiants de routage ou des métadonnées privées d’exécution.
-- Rendez les retries idempotents et évitez de créer du travail facturable en double.
+Les tâches de génération publiques sont basées sur le polling aujourd'hui. AI Sonar a des récepteurs de rappels en amont en interne, mais ce ne sont pas des webhooks clients et ne doivent pas être utilisés comme contrat d'intégration.
 
-## Checklist de production
+## Flux Recommandé
 
-- Les logs doivent aider le support sans stocker de secrets, fichiers privés, prompts ou médias utilisateur.
-- Les tickets support doivent inclure une forme de requête assainie, endpoint, modèle, horodatage et identifiants publics.
-- Validez le flux en staging avant de déplacer le trafic de production.
+1. Envoyez la demande de création avec un `model` explicite.
+2. Si la réponse est en ligne, lisez le résultat final immédiatement.
+3. Si la réponse contient `status: "pending"`, `task_id` ou `poll_url`, conservez la tâche et commencez à interroger.
+4. Interrogez toutes les `5-10s` pour les tâches médias longues. Arrêtez-vous uniquement sur un statut terminal.
+5. Sur `completed`, lisez les champs de résultat pour ce type de média. Sur `failed`, conservez l'erreur publique et montrez une action de réessai uniquement lorsque le réessai créera un nouveau travail visible par l'utilisateur.
 
-## Pages liées
+```json
+{
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "pending",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "model": "veo3.1"
+}
+```
 
-- [Obtenir le statut d'une tâche](/fr/api-reference/tasks/get-task-status)
-- [Annuler une tâche](/fr/api-reference/tasks/cancel-task)
-- [Observabilité et dépannage](/fr/guides/observability-troubleshooting)
-- [Génération de vidéos](/fr/guides/video-generation)
+## Résultats de Polling
+
+```bash
+curl "https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \\
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+Les statuts publics attendus sont `pending`, `processing`, `completed` et `failed`. Les tâches annulées sont représentées comme `failed` avec `cancelled: true` et `cancellation_status: "cancelled"` afin que le traitement des anciens statuts continue de fonctionner.
+
+Ne polluez pas les URL spécifiques aux fournisseurs, les ID de tâches en amont, les ID de routage ou les métadonnées d'exécution privées. Ce ne sont pas des contrats publics stables.
+
+## Facturation Et Réconciliation
+
+- Une réponse de création peut réserver un montant estimé pour le travail asynchrone.
+- Le règlement final se produit après que la tâche atteint un état terminal.
+- Lorsque le règlement est disponible, les réponses de statut de tâche peuvent exposer `billing_transaction_id` et l'en-tête `X-Billing-Transaction-ID`.
+- Si un délai d'attente client se produit après la création de la tâche, ne recréez pas le travail aveuglément. Reprenez à partir de `task_id` / `poll_url` stockés.
+
+## Annulation
+
+`DELETE /v1/tasks/{id}` est intentionnellement étroit. Il prend actuellement en charge les tâches vidéo Volcengine Seedance en file d'attente telles que `seedance-1.5-pro`, `seedance-2.0` et `seedance-2.0-fast`. Les tâches non prises en charge renvoient `400 unsupported_task_cancel`; les tâches déjà en cours ou terminales renvoient `409 task_not_cancellable`.
+
+## Liste de Vérification de Dépannage
+
+- `async_task_not_found`: la tâche est inconnue, expirée, inaccessible à cette clé API, ou ne fait pas partie du contrat de tâche asynchrone public.
+- URL finale de média manquante : continuez à interroger jusqu'à un état terminal ; ne supposez pas que les réponses `pending` incluent des sorties.
+- Travaux en double : vérifiez si votre chemin de réessai a créé une seconde tâche après un délai d'attente HTTP.
+- Mismatch de facturation : comparez `request_id`, `task_id` et `billing_transaction_id` dans le tableau de bord ou l'API de gestion.
+
+Lorsque vous contactez le support, incluez `request_id`, `task_id`, `billing_transaction_id` lorsqu'ils sont présents, le point de terminaison, le modèle, l'horodatage et une forme de demande assainie. N'incluez pas de clés API, de médias privés ou de prompts complets à moins que le support ne demande un échantillon expurgé.
+
+## Référence API
+
+| Sujet | Référence |
+|-------|-----------|
+| Obtenir l'état de la tâche | [Obtenir l'état de la tâche](/fr/api-reference/tasks/get-task-status) |
+| Annuler la tâche | [Annuler la tâche](/fr/api-reference/tasks/cancel-task) |
+| Génération d'images | [Génération d'images](/fr/guides/image-generation) |
+| Génération de vidéos | [Génération de vidéos](/fr/guides/video-generation) |
+| Facturation & Tarification | [Facturation & Tarification](/fr/guides/billing) |

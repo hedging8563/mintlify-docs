@@ -1,74 +1,74 @@
 ---
-title: "Generasi gambar"
-description: "Bangun alur teks-ke-gambar, gambar referensi, dan edit dengan API gambar AI Sonar."
+title: "Generasi Gambar"
+description: "Membangun alur kerja teks-ke-gambar, gambar-ke-gambar, dan pengeditan gambar terhadap kontrak gambar publik AI Sonar."
 ---
-## Alur yang disarankan
 
-1. Panggil [Daftar model](/id/api-reference/models/list-models) dengan `recommended_for=image`.
-2. Buka [Ambil model](/id/api-reference/models/get-model) untuk model yang dipilih dan ikuti kontrak publiknya.
-3. Gunakan [Buat gambar](/id/api-reference/images/create-image) untuk teks-ke-gambar dan alur gambar referensi yang didukung, atau [Edit gambar](/id/api-reference/images/edit-image) untuk alur edit.
-4. Jika respons menyertakan `poll_url`, polling URL itu sampai tugas mencapai status akhir.
+API gambar AI Sonar mencakup beberapa keluarga model dengan bentuk permintaan yang berbeda. Gunakan kontrak model publik dan referensi API spesifik endpoint sebelum mengasumsikan bahwa suatu field berfungsi di setiap model gambar.
 
-## Temukan model
+## Pilih Endpoint
 
-Model gambar tidak selalu memiliki bentuk request yang sama. Sebagian mengembalikan hasil inline, sebagian membuat tugas asinkron. Kontrak model menentukan apakah `size`, `quality`, `aspect_ratio`, `resolution`, dan `async` diterima.
+| Tujuan | Endpoint | Catatan |
+|--------|----------|---------|
+| Teks-ke-gambar | `POST /v1/images/generations` | Gunakan `prompt` dan `model` yang eksplisit |
+| Gambar-ke-gambar / gambar referensi | `POST /v1/images/generations` | Gunakan `operation: "image-to-image"` ditambah `image_url`, `image_urls`, atau `reference_image_urls` ketika model mendukungnya |
+| Pengeditan Gambar GPT | `POST /v1/images/edits` | Mendukung multipart `image`, JSON `image_url` / `image_urls`, dan referensi resmi `images[]` untuk model edit yang didukung |
+| Variasi warisan | `POST /v1/images/variations` | Utamakan rute generasi atau edit saat ini untuk pekerjaan baru |
+| Status Async | `GET /v1/tasks/{id}` | Gunakan `poll_url` terlebih dahulu jika ada |
+
+## Penemuan Model
 
 ```bash
-curl "https://api.aisonar.dev/v1/models?recommended_for=image" \
+curl "https://api.aisonar.dev/v1/models?recommended_for=image" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-## Teks ke gambar
+Parameter model gambar sangat bervariasi. Bacalah kontrak model yang dipilih sebelum mengirim `size`, `quality`, `aspect_ratio`, `resolution`, `async`, `background`, atau `output_format`.
 
-Untuk model keluarga GPT Image, gunakan `size` jika kontrak model menyediakannya. Untuk model Google atau Nano Banana, gunakan `aspect_ratio` dan `resolution` hanya jika tercantum dalam kontrak model.
+## Input Dan Field Spesifik Model
+
+- `gpt-image-2` menggunakan `size` dan `quality` gaya OpenAI; hilangkan `size` atau `quality` untuk membiarkan AI Sonar menggunakan `auto` di mana didukung.
+- Keluarga gambar Gemini dan Nano Banana umumnya menggunakan `aspect_ratio`; hanya kirim `resolution` ketika model yang dipilih mengeksposnya.
+- Permintaan gambar referensi Nano Banana harus berada di `/v1/images/generations` dengan `operation: "image-to-image"` dan `image_urls`, bukan di `/v1/images/edits`.
+- `/v1/images/generations` tidak menerima `images[]` atau `file_id` di tingkat atas; itu adalah bentuk alur edit.
+- URL gambar jarak jauh harus berupa URL publik `http`/`https`. Hindari jaringan pribadi, kredensial yang tertanam, fragmen, dan URL bertanda tangan yang berumur pendek.
+
+## Buat Permintaan
 
 ```bash
-curl https://api.aisonar.dev/v1/images/generations \
-  -H "Authorization: Bearer sk-your-api-key" \
-  -H "Content-Type: application/json" \
+curl https://api.aisonar.dev/v1/images/generations \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
   -d '{
     "model": "gpt-image-2",
-    "prompt": "A clean product photo of a ceramic coffee cup on a walnut desk",
+    "prompt": "Sebuah foto produk bersih dari cangkir kopi keramik di atas meja kenari",
     "size": "1024x1024",
     "response_format": "url"
   }'
 ```
 
-## Gambar referensi dan edit
+## Memantau Hasil
 
-Untuk generasi gambar referensi di `/v1/images/generations`, kirim `operation: "image-to-image"` dengan `image_url`, `image_urls`, `reference_image_urls`, atau file multipart `image` jika model mendukungnya. Gunakan `/v1/images/edits` untuk model edit yang menerima gambar multipart, URL gambar, atau `images[].image_url` / `images[].file_id`.
-
-Jangan kirim `images[]` level atas atau `file_id` level atas ke `/v1/images/generations`; bentuk itu hanya untuk alur edit yang mendokumentasikannya secara eksplisit.
+Beberapa rute gambar mengembalikan `data[].url` atau `data[].b64_json` secara inline. Rute lainnya mengembalikan `status: "pending"`, `task_id`, dan `poll_url`. Jika Anda meminta generasi atau pengeditan gambar async, hasil tugas yang selesai mengembalikan URL; gunakan permintaan sinkron ketika Anda secara khusus membutuhkan `b64_json`.
 
 ```bash
-curl https://api.aisonar.dev/v1/images/generations \
-  -H "Authorization: Bearer sk-your-api-key" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "nano-banana-pro",
-    "operation": "image-to-image",
-    "prompt": "Keep the same product, place it in a bright studio scene",
-    "image_urls": ["https://example.com/reference.png"],
-    "aspect_ratio": "1:1"
-  }'
-```
-
-## Polling hasil
-
-Respons gambar sinkron mengembalikan `data[].url` atau `data[].b64_json`. Respons tugas mengembalikan `status`, `task_id`, dan biasanya `poll_url`. Prioritaskan `poll_url`; fallback tetapnya adalah [Status tugas](/id/api-reference/tasks/get-task-status). Tugas gambar asinkron mengembalikan URL, jadi minta base64 inline hanya pada alur sinkron yang mendukungnya.
-
-```bash
-curl "https://api.aisonar.dev/v1/tasks/$TASK_ID" \
+curl "https://api.aisonar.dev/v1/tasks/$TASK_ID" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
+
+## Kesalahan Umum
+
+- Jangan mengasumsikan setiap model gambar bersifat sinkron.
+- Jangan meminta `b64_json` dari tugas gambar async; hasil async berorientasi URL.
+- Jangan mengirim `resolution` ke model gambar Gemini yang hanya menggunakan rasio.
+- Jangan gunakan `/v1/images/edits` untuk alur gambar-ke-gambar Nano Banana.
+- Atur waktu tunggu klien HTTP setidaknya `120s` untuk permintaan gambar resolusi tinggi yang sinkron.
 
 ## Referensi API
 
 | Topik | Referensi |
 |-------|-----------|
-| Buat gambar | [Buat gambar](/id/api-reference/images/create-image) |
-| Edit gambar | [Edit gambar](/id/api-reference/images/edit-image) |
-| Status gambar | [Status gambar](/id/api-reference/images/get-image-status) |
-| Status tugas | [Status tugas](/id/api-reference/tasks/get-task-status) |
-| Daftar model | [Daftar model](/id/api-reference/models/list-models) |
-| Ambil model | [Ambil model](/id/api-reference/models/get-model) |
+| Buat Gambar | [Buat Gambar](/id/api-reference/images/create-image) |
+| Edit Gambar | [Edit Gambar](/id/api-reference/images/edit-image) |
+| Buat Variasi Gambar | [Buat Variasi Gambar](/id/api-reference/images/create-variation) |
+| Dapatkan Status Gambar | [Dapatkan Status Gambar](/id/api-reference/images/get-image-status) |
+| Dapatkan Status Tugas | [Dapatkan Status Tugas](/id/api-reference/tasks/get-task-status) |

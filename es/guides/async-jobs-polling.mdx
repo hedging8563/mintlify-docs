@@ -1,29 +1,73 @@
 ---
-title: "Trabajos asíncronos y sondeo"
-description: "Guía de producción para Trabajos asíncronos y sondeo."
+title: "Trabajos Asíncronos y Polling"
+description: "Crea trabajos de generación asíncrona, consulta el estado de tareas públicas y reconcilia resultados finales sin detalles específicos de tareas del proveedor."
 ---
 
-## Descripción general
+Esta página refleja el contrato público de tareas asíncronas de AI Sonar. No trata las URL de tareas del proveedor, IDs de enrutamiento o el comportamiento de callbacks ascendentes como contratos de integración orientados al usuario.
 
-Esta guía explica cómo usar Trabajos asíncronos y sondeo en producción sin vincular la aplicación a detalles de implementación del proveedor.
+## Contrato Público
 
-Usa las API públicas de AI Sonar, los metadatos de modelos y los campos de respuesta documentados como contrato.
+AI Sonar expone un contrato público de tarea asíncrona para medios generados. Los endpoints de creación pueden devolver `id`, `task_id`, `status` y `poll_url`. Trata `id` y `task_id` como la misma identidad de tarea pública y almacena tanto el ID de tarea como `poll_url` con tu propio registro de trabajo.
 
-## Comportamiento actual
+Usa primero el `poll_url` devuelto. Si necesitas un endpoint fijo, usa `GET /v1/tasks/{id}` con el mismo `id` / `task_id` de la respuesta de creación.
 
-- Revisa estos valores antes del lanzamiento: `task_id`, `poll_url`, `/v1/tasks/{id}`.
-- No dependas de URL de estado específicas del proveedor, identificadores de enrutamiento ni metadatos privados de ejecución.
-- Haz que los reintentos sean idempotentes y evita trabajo facturable duplicado.
+Las tareas de generación públicas se basan en polling hoy en día. AI Sonar tiene receptores de callbacks ascendentes internamente, pero no son webhooks de clientes y no deben ser utilizados como un contrato de integración.
 
-## Checklist de producción
+## Flujo Recomendado
 
-- Los logs deben ayudar al soporte sin almacenar secretos, archivos privados, prompts ni medios de usuario.
-- Los tickets de soporte deben incluir forma de solicitud saneada, endpoint, modelo, timestamp e identificadores públicos.
-- Verifica el flujo en staging antes de mover tráfico de producción.
+1. Envía la solicitud de creación con un `model` explícito.
+2. Si la respuesta es en línea, lee el resultado final de inmediato.
+3. Si la respuesta contiene `status: "pending"`, `task_id` o `poll_url`, persiste la tarea y comienza a hacer polling.
+4. Haz polling cada `5-10s` para tareas de medios largos. Detente solo en un estado terminal.
+5. En `completed`, lee los campos de resultado para ese tipo de medio. En `failed`, almacena el error público y muestra una acción de reintento solo cuando reintentar creará un nuevo trabajo visible para el usuario.
 
-## Páginas relacionadas
+```json
+{
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "pending",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "model": "veo3.1"
+}
+```
 
-- [Obtener estado de la tarea](/es/api-reference/tasks/get-task-status)
-- [Cancelar tarea](/es/api-reference/tasks/cancel-task)
-- [Observabilidad y solución de problemas](/es/guides/observability-troubleshooting)
-- [Generación de video](/es/guides/video-generation)
+## Resultados de Polling
+
+```bash
+curl "https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \\
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+Los estados públicos esperados son `pending`, `processing`, `completed` y `failed`. Las tareas canceladas se representan como `failed` con `cancelled: true` y `cancellation_status: "cancelled"` para que el manejo de estados antiguos siga funcionando.
+
+No hagas polling a URLs específicas del proveedor, IDs de tareas ascendentes, IDs de enrutamiento o metadatos de ejecución privados. No son contratos públicos estables.
+
+## Facturación y Reconciliación
+
+- Una respuesta de creación puede reservar una cantidad estimada para trabajo asíncrono.
+- La liquidación final ocurre después de que la tarea alcanza un estado terminal.
+- Cuando la liquidación está disponible, las respuestas de estado de tarea pueden exponer `billing_transaction_id` y el encabezado `X-Billing-Transaction-ID`.
+- Si ocurre un tiempo de espera del cliente después de la creación de la tarea, no recrees el trabajo ciegamente. Reanuda desde el `task_id` / `poll_url` almacenado.
+
+## Cancelación
+
+`DELETE /v1/tasks/{id}` es intencionalmente restringido. Actualmente soporta tareas de video en cola de Volcengine Seedance como `seedance-1.5-pro`, `seedance-2.0` y `seedance-2.0-fast`. Las tareas no soportadas devuelven `400 unsupported_task_cancel`; las tareas que ya están en ejecución o en estado terminal devuelven `409 task_not_cancellable`.
+
+## Lista de Verificación de Solución de Problemas
+
+- `async_task_not_found`: la tarea es desconocida, ha expirado, es inaccesible para esta clave API, o no forma parte del contrato de tarea asíncrona pública.
+- URL de medio final faltante: sigue haciendo polling hasta que sea terminal; no asumas que las respuestas `pending` incluyen salidas.
+- Trabajos duplicados: verifica si tu ruta de reintento creó una segunda tarea después de un tiempo de espera HTTP.
+- Desajuste de facturación: compara `request_id`, `task_id` y `billing_transaction_id` en el panel o en la API de Gestión.
+
+Al contactar soporte, incluye `request_id`, `task_id`, `billing_transaction_id` cuando estén presentes, endpoint, modelo, marca de tiempo y una forma de solicitud sanitizada. No incluyas claves API, medios privados o prompts completos a menos que el soporte solicite una muestra redactada.
+
+## Referencia de API
+
+| Tema | Referencia |
+|-------|-----------|
+| Obtener Estado de Tarea | [Get Task Status](/es/api-reference/tasks/get-task-status) |
+| Cancelar Tarea | [Cancel Task](/es/api-reference/tasks/cancel-task) |
+| Generación de Imágenes | [Image Generation](/es/guides/image-generation) |
+| Generación de Videos | [Video Generation](/es/guides/video-generation) |
+| Facturación y Precios | [Billing & Pricing](/es/guides/billing) |

@@ -1,55 +1,55 @@
 ---
-title: "Tạo nhạc"
-description: "Tạo nhạc và lời bài hát bằng API tạo nhạc của AI Sonar và polling tác vụ bất đồng bộ."
+title: "Tạo Nhạc"
+description: "Tạo bài hát, nhạc cụ, lời bài hát và các phần tiếp theo với các tác vụ nhạc của AI Sonar."
 ---
-## Luồng đề xuất
 
-1. Gọi [Danh sách mô hình](/vi/api-reference/models/list-models) với `recommended_for=music`.
-2. Dùng [Tạo nhạc](/vi/api-reference/music/create-music) để tạo tác vụ với `prompt` và các trường tùy chọn như `title`, `tags`, `action`, `mv` hoặc thiết lập tiếp tục.
-3. Lưu `id` / `task_id` và `poll_url` được trả về.
-4. Polling cho đến khi tác vụ là `completed` hoặc `failed`, sau đó đọc `audio_url`, `video_url` tùy chọn, `title` và `lyrics`.
+Tạo nhạc là bất đồng bộ. `POST /v1/music/generations` tạo một tác vụ và trả về `id` / `task_id`, `status`, và thường là `poll_url`. Âm thanh và siêu dữ liệu cuối cùng sẽ xuất hiện sau khi kiểm tra.
 
-## Khám phá mô hình
-
-Tạo nhạc là bất đồng bộ. Đừng phụ thuộc vào tên provider upstream hoặc task ID của provider; AI Sonar trả về định danh tác vụ đã chuẩn hóa và URL polling.
+## Khám Phá Mô Hình
 
 ```bash
-curl "https://api.aisonar.dev/v1/models?recommended_for=music" \
+curl "https://api.aisonar.dev/v1/models?recommended_for=music" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-## Tạo tác vụ nhạc
+Hợp đồng công khai hiện tại cung cấp `suno_music` cho việc tạo nhạc và `suno_lyrics` cho các luồng chỉ có lời bài hát. Hãy truy vấn danh mục mô hình trước khi sử dụng trong sản xuất thay vì dựa vào giả định của nhà cung cấp.
 
-`action: "MUSIC"` tạo bài hát hoặc nhạc không lời tùy prompt và mô hình. `action: "LYRICS"` dành cho luồng chỉ tạo lời khi mô hình hỗ trợ. Chỉ dùng `continue_clip_id` và `continue_at` cho luồng tiếp tục được hợp đồng mô hình ghi rõ.
+## Tạo Yêu Cầu
 
 ```bash
-curl https://api.aisonar.dev/v1/music/generations \
-  -H "Authorization: Bearer sk-your-api-key" \
-  -H "Content-Type: application/json" \
+curl https://api.aisonar.dev/v1/music/generations \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
   -d '{
     "model": "suno_music",
-    "prompt": "An upbeat synth-pop track with warm vocals and a clean chorus",
+    "prompt": "Một bài hát synth-pop vui tươi với giọng hát ấm áp và điệp khúc trong trẻo",
     "title": "Morning Static",
-    "tags": "synth-pop, upbeat",
+    "tags": "synth-pop, vui tươi",
     "action": "MUSIC"
   }'
 ```
 
-## Polling kết quả
+Sử dụng `action: "MUSIC"` cho bài hát hoặc nhạc cụ. Sử dụng `action: "LYRICS"` chỉ với các mô hình hỗ trợ tạo lời bài hát. Các trường tiếp tục như `continue_clip_id` và `continue_at` dành cho quy trình làm việc tiếp tục và chỉ nên gửi khi sản phẩm của bạn đang tiếp tục một clip trước đó.
 
-Luôn ưu tiên `poll_url` được trả về. Endpoint dự phòng ổn định là [Trạng thái tác vụ](/vi/api-reference/tasks/get-task-status). Tác vụ nhạc hoàn tất có thể gồm `audio_url`, `video_url`, `title`, `lyrics` và metadata đã chuẩn hóa.
+## Kiểm Tra Kết Quả
 
-```bash
-curl "https://api.aisonar.dev/v1/tasks/$TASK_ID" \
-  -H "Authorization: Bearer sk-your-api-key"
-```
+Sử dụng `poll_url` được trả về trước. Nếu bạn cần một điểm cuối cố định, sử dụng `GET /v1/tasks/{id}` với cùng `id` / `task_id` từ phản hồi tạo.
 
-## Tham chiếu API
+Các tác vụ nhạc đã hoàn thành có thể bao gồm `audio_url`, `video_url`, `title`, `lyrics`, và siêu dữ liệu đã chuẩn hóa theo mô hình. Lưu trữ các URL cuối cùng trong ứng dụng của bạn thay vì kiểm tra lặp đi lặp lại sau khi có trạng thái cuối cùng.
 
-| Mục | Tham chiếu |
+## Những Cạm Bẫy Thường Gặp
+
+- Không hiển thị trình phát cuối cùng cho đến khi tác vụ được `completed` và có `audio_url`.
+- Không sử dụng ID tác vụ của nhà cung cấp hoặc URL lấy dữ liệu của nhà cung cấp trong trạng thái ứng dụng của bạn.
+- Không trộn lẫn các hành động chỉ có lời bài hát và nhạc đầy đủ trong một giao diện người dùng mà không cho người dùng thấy sự khác biệt.
+- Không tái tạo tác vụ trên mỗi lần làm mới trang; tiếp tục từ `task_id` đã lưu.
+
+## Tài Liệu API
+
+| Chủ Đề | Tài Liệu |
 |-------|-----------|
-| Tạo nhạc | [Tạo nhạc](/vi/api-reference/music/create-music) |
-| Trạng thái nhạc | [Trạng thái nhạc](/vi/api-reference/music/get-music-status) |
-| Trạng thái tác vụ | [Trạng thái tác vụ](/vi/api-reference/tasks/get-task-status) |
-| Danh sách mô hình | [Danh sách mô hình](/vi/api-reference/models/list-models) |
-| Lấy mô hình | [Lấy mô hình](/vi/api-reference/models/get-model) |
+| Tạo Nhạc | [Tạo Nhạc](/vi/api-reference/music/create-music) |
+| Lấy Trạng Thái Nhạc | [Lấy Trạng Thái Nhạc](/vi/api-reference/music/get-music-status) |
+| Lấy Trạng Thái Tác Vụ | [Lấy Trạng Thái Tác Vụ](/vi/api-reference/tasks/get-task-status) |
+| Danh Sách Mô Hình | [Danh Sách Mô Hình](/vi/api-reference/models/list-models) |
+| Thanh Toán & Giá Cả | [Thanh Toán & Giá Cả](/vi/guides/billing) |

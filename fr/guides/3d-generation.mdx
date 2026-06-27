@@ -1,54 +1,60 @@
 ---
 title: "Génération 3D"
-description: "Créez des assets 3D depuis du texte ou des images avec les API 3D de AI Sonar et le polling asynchrone."
+description: "Créez des actifs 3D à partir de texte ou d'images et téléchargez les fichiers de modèle complétés à partir des résultats de tâches asynchrones."
 ---
-## Flux recommandé
 
-1. Appelez [Lister les modèles](/fr/api-reference/models/list-models) avec `recommended_for=3d`.
-2. Utilisez [Créer en 3D](/fr/api-reference/3d/create-3d) avec un `prompt` texte ; ajoutez `image` ou `image_url` uniquement pour les modèles image-vers-3D qui le prennent en charge.
-3. Choisissez `format`, `quality`, `style` ou `seed` selon le contrat du modèle.
-4. Interrogez `poll_url` jusqu’à ce que l’asset soit prêt, puis téléchargez `model_url` ou des URLs spécifiques comme `glb_url` / `fbx_url`.
+La génération 3D est asynchrone. `POST /v1/3d/generations` crée une tâche ; les réponses de statut complètes retournent des URL d'actifs de modèle téléchargeables.
 
-## Découvrir les modèles
-
-La génération 3D est basée sur des tâches. Utilisez le catalogue de modèles comme source de vérité au lieu de supposer un fournisseur ou un modèle fixe.
+## Découverte de Modèle
 
 ```bash
-curl "https://api.aisonar.dev/v1/models?recommended_for=3d" \
+curl "https://api.aisonar.dev/v1/models?recommended_for=3d" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-## Créer une tâche 3D
+Ne supposez pas que chaque modèle 3D prend en charge à la fois le texte vers 3D et l'image vers 3D. Vérifiez le contrat du modèle sélectionné avant d'envoyer `image`, `image_url`, `format`, `quality`, `style` ou `seed`.
 
-Les requêtes texte-vers-3D nécessitent `prompt`. Les requêtes image-vers-3D ajoutent `image` en base64 ou `image_url`. Utilisez `format` et `quality` uniquement lorsque le contrat du modèle les expose.
+## Créer une Demande
 
 ```bash
-curl https://api.aisonar.dev/v1/3d/generations \
-  -H "Authorization: Bearer sk-your-api-key" \
-  -H "Content-Type: application/json" \
+curl https://api.aisonar.dev/v1/3d/generations \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
   -d '{
     "model": "tripo3d-v2.5",
-    "prompt": "A stylized low-poly robot mascot with clean topology",
+    "prompt": "Un mascotte robot stylisé en low-poly avec une topologie propre",
     "format": "glb",
     "quality": "standard"
   }'
 ```
 
-## Polling des résultats
+Le texte vers 3D nécessite un `prompt`. L'image vers 3D utilise `image` ou `image_url` lorsque cela est pris en charge par le modèle. Préférez les URL publiques pour les entrées de production, sauf si l'image source est privée et que votre client télécharge intentionnellement des données en base64.
 
-Utilisez d’abord le `poll_url` renvoyé. Le secours stable est [Statut de tâche](/fr/api-reference/tasks/get-task-status). Les tâches 3D terminées renvoient `model_url` et peuvent inclure `glb_url` ou `fbx_url`.
+## Choix de Sortie
 
-```bash
-curl "https://api.aisonar.dev/v1/tasks/$TASK_ID" \
-  -H "Authorization: Bearer sk-your-api-key"
-```
+- `format` peut demander un emballage de sortie tel que `glb`, `fbx`, `obj` ou `usdz` lorsque cela est pris en charge.
+- Les valeurs de `quality` telles que `draft`, `standard` ou `high` affectent la latence et le coût lorsque le modèle les expose.
+- `style` et `seed` dépendent du modèle ; omettez-les à moins que le contrat sélectionné ne les documente.
+
+## Interrogation des Résultats
+
+Utilisez d'abord le `poll_url` retourné. Si vous avez besoin d'un point de terminaison fixe, utilisez `GET /v1/tasks/{id}` avec le même `id` / `task_id` de la réponse de création.
+
+Les tâches complètes retournent `model_url` et peuvent inclure des URL spécifiques au format telles que `glb_url`, `fbx_url`, `obj_url` ou `usdz_url`. Téléchargez et mettez en cache l'actif dans votre propre produit si les utilisateurs ont besoin d'un accès répété.
+
+## Pièges Courants
+
+- Ne vous attendez pas à un actif 3D dans la réponse de création ; interrogez jusqu'à un statut terminal.
+- Ne promettez pas chaque format pour chaque modèle.
+- Ne réessayez pas les demandes de création après un délai d'attente du client sans vérifier si la tâche existe déjà.
+- Ne divulguez pas les ID de tâche du fournisseur dans votre interface utilisateur.
 
 ## Référence API
 
 | Sujet | Référence |
 |-------|-----------|
-| Créer en 3D | [Créer en 3D](/fr/api-reference/3d/create-3d) |
-| Statut 3D | [Statut 3D](/fr/api-reference/3d/get-3d-status) |
-| Statut de tâche | [Statut de tâche](/fr/api-reference/tasks/get-task-status) |
-| Lister les modèles | [Lister les modèles](/fr/api-reference/models/list-models) |
-| Obtenir le modèle | [Obtenir le modèle](/fr/api-reference/models/get-model) |
+| Créer 3D | [Créer 3D](/fr/api-reference/3d/create-3d) |
+| Obtenir le Statut 3D | [Obtenir le Statut 3D](/fr/api-reference/3d/get-3d-status) |
+| Obtenir le Statut de la Tâche | [Obtenir le Statut de la Tâche](/fr/api-reference/tasks/get-task-status) |
+| Lister les Modèles | [Lister les Modèles](/fr/api-reference/models/list-models) |
+| Facturation & Tarification | [Facturation & Tarification](/fr/guides/billing) |

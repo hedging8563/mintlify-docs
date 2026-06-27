@@ -1,29 +1,90 @@
 ---
-title: "أدلة الترحيل"
-description: "دليل إنتاج لـ أدلة الترحيل."
+title: "أدلة الهجرة"
+description: "نقل أحمال العمل من OpenAI وAnthropic وGemini ووسائط الإعلام إلى AI Sonar مع أقل تغييرات آمنة للإنتاج."
 ---
 
-## نظرة عامة
+AI Sonar هو أولاً متوافق مع OpenAI. اختر المسار الذي يتناسب مع سلوك العميل الذي تحتاجه بدلاً من تحويل كل عبء عمل إلى تنسيق واحد.
 
-يوضح هذا الدليل كيفية استخدام أدلة الترحيل في الإنتاج دون ربط التطبيق بتفاصيل تنفيذ المزوّد.
+## اختر التنسيق
 
-اعتبر واجهات AI Sonar العامة وبيانات النموذج وحقول الاستجابة الموثقة هي العقد.
+| عبء العمل الحالي | عنوان URL الأساسي لـ AI Sonar | نقطة النهاية الأساسية | ملاحظات |
+|-------------------|-------------------|------------------|-------|
+| إكمالات دردشة OpenAI | `https://api.aisonar.dev/v1` | `/chat/completions` | أقل تغيير للعملاء المتوافقين مع OpenAI |
+| ردود OpenAI | `https://api.aisonar.dev/v1` | `/responses` | استخدم فقط لسلوك محدد للردود |
+| Anthropic SDK | `https://api.aisonar.dev` | `/v1/messages` | لا تضف `/v1` في عنوان URL الأساسي لـ SDK |
+| Gemini REST | `https://api.aisonar.dev` | `/v1beta/models/:model:generateContent` | احتفظ بالحقول الأصلية لـ Gemini على المسار الأصلي |
+| توليد الوسائط | `https://api.aisonar.dev/v1` | `/images`, `/videos`, `/music`, `/3d` | اكتشف النماذج مع `recommended_for` وتوقع الاستطلاع غير المتزامن حيثما تم توثيقه |
 
-## السلوك الحالي
+## هجرة متوافقة مع OpenAI
 
-- راجع هذه القيم قبل الإصدار: base URL, API key, model ID.
-- لا تعتمد على URL حالة خاص بالمزوّد أو معرّفات توجيه أو بيانات تنفيذ خاصة.
-- اجعل retries آمنة للتكرار وتجنب إنشاء عمل قابل للفوترة مرتين.
+```python
+from openai import OpenAI
 
-## قائمة فحص الإنتاج
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1",
+)
 
-- يجب أن تساعد السجلات الدعم دون تخزين أسرار أو ملفات خاصة أو prompts أو وسائط مستخدم.
-- يجب أن تتضمن تذاكر الدعم شكل الطلب بعد التنظيف، endpoint، النموذج، الوقت، والمعرّفات العامة.
-- تحقق من المسار في staging قبل نقل حركة الإنتاج.
+response = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "Hello from AI Sonar"}],
+)
+```
 
-## صفحات ذات صلة
+احتفظ بشفرة إعادة المحاولة، والمهلة، والبث الحالية، ولكن تحقق من معرفات النماذج مقابل `GET /v1/models`. بالنسبة لتوليد الصور، أرسل `model` بشكل صريح واقرأ دليل الصور لأن نماذج الصور تختلف أكثر من نماذج الدردشة.
 
-- [✨ واجهة برمجة تطبيقات متعددة الصيغ](/ar/guides/api-formats)
-- [OpenAI SDK](/ar/integrations/openai-sdk)
-- [Anthropic SDK](/ar/integrations/anthropic-sdk)
-- [توجيه المزوّدين والموثوقية](/ar/guides/provider-routing-reliability)
+## هجرة Anthropic
+
+```python
+from anthropic import Anthropic
+
+client = Anthropic(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev",
+)
+
+message = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Explain AI Sonar in one sentence."}],
+)
+```
+
+استخدم هذا المسار لسلوك متوافق مع Claude مثل استخدام أداة الرسائل والتفكير الممتد. إذا كانت ميزة ما متوافقة مع Anthropic، احتفظ بها على `/v1/messages` بدلاً من ترجمتها عبر إكمالات الدردشة.
+
+## هجرة Gemini
+
+```bash
+curl "https://api.aisonar.dev/v1beta/models/gemini-3.5-flash:generateContent" \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
+  -d '{"contents":[{"parts":[{"text":"Hello"}]}]}'
+```
+
+يجب أن تبقى الأدوات المدمجة في Gemini، وموارد واجهة برمجة التطبيقات للملفات، والمحتويات المخزنة، وإعلانات الوظائف على `/v1beta` عندما تحتاج إلى سلوك متوافق مع Gemini.
+
+## هجرة الوسائط
+
+1. استعلام `GET /v1/models?recommended_for=image|video|music|3d` قبل اختيار نموذج.
+2. اقرأ `aisonar.public_contract_summary` وعلى صفحات التفاصيل، `aisonar.public_contract` الكامل.
+3. أرسل `model` بشكل صريح. لا تعتمد على القيم الافتراضية القديمة لحركة المرور الإنتاجية.
+4. قم بتخزين `task_id` و `poll_url` للوظائف غير المتزامنة.
+5. قم بتسوية التكاليف من خلال سجلات الاستخدام، وليس من خلال معرفات مهام المزود.
+
+## طرح الإنتاج
+
+- ابدأ بنقطة نهاية واحدة وعائلة نماذج واحدة.
+- اضبط مهلات HTTP عالية بما يكفي لمسارات الصور المتزامنة؛ استخدم الوضع غير المتزامن عند توفره للأعمال الطويلة.
+- قم بتسجيل المعرفات العامة وشكل الطلب المعقم قبل إرسال حركة المرور الإنتاجية.
+- قارن عينة من الردود، وسجلات الاستخدام، والمخرجات المرئية للعملاء.
+- اجعل التراجع بسيطًا: احتفظ بالعميل السابق للمزود حتى تصبح حركة مرور AI Sonar مستقرة.
+
+## مرجع API
+
+| الموضوع | المرجع |
+|-------|-----------|
+| واجهة برمجة التطبيقات متعددة التنسيقات | [واجهة برمجة التطبيقات متعددة التنسيقات](/ar/guides/api-formats) |
+| OpenAI SDK | [OpenAI SDK](/ar/integrations/openai-sdk) |
+| Anthropic SDK | [Anthropic SDK](/ar/integrations/anthropic-sdk) |
+| توليد الصور | [توليد الصور](/ar/guides/image-generation) |
+| الوظائف غير المتزامنة والاستطلاع | [الوظائف غير المتزامنة والاستطلاع](/ar/guides/async-jobs-polling) |

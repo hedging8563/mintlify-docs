@@ -1,31 +1,25 @@
 ---
 title: "3D Generation"
-description: "Create 3D assets from text or images with AI Sonar 3D generation APIs and asynchronous task polling."
+description: "Create 3D assets from text or images and download completed model files from async task results."
 ---
-## Recommended flow
 
-1. Call [List models](/api-reference/models/list-models) with `recommended_for=3d`.
-2. Use [Create 3D](/api-reference/3d/create-3d) with a text `prompt`; add `image` or `image_url` only for image-to-3D models that support it.
-3. Choose optional fields such as `format`, `quality`, `style`, or `seed` according to the selected model contract.
-4. Poll `poll_url` until the asset is ready, then download `model_url` or format-specific URLs such as `glb_url` / `fbx_url`.
+3D generation is asynchronous. `POST /v1/3d/generations` creates a task; completed status responses return downloadable model asset URLs.
 
-## Model discovery
-
-3D generation is task-based. Treat the model catalog as the source of truth instead of assuming one provider or one fixed model.
+## Model Discovery
 
 ```bash
-curl "https://api.aisonar.dev/v1/models?recommended_for=3d" \
+curl "https://api.aisonar.dev/v1/models?recommended_for=3d" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-## Create a 3D task
+Do not assume every 3D model supports both text-to-3D and image-to-3D. Check the selected model contract before sending `image`, `image_url`, `format`, `quality`, `style`, or `seed`.
 
-Text-to-3D requests require a `prompt`. Image-to-3D requests add either `image` base64 data or `image_url`. Use `format` and `quality` only where the model contract exposes them.
+## Create Request
 
 ```bash
-curl https://api.aisonar.dev/v1/3d/generations \
-  -H "Authorization: Bearer sk-your-api-key" \
-  -H "Content-Type: application/json" \
+curl https://api.aisonar.dev/v1/3d/generations \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
   -d '{
     "model": "tripo3d-v2.5",
     "prompt": "A stylized low-poly robot mascot with clean topology",
@@ -34,21 +28,33 @@ curl https://api.aisonar.dev/v1/3d/generations \
   }'
 ```
 
-## Polling results
+Text-to-3D requires a `prompt`. Image-to-3D uses `image` or `image_url` when supported by the model. Prefer public URLs for production inputs unless the source image is private and your client intentionally uploads base64 data.
 
-Use the returned `poll_url` first. The stable fallback is [Get task status](/api-reference/tasks/get-task-status). Completed 3D tasks return `model_url` and may include format-specific fields such as `glb_url` or `fbx_url`.
+## Output Choices
 
-```bash
-curl "https://api.aisonar.dev/v1/tasks/$TASK_ID" \
-  -H "Authorization: Bearer sk-your-api-key"
-```
+- `format` can request output packaging such as `glb`, `fbx`, `obj`, or `usdz` when supported.
+- `quality` values such as `draft`, `standard`, or `high` affect latency and cost when the model exposes them.
+- `style` and `seed` are model-dependent; omit them unless the selected contract documents them.
 
-## API reference
+## Polling Results
+
+Use the returned `poll_url` first. If you need a fixed endpoint, use `GET /v1/tasks/{id}` with the same `id` / `task_id` from the create response.
+
+Completed tasks return `model_url` and may include format-specific URLs such as `glb_url`, `fbx_url`, `obj_url`, or `usdz_url`. Download and cache the asset in your own product if users need repeat access.
+
+## Common Pitfalls
+
+- Do not expect a 3D asset in the create response; poll until terminal status.
+- Do not promise every format for every model.
+- Do not retry create requests after client timeout without checking whether the task already exists.
+- Do not expose provider task IDs in your UI.
+
+## API Reference
 
 | Topic | Reference |
 |-------|-----------|
 | Create 3D | [Create 3D](/api-reference/3d/create-3d) |
-| Get 3D status | [Get 3D status](/api-reference/3d/get-3d-status) |
-| Get task status | [Get task status](/api-reference/tasks/get-task-status) |
-| List models | [List models](/api-reference/models/list-models) |
-| Get model | [Get model](/api-reference/models/get-model) |
+| Get 3D Status | [Get 3D Status](/api-reference/3d/get-3d-status) |
+| Get Task Status | [Get Task Status](/api-reference/tasks/get-task-status) |
+| List Models | [List Models](/api-reference/models/list-models) |
+| Billing & Pricing | [Billing & Pricing](/guides/billing) |

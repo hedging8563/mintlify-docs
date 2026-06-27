@@ -1,31 +1,25 @@
 ---
 title: "Music Generation"
-description: "Create music and lyrics with AI Sonar music generation APIs and asynchronous task polling."
+description: "Create songs, instrumentals, lyrics, and continuations with AI Sonar music tasks."
 ---
-## Recommended flow
 
-1. Call [List models](/api-reference/models/list-models) with `recommended_for=music`.
-2. Use [Create music](/api-reference/music/create-music) to create a task with `prompt` and optional fields such as `title`, `tags`, `action`, `mv`, or continuation settings.
-3. Store the returned `id` / `task_id` and `poll_url`.
-4. Poll until the task is `completed` or `failed`, then read `audio_url`, optional `video_url`, `title`, and `lyrics`.
+Music generation is asynchronous. `POST /v1/music/generations` creates a task and returns `id` / `task_id`, `status`, and usually `poll_url`. Final audio and metadata appear after polling.
 
-## Model discovery
-
-Music generation is asynchronous. Do not build against an upstream provider name or provider task ID; AI Sonar returns a normalized task identity and polling URL.
+## Model Discovery
 
 ```bash
-curl "https://api.aisonar.dev/v1/models?recommended_for=music" \
+curl "https://api.aisonar.dev/v1/models?recommended_for=music" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-## Create a music task
+The current public contract exposes `suno_music` for music generation and `suno_lyrics` for lyric-only flows. Query the model catalog before production use instead of pinning provider assumptions.
 
-`action: "MUSIC"` creates songs or instrumentals depending on the prompt and model. `action: "LYRICS"` is for lyric-only flows when the selected model supports it. Use `continue_clip_id` and `continue_at` only for continuation workflows documented by the model contract.
+## Create Request
 
 ```bash
-curl https://api.aisonar.dev/v1/music/generations \
-  -H "Authorization: Bearer sk-your-api-key" \
-  -H "Content-Type: application/json" \
+curl https://api.aisonar.dev/v1/music/generations \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
   -d '{
     "model": "suno_music",
     "prompt": "An upbeat synth-pop track with warm vocals and a clean chorus",
@@ -35,21 +29,27 @@ curl https://api.aisonar.dev/v1/music/generations \
   }'
 ```
 
-## Polling results
+Use `action: "MUSIC"` for songs or instrumentals. Use `action: "LYRICS"` only with models that support lyric-only generation. Continuation fields such as `continue_clip_id` and `continue_at` are for continuation workflows and should be sent only when your product is continuing a previous clip.
 
-Always prefer the returned `poll_url`. The stable fallback is [Get task status](/api-reference/tasks/get-task-status). Completed music tasks can include `audio_url`, `video_url`, `title`, `lyrics`, and model-normalized metadata.
+## Polling Results
 
-```bash
-curl "https://api.aisonar.dev/v1/tasks/$TASK_ID" \
-  -H "Authorization: Bearer sk-your-api-key"
-```
+Use the returned `poll_url` first. If you need a fixed endpoint, use `GET /v1/tasks/{id}` with the same `id` / `task_id` from the create response.
 
-## API reference
+Completed music tasks can include `audio_url`, `video_url`, `title`, `lyrics`, and model-normalized metadata. Store the final URLs in your application rather than polling repeatedly after terminal status.
+
+## Common Pitfalls
+
+- Do not display a final player until the task is `completed` and an `audio_url` exists.
+- Do not use provider task IDs or provider fetch URLs in your app state.
+- Do not mix lyric-only and full-music actions behind one UI without showing the difference to users.
+- Do not recreate tasks on every page refresh; resume from stored `task_id`.
+
+## API Reference
 
 | Topic | Reference |
 |-------|-----------|
-| Create music | [Create music](/api-reference/music/create-music) |
-| Get music status | [Get music status](/api-reference/music/get-music-status) |
-| Get task status | [Get task status](/api-reference/tasks/get-task-status) |
-| List models | [List models](/api-reference/models/list-models) |
-| Get model | [Get model](/api-reference/models/get-model) |
+| Create Music | [Create Music](/api-reference/music/create-music) |
+| Get Music Status | [Get Music Status](/api-reference/music/get-music-status) |
+| Get Task Status | [Get Task Status](/api-reference/tasks/get-task-status) |
+| List Models | [List Models](/api-reference/models/list-models) |
+| Billing & Pricing | [Billing & Pricing](/guides/billing) |

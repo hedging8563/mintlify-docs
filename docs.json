@@ -68,20 +68,11 @@
                   "guides/error-handling",
                   "guides/rate-limits",
                   "guides/billing",
-                  "guides/best-practices"
-                ]
-              },
-              {
-                "group": "Platform Guides",
-                "pages": [
                   "guides/async-jobs-polling",
-                  "guides/webhooks-callbacks",
                   "guides/observability-troubleshooting",
-                  "guides/security-data-handling",
+                  "guides/structured-outputs-tool-calling",
                   "guides/migration-guides",
-                  "guides/provider-routing-reliability",
-                  "guides/model-lifecycle-deprecations",
-                  "guides/structured-outputs-tool-calling"
+                  "guides/best-practices"
                 ]
               },
               {
@@ -262,20 +253,11 @@
                   "zh/guides/error-handling",
                   "zh/guides/rate-limits",
                   "zh/guides/billing",
-                  "zh/guides/best-practices"
-                ]
-              },
-              {
-                "group": "平台指南",
-                "pages": [
                   "zh/guides/async-jobs-polling",
-                  "zh/guides/webhooks-callbacks",
                   "zh/guides/observability-troubleshooting",
-                  "zh/guides/security-data-handling",
+                  "zh/guides/structured-outputs-tool-calling",
                   "zh/guides/migration-guides",
-                  "zh/guides/provider-routing-reliability",
-                  "zh/guides/model-lifecycle-deprecations",
-                  "zh/guides/structured-outputs-tool-calling"
+                  "zh/guides/best-practices"
                 ]
               },
               {
@@ -456,20 +438,11 @@
                   "zh-Hant/guides/error-handling",
                   "zh-Hant/guides/rate-limits",
                   "zh-Hant/guides/billing",
-                  "zh-Hant/guides/best-practices"
-                ]
-              },
-              {
-                "group": "平台指南",
-                "pages": [
                   "zh-Hant/guides/async-jobs-polling",
-                  "zh-Hant/guides/webhooks-callbacks",
                   "zh-Hant/guides/observability-troubleshooting",
-                  "zh-Hant/guides/security-data-handling",
+                  "zh-Hant/guides/structured-outputs-tool-calling",
                   "zh-Hant/guides/migration-guides",
-                  "zh-Hant/guides/provider-routing-reliability",
-                  "zh-Hant/guides/model-lifecycle-deprecations",
-                  "zh-Hant/guides/structured-outputs-tool-calling"
+                  "zh-Hant/guides/best-practices"
                 ]
               },
               {
@@ -650,20 +623,11 @@
                   "ja/guides/error-handling",
                   "ja/guides/rate-limits",
                   "ja/guides/billing",
-                  "ja/guides/best-practices"
-                ]
-              },
-              {
-                "group": "プラットフォームガイド",
-                "pages": [
                   "ja/guides/async-jobs-polling",
-                  "ja/guides/webhooks-callbacks",
                   "ja/guides/observability-troubleshooting",
-                  "ja/guides/security-data-handling",
+                  "ja/guides/structured-outputs-tool-calling",
                   "ja/guides/migration-guides",
-                  "ja/guides/provider-routing-reliability",
-                  "ja/guides/model-lifecycle-deprecations",
-                  "ja/guides/structured-outputs-tool-calling"
+                  "ja/guides/best-practices"
                 ]
               },
               {
@@ -844,20 +808,11 @@
                   "ko/guides/error-handling",
                   "ko/guides/rate-limits",
                   "ko/guides/billing",
-                  "ko/guides/best-practices"
-                ]
-              },
-              {
-                "group": "플랫폼 가이드",
-                "pages": [
                   "ko/guides/async-jobs-polling",
-                  "ko/guides/webhooks-callbacks",
                   "ko/guides/observability-troubleshooting",
-                  "ko/guides/security-data-handling",
+                  "ko/guides/structured-outputs-tool-calling",
                   "ko/guides/migration-guides",
-                  "ko/guides/provider-routing-reliability",
-                  "ko/guides/model-lifecycle-deprecations",
-                  "ko/guides/structured-outputs-tool-calling"
+                  "ko/guides/best-practices"
                 ]
               },
               {
@@ -1038,20 +993,11 @@
                   "de/guides/error-handling",
                   "de/guides/rate-limits",
                   "de/guides/billing",
-                  "de/guides/best-practices"
-                ]
-              },
-              {
-                "group": "Plattformleitfäden",
-                "pages": [
                   "de/guides/async-jobs-polling",
-                  "de/guides/webhooks-callbacks",
                   "de/guides/observability-troubleshooting",
-                  "de/guides/security-data-handling",
+                  "de/guides/structured-outputs-tool-calling",
                   "de/guides/migration-guides",
-                  "de/guides/provider-routing-reliability",
-                  "de/guides/model-lifecycle-deprecations",
-                  "de/guides/structured-outputs-tool-calling"
+                  "de/guides/best-practices"
                 ]
               },
               {
@@ -1232,20 +1178,11 @@
                   "fr/guides/error-handling",
                   "fr/guides/rate-limits",
                   "fr/guides/billing",
-                  "fr/guides/best-practices"
-                ]
-              },
-              {
-                "group": "Guides plateforme",
-                "pages": [
                   "fr/guides/async-jobs-polling",
-                  "fr/guides/webhooks-callbacks",
                   "fr/guides/observability-troubleshooting",
-                  "fr/guides/security-data-handling",
+                  "fr/guides/structured-outputs-tool-calling",
                   "fr/guides/migration-guides",
-                  "fr/guides/provider-routing-reliability",
-                  "fr/guides/model-lifecycle-deprecations",
-                  "fr/guides/structured-outputs-tool-calling"
+                  "fr/guides/best-practices"
                 ]
               },
               {
@@ -1426,20 +1363,11 @@
                   "es/guides/error-handling",
                   "es/guides/rate-limits",
                   "es/guides/billing",
-                  "es/guides/best-practices"
-                ]
-              },
-              {
-                "group": "Guías de plataforma",
-                "pages": [
                   "es/guides/async-jobs-polling",
-                  "es/guides/webhooks-callbacks",
                   "es/guides/observability-troubleshooting",
-                  "es/guides/security-data-handling",
+                  "es/guides/structured-outputs-tool-calling",
                   "es/guides/migration-guides",
-                  "es/guides/provider-routing-reliability",
-                  "es/guides/model-lifecycle-deprecations",
-                  "es/guides/structured-outputs-tool-calling"
+                  "es/guides/best-practices"
                 ]
               },
               {
@@ -1620,20 +1548,11 @@
                   "pt/guides/error-handling",
                   "pt/guides/rate-limits",
                   "pt/guides/billing",
-                  "pt/guides/best-practices"
-                ]
-              },
-              {
-                "group": "Guias da plataforma",
-                "pages": [
                   "pt/guides/async-jobs-polling",
-                  "pt/guides/webhooks-callbacks",
                   "pt/guides/observability-troubleshooting",
-                  "pt/guides/security-data-handling",
+                  "pt/guides/structured-outputs-tool-calling",
                   "pt/guides/migration-guides",
-                  "pt/guides/provider-routing-reliability",
-                  "pt/guides/model-lifecycle-deprecations",
-                  "pt/guides/structured-outputs-tool-calling"
+                  "pt/guides/best-practices"
                 ]
               },
               {
@@ -1814,20 +1733,11 @@
                   "ar/guides/error-handling",
                   "ar/guides/rate-limits",
                   "ar/guides/billing",
-                  "ar/guides/best-practices"
-                ]
-              },
-              {
-                "group": "أدلة المنصة",
-                "pages": [
                   "ar/guides/async-jobs-polling",
-                  "ar/guides/webhooks-callbacks",
                   "ar/guides/observability-troubleshooting",
-                  "ar/guides/security-data-handling",
+                  "ar/guides/structured-outputs-tool-calling",
                   "ar/guides/migration-guides",
-                  "ar/guides/provider-routing-reliability",
-                  "ar/guides/model-lifecycle-deprecations",
-                  "ar/guides/structured-outputs-tool-calling"
+                  "ar/guides/best-practices"
                 ]
               },
               {
@@ -2008,20 +1918,11 @@
                   "vi/guides/error-handling",
                   "vi/guides/rate-limits",
                   "vi/guides/billing",
-                  "vi/guides/best-practices"
-                ]
-              },
-              {
-                "group": "Hướng dẫn nền tảng",
-                "pages": [
                   "vi/guides/async-jobs-polling",
-                  "vi/guides/webhooks-callbacks",
                   "vi/guides/observability-troubleshooting",
-                  "vi/guides/security-data-handling",
+                  "vi/guides/structured-outputs-tool-calling",
                   "vi/guides/migration-guides",
-                  "vi/guides/provider-routing-reliability",
-                  "vi/guides/model-lifecycle-deprecations",
-                  "vi/guides/structured-outputs-tool-calling"
+                  "vi/guides/best-practices"
                 ]
               },
               {
@@ -2202,20 +2103,11 @@
                   "id/guides/error-handling",
                   "id/guides/rate-limits",
                   "id/guides/billing",
-                  "id/guides/best-practices"
-                ]
-              },
-              {
-                "group": "Panduan platform",
-                "pages": [
                   "id/guides/async-jobs-polling",
-                  "id/guides/webhooks-callbacks",
                   "id/guides/observability-troubleshooting",
-                  "id/guides/security-data-handling",
+                  "id/guides/structured-outputs-tool-calling",
                   "id/guides/migration-guides",
-                  "id/guides/provider-routing-reliability",
-                  "id/guides/model-lifecycle-deprecations",
-                  "id/guides/structured-outputs-tool-calling"
+                  "id/guides/best-practices"
                 ]
               },
               {
@@ -2396,20 +2288,11 @@
                   "tr/guides/error-handling",
                   "tr/guides/rate-limits",
                   "tr/guides/billing",
-                  "tr/guides/best-practices"
-                ]
-              },
-              {
-                "group": "Platform kılavuzları",
-                "pages": [
                   "tr/guides/async-jobs-polling",
-                  "tr/guides/webhooks-callbacks",
                   "tr/guides/observability-troubleshooting",
-                  "tr/guides/security-data-handling",
+                  "tr/guides/structured-outputs-tool-calling",
                   "tr/guides/migration-guides",
-                  "tr/guides/provider-routing-reliability",
-                  "tr/guides/model-lifecycle-deprecations",
-                  "tr/guides/structured-outputs-tool-calling"
+                  "tr/guides/best-practices"
                 ]
               },
               {
@@ -2584,114 +2467,6 @@
     {
       "source": "/v1beta/:slug*",
       "destination": "https://api.aisonar.dev/v1beta/:slug*"
-    },
-    {
-      "source": "/integrations/claude-code-skill",
-      "destination": "/integrations/coding-agent-skill"
-    },
-    {
-      "source": "/guides/coding-agents",
-      "destination": "/guides/coding-agent-cost"
-    },
-    {
-      "source": "/guides/prompt-cache",
-      "destination": "/guides/coding-agent-cost"
-    },
-    {
-      "source": "/zh/guides/coding-agents",
-      "destination": "/zh/guides/coding-agent-cost"
-    },
-    {
-      "source": "/zh/guides/prompt-cache",
-      "destination": "/zh/guides/coding-agent-cost"
-    },
-    {
-      "source": "/zh-Hant/guides/coding-agents",
-      "destination": "/zh-Hant/guides/coding-agent-cost"
-    },
-    {
-      "source": "/zh-Hant/guides/prompt-cache",
-      "destination": "/zh-Hant/guides/coding-agent-cost"
-    },
-    {
-      "source": "/ja/guides/coding-agents",
-      "destination": "/ja/guides/coding-agent-cost"
-    },
-    {
-      "source": "/ja/guides/prompt-cache",
-      "destination": "/ja/guides/coding-agent-cost"
-    },
-    {
-      "source": "/ko/guides/coding-agents",
-      "destination": "/ko/guides/coding-agent-cost"
-    },
-    {
-      "source": "/ko/guides/prompt-cache",
-      "destination": "/ko/guides/coding-agent-cost"
-    },
-    {
-      "source": "/de/guides/coding-agents",
-      "destination": "/de/guides/coding-agent-cost"
-    },
-    {
-      "source": "/de/guides/prompt-cache",
-      "destination": "/de/guides/coding-agent-cost"
-    },
-    {
-      "source": "/fr/guides/coding-agents",
-      "destination": "/fr/guides/coding-agent-cost"
-    },
-    {
-      "source": "/fr/guides/prompt-cache",
-      "destination": "/fr/guides/coding-agent-cost"
-    },
-    {
-      "source": "/es/guides/coding-agents",
-      "destination": "/es/guides/coding-agent-cost"
-    },
-    {
-      "source": "/es/guides/prompt-cache",
-      "destination": "/es/guides/coding-agent-cost"
-    },
-    {
-      "source": "/pt/guides/coding-agents",
-      "destination": "/pt/guides/coding-agent-cost"
-    },
-    {
-      "source": "/pt/guides/prompt-cache",
-      "destination": "/pt/guides/coding-agent-cost"
-    },
-    {
-      "source": "/ar/guides/coding-agents",
-      "destination": "/ar/guides/coding-agent-cost"
-    },
-    {
-      "source": "/ar/guides/prompt-cache",
-      "destination": "/ar/guides/coding-agent-cost"
-    },
-    {
-      "source": "/vi/guides/coding-agents",
-      "destination": "/vi/guides/coding-agent-cost"
-    },
-    {
-      "source": "/vi/guides/prompt-cache",
-      "destination": "/vi/guides/coding-agent-cost"
-    },
-    {
-      "source": "/id/guides/coding-agents",
-      "destination": "/id/guides/coding-agent-cost"
-    },
-    {
-      "source": "/id/guides/prompt-cache",
-      "destination": "/id/guides/coding-agent-cost"
-    },
-    {
-      "source": "/tr/guides/coding-agents",
-      "destination": "/tr/guides/coding-agent-cost"
-    },
-    {
-      "source": "/tr/guides/prompt-cache",
-      "destination": "/tr/guides/coding-agent-cost"
     }
   ],
   "footer": {},

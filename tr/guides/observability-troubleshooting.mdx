@@ -1,29 +1,61 @@
 ---
-title: "Gözlemlenebilirlik ve sorun giderme"
-description: "Gözlemlenebilirlik ve sorun giderme için production kılavuzu."
+title: "Gözlemlenebilirlik & Hata Ayıklama"
+description: "AI Sonar'in destek, kullanım uzlaştırması ve asenkron görev hata ayıklama için sunduğu genel tanımlayıcıları yakalayın."
 ---
 
-## Genel bakış
+Bu sayfa, AI Sonar'i üretimde kullanan uygulama ekipleri için yazılmıştır. Genel tanımlayıcılara ve kullanıcı güvenliğine yönelik kayıtlara odaklanmaktadır, sağlayıcı yönlendirme iç detaylarına değil.
 
-Bu kılavuz, uygulamanızı provider implementation detaylarına bağlamadan production’da Gözlemlenebilirlik ve sorun giderme kullanmayı açıklar.
+## Genel Tanımlayıcılar
 
-AI Sonar public API’lerini, model metadata’sını ve dokümante edilmiş response field’larını sözleşme olarak kullanın.
+| Tanımlayıcı | Nerede Görünür | Ne için Kullanılır |
+|-------------|----------------|--------------------|
+| `request_id` | Hata gövdesi, Yönetim API kullanım kayıtları, gösterge paneli günlükleri | Destek ve istek düzeyinde uzlaştırma |
+| `task_id` / `id` | Asenkron oluşturma ve durum yanıtları | Görüntü, video, müzik ve 3D işleri için anket |
+| `poll_url` | Asenkron oluşturma yanıtları | Tercih edilen durum URL'si |
+| `billing_transaction_id` | Yerleştiğinde akış dışı yanıtlar, görev durum yanıtları, Yönetim API kullanım kayıtları, `X-Billing-Transaction-ID` başlığı | Faturalama uzlaştırması |
+| `X-Task-ID` | Asenkron görev yanıtları | Başlık düzeyinde görev korelasyonu |
 
-## Güncel davranış
+## Ne Kaydedilmeli
 
-- Release öncesi bu değerleri kontrol edin: `request_id`, `task_id`, `billing_transaction_id`.
-- Provider’a özel status URL’lerine, routing identifier’lara veya private execution metadata’ya bağlı kalmayın.
-- Retry işlemlerini idempotent yapın ve çift billable work oluşturmayın.
+1. Kayıt uç noktası, model, durum kodu, zaman damgası ve genel tanımlayıcıları kaydedin.
+2. Varsayılan olarak `Authorization`, API anahtarları, imzalı URL'ler, özel medya URL'leri ve tam istemleri gizleyin.
+3. Asenkron işler için, oluşturma yanıtını ve her terminal durum yanıtını kaydedin.
+4. Kullanım soruları için, API anahtar ID'si ve tarih filtreleri ile Yönetim API'sini çağırın.
+5. Sağlayıcı metnini ayrıştırmak yerine yanıt gövdesinden hata `type`, `code` ve `param` kullanın.
 
-## Production kontrol listesi
+## Hata Ayıklama Kontrol Listesi
 
-- Loglar support için yararlı olmalı, ancak secret, private file, prompt veya kullanıcı medyası saklamamalıdır.
-- Support ticket; sanitize edilmiş request shape, endpoint, model, timestamp ve public identifier içermelidir.
-- Production trafiğini taşımadan önce flow’u staging’de doğrulayın.
+| Belirti | İlk Kontrol | Yararlı Sayfa |
+|---------|-------------|----------------|
+| `401` veya `403` | API anahtarı, yönetim belirteci, organizasyon erişimi | [Kimlik Doğrulama](/tr/authentication) |
+| `429` | Hız sınırlama katmanı ve istemci yeniden deneme davranışı | [Hız Sınırlamaları](/tr/guides/rate-limits) |
+| `400 invalid_request_error` | Desteklenmeyen alan, yanlış uç nokta veya model özel sözleşme uyumsuzluğu | [Hata Yönetimi](/tr/guides/error-handling) |
+| Asenkron görev asla bitmiyor | `poll_url`'u anket yapın, son `status`'u kontrol edin, tekrar eden görev oluşturma işlemlerinden kaçının | [Asenkron İşler & Anket](/tr/guides/async-jobs-polling) |
+| Maliyet UI ile eşleşmiyor | Kullanım kayıtlarında `request_id` ve `billing_transaction_id`'yi karşılaştırın | [Faturalama & Fiyatlandırma](/tr/guides/billing) |
 
-## İlgili sayfalar
+## Kullanım Uzlaştırması
 
-- [Hata Yönetimi](/tr/guides/error-handling)
-- [Faturalandırma ve Fiyatlandırma](/tr/guides/billing)
-- [Asenkron işler ve polling](/tr/guides/async-jobs-polling)
-- [API anahtarı kullanımını getir](/tr/api-reference/management/get-api-key-usage)
+`GET /v1/management/api-keys/{keyId}/usage` sayfalanmış anahtar düzeyinde kullanımı döndürür. `scene`, `accessChannel`, `logicalModel`, `modelVendor`, `startDate` ve `endDate` ile filtreleyebilir. Gösterge panelini kazımak yerine sunucu tarafında uzlaştırma için kullanın.
+
+```bash
+curl "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/usage?page=1&limit=20&scene=video" \\
+  -H "Authorization: Bearer mt-your-management-token"
+```
+
+Akış yanıtları, akış gönderildikten sonra yerleşebilir, bu nedenle faturalama başlığı, kullanım daha sonra kaydedilse bile mevcut olmayabilir. Asenkron medya görevleri için, yerleşim terminal anketinden sonra görünebilir.
+
+## Destek Paketi
+
+Destekle iletişime geçerken, mevcutsa `request_id`, `task_id`, `billing_transaction_id`, uç nokta, model, zaman damgası ve temizlenmiş bir istek şekli ekleyin. Destek, gizlenmiş bir örnek istemedikçe API anahtarları, özel medya veya tam istemler eklemeyin.
+
+Müşteri günlüklerinde veya destek taleplerinde sağlayıcı adları, kanal ID'leri, yönlendirme tanımlayıcıları, Redis anahtarları veya yukarı akış görev URL'lerini AI Sonar destek açıkça istemedikçe eklemeyin.
+
+## API Referansı
+
+| Konu | Referans |
+|------|----------|
+| Hata Yönetimi | [Hata Yönetimi](/tr/guides/error-handling) |
+| Hız Sınırlamaları | [Hız Sınırlamaları](/tr/guides/rate-limits) |
+| Faturalama & Fiyatlandırma | [Faturalama & Fiyatlandırma](/tr/guides/billing) |
+| API Anahtar Kullanımını Al | [API Anahtar Kullanımını Al](/tr/api-reference/management/get-api-key-usage) |
+| Görev Durumunu Al | [Görev Durumunu Al](/tr/api-reference/tasks/get-task-status) |

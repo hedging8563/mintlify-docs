@@ -1,74 +1,74 @@
 ---
-title: "Görsel üretimi"
-description: "AI Sonar görsel API’leriyle metinden görsel, referans görsel ve düzenleme akışları oluşturun."
+title: "Görüntü Üretimi"
+description: "AI Sonar kamu görüntü sözleşmeleri ile metinden görüntüye, görüntüden görüntüye ve görüntü düzenleme iş akışları oluşturun."
 ---
-## Önerilen akış
 
-1. [Modelleri listele](/tr/api-reference/models/list-models) çağrısını `recommended_for=image` ile yapın.
-2. Seçilen model için [Modeli getir](/tr/api-reference/models/get-model) sayfasını açın ve public contract alanını izleyin.
-3. Metinden görsel ve desteklenen referans görsel akışları için [Görsel oluştur](/tr/api-reference/images/create-image), düzenleme akışları için [Görsel düzenle](/tr/api-reference/images/edit-image) kullanın.
-4. Yanıtta `poll_url` varsa görev son duruma gelene kadar bu URL’i yoklayın.
+AI Sonar görüntü API'leri, farklı istek şekilleriyle birkaç model ailesini kapsamaktadır. Herhangi bir alanın her görüntü modelinde çalıştığını varsaymadan önce, kamu model sözleşmesini ve uç noktaya özgü API referansını kullanın.
 
-## Modelleri keşfet
+## Uç Noktayı Seçin
 
-Görsel modellerinin request şekli aynı değildir. Bazıları sonucu inline döndürür, bazıları asenkron görev oluşturur. `size`, `quality`, `aspect_ratio`, `resolution`, `async` alanlarının kabul edilip edilmediğini seçilen model sözleşmesi belirler.
+| Hedef | Uç Nokta | Notlar |
+|-------|----------|--------|
+| Metinden görüntüye | `POST /v1/images/generations` | `prompt` ve açık bir `model` kullanın |
+| Görüntüden görüntüye / referans görüntü | `POST /v1/images/generations` | Model destekliyorsa `operation: "image-to-image"` artı `image_url`, `image_urls` veya `reference_image_urls` kullanın |
+| GPT Görüntü düzenleme | `POST /v1/images/edits` | Desteklenen düzenleme modelleri için çok parçalı `image`, JSON `image_url` / `image_urls` ve resmi `images[]` referanslarını destekler |
+| Eski varyasyon | `POST /v1/images/variations` | Yeni işler için mevcut üretim veya düzenleme yollarını tercih edin |
+| Asenkron durum | `GET /v1/tasks/{id}` | Varsa önce `poll_url` kullanın |
+
+## Model Keşfi
 
 ```bash
-curl "https://api.aisonar.dev/v1/models?recommended_for=image" \
+curl "https://api.aisonar.dev/v1/models?recommended_for=image" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-## Metinden görsel
+Görüntü modeli parametreleri oldukça farklılık gösterir. `size`, `quality`, `aspect_ratio`, `resolution`, `async`, `background` veya `output_format` göndermeden önce seçilen model sözleşmesini okuyun.
 
-GPT Image ailesi modellerinde model sözleşmesi sunuyorsa `size` kullanın. Google veya Nano Banana görsel modellerinde `aspect_ratio` ve `resolution` yalnızca sözleşmede listelenmişse kullanılmalıdır.
+## Girdi ve Model-Özel Alanlar
+
+- `gpt-image-2`, OpenAI tarzı `size` ve `quality` kullanır; destekleniyorsa AI Sonar'ın `auto` kullanmasına izin vermek için `size` veya `quality`'yi atlayın.
+- Gemini ve Nano Banana görüntü aileleri genellikle `aspect_ratio` kullanır; yalnızca seçilen model bunu açığa çıkardığında `resolution` gönderin.
+- Nano Banana referans-görüntü istekleri, `operation: "image-to-image"` ve `image_urls` ile `/v1/images/generations` üzerinde yer almalıdır, `/v1/images/edits` üzerinde değil.
+- `/v1/images/generations` üst düzey `images[]` veya `file_id` kabul etmez; bunlar düzenleme akış şekilleridir.
+- Uzaktan görüntü URL'leri, kamuya açık `http`/`https` URL'leri olmalıdır. Özel ağlardan, gömülü kimlik bilgilerinden, parçacıklardan ve kısa ömürlü imzalı URL'lerden kaçının.
+
+## İstek Oluşturma
 
 ```bash
-curl https://api.aisonar.dev/v1/images/generations \
-  -H "Authorization: Bearer sk-your-api-key" \
-  -H "Content-Type: application/json" \
+curl https://api.aisonar.dev/v1/images/generations \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
   -d '{
     "model": "gpt-image-2",
-    "prompt": "A clean product photo of a ceramic coffee cup on a walnut desk",
+    "prompt": "Ceviz masası üzerinde bir seramik kahve fincanının temiz bir ürün fotoğrafı",
     "size": "1024x1024",
     "response_format": "url"
   }'
 ```
 
-## Referans görseller ve düzenleme
+## Sonuçları Anketleme
 
-`/v1/images/generations` üzerinde referans görselle üretim için model destekliyorsa `operation: "image-to-image"` ile `image_url`, `image_urls`, `reference_image_urls` veya multipart `image` dosyası gönderin. Multipart görselleri, görsel URL’lerini veya `images[].image_url` / `images[].file_id` alanlarını kabul eden düzenleme modelleri için `/v1/images/edits` kullanın.
-
-Top-level `images[]` veya top-level `file_id` alanlarını `/v1/images/generations` endpointine göndermeyin; bu şekiller onları açıkça belgeleyen edit akışlarına aittir.
+Bazı görüntü yolları satır içi `data[].url` veya `data[].b64_json` döndürür. Diğer yollar `status: "pending"`, `task_id` ve `poll_url` döndürür. Asenkron görüntü üretimi veya düzenleme talep ederseniz, tamamlanan görev sonuçları URL'leri döndürür; özellikle `b64_json` gerektiğinde senkron istekler kullanın.
 
 ```bash
-curl https://api.aisonar.dev/v1/images/generations \
-  -H "Authorization: Bearer sk-your-api-key" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "nano-banana-pro",
-    "operation": "image-to-image",
-    "prompt": "Keep the same product, place it in a bright studio scene",
-    "image_urls": ["https://example.com/reference.png"],
-    "aspect_ratio": "1:1"
-  }'
-```
-
-## Sonuçları yokla
-
-Senkron görsel yanıtı `data[].url` veya `data[].b64_json` döndürür. Görev yanıtı `status`, `task_id` ve genellikle `poll_url` döndürür. `poll_url` önceliklidir; sabit fallback [Görev durumu](/tr/api-reference/tasks/get-task-status) endpointidir. Asenkron görsel görevleri URL döndürür, inline base64’i yalnızca desteklenen senkron akışlarda isteyin.
-
-```bash
-curl "https://api.aisonar.dev/v1/tasks/$TASK_ID" \
+curl "https://api.aisonar.dev/v1/tasks/$TASK_ID" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
+
+## Yaygın Hatalar
+
+- Her görüntü modelinin senkron olduğunu varsaymayın.
+- Asenkron görüntü görevlerinden `b64_json` talep etmeyin; asenkron sonuçlar URL odaklıdır.
+- Oran yalnızca Gemini görüntü modellerine `resolution` göndermeyin.
+- Nano Banana görüntüden görüntü akışları için `/v1/images/edits` kullanmayın.
+- Senkron yüksek çözünürlüklü görüntü istekleri için HTTP istemci zaman aşımını en az `120s` olarak ayarlayın.
 
 ## API Referansı
 
 | Konu | Referans |
-|-------|-----------|
-| Görsel oluştur | [Görsel oluştur](/tr/api-reference/images/create-image) |
-| Görsel düzenle | [Görsel düzenle](/tr/api-reference/images/edit-image) |
-| Görsel durumu | [Görsel durumu](/tr/api-reference/images/get-image-status) |
-| Görev durumu | [Görev durumu](/tr/api-reference/tasks/get-task-status) |
-| Modelleri listele | [Modelleri listele](/tr/api-reference/models/list-models) |
-| Modeli getir | [Modeli getir](/tr/api-reference/models/get-model) |
+|------|----------|
+| Görüntü Oluştur | [Görüntü Oluştur](/tr/api-reference/images/create-image) |
+| Görüntü Düzenle | [Görüntü Düzenle](/tr/api-reference/images/edit-image) |
+| Görüntü Varyasyonu Oluştur | [Görüntü Varyasyonu Oluştur](/tr/api-reference/images/create-variation) |
+| Görüntü Durumunu Al | [Görüntü Durumunu Al](/tr/api-reference/images/get-image-status) |
+| Görev Durumunu Al | [Görev Durumunu Al](/tr/api-reference/tasks/get-task-status) |

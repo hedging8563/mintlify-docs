@@ -1,29 +1,74 @@
 ---
-title: "Yapılandırılmış çıktılar ve tool calling"
-description: "Yapılandırılmış çıktılar ve tool calling için production kılavuzu."
+title: "Yapılandırılmış Çıktılar & Araç Çağrısı"
+description: "Her modelin aynı sözleşmeyi desteklediğini varsaymadan JSON modunu, fonksiyon araçlarını ve yerel araç yollarını kullanın."
 ---
 
-## Genel bakış
+Yapılandırılmış çıktılar ve araçlar gerçek AI Sonar API yollarıdır, ancak her model ve yol için evrensel bir yetenek değildir. İhtiyacınız olan davranışı sahip olan yolu seçin.
 
-Bu kılavuz, uygulamanızı provider implementation detaylarına bağlamadan production’da Yapılandırılmış çıktılar ve tool calling kullanmayı açıklar.
+## JSON Ve Yapılandırılmış Çıktı
 
-AI Sonar public API’lerini, model metadata’sını ve dokümante edilmiş response field’larını sözleşme olarak kullanın.
+Taşınabilir yapılandırılmış yanıtlar için, Chat Tamamlamaları ile başlayın `response_format: {"type":"json_object"}` ve çıktıyı uygulamanızda doğrulayın. Bu, AI Sonar paylaşılan doğrulamasındaki kararlı kamu talep şeklidir.
 
-## Güncel davranış
+```json
+{
+  "model": "gpt-5.4",
+  "messages": [{"role": "user", "content": "Return a JSON object with city and weather."}],
+  "response_format": {"type": "json_object"}
+}
+```
 
-- Release öncesi bu değerleri kontrol edin: JSON schema, tools, function declarations.
-- Provider’a özel status URL’lerine, routing identifier’lara veya private execution metadata’ya bağlı kalmayın.
-- Retry işlemlerini idempotent yapın ve çift billable work oluşturmayın.
+`json_schema` ve `strict` yapılandırılmış çıktı yolları bazı yukarı akış ve dönüştürme kodlarında mevcuttur, ancak bunlar model ve yol bağımlıdır. Bunları seçilen model ile doğrulamak için bir yetenek olarak değerlendirin, her AI Sonar yolunda genel bir vaat olarak değil.
 
-## Production kontrol listesi
+## Araç Çağrısı Sınırı
 
-- Loglar support için yararlı olmalı, ancak secret, private file, prompt veya kullanıcı medyası saklamamalıdır.
-- Support ticket; sanitize edilmiş request shape, endpoint, model, timestamp ve public identifier içermelidir.
-- Production trafiğini taşımadan önce flow’u staging’de doğrulayın.
+| Araç şekli | Tercih Edilecek Yol | Üretim Notu |
+|------------|---------------------|--------------|
+| OpenAI fonksiyon araçları | `/v1/chat/completions` | Kullanıcı tanımlı fonksiyon çağrıları için taşınabilir |
+| OpenAI Yanıt araçları | `/v1/responses` | Yanıtlarla ilgili yerleşik veya barındırılan araçlar için kullanın |
+| Anthropic araçları | `/v1/messages` | Claude'a özgü araç kullanımı ve düşünme akışları için kullanın |
+| Gemini fonksiyon bildirimleri / yerleşik araçlar | `/v1beta/models/:model:generateContent` | Gemini yolunda Gemini'ye özgü araç alanlarını koruyun |
 
-## İlgili sayfalar
+AI Sonar, fonksiyonunuzu sizin için çalıştırmaz. Bir model `tool_calls`, `function_call`, `tool_use` veya Gemini fonksiyon çağrı parçaları döndürdüğünde, uygulamanız aracı çalıştırmalı, aracın sonucunu yolun gerektirdiği formatta eklemeli ve konuşmaya devam etmelidir.
 
-- [✨ Çoklu Format API](/tr/guides/api-formats)
-- [Sohbet Tamamlaması Oluştur](/tr/api-reference/chat/create-completion)
-- [Yanıt Oluştur](/tr/api-reference/responses/create-response)
-- [Mesaj Oluştur](/tr/api-reference/messages/create-message)
+## Yaygın Hatalar
+
+- Sağlayıcıya özgü yerleşik araçları Chat Tamamlamaları üzerinden göndermeyin ve bunların sessizce çevrileceğini beklemeyin.
+- Seçilen yol ve model test edilmedikçe katı JSON Şemasına güvenmeyin.
+- Şemaları küçük ve açık tutun; büyük şemalar token ekler ve güvenilirliği azaltabilir.
+- JSON modu etkin olsa bile model çıktısını sunucu tarafında doğrulayın.
+- Desteklenmeyen alan hatalarını sözleşme geri bildirimi olarak değerlendirin. Alanı kaldırın veya onu sahip olan yerel yolu kullanın.
+
+## Örnek
+
+```bash
+curl https://api.aisonar.dev/v1/chat/completions \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "gpt-5.4",
+    "messages": [{"role":"user","content":"Extract name and email as JSON."}],
+    "response_format": {"type":"json_object"},
+    "tools": [{
+      "type": "function",
+      "function": {
+        "name": "lookup_customer",
+        "description": "Look up a customer by email",
+        "parameters": {
+          "type": "object",
+          "properties": {"email": {"type": "string"}},
+          "required": ["email"]
+        }
+      }
+    }]
+  }'
+```
+
+## API Referansı
+
+| Konu | Referans |
+|-------|-----------|
+| Çoklu Format API | [Çoklu Format API](/tr/guides/api-formats) |
+| Chat Tamamlaması Oluştur | [Chat Tamamlaması Oluştur](/tr/api-reference/chat/create-completion) |
+| Yanıt Oluştur | [Yanıt Oluştur](/tr/api-reference/responses/create-response) |
+| Mesaj Oluştur | [Mesaj Oluştur](/tr/api-reference/messages/create-message) |
+| Gemini İçeriği Oluştur | [Gemini İçeriği Oluştur](/tr/api-reference/gemini/generate-content) |

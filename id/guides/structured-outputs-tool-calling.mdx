@@ -1,29 +1,74 @@
 ---
-title: "Output terstruktur dan pemanggilan tool"
-description: "Panduan produksi untuk Output terstruktur dan pemanggilan tool."
+title: "Keluaran Terstruktur & Panggilan Alat"
+description: "Gunakan mode JSON, alat fungsi, dan rute alat asli tanpa mengasumsikan setiap model mendukung kontrak yang sama."
 ---
 
-## Ikhtisar
+Keluaran terstruktur dan alat adalah jalur API AI Sonar yang nyata, tetapi mereka bukan kemampuan universal di setiap model dan rute. Pilih rute yang memiliki perilaku yang Anda butuhkan.
 
-Panduan ini menjelaskan cara memakai Output terstruktur dan pemanggilan tool di produksi tanpa mengikat aplikasi ke detail implementasi provider.
+## JSON Dan Keluaran Terstruktur
 
-Gunakan API publik AI Sonar, metadata model, dan field respons terdokumentasi sebagai kontrak.
+Untuk respons terstruktur yang portabel, mulai dengan Chat Completions `response_format: {"type":"json_object"}` dan validasi keluaran di aplikasi Anda. Ini adalah bentuk permintaan publik yang stabil dalam validasi bersama AI Sonar.
 
-## Perilaku saat ini
+```json
+{
+  "model": "gpt-5.4",
+  "messages": [{"role": "user", "content": "Kembalikan objek JSON dengan kota dan cuaca."}],
+  "response_format": {"type": "json_object"}
+}
+```
 
-- Periksa nilai berikut sebelum rilis: JSON schema, tools, function declarations.
-- Jangan bergantung pada URL status khusus provider, identifier routing, atau metadata eksekusi privat.
-- Buat retry idempotent dan hindari membuat pekerjaan billable ganda.
+`json_schema` dan jalur keluaran terstruktur `strict` ada di beberapa kode upstream dan konversi, tetapi mereka tergantung pada model dan rute. Perlakukan mereka sebagai kemampuan untuk diverifikasi dengan model yang dipilih, bukan sebagai janji umum di setiap rute AI Sonar.
 
-## Checklist produksi
+## Batas Panggilan Alat
 
-- Log harus membantu support tanpa menyimpan secret, file privat, prompt, atau media pengguna.
-- Ticket support sebaiknya menyertakan request shape yang sudah disanitasi, endpoint, model, timestamp, dan identifier publik.
-- Verifikasi flow di staging sebelum memindahkan traffic produksi.
+| Bentuk Alat | Rute yang disukai | Catatan Produksi |
+|-------------|-------------------|------------------|
+| Alat fungsi OpenAI | `/v1/chat/completions` | Portabel untuk panggilan fungsi yang ditentukan pengguna |
+| Alat Respons OpenAI | `/v1/responses` | Gunakan untuk alat bawaan atau yang dihosting khusus Respons |
+| Alat Anthropic | `/v1/messages` | Gunakan untuk penggunaan alat asli Claude dan alur pemikiran |
+| Deklarasi fungsi Gemini / alat bawaan | `/v1beta/models/:model:generateContent` | Pertahankan bidang alat asli Gemini di rute Gemini |
 
-## Halaman terkait
+AI Sonar tidak menjalankan fungsi Anda untuk Anda. Ketika model mengembalikan `tool_calls`, `function_call`, `tool_use`, atau bagian panggilan fungsi Gemini, aplikasi Anda harus menjalankan alat, menambahkan hasil alat dalam format yang diperlukan oleh rute, dan melanjutkan percakapan.
 
-- [✨ Multi-Format API](/id/guides/api-formats)
-- [Buat Penyelesaian Obrolan](/id/api-reference/chat/create-completion)
-- [Buat Respons](/id/api-reference/responses/create-response)
-- [Buat Message](/id/api-reference/messages/create-message)
+## Kesalahan Umum
+
+- Jangan mengirim alat bawaan asli penyedia melalui Chat Completions dan mengharapkan mereka diterjemahkan secara diam-diam.
+- Jangan bergantung pada JSON Schema yang ketat kecuali rute dan model yang dipilih telah diuji.
+- Pertahankan skema kecil dan eksplisit; skema besar menambah token dan dapat mengurangi keandalan.
+- Validasi keluaran model di sisi server bahkan ketika mode JSON diaktifkan.
+- Perlakukan kesalahan bidang yang tidak didukung sebagai umpan balik kontrak. Hapus bidang tersebut atau gunakan rute asli yang memilikinya.
+
+## Contoh
+
+```bash
+curl https://api.aisonar.dev/v1/chat/completions \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "gpt-5.4",
+    "messages": [{"role":"user","content":"Ekstrak nama dan email sebagai JSON."}],
+    "response_format": {"type":"json_object"},
+    "tools": [{
+      "type": "function",
+      "function": {
+        "name": "lookup_customer",
+        "description": "Mencari pelanggan berdasarkan email",
+        "parameters": {
+          "type": "object",
+          "properties": {"email": {"type": "string"}},
+          "required": ["email"]
+        }
+      }
+    }]
+  }'
+```
+
+## Referensi API
+
+| Topik | Referensi |
+|-------|-----------|
+| API Multi-Format | [API Multi-Format](/id/guides/api-formats) |
+| Buat Chat Completion | [Buat Chat Completion](/id/api-reference/chat/create-completion) |
+| Buat Respons | [Buat Respons](/id/api-reference/responses/create-response) |
+| Buat Pesan | [Buat Pesan](/id/api-reference/messages/create-message) |
+| Hasilkan Konten Gemini | [Hasilkan Konten Gemini](/id/api-reference/gemini/generate-content) |

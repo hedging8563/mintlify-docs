@@ -1,250 +1,77 @@
 ---
-title: "Video oluşturma"
-description: "Metinden videoya, image-to-video, reference-to-video, ilk/son kare kontrolü, hareket kontrolü ve video-to-video akışlarına birleşik bir herkese açık sözleşme üzerinden erişin."
+title: "Video Üretimi"
+description: "Açık kamu işlemleri, asenkron anket ve modele özgü medya girdileri ile videolar oluşturun."
 ---
 
-## Genel bakış
+Video üretimi asenkron bir süreçtir. `POST /v1/videos/generations` bir kamu görev kimliği ve genellikle bir `poll_url` döner; nihai video daha sonraki durum yanıtlarında görünür.
 
-AI Sonar video oluşturmayı tek bir birleşik API üzerinden sunar. Üretim **asenkron** olarak çalışır: istek gönderirsiniz, `task_id` ve `poll_url` alırsınız, ardından nihai sonuç hazır olana kadar durumu düzenli olarak sorgularsınız.
+## Kamu Sözleşmesi
 
-### Kullanılabilirlik ve polling
+Üretimde açık `operation` kullanın. AI Sonar bazı işlemleri girdilerden çıkarabilir, ancak açık işlem değerleri doğrulama, destek ve yeniden denemeleri daha net hale getirir.
 
-Eğer oluşturma yanıtı `poll_url` döndürüyorsa, doğrudan o adresi kullanın. Bu URL `/v1/tasks/{id}` ise, bunu video işleri için kanonik durum uç noktası olarak kabul edin; `/v1/videos/generations/{id}` yalnızca geriye dönük uyumluluk içindir.
+| İşlem | Gerekli veya tipik girdi | Kullanım durumu |
+|-------|--------------------------|-----------------|
+| `text-to-video` | `prompt` | Sadece metinden oluşturma |
+| `image-to-video` | `image_url` veya uyumlu `image` | Başlangıç görüntüsünü canlandırma |
+| `reference-to-video` | `reference_images` ve desteklenen modellerde isteğe bağlı `video_urls` / `audio_urls` | Kimliği, tarzı veya varlık referanslarını koruma |
+| `start-end-to-video` | `start_image`, `end_image` | İlk ve son kareleri kontrol etme |
+| `video-to-video` | `video_url` veya modele özgü `task_id` | Mevcut bir klibi dönüştürme veya büyütme |
+| `motion-control` | `image_url` artı `video_url` | Bir konuya hareket referansı uygulama |
+| `audio-to-video` | `audio_url` | Ses koşullu video akışları |
+| `video-extension` | `task_id`, `extend_at` veya modele özgü genişletme alanları | Oluşturulan bir videoyu devam ettirme |
 
-Güncel herkese açık video modeli envanterini [Models API](/tr/api-reference/models/list-models) üzerinden veya [modeller sayfasında](https://aisonar.dev/models) görebilirsiniz.
-
-### Model ve medya davranışı
-
-Ses davranışı modele bağlıdır. AI Sonar’da `output_audio` gönderilmezse Veo 3 ailesi varsayılan olarak sesi açık kabul eder. Diğer herkese açık modeller sessiz olabilir ya da kararlı bir ses anahtarı sunmayabilir.
-
-Üretim entegrasyonlarında görsel, video ve ses girdileri için herkese açık `https` URL’lerini tercih edin. Uyumlu modeller `data:` URL’lerini kabul etmeye devam eder, ancak herkese açık URL’ler yeniden deneme, gözlemlenebilirlik ve hata ayıklama açısından daha sağlamdır.
-
-### Asenkron akış
-
-```mermaid
-sequenceDiagram
-    participant Client
-    participant AI Sonar
-    participant Provider
-
-    Client->>AI Sonar: POST /v1/videos/generations
-    AI Sonar->>Provider: Normalize edilmiş isteği ilet
-    Provider-->>AI Sonar: task_id + pending
-    AI Sonar-->>Client: { task_id, poll_url, status: "pending" }
-
-    loop Her 5-10 saniyede bir sorgula
-        Client->>AI Sonar: GET poll_url
-        AI Sonar->>Provider: Durumu sorgula
-        Provider-->>AI Sonar: Durum güncellemesi
-        AI Sonar-->>Client: { status, video_url? }
-    end
-```
-
-## Güncel herkese açık işlemler
-
-AI Sonar'ın herkese açık video sözleşmesi şu işlem değerlerini kabul eder. Destek modele özeldir ve sağlayıcılar yetenek ekledikçe veya kaldırdıkça değişir; özel bir işleme güvenmeden önce seçilen model sözleşmesini okuyun.
-
-- `text-to-video`
-- `image-to-video`
-- `reference-to-video`
-- `start-end-to-video`
-- `video-to-video`
-- `motion-control`
-- `audio-to-video`
-- `video-extension`
-
-## İşlem tanımları
-
-- **T2V (Text-to-Video)**: metin prompt'undan video üretir.
-- **I2V (Image-to-Video)**: başlangıç görselini canlandırır. En geniş uyumluluk için `image_url` kullanın.
-- **Reference**: `reference_images` ile bir veya daha fazla referans görsel üzerinden üretimi koşullandırır; bazı modeller `video_urls` üzerinden referans video ve `audio_urls` üzerinden referans ses de kabul eder.
-- **Start-End**: `start_image` ve `end_image` ile ilk ve son kareyi kontrol eder.
-- **V2V (Video-to-Video)**: mevcut bir videoyu, oluşturulmuş bir görevi veya sağlayıcıya özgü türev akışı kaynak olarak kullanır.
-- **Motion**: özne görselini hareket referans videosuyla birleştirir.
-- **Audio-to-Video**: ses koşullu bir model akışından video üretir.
-- **Video Extension**: mevcut bir video oluşturma görevini sürdürür veya uzatır.
-
-## Model keşfi
-
-Video modeli kullanılabilirliği sık değişir. Model seçmeden önce güncel herkese açık kısa listeyi alın:
+## Model Keşfi
 
 ```bash
-curl "https://api.aisonar.dev/v1/models?recommended_for=video" \
+curl "https://api.aisonar.dev/v1/models?recommended_for=video" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-Modele özgü alanları göndermeden önce seçilen modeli okuyun:
+`reference_images`, `kling_elements`, `output_audio`, `duration`, `resolution` veya `aspect_ratio` gibi özel alanlara güvenmeden önce seçilen model detayını okuyun.
+
+## İstek Oluşturma
 
 ```bash
-curl "https://api.aisonar.dev/v1/models/veo3.1" \
-  -H "Authorization: Bearer sk-your-api-key"
+curl https://api.aisonar.dev/v1/videos/generations \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "veo3.1",
+    "operation": "text-to-video",
+    "prompt": "Güneş ışığıyla aydınlatılmış bir bahçede yürüyen bir kedinin sakin sinematik görüntüsü",
+    "duration": 4,
+    "aspect_ratio": "16:9"
+  }'
 ```
 
-Gerçek kaynak olarak `aisonar.capabilities`, `aisonar.supported_operations`, `aisonar.public_contract_summary` ve `aisonar.public_contract` alanlarını kullanın. Aşağıdaki örnekler iş akışı kalıplarıdır, eksiksiz model envanteri değildir.
+Üretim medya girişi için, satır içi `data:` URL'leri yerine kamuya açık `https` URL'lerini tercih edin. İmzalı URL'ler kullanıyorsanız, bunların geçerliliğini görev oluşturma ve sağlayıcı tarafında yeniden deneme sırasında koruyun.
 
-## Kullanım örnekleri
+## Girdiler ve Modele Özgü Alanlar
 
-### Text-to-video
+- Veo 3 ailesi istekleri `output_audio` atlandığında varsayılan olarak sesli açılır. Model bu geçişi destekliyorsa ve kullanıcı deneyiminiz sese bağlıysa, bunu açıkça ayarlayın.
+- `kling_elements`, `kling-3.0-video` görüntü koşullu istekler içindir. Her bir öğeyi `prompt` içinde `@name` olarak referans gösterin; bunu `output_audio=true` ile birleştirmeyin.
+- `seedance-2.0` ve `seedance-2.0-fast` için, referans-to-video birden fazla referans görüntüsü ve mevcut kamu sözleşmesine göre referans video/ses girdilerini kabul edebilir.
+- `grok-imagine-video` için, video-to-video bir kamuya açık `.mp4` `video_url` kullanır; modele özgü sınırlamalar, örneğin `duration` ve `resolution`, model sözleşmesinden gelmelidir.
 
-```python
-response = requests.post(f"{BASE}/videos/generations",
-    headers=headers,
-    json={
-        "model": "veo3.1",
-        "prompt": "A calm cinematic shot of a cat walking through a sunlit garden.",
-        "operation": "text-to-video",
-        "duration": 4,
-        "aspect_ratio": "16:9"
-    }
-)
-```
+## Anket Sonuçları
 
-### Görselden videoya
+Öncelikle döndürülen `poll_url`'yi kullanın. Sabit bir uç noktaya ihtiyacınız varsa, oluşturma yanıtındaki aynı `id` / `task_id` ile `GET /v1/tasks/{id}` kullanın.
 
-```python
-response = requests.post(f"{BASE}/videos/generations",
-    headers=headers,
-    json={
-        "model": "hailuo-2.3-standard",
-        "prompt": "The scene begins from the provided image and adds gentle natural motion.",
-        "operation": "image-to-video",
-        "image_url": "https://example.com/portrait.jpg",
-        "duration": 6,
-        "aspect_ratio": "16:9"
-    }
-)
-```
+Tamamlanan video görevleri, sağlayıcıya ve çıktı sayısına bağlı olarak `video_url`, `video` veya `videos` dönebilir. `billing_transaction_id`'yi bir faturalama tanımlayıcısı olarak, görev tanımlayıcısı olarak değil, olarak değerlendirin.
 
-### Kling 3.0 Elements
+## Yaygın Hatalar
 
-Öğe referanslarına ihtiyacınız olduğunda `kling_elements` alanını `kling-3.0-video` ile kullanın. Görüntü koşullu bir istek (`image_url`, `image_urls`, `start_image` veya `end_image`) sağlayın ve prompt içinde her öğeyi `@name` ile referanslayın. `kling_elements` ile `output_audio=true` birlikte kullanılamaz; öğe referanslı isteklerde `output_audio` alanını kaldırın veya `false` yapın.
+- Eski video durum yollarını sabit kodlamayın; `poll_url`'yi tercih edin.
+- Model sözleşmesi izin vermedikçe, ilk kare alanlarını özel referans-görüntü akışları ile birleştirmeyin.
+- `duration`'ın girdi referans video uzunluğunu tanımladığını varsaymayın; genellikle üretilen çıktı uzunluğunu kontrol eder.
+- Bir zaman aşımından sonra oluşturma isteklerini yeniden denemeden önce bir görevin zaten oluşturulup oluşturulmadığını kontrol etmeyin.
 
-```python
-response = requests.post(f"{BASE}/videos/generations",
-    headers=headers,
-    json={
-        "model": "kling-3.0-video",
-        "prompt": "Place @hero_bag on a studio turntable with soft product lighting.",
-        "operation": "image-to-video",
-        "image_url": "https://example.com/studio-start.png",
-        "duration": 5,
-        "resolution": "720p",
-        "kling_elements": [
-            {
-                "name": "hero_bag",
-                "description": "black leather handbag",
-                "element_input_urls": [
-                    "https://example.com/bag-front.png",
-                    "https://example.com/bag-side.png"
-                ]
-            }
-        ]
-    }
-)
-```
+## API Referansı
 
-### Reference-to-video
-
-`seedance-2.0` ve `seedance-2.0-fast` için AI Sonar şu anda en fazla 9 referans görseli, ayrıca en fazla 3 referans video ve 3 referans sesi destekler. `duration` yalnızca üretilen çıktının süresini kontrol eder; referans video girdisi için ayrı bir süre sınırı tanımlamaz. `grok-imagine-video` için reference-to-video en fazla 7 görüntü referansı (`reference_images` veya `image_urls`) kabul eder ve `duration` en fazla 10 saniyedir. Referans görüntüleri `image_url` / `image` ilk kare girdileriyle birlikte göndermeyin. `grok-imagine-video-1.5-preview` yalnızca image-to-video destekler.
-
-```python
-response = requests.post(f"{BASE}/videos/generations",
-    headers=headers,
-    json={
-        "model": "veo3.1",
-        "prompt": "Keep the same subject identity and palette while adding subtle motion.",
-        "operation": "reference-to-video",
-        "reference_images": [
-            "https://example.com/ref-a.jpg",
-            "https://example.com/ref-b.jpg"
-        ],
-        "duration": 8,
-        "resolution": "720p",
-        "aspect_ratio": "9:16"
-    }
-)
-```
-
-### Start-end-to-video
-
-```python
-response = requests.post(f"{BASE}/videos/generations",
-    headers=headers,
-    json={
-        "model": "viduq2-pro",
-        "prompt": "Smooth transition from day to night.",
-        "operation": "start-end-to-video",
-        "start_image": "https://example.com/city-day.jpg",
-        "end_image": "https://example.com/city-night.jpg",
-        "duration": 5,
-        "resolution": "720p",
-        "aspect_ratio": "16:9"
-    }
-)
-```
-
-### Videodan videoya
-
-`grok-imagine-video` video-to-video için `video_url` içinde herkese açık HTTPS `.mp4` URL gönderin. AI Sonar bunu xAI REST `video.url` gövdesine çevirir. `resolution` için `480p` veya `720p` gönderebilirsiniz; bu düzenleme akışı `duration` ve `aspect_ratio` kabul etmez.
-
-```python
-response = requests.post(f"{BASE}/videos/generations",
-    headers=headers,
-    json={
-        "model": "grok-imagine-video",
-        "operation": "video-to-video",
-        "video_url": "https://example.com/source.mp4",
-        "prompt": "Upscale this clip while preserving the original motion."
-    }
-)
-```
-
-### Motion control
-
-```python
-response = requests.post(f"{BASE}/videos/generations",
-    headers=headers,
-    json={
-        "model": "kling-3.0-motion-control",
-        "operation": "motion-control",
-        "prompt": "Keep the subject stable while following the motion reference.",
-        "image_url": "https://example.com/subject.png",
-        "video_url": "https://example.com/motion.mp4",
-        "resolution": "720p"
-    }
-)
-```
-
-## Parametre referansı
-
-| Parametre | Tür | Not |
-|-----------|-----|-----|
-| `operation` | string | Üretimde açıkça göndermeniz önerilir |
-| `image_url` | string | Görsel girdileri için en sağlam biçim |
-| `image` | string | Yerel testler ve küçük entegrasyonlar için `data:` URL |
-| `reference_images` | string[] | Referans görsel koşullandırması için kanonik herkese açık alan |
-| `reference_image_type` | string | İsteğe bağlı `asset` / `style` seçicisi |
-| `video_url` | string | Video URL tabanlı `video-to-video` akışları ve `motion-control` için gereklidir; bazı türev akışlar bunun yerine `task_id` kullanır. |
-| `audio_url` | string | Uygun olduğunda modele özgü ses koşullu akışlarda kullanılır |
-| `output_audio` | boolean | Veo 3 ailesi alan gönderilmezse `true` kabul eder. `kling-3.0-video` bu seçiciyi upstream `sound` kontrolü için kabul eder ve alan atlanırsa sessizdir. |
-
-## Hızlı model seçimi rehberi
-
-<CardGroup cols={2}>
-  <Card title="En yüksek kalite" icon="crown">
-    Kalite hızdan daha önemliyse **veo3.1**, **kling-video-o1-pro** ve **viduq3-pro** güçlü seçeneklerdir.
-  </Card>
-  <Card title="Hızlı iterasyon" icon="bolt">
-    Hızlı denemeler için **veo3.1-fast**, **hailuo-2.3-fast** ve **viduq3-turbo** iyi başlangıç noktalarıdır.
-  </Card>
-  <Card title="Referans ağırlıklı akışlar" icon="images">
-    Özel referans görsel kontrolü gerekiyorsa **veo3.1**, **veo3.1-fast**, **wan-2.6** veya **kling-video-o1-pro / std** ile başlayın.
-  </Card>
-  <Card title="Videodan videoya" icon="film">
-    `GET /v1/models?recommended_for=video` ile başlayın; güncel V2V tarzı örnekler arasında **grok-imagine-video**, **seedance-2.0**, **veo3.1** ve **kling-video-o1-pro / std** bulunur.
-  </Card>
-</CardGroup>
-
-## Faturalama
-
-Faturalama modele bağlıdır. Bazı herkese açık video modelleri pratikte istek başına fiyatlandırılırken, bazıları saniye bazlı fiyatlandırmaya daha yakındır. Güncel herkese açık fiyat yüzeyi için [modeller sayfasına](https://aisonar.dev/models) veya [Pricing API](/tr/api-reference/pricing/get-pricing) bakın.
+| Konu | Referans |
+|------|----------|
+| Video Oluştur | [Video Oluştur](/tr/api-reference/video/create-video) |
+| Video Durumunu Al | [Video Durumunu Al](/tr/api-reference/video/get-video-status) |
+| Görev Durumunu Al | [Görev Durumunu Al](/tr/api-reference/tasks/get-task-status) |
+| Görevi İptal Et | [Görevi İptal Et](/tr/api-reference/tasks/cancel-task) |
+| Faturalama ve Fiyatlandırma | [Faturalama ve Fiyatlandırma](/tr/guides/billing) |

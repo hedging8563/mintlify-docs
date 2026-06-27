@@ -1,74 +1,74 @@
 ---
-title: "图片生成"
-description: "使用 AI Sonar 图片 API 构建文生图、参考图生成和图片编辑流程。"
+title: "图像生成"
+description: "构建基于 AI Sonar 公共图像合约的文本到图像、图像到图像和图像编辑工作流。"
 ---
-## 推荐流程
 
-1. 调用 [模型列表](/zh/api-reference/models/list-models)，带上 `recommended_for=image`。
-2. 打开所选模型的 [模型详情](/zh/api-reference/models/get-model)，按它的公开契约传参。
-3. 文生图和支持的参考图流程使用 [创建图片](/zh/api-reference/images/create-image)；编辑专用流程使用 [编辑图片](/zh/api-reference/images/edit-image)。
-4. 如果响应包含 `poll_url`，优先轮询该 URL，直到任务进入终态。
+AI Sonar 图像 API 涵盖了多个模型系列，具有不同的请求格式。在假设某个字段适用于每个图像模型之前，请使用公共模型合约和特定于端点的 API 参考。
+
+## 选择端点
+
+| 目标 | 端点 | 备注 |
+|------|----------|-------|
+| 文本到图像 | `POST /v1/images/generations` | 使用 `prompt` 和明确的 `model` |
+| 图像到图像 / 参考图像 | `POST /v1/images/generations` | 当模型支持时，使用 `operation: "image-to-image"` 以及 `image_url`、`image_urls` 或 `reference_image_urls` |
+| GPT 图像编辑 | `POST /v1/images/edits` | 支持多部分 `image`、JSON `image_url` / `image_urls` 和官方 `images[]` 引用，适用于支持的编辑模型 |
+| 旧版变体 | `POST /v1/images/variations` | 对于新工作，优先使用当前生成或编辑路由 |
+| 异步状态 | `GET /v1/tasks/{id}` | 当存在时，首先使用 `poll_url` |
 
 ## 模型发现
 
-图片模型的请求形态不完全相同。有些直接返回结果，有些创建异步任务。`size`、`quality`、`aspect_ratio`、`resolution`、`async` 等字段是否可用，以所选模型契约为准。
-
 ```bash
-curl "https://api.aisonar.dev/v1/models?recommended_for=image" \
+curl "https://api.aisonar.dev/v1/models?recommended_for=image" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-## 文生图
+图像模型参数差异很大。在发送 `size`、`quality`、`aspect_ratio`、`resolution`、`async`、`background` 或 `output_format` 之前，请阅读所选模型合约。
 
-GPT 图片系列模型通常使用 `size`。Google 或 Nano Banana 图片模型只有在模型契约列出时才使用 `aspect_ratio` 和 `resolution`。
+## 输入和模型特定字段
+
+- `gpt-image-2` 使用 OpenAI 风格的 `size` 和 `quality`；省略 `size` 或 `quality` 以让 AI Sonar 在支持的情况下使用 `auto`。
+- Gemini 和 Nano Banana 图像系列通常使用 `aspect_ratio`；仅在所选模型公开时发送 `resolution`。
+- Nano Banana 参考图像请求应在 `/v1/images/generations` 上，使用 `operation: "image-to-image"` 和 `image_urls`，而不是在 `/v1/images/edits` 上。
+- `/v1/images/generations` 不接受顶层的 `images[]` 或 `file_id`；这些是编辑流程格式。
+- 远程图像 URL 必须是公共的 `http`/`https` URL。避免使用私有网络、嵌入凭证、片段和短期签名 URL。
+
+## 创建请求
 
 ```bash
-curl https://api.aisonar.dev/v1/images/generations \
-  -H "Authorization: Bearer sk-your-api-key" \
-  -H "Content-Type: application/json" \
+curl https://api.aisonar.dev/v1/images/generations \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
   -d '{
     "model": "gpt-image-2",
-    "prompt": "A clean product photo of a ceramic coffee cup on a walnut desk",
+    "prompt": "一张干净的陶瓷咖啡杯在胡桃木桌上的产品照片",
     "size": "1024x1024",
     "response_format": "url"
   }'
 ```
 
-## 参考图与编辑
-
-在 `/v1/images/generations` 做参考图生成时，使用 `operation: "image-to-image"`，并传 `image_url`、`image_urls`、`reference_image_urls`，或在模型支持时传 multipart `image` 文件。图片编辑模型请使用 `/v1/images/edits`，它可以按文档接收 multipart 图片、图片 URL 或 `images[].image_url` / `images[].file_id`。
-
-不要把顶层 `images[]` 或顶层 `file_id` 发送到 `/v1/images/generations`；这些形态只属于明确支持它们的编辑流程。
-
-```bash
-curl https://api.aisonar.dev/v1/images/generations \
-  -H "Authorization: Bearer sk-your-api-key" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "nano-banana-pro",
-    "operation": "image-to-image",
-    "prompt": "Keep the same product, place it in a bright studio scene",
-    "image_urls": ["https://example.com/reference.png"],
-    "aspect_ratio": "1:1"
-  }'
-```
-
 ## 轮询结果
 
-同步图片响应会返回 `data[].url` 或 `data[].b64_json`。任务响应会返回 `status`、`task_id`，通常还有 `poll_url`。优先用 `poll_url`；固定兜底入口是 [查询任务状态](/zh/api-reference/tasks/get-task-status)。异步图片任务返回 URL 结果，base64 只应在支持的同步流程中请求。
+某些图像路由返回内联 `data[].url` 或 `data[].b64_json`。其他路由返回 `status: "pending"`、`task_id` 和 `poll_url`。如果您请求异步图像生成或编辑，完成的任务结果将返回 URL；当您特别需要 `b64_json` 时，请使用同步请求。
 
 ```bash
-curl "https://api.aisonar.dev/v1/tasks/$TASK_ID" \
+curl "https://api.aisonar.dev/v1/tasks/$TASK_ID" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
+
+## 常见陷阱
+
+- 不要假设每个图像模型都是同步的。
+- 不要从异步图像任务请求 `b64_json`；异步结果是以 URL 为导向的。
+- 不要向仅支持比例的 Gemini 图像模型发送 `resolution`。
+- 不要在 Nano Banana 图像到图像流程中使用 `/v1/images/edits`。
+- 对于同步高分辨率图像请求，将 HTTP 客户端超时设置为至少 `120s`。
 
 ## API 参考
 
 | 主题 | 参考 |
 |-------|-----------|
-| 创建图片 | [创建图片](/zh/api-reference/images/create-image) |
-| 编辑图片 | [编辑图片](/zh/api-reference/images/edit-image) |
-| 查询图片状态 | [查询图片状态](/zh/api-reference/images/get-image-status) |
-| 查询任务状态 | [查询任务状态](/zh/api-reference/tasks/get-task-status) |
-| 模型列表 | [模型列表](/zh/api-reference/models/list-models) |
-| 模型详情 | [模型详情](/zh/api-reference/models/get-model) |
+| 创建图像 | [创建图像](/zh/api-reference/images/create-image) |
+| 编辑图像 | [编辑图像](/zh/api-reference/images/edit-image) |
+| 创建图像变体 | [创建图像变体](/zh/api-reference/images/create-variation) |
+| 获取图像状态 | [获取图像状态](/zh/api-reference/images/get-image-status) |
+| 获取任务状态 | [获取任务状态](/zh/api-reference/tasks/get-task-status) |

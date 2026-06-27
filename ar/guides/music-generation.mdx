@@ -1,55 +1,55 @@
 ---
-title: "إنشاء الموسيقى"
-description: "أنشئ الموسيقى والكلمات باستخدام واجهات موسيقى AI Sonar واستطلاع المهام غير المتزامنة."
+title: "توليد الموسيقى"
+description: "إنشاء أغاني، مقاطع موسيقية، كلمات، واستمراريات مع مهام موسيقى AI Sonar."
 ---
-## التدفق الموصى به
 
-1. استدعِ [قائمة النماذج](/ar/api-reference/models/list-models) مع `recommended_for=music`.
-2. استخدم [إنشاء موسيقى](/ar/api-reference/music/create-music) لإنشاء مهمة تحتوي على `prompt` وحقول اختيارية مثل `title` و `tags` و `action` و `mv` أو إعدادات المتابعة.
-3. احفظ `id` / `task_id` و `poll_url` المُعادين.
-4. استطلع حتى تصبح المهمة `completed` أو `failed`، ثم اقرأ `audio_url` و `video_url` الاختياري و `title` و `lyrics`.
+توليد الموسيقى غير متزامن. `POST /v1/music/generations` ينشئ مهمة ويعيد `id` / `task_id`، `status`، وعادةً `poll_url`. تظهر الصوتيات النهائية والبيانات الوصفية بعد الاستطلاع.
 
-## اكتشاف النماذج
-
-إنشاء الموسيقى غير متزامن. لا تعتمد على اسم مزود upstream أو معرف مهمة المزود؛ يعيد AI Sonar هوية مهمة موحدة ورابط استطلاع.
+## اكتشاف النموذج
 
 ```bash
-curl "https://api.aisonar.dev/v1/models?recommended_for=music" \
+curl "https://api.aisonar.dev/v1/models?recommended_for=music" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-## إنشاء مهمة موسيقى
+العقدة العامة الحالية تعرض `suno_music` لتوليد الموسيقى و `suno_lyrics` لتدفقات الكلمات فقط. استفسر عن كتالوج النموذج قبل الاستخدام الإنتاجي بدلاً من تثبيت افتراضات المزود.
 
-`action: "MUSIC"` ينشئ أغاني أو مقاطع آلية حسب prompt والنموذج. `action: "LYRICS"` مخصص لتدفقات الكلمات فقط عندما يدعمه النموذج المختار. استخدم `continue_clip_id` و `continue_at` فقط في تدفقات المتابعة التي يوثقها عقد النموذج.
+## إنشاء الطلب
 
 ```bash
-curl https://api.aisonar.dev/v1/music/generations \
-  -H "Authorization: Bearer sk-your-api-key" \
-  -H "Content-Type: application/json" \
+curl https://api.aisonar.dev/v1/music/generations \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
   -d '{
     "model": "suno_music",
-    "prompt": "An upbeat synth-pop track with warm vocals and a clean chorus",
-    "title": "Morning Static",
-    "tags": "synth-pop, upbeat",
+    "prompt": "مقطع موسيقي مبهج من نوع الساينث بوب مع أصوات دافئة وكورس نظيف",
+    "title": "صوت الصباح",
+    "tags": "ساينث بوب، مبهج",
     "action": "MUSIC"
   }'
 ```
 
+استخدم `action: "MUSIC"` للأغاني أو المقاطع الموسيقية. استخدم `action: "LYRICS"` فقط مع النماذج التي تدعم توليد الكلمات فقط. حقول الاستمرارية مثل `continue_clip_id` و `continue_at` مخصصة لعمليات الاستمرارية ويجب إرسالها فقط عندما يستمر منتجك في مقطع سابق.
+
 ## استطلاع النتائج
 
-فضّل دائماً `poll_url` المُعاد. نقطة fallback الثابتة هي [حالة المهمة](/ar/api-reference/tasks/get-task-status). قد تحتوي مهام الموسيقى المكتملة على `audio_url` و `video_url` و `title` و `lyrics` وبيانات وصفية موحدة.
+استخدم `poll_url` المعاد أولاً. إذا كنت بحاجة إلى نقطة نهاية ثابتة، استخدم `GET /v1/tasks/{id}` بنفس `id` / `task_id` من استجابة الإنشاء.
 
-```bash
-curl "https://api.aisonar.dev/v1/tasks/$TASK_ID" \
-  -H "Authorization: Bearer sk-your-api-key"
-```
+يمكن أن تتضمن المهام الموسيقية المكتملة `audio_url`، `video_url`، `title`، `lyrics`، وبيانات وصفية موحدة للنموذج. قم بتخزين الروابط النهائية في تطبيقك بدلاً من الاستطلاع المتكرر بعد الحالة النهائية.
+
+## الأخطاء الشائعة
+
+- لا تعرض مشغلًا نهائيًا حتى تكون المهمة `completed` ويوجد `audio_url`.
+- لا تستخدم معرفات مهام المزود أو روابط جلب المزود في حالة تطبيقك.
+- لا تخلط بين إجراءات الكلمات فقط وإجراءات الموسيقى الكاملة خلف واجهة مستخدم واحدة دون إظهار الفرق للمستخدمين.
+- لا تعيد إنشاء المهام في كل تحديث للصفحة؛ استأنف من `task_id` المخزنة.
 
 ## مرجع API
 
 | الموضوع | المرجع |
 |-------|-----------|
 | إنشاء موسيقى | [إنشاء موسيقى](/ar/api-reference/music/create-music) |
-| حالة الموسيقى | [حالة الموسيقى](/ar/api-reference/music/get-music-status) |
-| حالة المهمة | [حالة المهمة](/ar/api-reference/tasks/get-task-status) |
+| الحصول على حالة الموسيقى | [الحصول على حالة الموسيقى](/ar/api-reference/music/get-music-status) |
+| الحصول على حالة المهمة | [الحصول على حالة المهمة](/ar/api-reference/tasks/get-task-status) |
 | قائمة النماذج | [قائمة النماذج](/ar/api-reference/models/list-models) |
-| جلب النموذج | [جلب النموذج](/ar/api-reference/models/get-model) |
+| الفوترة والتسعير | [الفوترة والتسعير](/ar/guides/billing) |

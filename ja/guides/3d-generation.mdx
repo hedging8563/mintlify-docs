@@ -1,54 +1,60 @@
 ---
-title: "3D 生成"
-description: "AI Sonar の 3D 生成 API と非同期タスクのポーリングでテキストや画像から 3D アセットを作成します。"
+title: "3D生成"
+description: "テキストまたは画像から3Dアセットを作成し、非同期タスクの結果から完成したモデルファイルをダウンロードします。"
 ---
-## 推奨フロー
 
-1. [モデル一覧](/ja/api-reference/models/list-models) を `recommended_for=3d` 付きで呼び出します。
-2. テキスト `prompt` で [3D を作成](/ja/api-reference/3d/create-3d) を呼び出します。`image` または `image_url` は、画像から 3D への変換に対応するモデルでのみ追加します。
-3. `format`、`quality`、`style`、`seed` などの任意フィールドは、選択したモデル契約に従って指定します。
-4. アセットが準備できるまで `poll_url` をポーリングし、`model_url` または `glb_url` / `fbx_url` などの形式別 URL をダウンロードします。
+3D生成は非同期です。 `POST /v1/3d/generations` はタスクを作成し、完了したステータスのレスポンスはダウンロード可能なモデルアセットのURLを返します。
 
-## モデルの発見
-
-3D 生成はタスクベースです。単一のプロバイダや固定モデルを前提にせず、モデルカタログを真値として扱ってください。
+## モデル発見
 
 ```bash
-curl "https://api.aisonar.dev/v1/models?recommended_for=3d" \
+curl "https://api.aisonar.dev/v1/models?recommended_for=3d" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-## 3D タスクを作成
+すべての3Dモデルがテキストから3Dおよび画像から3Dの両方をサポートしているとは限りません。 `image`、`image_url`、`format`、`quality`、`style`、または`seed`を送信する前に、選択したモデルの契約を確認してください。
 
-テキストから 3D へのリクエストには `prompt` が必要です。画像から 3D へのリクエストでは `image` の base64 データまたは `image_url` を追加します。`format` と `quality` はモデル契約で公開されている場合のみ使います。
+## リクエストの作成
 
 ```bash
-curl https://api.aisonar.dev/v1/3d/generations \
-  -H "Authorization: Bearer sk-your-api-key" \
-  -H "Content-Type: application/json" \
+curl https://api.aisonar.dev/v1/3d/generations \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
   -d '{
     "model": "tripo3d-v2.5",
-    "prompt": "A stylized low-poly robot mascot with clean topology",
+    "prompt": "クリーントポロジーを持つスタイライズされたローポリロボットマスコット",
     "format": "glb",
     "quality": "standard"
   }'
 ```
 
+テキストから3Dを生成するには`prompt`が必要です。画像から3Dを生成する場合、モデルがサポートしている場合は`image`または`image_url`を使用します。ソース画像がプライベートでなく、クライアントが意図的にbase64データをアップロードしない限り、プロダクション入力には公開URLを優先してください。
+
+## 出力の選択肢
+
+- `format`は、サポートされている場合に`glb`、`fbx`、`obj`、または`usdz`などの出力パッケージを要求できます。
+- `quality`の値（`draft`、`standard`、または`high`など）は、モデルがそれらを公開している場合にレイテンシとコストに影響します。
+- `style`と`seed`はモデル依存です。選択した契約が文書化していない限り、省略してください。
+
 ## 結果のポーリング
 
-まず返された `poll_url` を使います。安定した代替入口は [タスクステータスを取得](/ja/api-reference/tasks/get-task-status) です。完了した 3D タスクは `model_url` を返し、`glb_url` や `fbx_url` などの形式別フィールドを含むことがあります。
+最初に返された`poll_url`を使用してください。固定エンドポイントが必要な場合は、作成レスポンスから同じ`id` / `task_id`を使用して`GET /v1/tasks/{id}`を使用します。
 
-```bash
-curl "https://api.aisonar.dev/v1/tasks/$TASK_ID" \
-  -H "Authorization: Bearer sk-your-api-key"
-```
+完了したタスクは`model_url`を返し、`glb_url`、`fbx_url`、`obj_url`、または`usdz_url`などのフォーマット特有のURLを含む場合があります。ユーザーが再度アクセスする必要がある場合は、アセットをダウンロードして自社製品にキャッシュしてください。
 
-## API リファレンス
+## よくある落とし穴
 
-| 項目 | リファレンス |
+- 作成レスポンスで3Dアセットを期待しないでください。ターミナルステータスになるまでポーリングしてください。
+- すべてのモデルに対してすべてのフォーマットを約束しないでください。
+- クライアントのタイムアウト後にタスクが既に存在するかどうかを確認せずに作成リクエストを再試行しないでください。
+- UIにプロバイダーのタスクIDを公開しないでください。
+
+## APIリファレンス
+
+| トピック | リファレンス |
 |-------|-----------|
-| 3D を作成 | [3D を作成](/ja/api-reference/3d/create-3d) |
-| 3D ステータスを取得 | [3D ステータスを取得](/ja/api-reference/3d/get-3d-status) |
-| タスクステータスを取得 | [タスクステータスを取得](/ja/api-reference/tasks/get-task-status) |
-| モデル一覧 | [モデル一覧](/ja/api-reference/models/list-models) |
-| モデルを取得 | [モデルを取得](/ja/api-reference/models/get-model) |
+| 3Dの作成 | [3Dの作成](/ja/api-reference/3d/create-3d) |
+| 3Dステータスの取得 | [3Dステータスの取得](/ja/api-reference/3d/get-3d-status) |
+| タスクステータスの取得 | [タスクステータスの取得](/ja/api-reference/tasks/get-task-status) |
+| モデルの一覧 | [モデルの一覧](/ja/api-reference/models/list-models) |
+| 請求と価格設定 | [請求と価格設定](/ja/guides/billing) |

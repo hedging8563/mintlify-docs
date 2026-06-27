@@ -1,55 +1,55 @@
 ---
-title: "Müzik üretimi"
-description: "AI Sonar müzik API’leri ve asenkron görev yoklamasıyla müzik ve söz oluşturun."
+title: "Müzik Üretimi"
+description: "AI Sonar müzik görevleri ile şarkılar, enstrümantaller, sözler ve devamlar oluşturun."
 ---
-## Önerilen akış
 
-1. [Modelleri listele](/tr/api-reference/models/list-models) çağrısını `recommended_for=music` ile yapın.
-2. [Müzik oluştur](/tr/api-reference/music/create-music) ile `prompt` ve isteğe bağlı `title`, `tags`, `action`, `mv` veya devam ayarlarını içeren bir görev oluşturun.
-3. Dönen `id` / `task_id` ve `poll_url` değerlerini saklayın.
-4. Görev `completed` veya `failed` olana kadar yoklayın, ardından `audio_url`, isteğe bağlı `video_url`, `title` ve `lyrics` alanlarını okuyun.
+Müzik üretimi asenkron bir süreçtir. `POST /v1/music/generations` bir görev oluşturur ve `id` / `task_id`, `status` ve genellikle `poll_url` döner. Nihai ses ve meta veriler, anket yapıldıktan sonra görünür.
 
-## Modelleri keşfet
-
-Müzik üretimi asenkrondur. Upstream sağlayıcı adına veya sağlayıcı görev ID’sine bağlı geliştirme yapmayın; AI Sonar normalize edilmiş görev kimliği ve polling URL’i döndürür.
+## Model Keşfi
 
 ```bash
-curl "https://api.aisonar.dev/v1/models?recommended_for=music" \
+curl "https://api.aisonar.dev/v1/models?recommended_for=music" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-## Müzik görevi oluştur
+Mevcut kamu sözleşmesi, müzik üretimi için `suno_music` ve yalnızca söz akışları için `suno_lyrics` sunmaktadır. Üretim kullanımı öncesinde model kataloğunu sorgulayın, sağlayıcı varsayımlarını sabitlemek yerine.
 
-`action: "MUSIC"` prompt ve modele göre şarkı veya enstrümantal üretir. `action: "LYRICS"`, seçilen model desteklediğinde sadece söz üretimi içindir. `continue_clip_id` ve `continue_at` yalnızca model sözleşmesinde belgelenen devam akışlarında kullanılmalıdır.
+## İstek Oluşturma
 
 ```bash
-curl https://api.aisonar.dev/v1/music/generations \
-  -H "Authorization: Bearer sk-your-api-key" \
-  -H "Content-Type: application/json" \
+curl https://api.aisonar.dev/v1/music/generations \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
   -d '{
     "model": "suno_music",
-    "prompt": "An upbeat synth-pop track with warm vocals and a clean chorus",
-    "title": "Morning Static",
-    "tags": "synth-pop, upbeat",
+    "prompt": "Sıcak vokallere ve temiz bir nakarata sahip neşeli bir synth-pop parçası",
+    "title": "Sabah Statik",
+    "tags": "synth-pop, neşeli",
     "action": "MUSIC"
   }'
 ```
 
-## Sonuçları yokla
+Şarkılar veya enstrümantaller için `action: "MUSIC"` kullanın. Yalnızca söz üretimini destekleyen modellerle `action: "LYRICS"` kullanın. `continue_clip_id` ve `continue_at` gibi devam alanları, devam iş akışları içindir ve yalnızca ürününüz önceki bir klibi devam ettiriyorsa gönderilmelidir.
 
-Her zaman dönen `poll_url` değerini tercih edin. Kararlı fallback [Görev durumu](/tr/api-reference/tasks/get-task-status) endpointidir. Tamamlanan müzik görevleri `audio_url`, `video_url`, `title`, `lyrics` ve model tarafından normalize edilmiş metadata içerebilir.
+## Anket Sonuçları
 
-```bash
-curl "https://api.aisonar.dev/v1/tasks/$TASK_ID" \
-  -H "Authorization: Bearer sk-your-api-key"
-```
+Öncelikle dönen `poll_url`'yi kullanın. Sabit bir uç noktaya ihtiyacınız varsa, oluşturma yanıtındaki aynı `id` / `task_id` ile `GET /v1/tasks/{id}` kullanın.
+
+Tamamlanmış müzik görevleri `audio_url`, `video_url`, `title`, `lyrics` ve model-normalize edilmiş meta veriler içerebilir. Nihai URL'leri uygulamanızda saklayın, terminal durumu sonrasında tekrar tekrar anket yapmaktansa.
+
+## Yaygın Hatalar
+
+- Görev `completed` olana kadar ve bir `audio_url` mevcut olana kadar nihai bir oynatıcı göstermeyin.
+- Uygulama durumunuzda sağlayıcı görev kimliklerini veya sağlayıcı fetch URL'lerini kullanmayın.
+- Kullanıcılara farkı göstermeden tek bir UI arkasında yalnızca söz ve tam müzik eylemlerini karıştırmayın.
+- Her sayfa yenilemesinde görevleri yeniden oluşturmayın; saklanan `task_id`'den devam edin.
 
 ## API Referansı
 
 | Konu | Referans |
 |-------|-----------|
-| Müzik oluştur | [Müzik oluştur](/tr/api-reference/music/create-music) |
-| Müzik durumu | [Müzik durumu](/tr/api-reference/music/get-music-status) |
-| Görev durumu | [Görev durumu](/tr/api-reference/tasks/get-task-status) |
-| Modelleri listele | [Modelleri listele](/tr/api-reference/models/list-models) |
-| Modeli getir | [Modeli getir](/tr/api-reference/models/get-model) |
+| Müzik Oluştur | [Müzik Oluştur](/tr/api-reference/music/create-music) |
+| Müzik Durumunu Al | [Müzik Durumunu Al](/tr/api-reference/music/get-music-status) |
+| Görev Durumunu Al | [Görev Durumunu Al](/tr/api-reference/tasks/get-task-status) |
+| Modelleri Listele | [Modelleri Listele](/tr/api-reference/models/list-models) |
+| Faturalama & Fiyatlandırma | [Faturalama & Fiyatlandırma](/tr/guides/billing) |

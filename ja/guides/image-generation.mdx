@@ -1,74 +1,74 @@
 ---
 title: "画像生成"
-description: "AI Sonar の画像 API でテキストから画像、参照画像、編集ワークフローを構築します。"
+description: "AI Sonarの公開画像契約に対して、テキストから画像、画像から画像、画像編集のワークフローを構築します。"
 ---
-## 推奨フロー
 
-1. [モデル一覧](/ja/api-reference/models/list-models) を `recommended_for=image` 付きで呼び出します。
-2. 選択したモデルの [モデルを取得](/ja/api-reference/models/get-model) を開き、公開契約に従います。
-3. テキストから画像および対応する参照画像フローには [画像を作成](/ja/api-reference/images/create-image) を使い、編集専用フローには [画像を編集](/ja/api-reference/images/edit-image) を使います。
-4. レスポンスに `poll_url` が含まれる場合は、その URL をタスクが終端状態になるまでポーリングします。
+AI Sonarの画像APIは、異なるリクエスト形式を持ついくつかのモデルファミリーをカバーしています。すべての画像モデルでフィールドが機能することを前提とする前に、公開モデル契約とエンドポイント固有のAPIリファレンスを使用してください。
 
-## モデルの発見
+## エンドポイントの選択
 
-画像モデルのリクエスト形状は同一ではありません。インライン結果を返すものもあれば、非同期タスクを作成するものもあります。`size`、`quality`、`aspect_ratio`、`resolution`、`async` などのフィールドを受け付けるかは、選択したモデル契約で確認してください。
+| 目標 | エンドポイント | メモ |
+|------|----------------|------|
+| テキストから画像 | `POST /v1/images/generations` | `prompt`と明示的な`model`を使用 |
+| 画像から画像 / 参照画像 | `POST /v1/images/generations` | モデルがサポートしている場合は、`operation: "image-to-image"`に加えて`image_url`、`image_urls`、または`reference_image_urls`を使用 |
+| GPT画像編集 | `POST /v1/images/edits` | サポートされている編集モデルのために、マルチパート`image`、JSON形式の`image_url` / `image_urls`、および公式の`images[]`参照をサポート |
+| レガシー変種 | `POST /v1/images/variations` | 新しい作業には現在の生成または編集ルートを優先 |
+| 非同期ステータス | `GET /v1/tasks/{id}` | 存在する場合は最初に`poll_url`を使用 |
+
+## モデル発見
 
 ```bash
-curl "https://api.aisonar.dev/v1/models?recommended_for=image" \
+curl "https://api.aisonar.dev/v1/models?recommended_for=image" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-## テキストから画像
+画像モデルのパラメータは大きく異なります。`size`、`quality`、`aspect_ratio`、`resolution`、`async`、`background`、または`output_format`を送信する前に、選択したモデル契約を読んでください。
 
-GPT 画像系モデルでは、モデル契約にある場合に `size` を使います。Google または Nano Banana 画像モデルでは、契約に明記されている場合のみ `aspect_ratio` と `resolution` を使います。
+## 入力とモデル固有のフィールド
+
+- `gpt-image-2`はOpenAIスタイルの`size`と`quality`を使用します。AI Sonarがサポートする場合は、`size`または`quality`を省略して`auto`を使用させてください。
+- GeminiおよびNano Banana画像ファミリーは一般的に`aspect_ratio`を使用します。選択したモデルがそれを公開している場合にのみ`resolution`を送信してください。
+- Nano Bananaの参照画像リクエストは、`operation: "image-to-image"`と`image_urls`を持つ`/v1/images/generations`に属し、`/v1/images/edits`には属しません。
+- `/v1/images/generations`はトップレベルの`images[]`または`file_id`を受け付けません。これらは編集フローの形式です。
+- リモート画像URLは公開の`http`/`https` URLでなければなりません。プライベートネットワーク、埋め込まれた資格情報、フラグメント、および短命の署名付きURLは避けてください。
+
+## リクエストの作成
 
 ```bash
-curl https://api.aisonar.dev/v1/images/generations \
-  -H "Authorization: Bearer sk-your-api-key" \
-  -H "Content-Type: application/json" \
+curl https://api.aisonar.dev/v1/images/generations \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
   -d '{
     "model": "gpt-image-2",
-    "prompt": "A clean product photo of a ceramic coffee cup on a walnut desk",
+    "prompt": "クリーンな製品写真、ウォールナットのデスクの上にあるセラミックコーヒーカップ",
     "size": "1024x1024",
     "response_format": "url"
   }'
 ```
 
-## 参照画像と編集
-
-`/v1/images/generations` で参照画像生成を行う場合は、モデルが対応していれば `operation: "image-to-image"` と `image_url`、`image_urls`、`reference_image_urls`、または multipart の `image` ファイルを送ります。multipart 画像、画像 URL、`images[].image_url` / `images[].file_id` を受け付ける編集モデルでは `/v1/images/edits` を使います。
-
-トップレベルの `images[]` やトップレベルの `file_id` を `/v1/images/generations` に送らないでください。これらは明示的に文書化された編集フロー用の形状です。
-
-```bash
-curl https://api.aisonar.dev/v1/images/generations \
-  -H "Authorization: Bearer sk-your-api-key" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "nano-banana-pro",
-    "operation": "image-to-image",
-    "prompt": "Keep the same product, place it in a bright studio scene",
-    "image_urls": ["https://example.com/reference.png"],
-    "aspect_ratio": "1:1"
-  }'
-```
-
 ## 結果のポーリング
 
-同期画像レスポンスは `data[].url` または `data[].b64_json` を返します。タスクレスポンスは `status`、`task_id`、通常は `poll_url` を返します。`poll_url` を優先し、固定の代替入口は [タスクステータスを取得](/ja/api-reference/tasks/get-task-status) です。非同期画像タスクは URL 結果を返すため、インライン base64 は対応する同期フローでのみ要求してください。
+一部の画像ルートはインラインの`data[].url`または`data[].b64_json`を返します。他のルートは`status: "pending"`、`task_id`、および`poll_url`を返します。非同期の画像生成または編集をリクエストした場合、完了したタスクの結果はURLを返します。特に`b64_json`が必要な場合は同期リクエストを使用してください。
 
 ```bash
-curl "https://api.aisonar.dev/v1/tasks/$TASK_ID" \
+curl "https://api.aisonar.dev/v1/tasks/$TASK_ID" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-## API リファレンス
+## よくある落とし穴
 
-| 項目 | リファレンス |
-|-------|-----------|
-| 画像を作成 | [画像を作成](/ja/api-reference/images/create-image) |
-| 画像を編集 | [画像を編集](/ja/api-reference/images/edit-image) |
-| 画像ステータスを取得 | [画像ステータスを取得](/ja/api-reference/images/get-image-status) |
-| タスクステータスを取得 | [タスクステータスを取得](/ja/api-reference/tasks/get-task-status) |
-| モデル一覧 | [モデル一覧](/ja/api-reference/models/list-models) |
-| モデルを取得 | [モデルを取得](/ja/api-reference/models/get-model) |
+- すべての画像モデルが同期であるとは限りません。
+- 非同期画像タスクから`b64_json`をリクエストしないでください。非同期結果はURL指向です。
+- 比率のみのGemini画像モデルに`resolution`を送信しないでください。
+- Nano Bananaの画像から画像へのフローに`/v1/images/edits`を使用しないでください。
+- 同期の高解像度画像リクエストには、HTTPクライアントのタイムアウトを少なくとも`120s`に設定してください。
+
+## APIリファレンス
+
+| トピック | リファレンス |
+|----------|---------------|
+| 画像の作成 | [画像の作成](/ja/api-reference/images/create-image) |
+| 画像の編集 | [画像の編集](/ja/api-reference/images/edit-image) |
+| 画像のバリエーションの作成 | [画像のバリエーションの作成](/ja/api-reference/images/create-variation) |
+| 画像のステータス取得 | [画像のステータス取得](/ja/api-reference/images/get-image-status) |
+| タスクのステータス取得 | [タスクのステータス取得](/ja/api-reference/tasks/get-task-status) |

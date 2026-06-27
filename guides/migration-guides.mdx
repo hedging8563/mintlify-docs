@@ -1,29 +1,90 @@
 ---
 title: "Migration Guides"
-description: "Production guide for Migration Guides."
+description: "Move OpenAI, Anthropic, Gemini, and media workloads to AI Sonar with the smallest production-safe changes."
 ---
 
-## Overview
+AI Sonar is native-first and OpenAI-compatible. Pick the route that matches the client behavior you need instead of converting every workload into one format.
 
-This guide explains how to use Migration Guides in production without binding your application to provider implementation details.
+## Choose The Format
 
-Use AI Sonar public APIs, model metadata, and documented response fields as the contract.
+| Existing workload | AI Sonar base URL | Primary endpoint | Notes |
+|-------------------|-------------------|------------------|-------|
+| OpenAI Chat Completions | `https://api.aisonar.dev/v1` | `/chat/completions` | Smallest change for OpenAI-compatible clients |
+| OpenAI Responses | `https://api.aisonar.dev/v1` | `/responses` | Use only for Responses-specific behavior |
+| Anthropic SDK | `https://api.aisonar.dev` | `/v1/messages` | Do not append `/v1` in the SDK base URL |
+| Gemini REST | `https://api.aisonar.dev` | `/v1beta/models/:model:generateContent` | Keep Gemini-native fields on the native route |
+| Media generation | `https://api.aisonar.dev/v1` | `/images`, `/videos`, `/music`, `/3d` | Discover models with `recommended_for` and expect async polling where documented |
 
-## Current behavior
+## OpenAI-Compatible Migration
 
-- Review these values before release: base URL, API key, model ID.
-- Do not depend on provider-specific status URLs, routing identifiers, or private execution metadata.
-- Make retries idempotent and avoid creating duplicate billable work.
+```python
+from openai import OpenAI
 
-## Production checklist
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1",
+)
 
-- Keep logs useful for support without storing secrets, private files, prompts, or user media.
-- Support tickets should include sanitized request shape, endpoint, model, timestamp, and public identifiers.
-- Verify the flow in staging before moving production traffic.
+response = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "Hello from AI Sonar"}],
+)
+```
 
-## Related pages
+Keep your existing retry, timeout, and streaming code, but validate model IDs against `GET /v1/models`. For image generation, send `model` explicitly and read the image guide because image models differ more than chat models.
 
-- [✨ Multi-Format API](/guides/api-formats)
-- [OpenAI SDK](/integrations/openai-sdk)
-- [Anthropic SDK](/integrations/anthropic-sdk)
-- [Provider Routing & Reliability](/guides/provider-routing-reliability)
+## Anthropic Migration
+
+```python
+from anthropic import Anthropic
+
+client = Anthropic(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev",
+)
+
+message = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Explain AI Sonar in one sentence."}],
+)
+```
+
+Use this route for Claude-native behavior such as Messages tool use and extended thinking. If a feature is Anthropic-native, keep it on `/v1/messages` instead of translating it through Chat Completions.
+
+## Gemini Migration
+
+```bash
+curl "https://api.aisonar.dev/v1beta/models/gemini-3.5-flash:generateContent" \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
+  -d '{"contents":[{"parts":[{"text":"Hello"}]}]}'
+```
+
+Gemini built-in tools, File API resources, cached contents, and function declarations should stay on `/v1beta` when you need Gemini-native behavior.
+
+## Media Migration
+
+1. Query `GET /v1/models?recommended_for=image|video|music|3d` before choosing a model.
+2. Read `aisonar.public_contract_summary` and, on detail pages, the full `aisonar.public_contract`.
+3. Send an explicit `model`. Do not rely on legacy defaults for production traffic.
+4. Store `task_id` and `poll_url` for async jobs.
+5. Reconcile costs through usage records, not through provider task IDs.
+
+## Production Rollout
+
+- Start with one endpoint and one model family.
+- Set HTTP timeouts high enough for synchronous image routes; use async mode when available for long work.
+- Log public identifiers and sanitized request shape before sending production traffic.
+- Compare a sample of responses, usage records, and customer-visible outputs.
+- Keep rollback simple: preserve the previous provider client until AI Sonar traffic is stable.
+
+## API Reference
+
+| Topic | Reference |
+|-------|-----------|
+| Multi-Format API | [Multi-Format API](/guides/api-formats) |
+| OpenAI SDK | [OpenAI SDK](/integrations/openai-sdk) |
+| Anthropic SDK | [Anthropic SDK](/integrations/anthropic-sdk) |
+| Image Generation | [Image Generation](/guides/image-generation) |
+| Async Jobs & Polling | [Async Jobs & Polling](/guides/async-jobs-polling) |

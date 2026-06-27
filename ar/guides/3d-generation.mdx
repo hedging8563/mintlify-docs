@@ -1,54 +1,60 @@
 ---
-title: "إنشاء ثلاثي الأبعاد"
-description: "أنشئ أصولاً ثلاثية الأبعاد من النص أو الصور باستخدام واجهات AI Sonar ثلاثية الأبعاد واستطلاع المهام."
+title: "توليد ثلاثي الأبعاد"
+description: "إنشاء أصول ثلاثية الأبعاد من النصوص أو الصور وتنزيل ملفات النماذج المكتملة من نتائج المهام غير المتزامنة."
 ---
-## التدفق الموصى به
 
-1. استدعِ [قائمة النماذج](/ar/api-reference/models/list-models) مع `recommended_for=3d`.
-2. استخدم [إنشاء 3D](/ar/api-reference/3d/create-3d) مع `prompt` نصي؛ أضف `image` أو `image_url` فقط للنماذج التي تدعم تحويل الصورة إلى 3D.
-3. اختر الحقول الاختيارية مثل `format` و `quality` و `style` و `seed` حسب عقد النموذج المختار.
-4. استطلع `poll_url` حتى يصبح الأصل جاهزاً، ثم نزّل `model_url` أو روابط الصيغ مثل `glb_url` / `fbx_url`.
+توليد ثلاثي الأبعاد غير متزامن. `POST /v1/3d/generations` ينشئ مهمة؛ ردود الحالة المكتملة تعيد روابط أصول النماذج القابلة للتنزيل.
 
 ## اكتشاف النماذج
 
-إنشاء 3D يعتمد على المهام. اعتبر كتالوج النماذج مصدر الحقيقة بدلاً من افتراض مزود واحد أو نموذج ثابت.
-
 ```bash
-curl "https://api.aisonar.dev/v1/models?recommended_for=3d" \
+curl "https://api.aisonar.dev/v1/models?recommended_for=3d" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-## إنشاء مهمة 3D
+لا تفترض أن كل نموذج ثلاثي الأبعاد يدعم كل من النص إلى ثلاثي الأبعاد والصورة إلى ثلاثي الأبعاد. تحقق من عقد النموذج المحدد قبل إرسال `image`, `image_url`, `format`, `quality`, `style`, أو `seed`.
 
-طلبات النص إلى 3D تحتاج إلى `prompt`. وطلبات الصورة إلى 3D تضيف بيانات base64 في `image` أو `image_url`. استخدم `format` و `quality` فقط عندما يتيحهما عقد النموذج.
+## إنشاء الطلب
 
 ```bash
-curl https://api.aisonar.dev/v1/3d/generations \
-  -H "Authorization: Bearer sk-your-api-key" \
-  -H "Content-Type: application/json" \
+curl https://api.aisonar.dev/v1/3d/generations \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
   -d '{
     "model": "tripo3d-v2.5",
-    "prompt": "A stylized low-poly robot mascot with clean topology",
+    "prompt": "تميمة روبوت منخفضة البولي مع طوبولوجيا نظيفة",
     "format": "glb",
     "quality": "standard"
   }'
 ```
 
-## استطلاع النتائج
+يتطلب النص إلى ثلاثي الأبعاد `prompt`. تستخدم الصورة إلى ثلاثي الأبعاد `image` أو `image_url` عندما يدعمها النموذج. يفضل استخدام روابط عامة للمدخلات الإنتاجية ما لم تكن الصورة المصدر خاصة ويقوم عميلك بتحميل بيانات base64 عن قصد.
 
-استخدم `poll_url` المُعاد أولاً. نقطة fallback الثابتة هي [حالة المهمة](/ar/api-reference/tasks/get-task-status). ترجع مهام 3D المكتملة `model_url` وقد تتضمن `glb_url` أو `fbx_url`.
+## خيارات الإخراج
 
-```bash
-curl "https://api.aisonar.dev/v1/tasks/$TASK_ID" \
-  -H "Authorization: Bearer sk-your-api-key"
-```
+- يمكن أن يطلب `format` تعبئة الإخراج مثل `glb`, `fbx`, `obj`, أو `usdz` عندما يتم دعمها.
+- تؤثر قيم `quality` مثل `draft`, `standard`, أو `high` على زمن الاستجابة والتكلفة عندما يكشفها النموذج.
+- `style` و `seed` تعتمد على النموذج؛ احذفها ما لم توثقها العقدة المحددة.
+
+## استعلام النتائج
+
+استخدم `poll_url` المعاد أولاً. إذا كنت بحاجة إلى نقطة نهاية ثابتة، استخدم `GET /v1/tasks/{id}` بنفس `id` / `task_id` من رد الإنشاء.
+
+تعود المهام المكتملة بـ `model_url` وقد تتضمن روابط محددة بالتنسيق مثل `glb_url`, `fbx_url`, `obj_url`, أو `usdz_url`. قم بتنزيل وتخزين الأصل في منتجك الخاص إذا كان المستخدمون بحاجة إلى الوصول المتكرر.
+
+## الأخطاء الشائعة
+
+- لا تتوقع أصل ثلاثي الأبعاد في رد الإنشاء؛ استعلم حتى تصل إلى الحالة النهائية.
+- لا تعد بتوفير كل تنسيق لكل نموذج.
+- لا تعيد محاولة طلبات الإنشاء بعد انتهاء مهلة العميل دون التحقق مما إذا كانت المهمة موجودة بالفعل.
+- لا تعرض معرفات مهام المزود في واجهة المستخدم الخاصة بك.
 
 ## مرجع API
 
 | الموضوع | المرجع |
 |-------|-----------|
-| إنشاء 3D | [إنشاء 3D](/ar/api-reference/3d/create-3d) |
-| حالة 3D | [حالة 3D](/ar/api-reference/3d/get-3d-status) |
-| حالة المهمة | [حالة المهمة](/ar/api-reference/tasks/get-task-status) |
+| إنشاء ثلاثي الأبعاد | [إنشاء ثلاثي الأبعاد](/ar/api-reference/3d/create-3d) |
+| الحصول على حالة ثلاثي الأبعاد | [الحصول على حالة ثلاثي الأبعاد](/ar/api-reference/3d/get-3d-status) |
+| الحصول على حالة المهمة | [الحصول على حالة المهمة](/ar/api-reference/tasks/get-task-status) |
 | قائمة النماذج | [قائمة النماذج](/ar/api-reference/models/list-models) |
-| جلب النموذج | [جلب النموذج](/ar/api-reference/models/get-model) |
+| الفوترة والتسعير | [الفوترة والتسعير](/ar/guides/billing) |

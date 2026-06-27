@@ -1,29 +1,73 @@
 ---
 title: "异步任务与轮询"
-description: "异步任务与轮询 的生产使用指南。"
+description: "创建异步生成任务，轮询公共任务状态，并在没有提供者特定任务细节的情况下调和最终结果。"
 ---
 
-## 概述
+此页面反映了AI Sonar的公共异步任务合同。它不将提供者任务URL、路由ID或上游回调行为视为面向用户的集成合同。
 
-本指南说明如何在生产环境中使用异步任务与轮询，同时避免把应用绑定到供应商实现细节。
+## 公共合同
 
-以 AI Sonar 公开 API、模型元数据和已文档化响应字段作为契约。
+AI Sonar为生成的媒体公开一个异步任务合同。创建端点可能返回`id`、`task_id`、`status`和`poll_url`。将`id`和`task_id`视为相同的公共任务标识，并将任务ID和`poll_url`与您自己的任务记录一起存储。
 
-## 当前行为
+首先使用返回的`poll_url`。如果您需要固定端点，请使用`GET /v1/tasks/{id}`，并使用创建响应中的相同`id` / `task_id`。
 
-- 上线前重点检查这些值：`task_id`, `poll_url`, `/v1/tasks/{id}`。
-- 不要依赖供应商专有状态 URL、路由标识符或私有执行元数据。
-- 让重试保持幂等，避免创建重复计费工作。
+公共生成任务今天是基于轮询的。AI Sonar内部有上游回调接收器，但它们不是客户Webhook，不应作为集成合同使用。
 
-## 生产检查清单
+## 推荐流程
 
-- 日志要便于支持排障，但不要存储密钥、私有文件、prompt 或用户媒体。
-- 支持工单应包含脱敏请求结构、端点、模型、时间戳和公开标识符。
-- 生产流量切换前先在预发环境验证流程。
+1. 发送带有明确`model`的创建请求。
+2. 如果响应是内联的，立即读取最终结果。
+3. 如果响应包含`status: "pending"`、`task_id`或`poll_url`，请持久化任务并开始轮询。
+4. 对于长媒体任务，每`5-10s`轮询一次。仅在终端状态时停止。
+5. 在`completed`时，读取该媒体类型的结果字段。在`failed`时，存储公共错误，并仅在重试会创建新的用户可见任务时显示重试操作。
 
-## 相关页面
+```json
+{
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "pending",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "model": "veo3.1"
+}
+```
 
-- [获取任务状态](/zh/api-reference/tasks/get-task-status)
-- [取消任务](/zh/api-reference/tasks/cancel-task)
-- [可观测性与故障排查](/zh/guides/observability-troubleshooting)
-- [视频生成](/zh/guides/video-generation)
+## 轮询结果
+
+```bash
+curl "https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \\
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+预期的公共状态为`pending`、`processing`、`completed`和`failed`。取消的任务表示为`failed`，并带有`cancelled: true`和`cancellation_status: "cancelled"`，以便旧的状态处理继续有效。
+
+请勿轮询提供者特定的URL、上游任务ID、路由ID或私有执行元数据。它们不是稳定的公共合同。
+
+## 计费与调和
+
+- 创建响应可以为异步工作保留估计金额。
+- 最终结算发生在任务达到终端状态后。
+- 当结算可用时，任务状态响应可以暴露`billing_transaction_id`和`X-Billing-Transaction-ID`头。
+- 如果在任务创建后发生客户端超时，请勿盲目重新创建任务。请从存储的`task_id` / `poll_url`恢复。
+
+## 取消
+
+`DELETE /v1/tasks/{id}`的范围故意狭窄。它目前支持排队的Volcengine Seedance视频任务，如`seedance-1.5-pro`、`seedance-2.0`和`seedance-2.0-fast`。不支持的任务返回`400 unsupported_task_cancel`；已经运行或处于终端状态的任务返回`409 task_not_cancellable`。
+
+## 故障排除清单
+
+- `async_task_not_found`：任务未知、过期、对该API密钥不可访问，或不属于公共异步任务合同。
+- 缺少最终媒体URL：保持轮询直到终端；不要假设`pending`响应包含输出。
+- 重复任务：检查您的重试路径是否在HTTP超时后创建了第二个任务。
+- 计费不匹配：在仪表板或管理API中比较`request_id`、`task_id`和`billing_transaction_id`。
+
+联系支持时，请包括`request_id`、`task_id`、`billing_transaction_id`（如果存在）、端点、模型、时间戳和经过清理的请求形状。除非支持要求提供经过编辑的示例，否则请勿包含API密钥、私有媒体或完整提示。
+
+## API参考
+
+| 主题 | 参考 |
+|-------|-----------|
+| 获取任务状态 | [获取任务状态](/zh/api-reference/tasks/get-task-status) |
+| 取消任务 | [取消任务](/zh/api-reference/tasks/cancel-task) |
+| 图像生成 | [图像生成](/zh/guides/image-generation) |
+| 视频生成 | [视频生成](/zh/guides/video-generation) |
+| 计费与定价 | [计费与定价](/zh/guides/billing) |

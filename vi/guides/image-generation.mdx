@@ -1,74 +1,74 @@
 ---
-title: "Tạo hình ảnh"
-description: "Xây dựng luồng tạo ảnh từ văn bản, ảnh tham chiếu và chỉnh sửa bằng API hình ảnh của AI Sonar."
+title: "Tạo Hình Ảnh"
+description: "Xây dựng các quy trình từ văn bản sang hình ảnh, từ hình ảnh sang hình ảnh, và chỉnh sửa hình ảnh dựa trên các hợp đồng hình ảnh công khai của AI Sonar."
 ---
-## Luồng đề xuất
 
-1. Gọi [Danh sách mô hình](/vi/api-reference/models/list-models) với `recommended_for=image`.
-2. Mở [Lấy mô hình](/vi/api-reference/models/get-model) của mô hình đã chọn và làm theo hợp đồng công khai của nó.
-3. Dùng [Tạo hình ảnh](/vi/api-reference/images/create-image) cho văn bản sang hình ảnh và luồng ảnh tham chiếu được hỗ trợ, hoặc [Chỉnh sửa hình ảnh](/vi/api-reference/images/edit-image) cho luồng chỉnh sửa.
-4. Nếu phản hồi có `poll_url`, hãy polling URL đó cho đến khi tác vụ ở trạng thái cuối.
+Các API hình ảnh của AI Sonar bao gồm nhiều gia đình mô hình với các hình thức yêu cầu khác nhau. Sử dụng hợp đồng mô hình công khai và tài liệu tham khảo API cụ thể cho điểm cuối trước khi giả định một trường hoạt động trên mọi mô hình hình ảnh.
 
-## Khám phá mô hình
+## Chọn Điểm Cuối
 
-Các mô hình hình ảnh không có cùng dạng request. Một số trả kết quả trực tiếp, một số tạo tác vụ bất đồng bộ. Hợp đồng của mô hình đã chọn quyết định `size`, `quality`, `aspect_ratio`, `resolution`, `async` có được chấp nhận hay không.
+| Mục Tiêu | Điểm Cuối | Ghi Chú |
+|----------|-----------|---------|
+| Từ văn bản sang hình ảnh | `POST /v1/images/generations` | Sử dụng `prompt` và một `model` rõ ràng |
+| Từ hình ảnh sang hình ảnh / hình ảnh tham chiếu | `POST /v1/images/generations` | Sử dụng `operation: "image-to-image"` cộng với `image_url`, `image_urls`, hoặc `reference_image_urls` khi mô hình hỗ trợ |
+| Chỉnh sửa hình ảnh GPT | `POST /v1/images/edits` | Hỗ trợ `image` đa phần, `image_url` / `image_urls` JSON, và các tham chiếu `images[]` chính thức cho các mô hình chỉnh sửa được hỗ trợ |
+| Biến thể cũ | `POST /v1/images/variations` | Ưu tiên các tuyến đường tạo mới hoặc chỉnh sửa cho công việc mới |
+| Trạng thái bất đồng bộ | `GET /v1/tasks/{id}` | Sử dụng `poll_url` trước tiên khi có |
+
+## Khám Phá Mô Hình
 
 ```bash
-curl "https://api.aisonar.dev/v1/models?recommended_for=image" \
+curl "https://api.aisonar.dev/v1/models?recommended_for=image" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-## Văn bản sang hình ảnh
+Các tham số mô hình hình ảnh khác nhau rất nhiều. Đọc hợp đồng mô hình đã chọn trước khi gửi `size`, `quality`, `aspect_ratio`, `resolution`, `async`, `background`, hoặc `output_format`.
 
-Với các mô hình GPT Image, dùng `size` khi hợp đồng mô hình có trường này. Với mô hình Google hoặc Nano Banana, chỉ dùng `aspect_ratio` và `resolution` khi hợp đồng mô hình liệt kê chúng.
+## Các Tham Số Đầu Vào Và Trường Cụ Thể Của Mô Hình
+
+- `gpt-image-2` sử dụng `size` và `quality` theo kiểu OpenAI; bỏ qua `size` hoặc `quality` để cho AI Sonar sử dụng `auto` nơi được hỗ trợ.
+- Các gia đình hình ảnh Gemini và Nano Banana thường sử dụng `aspect_ratio`; chỉ gửi `resolution` khi mô hình đã chọn công khai nó.
+- Các yêu cầu hình ảnh tham chiếu Nano Banana thuộc về `/v1/images/generations` với `operation: "image-to-image"` và `image_urls`, không phải trên `/v1/images/edits`.
+- `/v1/images/generations` không chấp nhận `images[]` hoặc `file_id` ở cấp độ cao nhất; đó là các hình thức quy trình chỉnh sửa.
+- Các URL hình ảnh từ xa phải là các URL công khai `http`/`https`. Tránh các mạng riêng, thông tin xác thực nhúng, các đoạn, và các URL ký tạm thời ngắn hạn.
+
+## Tạo Yêu Cầu
 
 ```bash
-curl https://api.aisonar.dev/v1/images/generations \
-  -H "Authorization: Bearer sk-your-api-key" \
-  -H "Content-Type: application/json" \
+curl https://api.aisonar.dev/v1/images/generations \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
   -d '{
     "model": "gpt-image-2",
-    "prompt": "A clean product photo of a ceramic coffee cup on a walnut desk",
+    "prompt": "Một bức ảnh sản phẩm sạch của một chiếc cốc cà phê bằng gốm trên một cái bàn óc chó",
     "size": "1024x1024",
     "response_format": "url"
   }'
 ```
 
-## Ảnh tham chiếu và chỉnh sửa
+## Lấy Kết Quả
 
-Với tạo ảnh tham chiếu trên `/v1/images/generations`, gửi `operation: "image-to-image"` cùng `image_url`, `image_urls`, `reference_image_urls` hoặc tệp multipart `image` khi mô hình hỗ trợ. Dùng `/v1/images/edits` cho mô hình chỉnh sửa nhận ảnh multipart, URL ảnh hoặc `images[].image_url` / `images[].file_id`.
-
-Không gửi `images[]` cấp cao nhất hoặc `file_id` cấp cao nhất tới `/v1/images/generations`; các dạng đó thuộc về luồng chỉnh sửa có tài liệu riêng.
+Một số tuyến đường hình ảnh trả về `data[].url` hoặc `data[].b64_json` trong dòng. Các tuyến đường khác trả về `status: "pending"`, `task_id`, và `poll_url`. Nếu bạn yêu cầu tạo hình ảnh hoặc chỉnh sửa bất đồng bộ, kết quả nhiệm vụ hoàn thành sẽ trả về các URL; sử dụng các yêu cầu đồng bộ khi bạn cần cụ thể `b64_json`.
 
 ```bash
-curl https://api.aisonar.dev/v1/images/generations \
-  -H "Authorization: Bearer sk-your-api-key" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "nano-banana-pro",
-    "operation": "image-to-image",
-    "prompt": "Keep the same product, place it in a bright studio scene",
-    "image_urls": ["https://example.com/reference.png"],
-    "aspect_ratio": "1:1"
-  }'
-```
-
-## Polling kết quả
-
-Phản hồi hình ảnh đồng bộ trả `data[].url` hoặc `data[].b64_json`. Phản hồi tác vụ trả `status`, `task_id` và thường có `poll_url`. Ưu tiên `poll_url`; endpoint dự phòng cố định là [Trạng thái tác vụ](/vi/api-reference/tasks/get-task-status). Tác vụ hình ảnh bất đồng bộ trả URL, vì vậy chỉ yêu cầu base64 inline trong luồng đồng bộ có hỗ trợ.
-
-```bash
-curl "https://api.aisonar.dev/v1/tasks/$TASK_ID" \
+curl "https://api.aisonar.dev/v1/tasks/$TASK_ID" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-## Tham chiếu API
+## Những Cạm Bẫy Thường Gặp
 
-| Mục | Tham chiếu |
-|-------|-----------|
-| Tạo hình ảnh | [Tạo hình ảnh](/vi/api-reference/images/create-image) |
-| Chỉnh sửa hình ảnh | [Chỉnh sửa hình ảnh](/vi/api-reference/images/edit-image) |
-| Trạng thái hình ảnh | [Trạng thái hình ảnh](/vi/api-reference/images/get-image-status) |
-| Trạng thái tác vụ | [Trạng thái tác vụ](/vi/api-reference/tasks/get-task-status) |
-| Danh sách mô hình | [Danh sách mô hình](/vi/api-reference/models/list-models) |
-| Lấy mô hình | [Lấy mô hình](/vi/api-reference/models/get-model) |
+- Không giả định rằng mọi mô hình hình ảnh đều đồng bộ.
+- Không yêu cầu `b64_json` từ các nhiệm vụ hình ảnh bất đồng bộ; kết quả bất đồng bộ có định hướng URL.
+- Không gửi `resolution` đến các mô hình hình ảnh Gemini chỉ tỷ lệ.
+- Không sử dụng `/v1/images/edits` cho các quy trình hình ảnh Nano Banana.
+- Đặt thời gian chờ của khách hàng HTTP ít nhất là `120s` cho các yêu cầu hình ảnh độ phân giải cao đồng bộ.
+
+## Tài Liệu Tham Khảo API
+
+| Chủ Đề | Tài Liệu Tham Khảo |
+|--------|--------------------|
+| Tạo Hình Ảnh | [Tạo Hình Ảnh](/vi/api-reference/images/create-image) |
+| Chỉnh Sửa Hình Ảnh | [Chỉnh Sửa Hình Ảnh](/vi/api-reference/images/edit-image) |
+| Tạo Biến Thể Hình Ảnh | [Tạo Biến Thể Hình Ảnh](/vi/api-reference/images/create-variation) |
+| Lấy Trạng Thái Hình Ảnh | [Lấy Trạng Thái Hình Ảnh](/vi/api-reference/images/get-image-status) |
+| Lấy Trạng Thái Nhiệm Vụ | [Lấy Trạng Thái Nhiệm Vụ](/vi/api-reference/tasks/get-task-status) |

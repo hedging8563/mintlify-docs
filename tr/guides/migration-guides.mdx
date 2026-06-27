@@ -1,29 +1,90 @@
 ---
-title: "Migrasyon kılavuzları"
-description: "Migrasyon kılavuzları için production kılavuzu."
+title: "Göç Rehberleri"
+description: "OpenAI, Anthropic, Gemini ve medya iş yüklerini AI Sonar'a en az üretim güvenli değişikliklerle taşıyın."
 ---
 
-## Genel bakış
+AI Sonar, yerel öncelikli ve OpenAI ile uyumlu. Her iş yükünü tek bir formata dönüştürmek yerine, ihtiyaç duyduğunuz istemci davranışına uyan rotayı seçin.
 
-Bu kılavuz, uygulamanızı provider implementation detaylarına bağlamadan production’da Migrasyon kılavuzları kullanmayı açıklar.
+## Formatı Seçin
 
-AI Sonar public API’lerini, model metadata’sını ve dokümante edilmiş response field’larını sözleşme olarak kullanın.
+| Mevcut iş yükü | AI Sonar temel URL'si | Birincil uç nokta | Notlar |
+|-------------------|-------------------|------------------|-------|
+| OpenAI Sohbet Tamamlamaları | `https://api.aisonar.dev/v1` | `/chat/completions` | OpenAI ile uyumlu istemciler için en küçük değişiklik |
+| OpenAI Yanıtları | `https://api.aisonar.dev/v1` | `/responses` | Sadece Yanıtlar'a özgü davranışlar için kullanın |
+| Anthropic SDK | `https://api.aisonar.dev` | `/v1/messages` | SDK temel URL'sine `/v1` eklemeyin |
+| Gemini REST | `https://api.aisonar.dev` | `/v1beta/models/:model:generateContent` | Yerel rotada Gemini'ye özgü alanları koruyun |
+| Medya üretimi | `https://api.aisonar.dev/v1` | `/images`, `/videos`, `/music`, `/3d` | `recommended_for` ile modelleri keşfedin ve belgelenmiş yerlerde asenkron anket bekleyin |
 
-## Güncel davranış
+## OpenAI-Uyumlu Göç
 
-- Release öncesi bu değerleri kontrol edin: base URL, API key, model ID.
-- Provider’a özel status URL’lerine, routing identifier’lara veya private execution metadata’ya bağlı kalmayın.
-- Retry işlemlerini idempotent yapın ve çift billable work oluşturmayın.
+```python
+from openai import OpenAI
 
-## Production kontrol listesi
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1",
+)
 
-- Loglar support için yararlı olmalı, ancak secret, private file, prompt veya kullanıcı medyası saklamamalıdır.
-- Support ticket; sanitize edilmiş request shape, endpoint, model, timestamp ve public identifier içermelidir.
-- Production trafiğini taşımadan önce flow’u staging’de doğrulayın.
+response = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "Hello from AI Sonar"}],
+)
+```
 
-## İlgili sayfalar
+Mevcut yeniden deneme, zaman aşımı ve akış kodunuzu koruyun, ancak model kimliklerini `GET /v1/models` ile doğrulayın. Görüntü üretimi için `model`'i açıkça gönderin ve görüntü modellerinin sohbet modellerinden daha fazla farklılık gösterdiğini göz önünde bulundurarak görüntü kılavuzunu okuyun.
 
-- [✨ Çoklu Format API](/tr/guides/api-formats)
-- [OpenAI SDK](/tr/integrations/openai-sdk)
-- [Anthropic SDK](/tr/integrations/anthropic-sdk)
-- [Provider routing ve güvenilirlik](/tr/guides/provider-routing-reliability)
+## Anthropic Göçü
+
+```python
+from anthropic import Anthropic
+
+client = Anthropic(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev",
+)
+
+message = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Explain AI Sonar in one sentence."}],
+)
+```
+
+Bu rotayı, Mesajlar aracı kullanımı ve genişletilmiş düşünme gibi Claude'ye özgü davranışlar için kullanın. Bir özellik Anthropic'e özgü ise, onu `/v1/messages` üzerinde tutun, Sohbet Tamamlamaları üzerinden çevirmeyin.
+
+## Gemini Göçü
+
+```bash
+curl "https://api.aisonar.dev/v1beta/models/gemini-3.5-flash:generateContent" \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
+  -d '{"contents":[{"parts":[{"text":"Hello"}]}]}'
+```
+
+Gemini yerleşik araçları, Dosya API kaynakları, önbelleğe alınmış içerikler ve işlev bildirimleri, Gemini'ye özgü davranışlar gerektiğinde `/v1beta` üzerinde kalmalıdır.
+
+## Medya Göçü
+
+1. Bir model seçmeden önce `GET /v1/models?recommended_for=image|video|music|3d` sorgulayın.
+2. `aisonar.public_contract_summary`'yı okuyun ve detay sayfalarında tam `aisonar.public_contract`'ı inceleyin.
+3. Açık bir `model` gönderin. Üretim trafiği için eski varsayılanlara güvenmeyin.
+4. Asenkron işler için `task_id` ve `poll_url`'u saklayın.
+5. Maliyetleri kullanım kayıtları üzerinden uzlaştırın, sağlayıcı görev kimlikleri üzerinden değil.
+
+## Üretim Yayılımı
+
+- Bir uç nokta ve bir model ailesi ile başlayın.
+- Senkron görüntü yolları için HTTP zaman aşımını yeterince yüksek ayarlayın; uzun işler için mevcut olduğunda asenkron modu kullanın.
+- Üretim trafiği göndermeden önce kamuya açık tanımlayıcıları ve temizlenmiş istek şekillerini kaydedin.
+- Yanıtların, kullanım kayıtlarının ve müşteri görünür çıktılarının bir örneğini karşılaştırın.
+- Geri alma işlemini basit tutun: AI Sonar trafiği stabil olana kadar önceki sağlayıcı istemcisini koruyun.
+
+## API Referansı
+
+| Konu | Referans |
+|-------|-----------|
+| Çoklu Format API | [Çoklu Format API](/tr/guides/api-formats) |
+| OpenAI SDK | [OpenAI SDK](/tr/integrations/openai-sdk) |
+| Anthropic SDK | [Anthropic SDK](/tr/integrations/anthropic-sdk) |
+| Görüntü Üretimi | [Görüntü Üretimi](/tr/guides/image-generation) |
+| Asenkron İşler & Anket | [Asenkron İşler & Anket](/tr/guides/async-jobs-polling) |

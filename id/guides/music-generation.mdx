@@ -1,55 +1,55 @@
 ---
-title: "Generasi musik"
-description: "Buat musik dan lirik dengan API musik AI Sonar dan polling tugas asinkron."
+title: "Generasi Musik"
+description: "Buat lagu, instrumental, lirik, dan kelanjutan dengan tugas musik AI Sonar."
 ---
-## Alur yang disarankan
 
-1. Panggil [Daftar model](/id/api-reference/models/list-models) dengan `recommended_for=music`.
-2. Gunakan [Buat musik](/id/api-reference/music/create-music) untuk membuat tugas dengan `prompt` dan field opsional seperti `title`, `tags`, `action`, `mv`, atau pengaturan lanjutan.
-3. Simpan `id` / `task_id` dan `poll_url` yang dikembalikan.
-4. Polling sampai tugas `completed` atau `failed`, lalu baca `audio_url`, `video_url` opsional, `title`, dan `lyrics`.
+Generasi musik bersifat asinkron. `POST /v1/music/generations` membuat tugas dan mengembalikan `id` / `task_id`, `status`, dan biasanya `poll_url`. Audio akhir dan metadata muncul setelah polling.
 
-## Temukan model
-
-Generasi musik bersifat asinkron. Jangan bergantung pada nama provider upstream atau ID tugas provider; AI Sonar mengembalikan identitas tugas yang dinormalisasi dan URL polling.
+## Penemuan Model
 
 ```bash
-curl "https://api.aisonar.dev/v1/models?recommended_for=music" \
+curl "https://api.aisonar.dev/v1/models?recommended_for=music" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-## Buat tugas musik
+Kontrak publik saat ini mengekspos `suno_music` untuk generasi musik dan `suno_lyrics` untuk alur lirik saja. Kuery katalog model sebelum penggunaan produksi daripada mengandalkan asumsi penyedia.
 
-`action: "MUSIC"` membuat lagu atau instrumental tergantung prompt dan model. `action: "LYRICS"` untuk alur lirik saja jika model mendukungnya. Gunakan `continue_clip_id` dan `continue_at` hanya untuk alur lanjutan yang didokumentasikan kontrak model.
+## Buat Permintaan
 
 ```bash
-curl https://api.aisonar.dev/v1/music/generations \
-  -H "Authorization: Bearer sk-your-api-key" \
-  -H "Content-Type: application/json" \
+curl https://api.aisonar.dev/v1/music/generations \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
   -d '{
     "model": "suno_music",
-    "prompt": "An upbeat synth-pop track with warm vocals and a clean chorus",
+    "prompt": "Lagu synth-pop ceria dengan vokal hangat dan chorus yang bersih",
     "title": "Morning Static",
-    "tags": "synth-pop, upbeat",
+    "tags": "synth-pop, ceria",
     "action": "MUSIC"
   }'
 ```
 
-## Polling hasil
+Gunakan `action: "MUSIC"` untuk lagu atau instrumental. Gunakan `action: "LYRICS"` hanya dengan model yang mendukung generasi lirik saja. Bidang kelanjutan seperti `continue_clip_id` dan `continue_at` adalah untuk alur kelanjutan dan harus dikirim hanya ketika produk Anda melanjutkan klip sebelumnya.
 
-Selalu prioritaskan `poll_url` yang dikembalikan. Fallback stabilnya adalah [Status tugas](/id/api-reference/tasks/get-task-status). Tugas musik selesai dapat berisi `audio_url`, `video_url`, `title`, `lyrics`, dan metadata ternormalisasi.
+## Hasil Polling
 
-```bash
-curl "https://api.aisonar.dev/v1/tasks/$TASK_ID" \
-  -H "Authorization: Bearer sk-your-api-key"
-```
+Gunakan `poll_url` yang dikembalikan terlebih dahulu. Jika Anda memerlukan endpoint tetap, gunakan `GET /v1/tasks/{id}` dengan `id` / `task_id` yang sama dari respons pembuatan.
+
+Tugas musik yang selesai dapat mencakup `audio_url`, `video_url`, `title`, `lyrics`, dan metadata yang dinormalisasi oleh model. Simpan URL akhir di aplikasi Anda daripada melakukan polling berulang kali setelah status terminal.
+
+## Kesalahan Umum
+
+- Jangan tampilkan pemutar akhir sampai tugas `completed` dan `audio_url` ada.
+- Jangan gunakan ID tugas penyedia atau URL ambil penyedia dalam status aplikasi Anda.
+- Jangan campurkan tindakan lirik saja dan musik penuh di belakang satu UI tanpa menunjukkan perbedaannya kepada pengguna.
+- Jangan buat ulang tugas pada setiap penyegaran halaman; lanjutkan dari `task_id` yang disimpan.
 
 ## Referensi API
 
 | Topik | Referensi |
 |-------|-----------|
-| Buat musik | [Buat musik](/id/api-reference/music/create-music) |
-| Status musik | [Status musik](/id/api-reference/music/get-music-status) |
-| Status tugas | [Status tugas](/id/api-reference/tasks/get-task-status) |
-| Daftar model | [Daftar model](/id/api-reference/models/list-models) |
-| Ambil model | [Ambil model](/id/api-reference/models/get-model) |
+| Buat Musik | [Buat Musik](/id/api-reference/music/create-music) |
+| Dapatkan Status Musik | [Dapatkan Status Musik](/id/api-reference/music/get-music-status) |
+| Dapatkan Status Tugas | [Dapatkan Status Tugas](/id/api-reference/tasks/get-task-status) |
+| Daftar Model | [Daftar Model](/id/api-reference/models/list-models) |
+| Penagihan & Harga | [Penagihan & Harga](/id/guides/billing) |

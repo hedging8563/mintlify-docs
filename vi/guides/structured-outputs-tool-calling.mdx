@@ -1,29 +1,74 @@
 ---
-title: "Đầu ra có cấu trúc và gọi công cụ"
-description: "Hướng dẫn production cho Đầu ra có cấu trúc và gọi công cụ."
+title: "Đầu Ra Cấu Trúc & Gọi Công Cụ"
+description: "Sử dụng chế độ JSON, công cụ hàm và các đường dẫn công cụ gốc mà không giả định rằng mọi mô hình đều hỗ trợ cùng một hợp đồng."
 ---
 
-## Tổng quan
+Đầu ra cấu trúc và công cụ là các đường dẫn API AI Sonar thực tế, nhưng chúng không phải là một khả năng phổ quát trên mọi mô hình và đường dẫn. Chọn đường dẫn sở hữu hành vi bạn cần.
 
-Hướng dẫn này giải thích cách dùng Đầu ra có cấu trúc và gọi công cụ trong production mà không gắn ứng dụng vào chi tiết triển khai của provider.
+## JSON Và Đầu Ra Cấu Trúc
 
-Dùng API công khai của AI Sonar, metadata mô hình và field phản hồi đã tài liệu hóa làm hợp đồng.
+Để có các phản hồi cấu trúc di động, bắt đầu với Chat Completions `response_format: {"type":"json_object"}` và xác thực đầu ra trong ứng dụng của bạn. Đây là hình dạng yêu cầu công khai ổn định trong xác thực chia sẻ của AI Sonar.
 
-## Hành vi hiện tại
+```json
+{
+  "model": "gpt-5.4",
+  "messages": [{"role": "user", "content": "Return a JSON object with city and weather."}],
+  "response_format": {"type": "json_object"}
+}
+```
 
-- Kiểm tra các giá trị này trước khi phát hành: JSON schema, tools, function declarations.
-- Không phụ thuộc URL trạng thái riêng của provider, định danh routing hoặc metadata thực thi riêng tư.
-- Làm retry có tính idempotent và tránh tạo công việc bị tính phí trùng lặp.
+`json_schema` và các đường dẫn đầu ra cấu trúc `strict` tồn tại trong một số mã nguồn và chuyển đổi, nhưng chúng phụ thuộc vào mô hình và đường dẫn. Xem chúng như một khả năng để xác minh với mô hình đã chọn, không phải là một lời hứa chung cho mọi đường dẫn AI Sonar.
 
-## Checklist production
+## Ranh Giới Gọi Công Cụ
 
-- Log cần hữu ích cho support nhưng không lưu secret, file riêng tư, prompt hoặc media người dùng.
-- Ticket support nên có request shape đã làm sạch, endpoint, model, timestamp và định danh công khai.
-- Xác minh flow ở staging trước khi chuyển traffic production.
+| Hình dạng công cụ | Đường dẫn ưu tiên | Ghi chú sản xuất |
+|-------------------|------------------|------------------|
+| Công cụ hàm OpenAI | `/v1/chat/completions` | Di động cho các cuộc gọi hàm do người dùng định nghĩa |
+| Công cụ phản hồi OpenAI | `/v1/responses` | Sử dụng cho các công cụ tích hợp hoặc lưu trữ cụ thể cho phản hồi |
+| Công cụ Anthropic | `/v1/messages` | Sử dụng cho việc sử dụng công cụ gốc của Claude và các luồng suy nghĩ |
+| Khai báo hàm Gemini / công cụ tích hợp | `/v1beta/models/:model:generateContent` | Giữ các trường công cụ gốc của Gemini trên đường dẫn Gemini |
 
-## Trang liên quan
+AI Sonar không thực thi hàm của bạn cho bạn. Khi một mô hình trả về `tool_calls`, `function_call`, `tool_use`, hoặc các phần gọi hàm Gemini, ứng dụng của bạn phải chạy công cụ, thêm kết quả công cụ theo định dạng yêu cầu bởi đường dẫn, và tiếp tục cuộc trò chuyện.
 
-- [✨ API Đa Định dạng](/vi/guides/api-formats)
-- [Tạo Hoàn Thiện Cuộc Trò Chuyện](/vi/api-reference/chat/create-completion)
-- [Tạo phản hồi](/vi/api-reference/responses/create-response)
-- [Tạo Tin nhắn](/vi/api-reference/messages/create-message)
+## Cạm Bẫy Thường Gặp
+
+- Không gửi các công cụ tích hợp gốc của nhà cung cấp qua Chat Completions và mong đợi chúng được dịch một cách im lặng.
+- Không dựa vào JSON Schema nghiêm ngặt trừ khi đường dẫn và mô hình đã chọn đã được thử nghiệm.
+- Giữ cho các schema nhỏ và rõ ràng; các schema lớn thêm token và có thể giảm độ tin cậy.
+- Xác thực đầu ra mô hình ở phía máy chủ ngay cả khi chế độ JSON được bật.
+- Xem các lỗi trường không được hỗ trợ như phản hồi hợp đồng. Xóa trường hoặc sử dụng đường dẫn gốc sở hữu nó.
+
+## Ví Dụ
+
+```bash
+curl https://api.aisonar.dev/v1/chat/completions \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "gpt-5.4",
+    "messages": [{"role":"user","content":"Extract name and email as JSON."}],
+    "response_format": {"type":"json_object"},
+    "tools": [{
+      "type": "function",
+      "function": {
+        "name": "lookup_customer",
+        "description": "Look up a customer by email",
+        "parameters": {
+          "type": "object",
+          "properties": {"email": {"type": "string"}},
+          "required": ["email"]
+        }
+      }
+    }]
+  }'
+```
+
+## Tài Liệu API
+
+| Chủ đề | Tham khảo |
+|--------|-----------|
+| API Định Dạng Đa | [Multi-Format API](/vi/guides/api-formats) |
+| Tạo Hoàn Thành Trò Chuyện | [Create Chat Completion](/vi/api-reference/chat/create-completion) |
+| Tạo Phản Hồi | [Create Response](/vi/api-reference/responses/create-response) |
+| Tạo Tin Nhắn | [Create Message](/vi/api-reference/messages/create-message) |
+| Tạo Nội Dung Gemini | [Generate Gemini Content](/vi/api-reference/gemini/generate-content) |

@@ -1,29 +1,90 @@
 ---
 title: "移行ガイド"
-description: "移行ガイドの本番利用ガイド。"
+description: "OpenAI、Anthropic、Gemini、およびメディアワークロードを、最小限の生産安全な変更でAI Sonarに移動します。"
 ---
 
-## 概要
+AI SonarはネイティブファーストでOpenAI互換です。すべてのワークロードを1つの形式に変換するのではなく、必要なクライアントの動作に合ったルートを選択してください。
 
-このガイドでは、「移行ガイド」を本番で使う方法を説明します。アプリケーションをプロバイダー実装詳細に結び付けません。
+## フォーマットを選択
 
-AI Sonar の公開 API、モデルメタデータ、文書化されたレスポンスフィールドを契約として扱います。
+| 既存のワークロード | AI SonarベースURL | プライマリエンドポイント | ノート |
+|-------------------|-------------------|------------------|-------|
+| OpenAIチャット完了 | `https://api.aisonar.dev/v1` | `/chat/completions` | OpenAI互換クライアントに対する最小限の変更 |
+| OpenAIレスポンス | `https://api.aisonar.dev/v1` | `/responses` | レスポンス特有の動作にのみ使用 |
+| Anthropic SDK | `https://api.aisonar.dev` | `/v1/messages` | SDKベースURLに`/v1`を追加しないでください |
+| Gemini REST | `https://api.aisonar.dev` | `/v1beta/models/:model:generateContent` | ネイティブルートでGeminiネイティブフィールドを保持 |
+| メディア生成 | `https://api.aisonar.dev/v1` | `/images`, `/videos`, `/music`, `/3d` | `recommended_for`でモデルを発見し、文書化されている場合は非同期ポーリングを期待 |
 
-## 現在の動作
+## OpenAI互換の移行
 
-- リリース前に次の値を確認します: base URL, API key, model ID。
-- プロバイダー固有の状態 URL、ルーティング識別子、非公開の実行メタデータには依存しないでください。
-- リトライは冪等にし、重複課金される作業を作らないでください。
+```python
+from openai import OpenAI
 
-## 本番チェックリスト
+client = OpenAI(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev/v1",
+)
 
-- ログはサポートに役立つ範囲に留め、秘密情報、私有ファイル、prompt、ユーザーメディアは保存しません。
-- サポート依頼には、秘匿化したリクエスト形状、エンドポイント、モデル、時刻、公開識別子を含めます。
-- 本番トラフィックを移す前にステージングでフローを検証します。
+response = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[{"role": "user", "content": "Hello from AI Sonar"}],
+)
+```
 
-## 関連ページ
+既存のリトライ、タイムアウト、およびストリーミングコードを保持しますが、モデルIDを`GET /v1/models`に対して検証してください。画像生成の場合は、`model`を明示的に送信し、画像モデルはチャットモデルよりも異なるため、画像ガイドを参照してください。
 
-- [✨ マルチフォーマット API](/ja/guides/api-formats)
-- [OpenAI SDK](/ja/integrations/openai-sdk)
-- [Anthropic SDK](/ja/integrations/anthropic-sdk)
-- [プロバイダールーティングと信頼性](/ja/guides/provider-routing-reliability)
+## Anthropic移行
+
+```python
+from anthropic import Anthropic
+
+client = Anthropic(
+    api_key="sk-your-api-key",
+    base_url="https://api.aisonar.dev",
+)
+
+message = client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Explain AI Sonar in one sentence."}],
+)
+```
+
+メッセージツールの使用や拡張思考など、Claudeネイティブの動作にはこのルートを使用してください。機能がAnthropicネイティブである場合は、Chat Completionsを通じて翻訳するのではなく、`/v1/messages`に保持してください。
+
+## Gemini移行
+
+```bash
+curl "https://api.aisonar.dev/v1beta/models/gemini-3.5-flash:generateContent" \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
+  -d '{"contents":[{"parts":[{"text":"Hello"}]}]}'
+```
+
+Geminiの組み込みツール、ファイルAPIリソース、キャッシュされたコンテンツ、および関数宣言は、Geminiネイティブの動作が必要な場合は`/v1beta`に留めておくべきです。
+
+## メディア移行
+
+1. モデルを選択する前に`GET /v1/models?recommended_for=image|video|music|3d`をクエリしてください。
+2. `aisonar.public_contract_summary`を読み、詳細ページでは完全な`aisonar.public_contract`を確認してください。
+3. 明示的に`model`を送信してください。生産トラフィックのためにレガシーのデフォルトに依存しないでください。
+4. 非同期ジョブのために`task_id`と`poll_url`を保存してください。
+5. プロバイダーのタスクIDではなく、使用記録を通じてコストを調整してください。
+
+## 生産展開
+
+- 1つのエンドポイントと1つのモデルファミリーから始めてください。
+- 同期画像ルートのためにHTTPタイムアウトを十分に高く設定してください。長時間の作業には利用可能な場合は非同期モードを使用してください。
+- 生産トラフィックを送信する前に、公開識別子とサニタイズされたリクエスト形状をログに記録してください。
+- レスポンス、使用記録、および顧客に見える出力のサンプルを比較してください。
+- ロールバックを簡単に保つ: AI Sonarトラフィックが安定するまで、以前のプロバイダーのクライアントを保持してください。
+
+## APIリファレンス
+
+| トピック | リファレンス |
+|-------|-----------|
+| マルチフォーマットAPI | [マルチフォーマットAPI](/ja/guides/api-formats) |
+| OpenAI SDK | [OpenAI SDK](/ja/integrations/openai-sdk) |
+| Anthropic SDK | [Anthropic SDK](/ja/integrations/anthropic-sdk) |
+| 画像生成 | [画像生成](/ja/guides/image-generation) |
+| 非同期ジョブとポーリング | [非同期ジョブとポーリング](/ja/guides/async-jobs-polling) |

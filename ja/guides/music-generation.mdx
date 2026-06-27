@@ -1,55 +1,55 @@
 ---
 title: "音楽生成"
-description: "AI Sonar の音楽生成 API と非同期タスクのポーリングで音楽と歌詞を作成します。"
+description: "AI Sonarの音楽タスクを使用して、曲、インストゥルメンタル、歌詞、続きの生成を行います。"
 ---
-## 推奨フロー
 
-1. [モデル一覧](/ja/api-reference/models/list-models) を `recommended_for=music` 付きで呼び出します。
-2. [音楽を作成](/ja/api-reference/music/create-music) で `prompt` を含むタスクを作成し、必要に応じて `title`、`tags`、`action`、`mv`、継続設定を指定します。
-3. 返された `id` / `task_id` と `poll_url` を保存します。
-4. `completed` または `failed` になるまでポーリングし、`audio_url`、任意の `video_url`、`title`、`lyrics` を読み取ります。
+音楽生成は非同期です。 `POST /v1/music/generations` はタスクを作成し、`id` / `task_id`、`status`、通常は `poll_url` を返します。最終的な音声とメタデータはポーリング後に表示されます。
 
-## モデルの発見
-
-音楽生成は非同期です。上流プロバイダ名やプロバイダ側タスク ID に依存せず、AI Sonar が返す正規化されたタスク ID とポーリング URL を使ってください。
+## モデル発見
 
 ```bash
-curl "https://api.aisonar.dev/v1/models?recommended_for=music" \
+curl "https://api.aisonar.dev/v1/models?recommended_for=music" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-## 音楽タスクを作成
+現在の公開契約では、音楽生成のために `suno_music` を、歌詞のみのフローのために `suno_lyrics` を公開しています。プロダクション使用前にモデルカタログを照会し、プロバイダーの仮定を固定しないでください。
 
-`action: "MUSIC"` はプロンプトとモデルに応じて楽曲またはインストゥルメンタルを作成します。`action: "LYRICS"` は、選択したモデルが対応する歌詞のみのフロー用です。`continue_clip_id` と `continue_at` は、モデル契約で明記された継続ワークフローでのみ使います。
+## リクエストの作成
 
 ```bash
-curl https://api.aisonar.dev/v1/music/generations \
-  -H "Authorization: Bearer sk-your-api-key" \
-  -H "Content-Type: application/json" \
+curl https://api.aisonar.dev/v1/music/generations \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
   -d '{
     "model": "suno_music",
-    "prompt": "An upbeat synth-pop track with warm vocals and a clean chorus",
-    "title": "Morning Static",
-    "tags": "synth-pop, upbeat",
+    "prompt": "温かいボーカルとクリーンなコーラスを持つアップビートなシンセポップトラック",
+    "title": "モーニングスタティック",
+    "tags": "シンセポップ, アップビート",
     "action": "MUSIC"
   }'
 ```
 
+曲やインストゥルメンタルには `action: "MUSIC"` を使用してください。歌詞のみの生成をサポートするモデルに対してのみ `action: "LYRICS"` を使用してください。`continue_clip_id` や `continue_at` などの続きフィールドは続きのワークフロー用であり、前のクリップを続ける場合にのみ送信する必要があります。
+
 ## 結果のポーリング
 
-返された `poll_url` を常に優先してください。安定した代替入口は [タスクステータスを取得](/ja/api-reference/tasks/get-task-status) です。完了した音楽タスクには `audio_url`、`video_url`、`title`、`lyrics`、モデル正規化メタデータが含まれることがあります。
+最初に返された `poll_url` を使用してください。固定エンドポイントが必要な場合は、作成応答から同じ `id` / `task_id` を使用して `GET /v1/tasks/{id}` を使用してください。
 
-```bash
-curl "https://api.aisonar.dev/v1/tasks/$TASK_ID" \
-  -H "Authorization: Bearer sk-your-api-key"
-```
+完了した音楽タスクには `audio_url`、`video_url`、`title`、`lyrics`、およびモデル正規化メタデータが含まれる場合があります。最終的なURLは、端末状態の後に繰り返しポーリングするのではなく、アプリケーションに保存してください。
 
-## API リファレンス
+## よくある落とし穴
 
-| 項目 | リファレンス |
+- タスクが `completed` であり、`audio_url` が存在するまで最終プレーヤーを表示しないでください。
+- アプリの状態でプロバイダーのタスクIDやプロバイダーのフェッチURLを使用しないでください。
+- ユーザーに違いを示さずに、歌詞のみのアクションとフル音楽アクションを1つのUIの背後で混合しないでください。
+- ページをリフレッシュするたびにタスクを再作成しないでください。保存された `task_id` から再開してください。
+
+## APIリファレンス
+
+| トピック | リファレンス |
 |-------|-----------|
-| 音楽を作成 | [音楽を作成](/ja/api-reference/music/create-music) |
-| 音楽ステータスを取得 | [音楽ステータスを取得](/ja/api-reference/music/get-music-status) |
-| タスクステータスを取得 | [タスクステータスを取得](/ja/api-reference/tasks/get-task-status) |
-| モデル一覧 | [モデル一覧](/ja/api-reference/models/list-models) |
-| モデルを取得 | [モデルを取得](/ja/api-reference/models/get-model) |
+| 音楽の作成 | [音楽の作成](/ja/api-reference/music/create-music) |
+| 音楽のステータス取得 | [音楽のステータス取得](/ja/api-reference/music/get-music-status) |
+| タスクのステータス取得 | [タスクのステータス取得](/ja/api-reference/tasks/get-task-status) |
+| モデルの一覧 | [モデルの一覧](/ja/api-reference/models/list-models) |
+| 請求と価格設定 | [請求と価格設定](/ja/guides/billing) |

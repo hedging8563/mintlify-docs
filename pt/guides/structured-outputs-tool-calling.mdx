@@ -1,29 +1,74 @@
 ---
-title: "Saídas estruturadas e chamadas de ferramentas"
-description: "Guia de produção para Saídas estruturadas e chamadas de ferramentas."
+title: "Saídas Estruturadas & Chamada de Ferramentas"
+description: "Use o modo JSON, ferramentas de função e rotas de ferramentas nativas sem assumir que cada modelo suporta o mesmo contrato."
 ---
 
-## Visão geral
+Saídas estruturadas e ferramentas são caminhos reais da API AI Sonar, mas não são uma capacidade universal em todos os modelos e rotas. Escolha a rota que possui o comportamento que você precisa.
 
-Este guia explica como usar Saídas estruturadas e chamadas de ferramentas em produção sem vincular sua aplicação a detalhes de implementação do provedor.
+## JSON E Saída Estruturada
 
-Use APIs públicas da AI Sonar, metadados de modelo e campos de resposta documentados como contrato.
+Para respostas estruturadas portáteis, comece com Chat Completions `response_format: {"type":"json_object"}` e valide a saída em sua aplicação. Esta é a forma de solicitação pública estável na validação compartilhada do AI Sonar.
 
-## Comportamento atual
+```json
+{
+  "model": "gpt-5.4",
+  "messages": [{"role": "user", "content": "Retorne um objeto JSON com cidade e clima."}],
+  "response_format": {"type": "json_object"}
+}
+```
 
-- Revise estes valores antes do lançamento: JSON schema, tools, function declarations.
-- Não dependa de URLs de status específicas do provedor, identificadores de roteamento ou metadados privados de execução.
-- Faça retries idempotentes e evite trabalho faturável duplicado.
+Caminhos de saída estruturada `json_schema` e `strict` existem em algum código de upstream e conversão, mas são dependentes de modelo e rota. Trate-os como uma capacidade a ser verificada com o modelo selecionado, não como uma promessa geral em todas as rotas do AI Sonar.
 
-## Checklist de produção
+## Limite de Chamada de Ferramentas
 
-- Logs devem ajudar o suporte sem armazenar secrets, arquivos privados, prompts ou mídia de usuário.
-- Tickets de suporte devem incluir forma de request higienizada, endpoint, modelo, timestamp e identificadores públicos.
-- Valide o fluxo em staging antes de mover tráfego de produção.
+| Forma da Ferramenta | Rota a preferir | Nota de Produção |
+|---------------------|------------------|------------------|
+| Ferramentas de função OpenAI | `/v1/chat/completions` | Portátil para chamadas de função definidas pelo usuário |
+| Ferramentas de Respostas OpenAI | `/v1/responses` | Use para ferramentas integradas ou hospedadas específicas de Respostas |
+| Ferramentas Anthropic | `/v1/messages` | Use para uso nativo de ferramentas Claude e fluxos de pensamento |
+| Declarações de função Gemini / ferramentas integradas | `/v1beta/models/:model:generateContent` | Mantenha campos de ferramentas nativas Gemini na rota Gemini |
 
-## Páginas relacionadas
+O AI Sonar não executa sua função por você. Quando um modelo retorna `tool_calls`, `function_call`, `tool_use` ou partes de chamada de função Gemini, sua aplicação deve executar a ferramenta, anexar o resultado da ferramenta no formato exigido pela rota e continuar a conversa.
 
-- [✨ API Multi-Formato](/pt/guides/api-formats)
-- [Criar conclusão de chat](/pt/api-reference/chat/create-completion)
-- [Criar Resposta](/pt/api-reference/responses/create-response)
-- [Criar Mensagem](/pt/api-reference/messages/create-message)
+## Armadilhas Comuns
+
+- Não envie ferramentas integradas nativas do provedor através de Chat Completions e espere que sejam traduzidas silenciosamente.
+- Não confie em JSON Schema estrito a menos que a rota e o modelo selecionados tenham sido testados.
+- Mantenha esquemas pequenos e explícitos; esquemas grandes adicionam tokens e podem reduzir a confiabilidade.
+- Valide a saída do modelo no lado do servidor, mesmo quando o modo JSON está habilitado.
+- Trate erros de campo não suportado como feedback de contrato. Remova o campo ou use a rota nativa que o possui.
+
+## Exemplo
+
+```bash
+curl https://api.aisonar.dev/v1/chat/completions \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "gpt-5.4",
+    "messages": [{"role":"user","content":"Extraia nome e email como JSON."}],
+    "response_format": {"type":"json_object"},
+    "tools": [{
+      "type": "function",
+      "function": {
+        "name": "lookup_customer",
+        "description": "Procure um cliente por email",
+        "parameters": {
+          "type": "object",
+          "properties": {"email": {"type": "string"}},
+          "required": ["email"]
+        }
+      }
+    }]
+  }'
+```
+
+## Referência da API
+
+| Tópico | Referência |
+|--------|------------|
+| API Multi-Formato | [API Multi-Formato](/pt/guides/api-formats) |
+| Criar Chat Completion | [Criar Chat Completion](/pt/api-reference/chat/create-completion) |
+| Criar Resposta | [Criar Resposta](/pt/api-reference/responses/create-response) |
+| Criar Mensagem | [Criar Mensagem](/pt/api-reference/messages/create-message) |
+| Gerar Conteúdo Gemini | [Gerar Conteúdo Gemini](/pt/api-reference/gemini/generate-content) |

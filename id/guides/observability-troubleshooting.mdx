@@ -1,29 +1,61 @@
 ---
-title: "Observability dan pemecahan masalah"
-description: "Panduan produksi untuk Observability dan pemecahan masalah."
+title: "Observabilitas & Pemecahan Masalah"
+description: "Tangkap pengenal publik yang diekspos AI Sonar untuk dukungan, rekonsiliasi penggunaan, dan debugging tugas asinkron."
 ---
 
-## Ikhtisar
+Halaman ini ditulis untuk tim aplikasi yang mengoperasikan AI Sonar di produksi. Ini berfokus pada pengenal publik dan log yang aman untuk pengguna, bukan pada internal routing penyedia.
 
-Panduan ini menjelaskan cara memakai Observability dan pemecahan masalah di produksi tanpa mengikat aplikasi ke detail implementasi provider.
+## Pengenal Publik
 
-Gunakan API publik AI Sonar, metadata model, dan field respons terdokumentasi sebagai kontrak.
+| Pengenal | Di mana ia muncul | Gunakan untuk |
+|----------|-------------------|---------------|
+| `request_id` | Badan kesalahan, catatan penggunaan Management API, log dasbor | Dukungan dan rekonsiliasi tingkat permintaan |
+| `task_id` / `id` | Respons pembuatan dan status asinkron | Memantau gambar, video, musik, dan pekerjaan 3D |
+| `poll_url` | Respons pembuatan asinkron | URL status yang disukai |
+| `billing_transaction_id` | Respons non-streaming saat diselesaikan, respons status tugas, catatan penggunaan Management API, header `X-Billing-Transaction-ID` | Rekonsiliasi penagihan |
+| `X-Task-ID` | Respons tugas asinkron | Korelasi tugas tingkat header |
 
-## Perilaku saat ini
+## Apa yang Harus Dicatat
 
-- Periksa nilai berikut sebelum rilis: `request_id`, `task_id`, `billing_transaction_id`.
-- Jangan bergantung pada URL status khusus provider, identifier routing, atau metadata eksekusi privat.
-- Buat retry idempotent dan hindari membuat pekerjaan billable ganda.
+1. Catat endpoint, model, kode status, timestamp, dan pengenal publik.
+2. Redak `Authorization`, kunci API, URL yang ditandatangani, URL media pribadi, dan prompt lengkap secara default.
+3. Untuk pekerjaan asinkron, catat respons pembuatan dan setiap respons status terminal.
+4. Untuk pertanyaan penggunaan, panggil Management API dengan ID kunci API dan filter tanggal.
+5. Gunakan `type`, `code`, dan `param` kesalahan dari badan respons alih-alih mengurai teks penyedia.
 
-## Checklist produksi
+## Daftar Periksa Pemecahan Masalah
 
-- Log harus membantu support tanpa menyimpan secret, file privat, prompt, atau media pengguna.
-- Ticket support sebaiknya menyertakan request shape yang sudah disanitasi, endpoint, model, timestamp, dan identifier publik.
-- Verifikasi flow di staging sebelum memindahkan traffic produksi.
+| Gejala | Periksa pertama | Halaman berguna |
+|--------|-----------------|------------------|
+| `401` atau `403` | Kunci API, token manajemen, akses organisasi | [Autentikasi](/id/authentication) |
+| `429` | Tingkat batas laju dan perilaku coba ulang klien | [Batas Laju](/id/guides/rate-limits) |
+| `400 invalid_request_error` | Bidang yang tidak didukung, endpoint yang salah, atau ketidakcocokan kontrak spesifik model | [Penanganan Kesalahan](/id/guides/error-handling) |
+| Tugas asinkron tidak pernah selesai | Pantau `poll_url`, periksa `status` akhir, hindari pembuatan tugas duplikat | [Pekerjaan Asinkron & Pemantauan](/id/guides/async-jobs-polling) |
+| Biaya tidak cocok dengan UI | Bandingkan `request_id` dan `billing_transaction_id` dalam catatan penggunaan | [Penagihan & Harga](/id/guides/billing) |
 
-## Halaman terkait
+## Rekonsiliasi Penggunaan
 
-- [Penanganan Kesalahan](/id/guides/error-handling)
-- [Penagihan & Harga](/id/guides/billing)
-- [Pekerjaan asinkron dan polling](/id/guides/async-jobs-polling)
-- [Lihat penggunaan API key](/id/api-reference/management/get-api-key-usage)
+`GET /v1/management/api-keys/{keyId}/usage` mengembalikan penggunaan tingkat kunci yang dipaginasi. Ini dapat difilter berdasarkan `scene`, `accessChannel`, `logicalModel`, `modelVendor`, `startDate`, dan `endDate`. Gunakan untuk rekonsiliasi sisi server alih-alih mengikis dasbor.
+
+```bash
+curl "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/usage?page=1&limit=20&scene=video" \\
+  -H "Authorization: Bearer mt-your-management-token"
+```
+
+Respons streaming mungkin diselesaikan setelah aliran dikirim, jadi header penagihan bisa tidak ada bahkan ketika penggunaan dicatat kemudian. Untuk tugas media asinkron, penyelesaian dapat muncul setelah pemantauan terminal.
+
+## Paket Dukungan
+
+Saat menghubungi dukungan, sertakan `request_id`, `task_id`, `billing_transaction_id` jika ada, endpoint, model, timestamp, dan bentuk permintaan yang telah disanitasi. Jangan sertakan kunci API, media pribadi, atau prompt lengkap kecuali dukungan meminta contoh yang telah direda.
+
+Jangan sertakan nama penyedia, ID saluran, pengenal routing, kunci Redis, atau URL tugas hulu dalam log pelanggan atau tiket dukungan kecuali dukungan AI Sonar secara eksplisit meminta mereka.
+
+## Referensi API
+
+| Topik | Referensi |
+|-------|-----------|
+| Penanganan Kesalahan | [Penanganan Kesalahan](/id/guides/error-handling) |
+| Batas Laju | [Batas Laju](/id/guides/rate-limits) |
+| Penagihan & Harga | [Penagihan & Harga](/id/guides/billing) |
+| Dapatkan Penggunaan Kunci API | [Dapatkan Penggunaan Kunci API](/id/api-reference/management/get-api-key-usage) |
+| Dapatkan Status Tugas | [Dapatkan Status Tugas](/id/api-reference/tasks/get-task-status) |

@@ -1,29 +1,73 @@
 ---
-title: "Tác vụ bất đồng bộ và polling"
-description: "Hướng dẫn production cho Tác vụ bất đồng bộ và polling."
+title: "Công Việc Async & Polling"
+description: "Tạo các công việc tạo ra bất đồng bộ, kiểm tra trạng thái tác vụ công khai và đối chiếu kết quả cuối cùng mà không cần chi tiết tác vụ cụ thể của nhà cung cấp."
 ---
 
-## Tổng quan
+Trang này phản ánh hợp đồng tác vụ bất đồng bộ công khai của AI Sonar. Nó không coi các URL tác vụ của nhà cung cấp, ID định tuyến, hoặc hành vi callback upstream là các hợp đồng tích hợp hướng tới người dùng.
 
-Hướng dẫn này giải thích cách dùng Tác vụ bất đồng bộ và polling trong production mà không gắn ứng dụng vào chi tiết triển khai của provider.
+## Hợp Đồng Công Khai
 
-Dùng API công khai của AI Sonar, metadata mô hình và field phản hồi đã tài liệu hóa làm hợp đồng.
+AI Sonar cung cấp một hợp đồng tác vụ bất đồng bộ công khai cho các phương tiện được tạo ra. Các điểm cuối tạo có thể trả về `id`, `task_id`, `status`, và `poll_url`. Xem `id` và `task_id` như cùng một danh tính tác vụ công khai và lưu trữ cả ID tác vụ và `poll_url` với bản ghi công việc của bạn.
 
-## Hành vi hiện tại
+Sử dụng `poll_url` được trả về trước. Nếu bạn cần một điểm cuối cố định, hãy sử dụng `GET /v1/tasks/{id}` với cùng `id` / `task_id` từ phản hồi tạo.
 
-- Kiểm tra các giá trị này trước khi phát hành: `task_id`, `poll_url`, `/v1/tasks/{id}`.
-- Không phụ thuộc URL trạng thái riêng của provider, định danh routing hoặc metadata thực thi riêng tư.
-- Làm retry có tính idempotent và tránh tạo công việc bị tính phí trùng lặp.
+Các tác vụ tạo công khai hiện nay dựa trên polling. AI Sonar có các bộ nhận callback upstream nội bộ, nhưng chúng không phải là webhook của khách hàng và không nên được sử dụng như một hợp đồng tích hợp.
 
-## Checklist production
+## Quy Trình Được Khuyến Nghị
 
-- Log cần hữu ích cho support nhưng không lưu secret, file riêng tư, prompt hoặc media người dùng.
-- Ticket support nên có request shape đã làm sạch, endpoint, model, timestamp và định danh công khai.
-- Xác minh flow ở staging trước khi chuyển traffic production.
+1. Gửi yêu cầu tạo với một `model` rõ ràng.
+2. Nếu phản hồi là inline, đọc kết quả cuối cùng ngay lập tức.
+3. Nếu phản hồi chứa `status: "pending"`, `task_id`, hoặc `poll_url`, lưu trữ tác vụ và bắt đầu polling.
+4. Poll mỗi `5-10s` cho các tác vụ phương tiện dài. Dừng lại chỉ khi có trạng thái cuối cùng.
+5. Khi `completed`, đọc các trường kết quả cho loại phương tiện đó. Khi `failed`, lưu trữ lỗi công khai và chỉ hiển thị hành động thử lại khi việc thử lại sẽ tạo ra một công việc mới có thể nhìn thấy cho người dùng.
 
-## Trang liên quan
+```json
+{
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "pending",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "model": "veo3.1"
+}
+```
 
-- [Lấy Trạng thái Tác vụ](/vi/api-reference/tasks/get-task-status)
-- [Hủy tác vụ](/vi/api-reference/tasks/cancel-task)
-- [Quan sát và xử lý sự cố](/vi/guides/observability-troubleshooting)
-- [Tạo video](/vi/guides/video-generation)
+## Kết Quả Polling
+
+```bash
+curl "https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \\
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+Các trạng thái công khai mong đợi là `pending`, `processing`, `completed`, và `failed`. Các tác vụ bị hủy được biểu thị là `failed` với `cancelled: true` và `cancellation_status: "cancelled"` để việc xử lý trạng thái cũ vẫn hoạt động.
+
+Không polling các URL cụ thể của nhà cung cấp, ID tác vụ upstream, ID định tuyến, hoặc metadata thực thi riêng tư. Chúng không phải là các hợp đồng công khai ổn định.
+
+## Thanh Toán Và Đối Chiếu
+
+- Một phản hồi tạo có thể giữ chỗ một số tiền ước tính cho công việc bất đồng bộ.
+- Việc thanh toán cuối cùng xảy ra sau khi tác vụ đạt trạng thái cuối cùng.
+- Khi việc thanh toán có sẵn, các phản hồi trạng thái tác vụ có thể tiết lộ `billing_transaction_id` và tiêu đề `X-Billing-Transaction-ID`.
+- Nếu xảy ra timeout của khách hàng sau khi tạo tác vụ, đừng tạo lại công việc một cách mù quáng. Tiếp tục từ `task_id` / `poll_url` đã lưu trữ.
+
+## Hủy Bỏ
+
+`DELETE /v1/tasks/{id}` được thiết kế một cách có chủ đích. Nó hiện hỗ trợ các tác vụ video Volcengine Seedance đang chờ như `seedance-1.5-pro`, `seedance-2.0`, và `seedance-2.0-fast`. Các tác vụ không được hỗ trợ trả về `400 unsupported_task_cancel`; các tác vụ đã chạy hoặc ở trạng thái cuối cùng trả về `409 task_not_cancellable`.
+
+## Danh Sách Kiểm Tra Khắc Phục Sự Cố
+
+- `async_task_not_found`: tác vụ không xác định, đã hết hạn, không thể truy cập bằng khóa API này, hoặc không phải là một phần của hợp đồng tác vụ bất đồng bộ công khai.
+- Thiếu URL phương tiện cuối cùng: tiếp tục polling cho đến khi đạt trạng thái cuối cùng; đừng giả định rằng các phản hồi `pending` bao gồm đầu ra.
+- Công việc trùng lặp: kiểm tra xem đường dẫn thử lại của bạn có tạo ra một tác vụ thứ hai sau khi timeout HTTP hay không.
+- Sự không khớp trong thanh toán: so sánh `request_id`, `task_id`, và `billing_transaction_id` trong bảng điều khiển hoặc API Quản lý.
+
+Khi liên hệ với hỗ trợ, bao gồm `request_id`, `task_id`, `billing_transaction_id` khi có, điểm cuối, model, timestamp, và hình dạng yêu cầu đã được làm sạch. Đừng bao gồm khóa API, phương tiện riêng tư, hoặc các prompt đầy đủ trừ khi hỗ trợ yêu cầu một mẫu đã được chỉnh sửa.
+
+## Tài Liệu API
+
+| Chủ Đề | Tham Chiếu |
+|-------|-----------|
+| Lấy Trạng Thái Tác Vụ | [Lấy Trạng Thái Tác Vụ](/vi/api-reference/tasks/get-task-status) |
+| Hủy Tác Vụ | [Hủy Tác Vụ](/vi/api-reference/tasks/cancel-task) |
+| Tạo Hình Ảnh | [Tạo Hình Ảnh](/vi/guides/image-generation) |
+| Tạo Video | [Tạo Video](/vi/guides/video-generation) |
+| Thanh Toán & Giá Cả | [Thanh Toán & Giá Cả](/vi/guides/billing) |

@@ -1,29 +1,74 @@
 ---
 title: "構造化出力とツール呼び出し"
-description: "構造化出力とツール呼び出しの本番利用ガイド。"
+description: "すべてのモデルが同じ契約をサポートしているとは限らないため、JSONモード、関数ツール、およびネイティブツールルートを使用します。"
 ---
 
-## 概要
+構造化出力とツールは実際のAI Sonar APIパスですが、すべてのモデルとルートに共通の機能ではありません。必要な動作を持つルートを選択してください。
 
-このガイドでは、「構造化出力とツール呼び出し」を本番で使う方法を説明します。アプリケーションをプロバイダー実装詳細に結び付けません。
+## JSONと構造化出力
 
-AI Sonar の公開 API、モデルメタデータ、文書化されたレスポンスフィールドを契約として扱います。
+ポータブルな構造化レスポンスのために、Chat Completions `response_format: {"type":"json_object"}` から始め、アプリケーションで出力を検証します。これはAI Sonarの共有検証における安定した公開リクエスト形状です。
 
-## 現在の動作
+```json
+{
+  "model": "gpt-5.4",
+  "messages": [{"role": "user", "content": "Return a JSON object with city and weather."}],
+  "response_format": {"type": "json_object"}
+}
+```
 
-- リリース前に次の値を確認します: JSON schema, tools, function declarations。
-- プロバイダー固有の状態 URL、ルーティング識別子、非公開の実行メタデータには依存しないでください。
-- リトライは冪等にし、重複課金される作業を作らないでください。
+`json_schema` および `strict` 構造化出力パスは、一部の上流および変換コードに存在しますが、モデルおよびルートに依存します。これらは選択したモデルで検証するための機能として扱い、すべてのAI Sonarルートに対する包括的な約束として扱わないでください。
 
-## 本番チェックリスト
+## ツール呼び出しの境界
 
-- ログはサポートに役立つ範囲に留め、秘密情報、私有ファイル、prompt、ユーザーメディアは保存しません。
-- サポート依頼には、秘匿化したリクエスト形状、エンドポイント、モデル、時刻、公開識別子を含めます。
-- 本番トラフィックを移す前にステージングでフローを検証します。
+| ツール形状 | 優先すべきルート | 製品ノート |
+|------------|-----------------|-----------------|
+| OpenAI関数ツール | `/v1/chat/completions` | ユーザー定義の関数呼び出しにポータブル |
+| OpenAIレスポンツール | `/v1/responses` | レスポンス特有の組み込みまたはホストツールに使用 |
+| Anthropicツール | `/v1/messages` | Claudeネイティブツールの使用と思考フローに使用 |
+| Gemini関数宣言 / 組み込みツール | `/v1beta/models/:model:generateContent` | Geminiルート上のGeminiネイティブツールフィールドを保持 |
 
-## 関連ページ
+AI Sonarはあなたの関数を実行しません。モデルが `tool_calls`、`function_call`、`tool_use`、またはGemini関数呼び出しの部分を返すとき、あなたのアプリケーションはツールを実行し、ルートが要求する形式でツールの結果を追加し、会話を続ける必要があります。
 
-- [✨ マルチフォーマット API](/ja/guides/api-formats)
-- [チャット補完の作成](/ja/api-reference/chat/create-completion)
-- [レスポンスの作成](/ja/api-reference/responses/create-response)
-- [メッセージを作成](/ja/api-reference/messages/create-message)
+## 一般的な落とし穴
+
+- プロバイダーのネイティブ組み込みツールをChat Completionsを通じて送信し、静かに翻訳されることを期待しないでください。
+- 選択したルートとモデルがテストされていない限り、厳密なJSONスキーマに依存しないでください。
+- スキーマは小さく明示的に保ってください。大きなスキーマはトークンを追加し、信頼性を低下させる可能性があります。
+- JSONモードが有効になっている場合でも、モデル出力をサーバー側で検証してください。
+- サポートされていないフィールドエラーを契約フィードバックとして扱ってください。フィールドを削除するか、それを所有するネイティブルートを使用してください。
+
+## 例
+
+```bash
+curl https://api.aisonar.dev/v1/chat/completions \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "gpt-5.4",
+    "messages": [{"role":"user","content":"Extract name and email as JSON."}],
+    "response_format": {"type":"json_object"},
+    "tools": [{
+      "type": "function",
+      "function": {
+        "name": "lookup_customer",
+        "description": "Look up a customer by email",
+        "parameters": {
+          "type": "object",
+          "properties": {"email": {"type": "string"}},
+          "required": ["email"]
+        }
+      }
+    }]
+  }'
+```
+
+## APIリファレンス
+
+| トピック | リファレンス |
+|-------|-----------|
+| マルチフォーマットAPI | [マルチフォーマットAPI](/ja/guides/api-formats) |
+| チャット完了の作成 | [チャット完了の作成](/ja/api-reference/chat/create-completion) |
+| レスポンスの作成 | [レスポンスの作成](/ja/api-reference/responses/create-response) |
+| メッセージの作成 | [メッセージの作成](/ja/api-reference/messages/create-message) |
+| Geminiコンテンツの生成 | [Geminiコンテンツの生成](/ja/api-reference/gemini/generate-content) |

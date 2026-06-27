@@ -1,29 +1,74 @@
 ---
-title: "結構化輸出與工具呼叫"
-description: "結構化輸出與工具呼叫 的生產使用指南。"
+title: "結構化輸出與工具調用"
+description: "使用 JSON 模式、函數工具和原生工具路徑，而不假設每個模型都支持相同的合約。"
 ---
 
-## 概述
+結構化輸出和工具是真正的 AI Sonar API 路徑，但它們並不是每個模型和路徑都具備的通用能力。選擇擁有您所需行為的路徑。
 
-本指南說明如何在生產環境中使用結構化輸出與工具呼叫，同時避免把應用綁定到供應商實作細節。
+## JSON 與結構化輸出
 
-以 AI Sonar 公開 API、模型中繼資料和已文件化回應欄位作為契約。
+對於可攜式結構化響應，請從 Chat Completions 開始 `response_format: {"type":"json_object"}` 並在您的應用程序中驗證輸出。這是 AI Sonar 共享驗證中的穩定公共請求形狀。
 
-## 目前行為
+```json
+{
+  "model": "gpt-5.4",
+  "messages": [{"role": "user", "content": "Return a JSON object with city and weather."}],
+  "response_format": {"type": "json_object"}
+}
+```
 
-- 上線前重點檢查這些值：JSON schema, tools, function declarations。
-- 不要依賴供應商專有狀態 URL、路由識別符或私有執行中繼資料。
-- 讓重試保持冪等，避免建立重複計費工作。
+`json_schema` 和 `strict` 結構化輸出路徑存在於某些上游和轉換代碼中，但它們依賴於模型和路徑。將它們視為與所選模型驗證的能力，而不是在每個 AI Sonar 路徑上的普遍承諾。
 
-## 生產檢查清單
+## 工具調用邊界
 
-- 日誌要便於支援排障，但不要儲存密鑰、私有檔案、prompt 或使用者媒體。
-- 支援工單應包含脫敏請求結構、端點、模型、時間戳和公開識別符。
-- 生產流量切換前先在預發環境驗證流程。
+| 工具形狀 | 優先路徑 | 生產備註 |
+|----------|----------|----------|
+| OpenAI 函數工具 | `/v1/chat/completions` | 可攜式用於用戶定義的函數調用 |
+| OpenAI 響應工具 | `/v1/responses` | 用於響應特定的內置或托管工具 |
+| Anthropic 工具 | `/v1/messages` | 用於 Claude 原生工具使用和思考流程 |
+| Gemini 函數聲明 / 內置工具 | `/v1beta/models/:model:generateContent` | 在 Gemini 路徑上保留 Gemini 原生工具字段 |
 
-## 相關頁面
+AI Sonar 不會為您執行函數。當模型返回 `tool_calls`、`function_call`、`tool_use` 或 Gemini 函數調用部分時，您的應用程序必須運行該工具，將工具結果附加到路徑所需的格式中，並繼續對話。
 
-- [✨ 多格式 API](/zh-Hant/guides/api-formats)
-- [建立聊天補全](/zh-Hant/api-reference/chat/create-completion)
-- [建立回應](/zh-Hant/api-reference/responses/create-response)
-- [建立訊息](/zh-Hant/api-reference/messages/create-message)
+## 常見陷阱
+
+- 不要通過 Chat Completions 發送提供者原生的內置工具，並期望它們被靜默翻譯。
+- 除非所選路徑和模型已經過測試，否則不要依賴嚴格的 JSON Schema。
+- 保持 schema 小而明確；大型 schema 會增加 tokens 並可能降低可靠性。
+- 即使啟用了 JSON 模式，也要在伺服器端驗證模型輸出。
+- 將不支持的字段錯誤視為合約反饋。刪除該字段或使用擁有該字段的原生路徑。
+
+## 範例
+
+```bash
+curl https://api.aisonar.dev/v1/chat/completions \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "gpt-5.4",
+    "messages": [{"role":"user","content":"Extract name and email as JSON."}],
+    "response_format": {"type":"json_object"},
+    "tools": [{
+      "type": "function",
+      "function": {
+        "name": "lookup_customer",
+        "description": "Look up a customer by email",
+        "parameters": {
+          "type": "object",
+          "properties": {"email": {"type": "string"}},
+          "required": ["email"]
+        }
+      }
+    }]
+  }'
+```
+
+## API 參考
+
+| 主題 | 參考 |
+|------|------|
+| 多格式 API | [多格式 API](/zh-Hant/guides/api-formats) |
+| 創建聊天完成 | [創建聊天完成](/zh-Hant/api-reference/chat/create-completion) |
+| 創建響應 | [創建響應](/zh-Hant/api-reference/responses/create-response) |
+| 創建消息 | [創建消息](/zh-Hant/api-reference/messages/create-message) |
+| 生成 Gemini 內容 | [生成 Gemini 內容](/zh-Hant/api-reference/gemini/generate-content) |

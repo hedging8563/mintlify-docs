@@ -1,55 +1,55 @@
 ---
 title: "음악 생성"
-description: "AI Sonar 음악 생성 API와 비동기 작업 폴링으로 음악과 가사를 만듭니다."
+description: "AI Sonar 음악 작업으로 노래, 악기 연주, 가사 및 연속성을 생성합니다."
 ---
-## 권장 흐름
 
-1. [모델 목록](/ko/api-reference/models/list-models)을 `recommended_for=music`와 함께 호출합니다.
-2. [음악 생성](/ko/api-reference/music/create-music)으로 `prompt`와 선택적 `title`, `tags`, `action`, `mv`, 이어 만들기 설정을 포함한 작업을 만듭니다.
-3. 반환된 `id` / `task_id`와 `poll_url`을 저장합니다.
-4. 작업이 `completed` 또는 `failed`가 될 때까지 폴링한 뒤 `audio_url`, 선택적 `video_url`, `title`, `lyrics`를 읽습니다.
+음악 생성은 비동기적입니다. `POST /v1/music/generations`는 작업을 생성하고 `id` / `task_id`, `status`, 그리고 일반적으로 `poll_url`을 반환합니다. 최종 오디오 및 메타데이터는 폴링 후에 나타납니다.
 
-## 모델 찾기
-
-음악 생성은 비동기입니다. 업스트림 제공자 이름이나 제공자 작업 ID에 의존하지 마세요. AI Sonar은 정규화된 작업 ID와 폴링 URL을 반환합니다.
+## 모델 발견
 
 ```bash
-curl "https://api.aisonar.dev/v1/models?recommended_for=music" \
+curl "https://api.aisonar.dev/v1/models?recommended_for=music" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-## 음악 작업 생성
+현재 공개 계약은 음악 생성을 위한 `suno_music`과 가사 전용 흐름을 위한 `suno_lyrics`를 노출합니다. 프로덕션 사용 전에 모델 카탈로그를 쿼리하여 공급자 가정을 고정하지 마십시오.
 
-`action: "MUSIC"`은 프롬프트와 모델에 따라 노래 또는 연주곡을 만듭니다. `action: "LYRICS"`는 선택한 모델이 지원하는 가사 전용 흐름에 사용합니다. `continue_clip_id`와 `continue_at`은 모델 계약이 문서화한 이어 만들기 흐름에서만 사용합니다.
+## 요청 생성
 
 ```bash
-curl https://api.aisonar.dev/v1/music/generations \
-  -H "Authorization: Bearer sk-your-api-key" \
-  -H "Content-Type: application/json" \
+curl https://api.aisonar.dev/v1/music/generations \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
   -d '{
     "model": "suno_music",
-    "prompt": "An upbeat synth-pop track with warm vocals and a clean chorus",
-    "title": "Morning Static",
-    "tags": "synth-pop, upbeat",
+    "prompt": "따뜻한 보컬과 깨끗한 후렴이 있는 경쾌한 신스팝 트랙",
+    "title": "아침의 정적",
+    "tags": "신스팝, 경쾌함",
     "action": "MUSIC"
   }'
 ```
 
+노래나 악기 연주를 위해 `action: "MUSIC"`을 사용하십시오. 가사 전용 생성을 지원하는 모델과 함께 `action: "LYRICS"`만 사용하십시오. `continue_clip_id` 및 `continue_at`와 같은 연속성 필드는 연속 작업 흐름을 위한 것이며, 제품이 이전 클립을 계속할 때만 전송해야 합니다.
+
 ## 결과 폴링
 
-항상 반환된 `poll_url`을 우선 사용하세요. 안정적인 대체 엔드포인트는 [작업 상태 조회](/ko/api-reference/tasks/get-task-status)입니다. 완료된 음악 작업에는 `audio_url`, `video_url`, `title`, `lyrics`, 모델 정규화 메타데이터가 포함될 수 있습니다.
+반환된 `poll_url`을 먼저 사용하십시오. 고정 엔드포인트가 필요한 경우, 생성 응답에서 동일한 `id` / `task_id`로 `GET /v1/tasks/{id}`를 사용하십시오.
 
-```bash
-curl "https://api.aisonar.dev/v1/tasks/$TASK_ID" \
-  -H "Authorization: Bearer sk-your-api-key"
-```
+완료된 음악 작업에는 `audio_url`, `video_url`, `title`, `lyrics`, 및 모델 정규화 메타데이터가 포함될 수 있습니다. 최종 URL을 애플리케이션에 저장하고 터미널 상태 이후에 반복적으로 폴링하지 마십시오.
 
-## API 레퍼런스
+## 일반적인 함정
 
-| 항목 | 레퍼런스 |
+- 작업이 `completed` 상태이고 `audio_url`이 존재할 때까지 최종 플레이어를 표시하지 마십시오.
+- 애플리케이션 상태에서 공급자 작업 ID 또는 공급자 가져오기 URL을 사용하지 마십시오.
+- 사용자에게 차이를 보여주지 않고 가사 전용 및 전체 음악 작업을 하나의 UI 뒤에서 혼합하지 마십시오.
+- 페이지 새로 고침 시마다 작업을 재생성하지 마십시오; 저장된 `task_id`에서 재개하십시오.
+
+## API 참조
+
+| 주제 | 참조 |
 |-------|-----------|
 | 음악 생성 | [음악 생성](/ko/api-reference/music/create-music) |
-| 음악 상태 조회 | [음악 상태 조회](/ko/api-reference/music/get-music-status) |
-| 작업 상태 조회 | [작업 상태 조회](/ko/api-reference/tasks/get-task-status) |
+| 음악 상태 가져오기 | [음악 상태 가져오기](/ko/api-reference/music/get-music-status) |
+| 작업 상태 가져오기 | [작업 상태 가져오기](/ko/api-reference/tasks/get-task-status) |
 | 모델 목록 | [모델 목록](/ko/api-reference/models/list-models) |
-| 모델 조회 | [모델 조회](/ko/api-reference/models/get-model) |
+| 청구 및 가격 책정 | [청구 및 가격 책정](/ko/guides/billing) |

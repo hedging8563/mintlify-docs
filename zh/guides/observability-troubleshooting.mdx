@@ -1,29 +1,61 @@
 ---
-title: "可观测性与故障排查"
-description: "可观测性与故障排查 的生产使用指南。"
+title: "可观察性与故障排除"
+description: "捕获 AI Sonar 为支持、使用对账和异步任务调试所暴露的公共标识符。"
 ---
 
-## 概述
+本页面是为在生产环境中操作 AI Sonar 的应用团队编写的。它专注于公共标识符和用户安全日志，而不是提供者路由的内部细节。
 
-本指南说明如何在生产环境中使用可观测性与故障排查，同时避免把应用绑定到供应商实现细节。
+## 公共标识符
 
-以 AI Sonar 公开 API、模型元数据和已文档化响应字段作为契约。
+| 标识符 | 出现位置 | 用途 |
+|--------|----------|------|
+| `request_id` | 错误主体、管理 API 使用记录、仪表板日志 | 支持和请求级对账 |
+| `task_id` / `id` | 异步创建和状态响应 | 轮询图像、视频、音乐和 3D 作业 |
+| `poll_url` | 异步创建响应 | 优选状态 URL |
+| `billing_transaction_id` | 结算时的非流式响应、任务状态响应、管理 API 使用记录、`X-Billing-Transaction-ID` 头 | 账单对账 |
+| `X-Task-ID` | 异步任务响应 | 头级任务关联 |
 
-## 当前行为
+## 记录内容
 
-- 上线前重点检查这些值：`request_id`, `task_id`, `billing_transaction_id`。
-- 不要依赖供应商专有状态 URL、路由标识符或私有执行元数据。
-- 让重试保持幂等，避免创建重复计费工作。
+1. 记录端点、模型、状态码、时间戳和公共标识符。
+2. 默认情况下，隐去 `Authorization`、API 密钥、签名 URL、私有媒体 URL 和完整提示。
+3. 对于异步作业，记录创建响应和每个终端状态响应。
+4. 对于使用问题，使用 API 密钥 ID 和日期过滤器调用管理 API。
+5. 使用响应主体中的错误 `type`、`code` 和 `param`，而不是解析提供者文本。
 
-## 生产检查清单
+## 故障排除清单
 
-- 日志要便于支持排障，但不要存储密钥、私有文件、prompt 或用户媒体。
-- 支持工单应包含脱敏请求结构、端点、模型、时间戳和公开标识符。
-- 生产流量切换前先在预发环境验证流程。
+| 症状 | 首先检查 | 有用页面 |
+|------|----------|----------|
+| `401` 或 `403` | API 密钥、管理令牌、组织访问 | [身份验证](/zh/authentication) |
+| `429` | 速率限制级别和客户端重试行为 | [速率限制](/zh/guides/rate-limits) |
+| `400 invalid_request_error` | 不支持的字段、错误的端点或模型特定合同不匹配 | [错误处理](/zh/guides/error-handling) |
+| 异步任务从未完成 | 轮询 `poll_url`，检查最终 `status`，避免重复任务创建 | [异步作业与轮询](/zh/guides/async-jobs-polling) |
+| 成本与 UI 不匹配 | 比较使用记录中的 `request_id` 和 `billing_transaction_id` | [账单与定价](/zh/guides/billing) |
 
-## 相关页面
+## 使用对账
 
-- [错误处理](/zh/guides/error-handling)
-- [账单与定价](/zh/guides/billing)
-- [异步任务与轮询](/zh/guides/async-jobs-polling)
-- [获取 API Key 用量](/zh/api-reference/management/get-api-key-usage)
+`GET /v1/management/api-keys/{keyId}/usage` 返回分页的密钥级使用情况。可以按 `scene`、`accessChannel`、`logicalModel`、`modelVendor`、`startDate` 和 `endDate` 进行过滤。用于服务器端对账，而不是抓取仪表板。
+
+```bash
+curl "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/usage?page=1&limit=20&scene=video" \\
+  -H "Authorization: Bearer mt-your-management-token"
+```
+
+流式响应可能在流发送后结算，因此即使使用情况稍后被记录，账单头也可能缺失。对于异步媒体任务，结算可能在终端轮询后出现。
+
+## 支持包
+
+联系支持时，请包括 `request_id`、`task_id`、`billing_transaction_id`（如果存在）、端点、模型、时间戳和经过清理的请求格式。除非支持要求提供经过编辑的示例，否则请勿包含 API 密钥、私有媒体或完整提示。
+
+除非 AI Sonar 支持明确要求，否则请勿在客户日志或支持票中包含提供者名称、频道 ID、路由标识符、Redis 键或上游任务 URL。
+
+## API 参考
+
+| 主题 | 参考 |
+|------|------|
+| 错误处理 | [错误处理](/zh/guides/error-handling) |
+| 速率限制 | [速率限制](/zh/guides/rate-limits) |
+| 账单与定价 | [账单与定价](/zh/guides/billing) |
+| 获取 API 密钥使用情况 | [获取 API 密钥使用情况](/zh/api-reference/management/get-api-key-usage) |
+| 获取任务状态 | [获取任务状态](/zh/api-reference/tasks/get-task-status) |

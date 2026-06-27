@@ -1,29 +1,74 @@
 ---
-title: "Strukturierte Ausgaben & Tool Calling"
-description: "Produktionsleitfaden für Strukturierte Ausgaben & Tool Calling."
+title: "Strukturierte Ausgaben & Tool-Aufruf"
+description: "Verwenden Sie den JSON-Modus, Funktionstools und native Tool-Routen, ohne anzunehmen, dass jedes Modell denselben Vertrag unterstützt."
 ---
 
-## Übersicht
+Strukturierte Ausgaben und Tools sind echte AI Sonar API-Pfade, aber sie sind keine universelle Fähigkeit über jedes Modell und jede Route hinweg. Wählen Sie die Route, die das Verhalten besitzt, das Sie benötigen.
 
-Dieser Leitfaden erklärt, wie Sie Strukturierte Ausgaben & Tool Calling in Produktion nutzen, ohne Ihre Anwendung an Provider-Implementierungsdetails zu binden.
+## JSON Und Strukturierte Ausgabe
 
-Nutzen Sie öffentliche AI Sonar-APIs, Modellmetadaten und dokumentierte Antwortfelder als Vertrag.
+Für tragbare strukturierte Antworten beginnen Sie mit Chat Completions `response_format: {"type":"json_object"}` und validieren Sie die Ausgabe in Ihrer Anwendung. Dies ist die stabile öffentliche Anforderungsform in der AI Sonar gemeinsamen Validierung.
 
-## Aktuelles Verhalten
+```json
+{
+  "model": "gpt-5.4",
+  "messages": [{"role": "user", "content": "Geben Sie ein JSON-Objekt mit Stadt und Wetter zurück."}],
+  "response_format": {"type": "json_object"}
+}
+```
 
-- Prüfen Sie diese Werte vor dem Release: JSON schema, tools, function declarations.
-- Verlassen Sie sich nicht auf provider-spezifische Status-URLs, Routing-Kennungen oder private Ausführungsmetadaten.
-- Machen Sie Wiederholungen idempotent und vermeiden Sie doppelt abrechenbare Arbeit.
+`json_schema` und `strict` strukturierte Ausgabepfade existieren in einigen upstream und Konvertierungscode, aber sie sind modell- und routenabhängig. Behandeln Sie sie als eine Fähigkeit, die mit dem ausgewählten Modell verifiziert werden muss, nicht als eine allgemeine Zusage über jede AI Sonar-Route hinweg.
 
-## Produktions-Checkliste
+## Tool-Aufrufgrenze
 
-- Logs sollen Support ermöglichen, aber keine Secrets, privaten Dateien, Prompts oder Nutzermedien speichern.
-- Support-Tickets sollten bereinigte Anfrageform, Endpoint, Modell, Zeitstempel und öffentliche Kennungen enthalten.
-- Prüfen Sie den Ablauf in Staging, bevor Sie Produktionsverkehr umstellen.
+| Tool-Form | Bevorzugte Route | Produktionshinweis |
+|-----------|------------------|---------------------|
+| OpenAI Funktionstools | `/v1/chat/completions` | Tragbar für benutzerdefinierte Funktionsaufrufe |
+| OpenAI Antworten-Tools | `/v1/responses` | Verwenden Sie für spezifische eingebaute oder gehostete Tools für Antworten |
+| Anthropic-Tools | `/v1/messages` | Verwenden Sie für Claude-native Tool-Nutzung und Denkflüsse |
+| Gemini Funktionsdeklarationen / eingebaute Tools | `/v1beta/models/:model:generateContent` | Halten Sie Gemini-native Tool-Felder auf der Gemini-Route |
 
-## Verwandte Seiten
+AI Sonar führt Ihre Funktion nicht für Sie aus. Wenn ein Modell `tool_calls`, `function_call`, `tool_use` oder Teile des Gemini-Funktionsaufrufs zurückgibt, muss Ihre Anwendung das Tool ausführen, das Toolergebnis im vom Route erforderlichen Format anhängen und das Gespräch fortsetzen.
 
-- [✨ Multi-Format-API](/de/guides/api-formats)
-- [Chat-Vervollständigung erstellen](/de/api-reference/chat/create-completion)
-- [Antwort erstellen](/de/api-reference/responses/create-response)
-- [Nachricht erstellen](/de/api-reference/messages/create-message)
+## Häufige Fallstricke
+
+- Senden Sie keine provider-native eingebauten Tools über Chat Completions und erwarten Sie, dass sie stillschweigend übersetzt werden.
+- Verlassen Sie sich nicht auf strikte JSON-Schemata, es sei denn, die ausgewählte Route und das Modell wurden getestet.
+- Halten Sie Schemata klein und explizit; große Schemata fügen Tokens hinzu und können die Zuverlässigkeit verringern.
+- Validieren Sie die Modellausgabe serverseitig, auch wenn der JSON-Modus aktiviert ist.
+- Behandeln Sie Fehler bei nicht unterstützten Feldern als Vertragsfeedback. Entfernen Sie das Feld oder verwenden Sie die native Route, die es besitzt.
+
+## Beispiel
+
+```bash
+curl https://api.aisonar.dev/v1/chat/completions \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "gpt-5.4",
+    "messages": [{"role":"user","content":"Extrahieren Sie Name und E-Mail als JSON."}],
+    "response_format": {"type":"json_object"},
+    "tools": [{
+      "type": "function",
+      "function": {
+        "name": "lookup_customer",
+        "description": "Suchen Sie einen Kunden nach E-Mail",
+        "parameters": {
+          "type": "object",
+          "properties": {"email": {"type": "string"}},
+          "required": ["email"]
+        }
+      }
+    }]
+  }'
+```
+
+## API-Referenz
+
+| Thema | Referenz |
+|-------|----------|
+| Multi-Format API | [Multi-Format API](/de/guides/api-formats) |
+| Chat-Vervollständigung erstellen | [Chat-Vervollständigung erstellen](/de/api-reference/chat/create-completion) |
+| Antwort erstellen | [Antwort erstellen](/de/api-reference/responses/create-response) |
+| Nachricht erstellen | [Nachricht erstellen](/de/api-reference/messages/create-message) |
+| Gemini-Inhalt generieren | [Gemini-Inhalt generieren](/de/api-reference/gemini/generate-content) |

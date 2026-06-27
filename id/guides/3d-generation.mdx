@@ -1,54 +1,60 @@
 ---
 title: "Generasi 3D"
-description: "Buat aset 3D dari teks atau gambar dengan API 3D AI Sonar dan polling tugas asinkron."
+description: "Buat aset 3D dari teks atau gambar dan unduh file model yang telah selesai dari hasil tugas asinkron."
 ---
-## Alur yang disarankan
 
-1. Panggil [Daftar model](/id/api-reference/models/list-models) dengan `recommended_for=3d`.
-2. Gunakan [Buat 3D](/id/api-reference/3d/create-3d) dengan `prompt` teks; tambahkan `image` atau `image_url` hanya untuk model yang mendukung gambar-ke-3D.
-3. Pilih field opsional seperti `format`, `quality`, `style`, atau `seed` sesuai kontrak model.
-4. Polling `poll_url` sampai aset siap, lalu unduh `model_url` atau URL khusus format seperti `glb_url` / `fbx_url`.
+Generasi 3D bersifat asinkron. `POST /v1/3d/generations` membuat sebuah tugas; respons status yang selesai mengembalikan URL aset model yang dapat diunduh.
 
-## Temukan model
-
-Generasi 3D berbasis tugas. Jadikan katalog model sebagai sumber kebenaran, bukan mengasumsikan satu provider atau satu model tetap.
+## Penemuan Model
 
 ```bash
-curl "https://api.aisonar.dev/v1/models?recommended_for=3d" \
+curl "https://api.aisonar.dev/v1/models?recommended_for=3d" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-## Buat tugas 3D
+Jangan menganggap setiap model 3D mendukung baik teks-ke-3D maupun gambar-ke-3D. Periksa kontrak model yang dipilih sebelum mengirim `image`, `image_url`, `format`, `quality`, `style`, atau `seed`.
 
-Request teks-ke-3D memerlukan `prompt`. Request gambar-ke-3D menambahkan data base64 `image` atau `image_url`. Gunakan `format` dan `quality` hanya jika tersedia di kontrak model.
+## Buat Permintaan
 
 ```bash
-curl https://api.aisonar.dev/v1/3d/generations \
-  -H "Authorization: Bearer sk-your-api-key" \
-  -H "Content-Type: application/json" \
+curl https://api.aisonar.dev/v1/3d/generations \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
   -d '{
     "model": "tripo3d-v2.5",
-    "prompt": "A stylized low-poly robot mascot with clean topology",
+    "prompt": "Sebuah maskot robot low-poly bergaya dengan topologi yang bersih",
     "format": "glb",
     "quality": "standard"
   }'
 ```
 
-## Polling hasil
+Teks-ke-3D memerlukan `prompt`. Gambar-ke-3D menggunakan `image` atau `image_url` ketika didukung oleh model. Utamakan URL publik untuk input produksi kecuali gambar sumber bersifat pribadi dan klien Anda sengaja mengunggah data base64.
 
-Gunakan `poll_url` yang dikembalikan terlebih dahulu. Fallback stabilnya adalah [Status tugas](/id/api-reference/tasks/get-task-status). Tugas 3D selesai mengembalikan `model_url` dan dapat menyertakan `glb_url` atau `fbx_url`.
+## Pilihan Output
 
-```bash
-curl "https://api.aisonar.dev/v1/tasks/$TASK_ID" \
-  -H "Authorization: Bearer sk-your-api-key"
-```
+- `format` dapat meminta pengemasan output seperti `glb`, `fbx`, `obj`, atau `usdz` ketika didukung.
+- Nilai `quality` seperti `draft`, `standard`, atau `high` mempengaruhi latensi dan biaya ketika model mengeksposnya.
+- `style` dan `seed` tergantung pada model; hilangkan mereka kecuali kontrak yang dipilih mendokumentasikannya.
+
+## Memantau Hasil
+
+Gunakan `poll_url` yang dikembalikan terlebih dahulu. Jika Anda memerlukan endpoint tetap, gunakan `GET /v1/tasks/{id}` dengan `id` / `task_id` yang sama dari respons pembuatan.
+
+Tugas yang selesai mengembalikan `model_url` dan mungkin menyertakan URL spesifik format seperti `glb_url`, `fbx_url`, `obj_url`, atau `usdz_url`. Unduh dan simpan aset dalam produk Anda sendiri jika pengguna memerlukan akses ulang.
+
+## Kesalahan Umum
+
+- Jangan mengharapkan aset 3D dalam respons pembuatan; pantau hingga status terminal.
+- Jangan menjanjikan setiap format untuk setiap model.
+- Jangan mencoba ulang permintaan pembuatan setelah waktu tunggu klien tanpa memeriksa apakah tugas sudah ada.
+- Jangan mengekspos ID tugas penyedia di UI Anda.
 
 ## Referensi API
 
 | Topik | Referensi |
 |-------|-----------|
 | Buat 3D | [Buat 3D](/id/api-reference/3d/create-3d) |
-| Status 3D | [Status 3D](/id/api-reference/3d/get-3d-status) |
-| Status tugas | [Status tugas](/id/api-reference/tasks/get-task-status) |
-| Daftar model | [Daftar model](/id/api-reference/models/list-models) |
-| Ambil model | [Ambil model](/id/api-reference/models/get-model) |
+| Dapatkan Status 3D | [Dapatkan Status 3D](/id/api-reference/3d/get-3d-status) |
+| Dapatkan Status Tugas | [Dapatkan Status Tugas](/id/api-reference/tasks/get-task-status) |
+| Daftar Model | [Daftar Model](/id/api-reference/models/list-models) |
+| Penagihan & Harga | [Penagihan & Harga](/id/guides/billing) |

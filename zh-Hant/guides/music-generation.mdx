@@ -1,55 +1,55 @@
 ---
 title: "音樂生成"
-description: "使用 AI Sonar 音樂生成 API 和非同步任務輪詢建立音樂與歌詞。"
+description: "使用 AI Sonar 音樂任務創建歌曲、器樂、歌詞和延續。"
 ---
-## 建議流程
 
-1. 调用 [模型列表](/zh-Hant/api-reference/models/list-models)，带上 `recommended_for=music`。
-2. 用 [创建音乐](/zh-Hant/api-reference/music/create-music) 创建任务，传 `prompt`，并按需传 `title`、`tags`、`action`、`mv` 或续写设置。
-3. 保存返回的 `id` / `task_id` 和 `poll_url`。
-4. 轮询到 `completed` 或 `failed`，再读取 `audio_url`、可选 `video_url`、`title` 和 `lyrics`。
+音樂生成是異步的。 `POST /v1/music/generations` 創建一個任務並返回 `id` / `task_id`、`status`，通常還會返回 `poll_url`。最終音頻和元數據在輪詢後出現。
 
 ## 模型發現
 
-音乐生成是异步任务。不要依赖上游供应商名称或上游任务 ID；AI Sonar 会返回标准化的任务 ID 和轮询 URL。
-
 ```bash
-curl "https://api.aisonar.dev/v1/models?recommended_for=music" \
+curl "https://api.aisonar.dev/v1/models?recommended_for=music" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-## 建立音樂任務
+當前公共合約公開了 `suno_music` 用於音樂生成，以及 `suno_lyrics` 用於僅歌詞流程。在生產使用之前查詢模型目錄，而不是固定提供者假設。
 
-`action: "MUSIC"` 用于歌曲或纯音乐，具体取决于提示词和模型。`action: "LYRICS"` 只用于所选模型支持的歌词生成流程。`continue_clip_id` 和 `continue_at` 只用于模型契约明确支持的续写场景。
+## 創建請求
 
 ```bash
-curl https://api.aisonar.dev/v1/music/generations \
-  -H "Authorization: Bearer sk-your-api-key" \
-  -H "Content-Type: application/json" \
+curl https://api.aisonar.dev/v1/music/generations \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
   -d '{
     "model": "suno_music",
-    "prompt": "An upbeat synth-pop track with warm vocals and a clean chorus",
-    "title": "Morning Static",
-    "tags": "synth-pop, upbeat",
+    "prompt": "一首充滿活力的合成流行曲，帶有溫暖的聲音和清晰的合唱",
+    "title": "晨間靜電",
+    "tags": "合成流行, 充滿活力",
     "action": "MUSIC"
   }'
 ```
 
+對於歌曲或器樂，使用 `action: "MUSIC"`。僅在支持僅歌詞生成的模型中使用 `action: "LYRICS"`。延續字段如 `continue_clip_id` 和 `continue_at` 用於延續工作流程，應僅在您的產品正在延續先前片段時發送。
+
 ## 輪詢結果
 
-始终优先使用返回的 `poll_url`。稳定兜底入口是 [查询任务状态](/zh-Hant/api-reference/tasks/get-task-status)。完成后的音乐任务可能包含 `audio_url`、`video_url`、`title`、`lyrics` 和模型归一化后的元数据。
+首先使用返回的 `poll_url`。如果您需要固定端點，請使用 `GET /v1/tasks/{id}`，並使用創建響應中的相同 `id` / `task_id`。
 
-```bash
-curl "https://api.aisonar.dev/v1/tasks/$TASK_ID" \
-  -H "Authorization: Bearer sk-your-api-key"
-```
+完成的音樂任務可以包括 `audio_url`、`video_url`、`title`、`lyrics` 和模型標準化的元數據。將最終的 URL 存儲在您的應用程序中，而不是在終端狀態後重複輪詢。
+
+## 常見陷阱
+
+- 在任務 `completed` 並且存在 `audio_url` 之前，不要顯示最終播放器。
+- 不要在您的應用狀態中使用提供者任務 ID 或提供者獲取 URL。
+- 不要在一個 UI 中混合僅歌詞和完整音樂操作，而不向用戶顯示區別。
+- 不要在每次頁面刷新時重新創建任務；從存儲的 `task_id` 繼續。
 
 ## API 參考
 
 | 主題 | 參考 |
 |-------|-----------|
-| 创建音乐 | [创建音乐](/zh-Hant/api-reference/music/create-music) |
-| 查询音乐状态 | [查询音乐状态](/zh-Hant/api-reference/music/get-music-status) |
-| 查询任务状态 | [查询任务状态](/zh-Hant/api-reference/tasks/get-task-status) |
-| 模型列表 | [模型列表](/zh-Hant/api-reference/models/list-models) |
-| 模型详情 | [模型详情](/zh-Hant/api-reference/models/get-model) |
+| 創建音樂 | [創建音樂](/zh-Hant/api-reference/music/create-music) |
+| 獲取音樂狀態 | [獲取音樂狀態](/zh-Hant/api-reference/music/get-music-status) |
+| 獲取任務狀態 | [獲取任務狀態](/zh-Hant/api-reference/tasks/get-task-status) |
+| 列出模型 | [列出模型](/zh-Hant/api-reference/models/list-models) |
+| 計費與定價 | [計費與定價](/zh-Hant/guides/billing) |

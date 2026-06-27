@@ -1,29 +1,61 @@
 ---
 title: "Observability & Troubleshooting"
-description: "Production guide for Observability & Troubleshooting."
+description: "Capture the public identifiers AI Sonar exposes for support, usage reconciliation, and async task debugging."
 ---
 
-## Overview
+This page is written for application teams operating AI Sonar in production. It focuses on public identifiers and user-safe logs, not provider routing internals.
 
-This guide explains how to use Observability & Troubleshooting in production without binding your application to provider implementation details.
+## Public Identifiers
 
-Use AI Sonar public APIs, model metadata, and documented response fields as the contract.
+| Identifier | Where it appears | Use it for |
+|------------|------------------|------------|
+| `request_id` | Error bodies, Management API usage records, dashboard logs | Support and request-level reconciliation |
+| `task_id` / `id` | Async create and status responses | Polling image, video, music, and 3D jobs |
+| `poll_url` | Async create responses | Preferred status URL |
+| `billing_transaction_id` | Non-streaming responses when settled, task status responses, Management API usage records, `X-Billing-Transaction-ID` header | Billing reconciliation |
+| `X-Task-ID` | Async task responses | Header-level task correlation |
 
-## Current behavior
+## What To Log
 
-- Review these values before release: `request_id`, `task_id`, `billing_transaction_id`.
-- Do not depend on provider-specific status URLs, routing identifiers, or private execution metadata.
-- Make retries idempotent and avoid creating duplicate billable work.
+1. Log endpoint, model, status code, timestamp, and public identifiers.
+2. Redact `Authorization`, API keys, signed URLs, private media URLs, and full prompts by default.
+3. For async jobs, log the create response and every terminal status response.
+4. For usage questions, call the Management API with the API key ID and date filters.
+5. Use error `type`, `code`, and `param` from the response body instead of parsing provider text.
 
-## Production checklist
+## Troubleshooting Checklist
 
-- Keep logs useful for support without storing secrets, private files, prompts, or user media.
-- Support tickets should include sanitized request shape, endpoint, model, timestamp, and public identifiers.
-- Verify the flow in staging before moving production traffic.
+| Symptom | First check | Useful page |
+|---------|-------------|-------------|
+| `401` or `403` | API key, management token, organization access | [Authentication](/authentication) |
+| `429` | Rate-limit tier and client retry behavior | [Rate Limits](/guides/rate-limits) |
+| `400 invalid_request_error` | Unsupported field, wrong endpoint, or model-specific contract mismatch | [Error Handling](/guides/error-handling) |
+| Async task never finishes | Poll `poll_url`, inspect final `status`, avoid duplicate task creation | [Async Jobs & Polling](/guides/async-jobs-polling) |
+| Cost does not match UI | Compare `request_id` and `billing_transaction_id` in usage records | [Billing & Pricing](/guides/billing) |
 
-## Related pages
+## Usage Reconciliation
 
-- [Error Handling](/guides/error-handling)
-- [Billing & Pricing](/guides/billing)
-- [Async Jobs & Polling](/guides/async-jobs-polling)
-- [Get API Key Usage](/api-reference/management/get-api-key-usage)
+`GET /v1/management/api-keys/{keyId}/usage` returns paginated key-level usage. It can filter by `scene`, `accessChannel`, `logicalModel`, `modelVendor`, `startDate`, and `endDate`. Use it for server-side reconciliation instead of scraping the dashboard.
+
+```bash
+curl "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/usage?page=1&limit=20&scene=video" \\
+  -H "Authorization: Bearer mt-your-management-token"
+```
+
+Streaming responses may settle after the stream is sent, so the billing header can be absent even when usage is later recorded. For async media tasks, settlement can appear after terminal polling.
+
+## Support Packet
+
+When contacting support, include `request_id`, `task_id`, `billing_transaction_id` when present, endpoint, model, timestamp, and a sanitized request shape. Do not include API keys, private media, or full prompts unless support asks for a redacted sample.
+
+Do not include provider names, channel IDs, routing identifiers, Redis keys, or upstream task URLs in customer logs or support tickets unless AI Sonar support explicitly asks for them.
+
+## API Reference
+
+| Topic | Reference |
+|-------|-----------|
+| Error Handling | [Error Handling](/guides/error-handling) |
+| Rate Limits | [Rate Limits](/guides/rate-limits) |
+| Billing & Pricing | [Billing & Pricing](/guides/billing) |
+| Get API Key Usage | [Get API Key Usage](/api-reference/management/get-api-key-usage) |
+| Get Task Status | [Get Task Status](/api-reference/tasks/get-task-status) |

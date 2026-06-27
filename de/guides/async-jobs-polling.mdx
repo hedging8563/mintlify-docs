@@ -1,29 +1,73 @@
 ---
-title: "Asynchrone Jobs & Polling"
-description: "Produktionsleitfaden für Asynchrone Jobs & Polling."
+title: "Asynchrone Jobs & Abfragen"
+description: "Erstellen Sie asynchrone Generierungsjobs, fragen Sie den Status öffentlicher Aufgaben ab und versöhnen Sie endgültige Ergebnisse ohne provider-spezifische Aufgabendetails."
 ---
 
-## Übersicht
+Diese Seite spiegelt den öffentlichen asynchronen Aufgabenvertrag von AI Sonar wider. Sie behandelt keine provider-spezifischen Aufgaben-URLs, Routing-IDs oder upstream Callback-Verhalten als benutzerorientierte Integrationsverträge.
 
-Dieser Leitfaden erklärt, wie Sie Asynchrone Jobs & Polling in Produktion nutzen, ohne Ihre Anwendung an Provider-Implementierungsdetails zu binden.
+## Öffentlicher Vertrag
 
-Nutzen Sie öffentliche AI Sonar-APIs, Modellmetadaten und dokumentierte Antwortfelder als Vertrag.
+AI Sonar bietet einen öffentlichen asynchronen Aufgabenvertrag für generierte Medien an. Die Erstellungsendpunkte können `id`, `task_id`, `status` und `poll_url` zurückgeben. Behandeln Sie `id` und `task_id` als dieselbe öffentliche Aufgabenidentität und speichern Sie sowohl die Aufgaben-ID als auch `poll_url` mit Ihrem eigenen Jobdatensatz.
 
-## Aktuelles Verhalten
+Verwenden Sie zuerst die zurückgegebene `poll_url`. Wenn Sie einen festen Endpunkt benötigen, verwenden Sie `GET /v1/tasks/{id}` mit derselben `id` / `task_id` aus der Antwort zur Erstellung.
 
-- Prüfen Sie diese Werte vor dem Release: `task_id`, `poll_url`, `/v1/tasks/{id}`.
-- Verlassen Sie sich nicht auf provider-spezifische Status-URLs, Routing-Kennungen oder private Ausführungsmetadaten.
-- Machen Sie Wiederholungen idempotent und vermeiden Sie doppelt abrechenbare Arbeit.
+Öffentliche Generierungsaufgaben basieren heute auf Abfragen. AI Sonar hat intern upstream Callback-Empfänger, aber diese sind keine Kunden-Webhooks und sollten nicht als Integrationsvertrag verwendet werden.
 
-## Produktions-Checkliste
+## Empfohlener Ablauf
 
-- Logs sollen Support ermöglichen, aber keine Secrets, privaten Dateien, Prompts oder Nutzermedien speichern.
-- Support-Tickets sollten bereinigte Anfrageform, Endpoint, Modell, Zeitstempel und öffentliche Kennungen enthalten.
-- Prüfen Sie den Ablauf in Staging, bevor Sie Produktionsverkehr umstellen.
+1. Senden Sie die Erstellungsanfrage mit einem expliziten `model`.
+2. Wenn die Antwort inline ist, lesen Sie das endgültige Ergebnis sofort.
+3. Wenn die Antwort `status: "pending"`, `task_id` oder `poll_url` enthält, speichern Sie die Aufgabe und beginnen Sie mit dem Abfragen.
+4. Abfragen Sie alle `5-10s` für lange Medienaufgaben. Stoppen Sie nur bei einem terminalen Status.
+5. Bei `completed` lesen Sie die Ergebnisfelder für diesen Medientyp. Bei `failed` speichern Sie den öffentlichen Fehler und zeigen eine Wiederholungsaktion nur an, wenn das Wiederholen einen neuen benutzer sichtbaren Job erstellt.
 
-## Verwandte Seiten
+```json
+{
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "pending",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "model": "veo3.1"
+}
+```
 
-- [Task-Status abrufen](/de/api-reference/tasks/get-task-status)
-- [Task abbrechen](/de/api-reference/tasks/cancel-task)
-- [Observability & Fehlersuche](/de/guides/observability-troubleshooting)
-- [Video-Generierung](/de/guides/video-generation)
+## Abfrageergebnisse
+
+```bash
+curl "https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \\
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+Erwartete öffentliche Status sind `pending`, `processing`, `completed` und `failed`. Abgebrochene Aufgaben werden als `failed` mit `cancelled: true` und `cancellation_status: "cancelled"` dargestellt, damit die ältere Statusbehandlung weiterhin funktioniert.
+
+Fragen Sie keine provider-spezifischen URLs, upstream Aufgaben-IDs, Routing-IDs oder private Ausführungsmetadaten ab. Diese sind keine stabilen öffentlichen Verträge.
+
+## Abrechnung und Versöhnung
+
+- Eine Antwort auf die Erstellung kann einen geschätzten Betrag für asynchrone Arbeiten reservieren.
+- Die endgültige Abrechnung erfolgt, nachdem die Aufgabe einen terminalen Zustand erreicht hat.
+- Wenn die Abrechnung verfügbar ist, können die Antworten zum Aufgabenstatus `billing_transaction_id` und den Header `X-Billing-Transaction-ID` offenlegen.
+- Wenn ein Client-Timeout nach der Erstellung der Aufgabe auftritt, erstellen Sie den Job nicht blind erneut. Setzen Sie die Speicherung von `task_id` / `poll_url` fort.
+
+## Stornierung
+
+`DELETE /v1/tasks/{id}` ist absichtlich eng gefasst. Es unterstützt derzeit wartende Volcengine Seedance-Videoaufgaben wie `seedance-1.5-pro`, `seedance-2.0` und `seedance-2.0-fast`. Nicht unterstützte Aufgaben geben `400 unsupported_task_cancel` zurück; bereits laufende oder terminale Aufgaben geben `409 task_not_cancellable` zurück.
+
+## Fehlerbehebung Checkliste
+
+- `async_task_not_found`: die Aufgabe ist unbekannt, abgelaufen, für diesen API-Schlüssel nicht zugänglich oder nicht Teil des öffentlichen asynchronen Aufgabenvertrags.
+- Fehlende endgültige Medien-URL: Fragen Sie weiter ab, bis ein terminaler Status erreicht ist; gehen Sie nicht davon aus, dass `pending`-Antworten Ausgaben enthalten.
+- Doppelte Jobs: Überprüfen Sie, ob Ihr Wiederholungsweg eine zweite Aufgabe nach einem HTTP-Timeout erstellt hat.
+- Abrechnungsabweichung: Vergleichen Sie `request_id`, `task_id` und `billing_transaction_id` im Dashboard oder Management-API.
+
+Wenn Sie den Support kontaktieren, fügen Sie `request_id`, `task_id`, `billing_transaction_id` (sofern vorhanden), Endpunkt, Modell, Zeitstempel und eine bereinigte Anfrageform hinzu. Fügen Sie keine API-Schlüssel, privaten Medien oder vollständigen Eingabeaufforderungen hinzu, es sei denn, der Support fordert ein redigiertes Beispiel an.
+
+## API-Referenz
+
+| Thema | Referenz |
+|-------|-----------|
+| Aufgabenstatus abrufen | [Get Task Status](/de/api-reference/tasks/get-task-status) |
+| Aufgabe stornieren | [Cancel Task](/de/api-reference/tasks/cancel-task) |
+| Bildgenerierung | [Image Generation](/de/guides/image-generation) |
+| Videoerzeugung | [Video Generation](/de/guides/video-generation) |
+| Abrechnung & Preisgestaltung | [Billing & Pricing](/de/guides/billing) |

@@ -1,29 +1,73 @@
 ---
-title: "Asenkron işler ve polling"
-description: "Asenkron işler ve polling için production kılavuzu."
+title: "Asenkron İşler & Anketleme"
+description: "Asenkron üretim işleri oluşturun, genel görev durumunu sorgulayın ve sağlayıcıya özgü görev ayrıntıları olmadan nihai sonuçları uzlaştırın."
 ---
 
-## Genel bakış
+Bu sayfa AI Sonar'ın genel asenkron görev sözleşmesini yansıtmaktadır. Sağlayıcı görev URL'lerini, yönlendirme kimliklerini veya yukarı akış geri çağırma davranışını kullanıcıya yönelik entegrasyon sözleşmeleri olarak ele almaz.
 
-Bu kılavuz, uygulamanızı provider implementation detaylarına bağlamadan production’da Asenkron işler ve polling kullanmayı açıklar.
+## Genel Sözleşme
 
-AI Sonar public API’lerini, model metadata’sını ve dokümante edilmiş response field’larını sözleşme olarak kullanın.
+AI Sonar, üretilen medya için bir genel asenkron görev sözleşmesi sunar. Oluşturma uç noktaları `id`, `task_id`, `status` ve `poll_url` döndürebilir. `id` ve `task_id`'yi aynı genel görev kimliği olarak ele alın ve hem görev kimliğini hem de `poll_url`'yi kendi iş kaydınızla saklayın.
 
-## Güncel davranış
+İlk olarak döndürülen `poll_url`'yi kullanın. Sabit bir uç noktaya ihtiyacınız varsa, oluşturma yanıtındaki aynı `id` / `task_id` ile `GET /v1/tasks/{id}` kullanın.
 
-- Release öncesi bu değerleri kontrol edin: `task_id`, `poll_url`, `/v1/tasks/{id}`.
-- Provider’a özel status URL’lerine, routing identifier’lara veya private execution metadata’ya bağlı kalmayın.
-- Retry işlemlerini idempotent yapın ve çift billable work oluşturmayın.
+Genel üretim görevleri bugün anketleme tabanlıdır. AI Sonar, dahili olarak yukarı akış geri çağırma alıcılarına sahiptir, ancak bunlar müşteri web kancaları değildir ve entegrasyon sözleşmesi olarak kullanılmamalıdır.
 
-## Production kontrol listesi
+## Önerilen Akış
 
-- Loglar support için yararlı olmalı, ancak secret, private file, prompt veya kullanıcı medyası saklamamalıdır.
-- Support ticket; sanitize edilmiş request shape, endpoint, model, timestamp ve public identifier içermelidir.
-- Production trafiğini taşımadan önce flow’u staging’de doğrulayın.
+1. Açık bir `model` ile oluşturma isteğini gönderin.
+2. Yanıt satır içindeyse, nihai sonucu hemen okuyun.
+3. Yanıt `status: "pending"`, `task_id` veya `poll_url` içeriyorsa, görevi kalıcı hale getirin ve anketlemeye başlayın.
+4. Uzun medya görevleri için her `5-10s`'de anket yapın. Sadece terminal durumunda durun.
+5. `completed` durumunda, o medya türü için sonuç alanlarını okuyun. `failed` durumunda, genel hatayı saklayın ve yalnızca yeniden deneme yeni bir kullanıcı görünür işi oluşturduğunda bir yeniden deneme eylemi gösterin.
 
-## İlgili sayfalar
+```json
+{
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "pending",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "model": "veo3.1"
+}
+```
 
-- [Görev Durumunu Al](/tr/api-reference/tasks/get-task-status)
-- [Görevi iptal et](/tr/api-reference/tasks/cancel-task)
-- [Gözlemlenebilirlik ve sorun giderme](/tr/guides/observability-troubleshooting)
-- [Video oluşturma](/tr/guides/video-generation)
+## Anketleme Sonuçları
+
+```bash
+curl "https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \\
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+Beklenen genel durumlar `pending`, `processing`, `completed` ve `failed`'dir. İptal edilen görevler `failed` olarak `cancelled: true` ve `cancellation_status: "cancelled"` ile temsil edilir, böylece eski durum işleme devam eder.
+
+Sağlayıcıya özgü URL'leri, yukarı akış görev kimliklerini, yönlendirme kimliklerini veya özel yürütme meta verilerini sorgulamayın. Bunlar kararlı genel sözleşmeler değildir.
+
+## Faturalama ve Uzlaştırma
+
+- Bir oluşturma yanıtı, asenkron çalışma için tahmini bir miktarı rezerve edebilir.
+- Nihai uzlaşma, görev terminal bir duruma ulaştığında gerçekleşir.
+- Uzlaşma mevcut olduğunda, görev durumu yanıtları `billing_transaction_id` ve `X-Billing-Transaction-ID` başlığını açığa çıkarabilir.
+- Görev oluşturulduktan sonra bir istemci zaman aşımı olursa, işi körü körüne yeniden oluşturmayın. Saklanan `task_id` / `poll_url`'den devam edin.
+
+## İptal
+
+`DELETE /v1/tasks/{id}` kasıtlı olarak dar tutulmuştur. Şu anda `seedance-1.5-pro`, `seedance-2.0` ve `seedance-2.0-fast` gibi kuyrukta bekleyen Volcengine Seedance video görevlerini desteklemektedir. Desteklenmeyen görevler `400 unsupported_task_cancel` döndürür; zaten çalışan veya terminal olan görevler `409 task_not_cancellable` döndürür.
+
+## Sorun Giderme Kontrol Listesi
+
+- `async_task_not_found`: görev bilinmiyor, süresi dolmuş, bu API anahtarına erişilemez veya genel asenkron görev sözleşmesinin bir parçası değildir.
+- Nihai medya URL'si eksik: terminal duruma kadar anket yapmaya devam edin; `pending` yanıtlarının çıktılar içerdiğini varsaymayın.
+- Çift görevler: yeniden deneme yolunuzun bir HTTP zaman aşımından sonra ikinci bir görev oluşturup oluşturmadığını kontrol edin.
+- Faturalama uyumsuzluğu: kontrol panelinde veya Yönetim API'sinde `request_id`, `task_id` ve `billing_transaction_id`'yi karşılaştırın.
+
+Destekle iletişime geçerken, mevcut olduğunda `request_id`, `task_id`, `billing_transaction_id`, uç nokta, model, zaman damgası ve temizlenmiş bir istek şekli ekleyin. Destek, redakte edilmiş bir örnek istemedikçe API anahtarlarını, özel medyayı veya tam istemleri eklemeyin.
+
+## API Referansı
+
+| Konu | Referans |
+|-------|-----------|
+| Görev Durumunu Al | [Görev Durumunu Al](/tr/api-reference/tasks/get-task-status) |
+| Görevi İptal Et | [Görevi İptal Et](/tr/api-reference/tasks/cancel-task) |
+| Görüntü Üretimi | [Görüntü Üretimi](/tr/guides/image-generation) |
+| Video Üretimi | [Video Üretimi](/tr/guides/video-generation) |
+| Faturalama & Fiyatlandırma | [Faturalama & Fiyatlandırma](/tr/guides/billing) |

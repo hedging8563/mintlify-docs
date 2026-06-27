@@ -1,66 +1,67 @@
 ---
-title: "Bilderzeugung"
-description: "Erstelle Text-zu-Bild-, Referenzbild- und Bearbeitungsabläufe mit den AI Sonar-Bild-APIs."
+title: "Bildgenerierung"
+description: "Erstellen Sie Text-zu-Bild-, Bild-zu-Bild- und Bildbearbeitungs-Workflows gegen die öffentlichen Bildverträge von AI Sonar."
 ---
-## Empfohlener Ablauf
 
-1. Rufe [Modelle auflisten](/de/api-reference/models/list-models) mit `recommended_for=image` auf.
-2. Öffne [Modell abrufen](/de/api-reference/models/get-model) für das gewählte Modell und folge dem öffentlichen Vertrag.
-3. Nutze [Bild erstellen](/de/api-reference/images/create-image) für Text-zu-Bild und unterstützte Referenzbild-Flows oder [Bild bearbeiten](/de/api-reference/images/edit-image) für spezielle Edit-Flows.
-4. Wenn die Antwort `poll_url` enthält, frage diese URL ab, bis der Task einen Endzustand erreicht.
+Die AI Sonar-Bild-APIs decken mehrere Modellfamilien mit unterschiedlichen Anforderungsformaten ab. Verwenden Sie den öffentlichen Modellvertrag und die spezifische API-Referenz für den Endpunkt, bevor Sie davon ausgehen, dass ein Feld in jedem Bildmodell funktioniert.
 
-## Modelle finden
+## Wählen Sie den Endpunkt
 
-Bildmodelle haben nicht alle dieselbe Request-Form. Manche geben Ergebnisse direkt zurück, andere erstellen asynchrone Tasks. Der Vertrag des gewählten Modells legt fest, ob Felder wie `size`, `quality`, `aspect_ratio`, `resolution` und `async` akzeptiert werden.
+| Ziel | Endpunkt | Hinweise |
+|------|----------|-------|
+| Text-zu-Bild | `POST /v1/images/generations` | Verwenden Sie `prompt` und ein explizites `model` |
+| Bild-zu-Bild / Referenzbild | `POST /v1/images/generations` | Verwenden Sie `operation: "image-to-image"` plus `image_url`, `image_urls` oder `reference_image_urls`, wenn das Modell dies unterstützt |
+| GPT Bildbearbeitung | `POST /v1/images/edits` | Unterstützt multipart `image`, JSON `image_url` / `image_urls` und offizielle `images[]` Referenzen für unterstützte Bearbeitungsmodelle |
+| Legacy-Variation | `POST /v1/images/variations` | Bevorzugen Sie aktuelle Generierungs- oder Bearbeitungsrouten für neue Arbeiten |
+| Async-Status | `GET /v1/tasks/{id}` | Verwenden Sie zuerst `poll_url`, wenn vorhanden |
+
+## Modellerkennung
 
 ```bash
-curl "https://api.aisonar.dev/v1/models?recommended_for=image" \
+curl "https://api.aisonar.dev/v1/models?recommended_for=image" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-## Text zu Bild
+Die Bildmodellparameter unterscheiden sich stark. Lesen Sie den ausgewählten Modellvertrag, bevor Sie `size`, `quality`, `aspect_ratio`, `resolution`, `async`, `background` oder `output_format` senden.
 
-Für GPT-Image-Modelle verwendest du `size`, wenn der Modellvertrag es anbietet. Für Google- oder Nano-Banana-Bildmodelle nutzt du `aspect_ratio` und `resolution` nur, wenn sie im Vertrag des gewählten Modells aufgeführt sind.
+## Eingaben und modell-spezifische Felder
+
+- `gpt-image-2` verwendet OpenAI-ähnliche `size` und `quality`; lassen Sie `size` oder `quality` weg, damit AI Sonar `auto` verwenden kann, wo es unterstützt wird.
+- Die Bildfamilien Gemini und Nano Banana verwenden im Allgemeinen `aspect_ratio`; senden Sie `resolution` nur, wenn das ausgewählte Modell es bereitstellt.
+- Anfragen für Referenzbilder von Nano Banana gehören zu `/v1/images/generations` mit `operation: "image-to-image"` und `image_urls`, nicht zu `/v1/images/edits`.
+- `/v1/images/generations` akzeptiert keine obersten `images[]` oder `file_id`; das sind Formen des Bearbeitungsflusses.
+- Remote-Bild-URLs müssen öffentliche `http`/`https` URLs sein. Vermeiden Sie private Netzwerke, eingebettete Anmeldeinformationen, Fragmente und kurzlebige signierte URLs.
+
+## Anfrage erstellen
 
 ```bash
-curl https://api.aisonar.dev/v1/images/generations \
-  -H "Authorization: Bearer sk-your-api-key" \
-  -H "Content-Type: application/json" \
+curl https://api.aisonar.dev/v1/images/generations \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
   -d '{
     "model": "gpt-image-2",
-    "prompt": "A clean product photo of a ceramic coffee cup on a walnut desk",
+    "prompt": "Ein sauberes Produktfoto einer keramischen Kaffeetasse auf einem Walnuss-Schreibtisch",
     "size": "1024x1024",
     "response_format": "url"
   }'
 ```
 
-## Referenzbilder und Bearbeitung
+## Ergebnisse abfragen
 
-Für Referenzbild-Generierung auf `/v1/images/generations` sende `operation: "image-to-image"` mit `image_url`, `image_urls`, `reference_image_urls` oder einer multipart-`image`-Datei, sofern das Modell dies unterstützt. Verwende `/v1/images/edits` für Edit-Modelle, die multipart-Bilder, Bild-URLs oder `images[].image_url` / `images[].file_id` akzeptieren.
-
-Sende keine Top-Level-`images[]` und kein Top-Level-`file_id` an `/v1/images/generations`; diese Formen gehören zu Edit-Flows, die sie ausdrücklich dokumentieren.
+Einige Bildrouten geben inline `data[].url` oder `data[].b64_json` zurück. Andere Routen geben `status: "pending"`, `task_id` und `poll_url` zurück. Wenn Sie die asynchrone Bildgenerierung oder -bearbeitung anfordern, geben die abgeschlossenen Aufgaben Ergebnisse in Form von URLs zurück; verwenden Sie synchrone Anfragen, wenn Sie speziell `b64_json` benötigen.
 
 ```bash
-curl https://api.aisonar.dev/v1/images/generations \
-  -H "Authorization: Bearer sk-your-api-key" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "nano-banana-pro",
-    "operation": "image-to-image",
-    "prompt": "Keep the same product, place it in a bright studio scene",
-    "image_urls": ["https://example.com/reference.png"],
-    "aspect_ratio": "1:1"
-  }'
-```
-
-## Ergebnisse pollen
-
-Eine synchrone Bildantwort liefert `data[].url` oder `data[].b64_json`. Eine Task-Antwort liefert `status`, `task_id` und meist `poll_url`. Bevorzuge `poll_url`; der feste Fallback ist [Task-Status abrufen](/de/api-reference/tasks/get-task-status). Asynchrone Bildtasks liefern URL-Ergebnisse, fordere Inline-base64 daher nur in unterstützten synchronen Flows an.
-
-```bash
-curl "https://api.aisonar.dev/v1/tasks/$TASK_ID" \
+curl "https://api.aisonar.dev/v1/tasks/$TASK_ID" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
+
+## Häufige Fallstricke
+
+- Gehen Sie nicht davon aus, dass jedes Bildmodell synchron ist.
+- Fordern Sie `b64_json` nicht von asynchronen Bildaufgaben an; asynchrone Ergebnisse sind URL-orientiert.
+- Senden Sie `resolution` nicht an bildverhältnisbasierte Gemini-Bildmodelle.
+- Verwenden Sie `/v1/images/edits` nicht für Nano Banana Bild-zu-Bild-Flüsse.
+- Setzen Sie HTTP-Client-Timeouts auf mindestens `120s` für synchrone hochauflösende Bildanfragen.
 
 ## API-Referenz
 
@@ -68,7 +69,6 @@ curl "https://api.aisonar.dev/v1/tasks/$TASK_ID" \
 |-------|-----------|
 | Bild erstellen | [Bild erstellen](/de/api-reference/images/create-image) |
 | Bild bearbeiten | [Bild bearbeiten](/de/api-reference/images/edit-image) |
-| Bildstatus | [Bildstatus](/de/api-reference/images/get-image-status) |
-| Aufgabenstatus | [Aufgabenstatus](/de/api-reference/tasks/get-task-status) |
-| Modelle auflisten | [Modelle auflisten](/de/api-reference/models/list-models) |
-| Modell abrufen | [Modell abrufen](/de/api-reference/models/get-model) |
+| Bildvariation erstellen | [Bildvariation erstellen](/de/api-reference/images/create-variation) |
+| Bildstatus abrufen | [Bildstatus abrufen](/de/api-reference/images/get-image-status) |
+| Aufgabenstatus abrufen | [Aufgabenstatus abrufen](/de/api-reference/tasks/get-task-status) |

@@ -1,29 +1,61 @@
 ---
-title: "관측성 및 문제 해결"
-description: "관측성 및 문제 해결 프로덕션 사용 가이드."
+title: "관측 가능성 및 문제 해결"
+description: "지원, 사용 조정 및 비동기 작업 디버깅을 위해 AI Sonar이 노출하는 공개 식별자를 캡처합니다."
 ---
 
-## 개요
+이 페이지는 프로덕션에서 AI Sonar을 운영하는 애플리케이션 팀을 위해 작성되었습니다. 공개 식별자와 사용자 안전 로그에 중점을 두며, 제공자 라우팅 내부에 대한 내용은 포함하지 않습니다.
 
-이 가이드는 애플리케이션을 provider 구현 세부 정보에 묶지 않고 관측성 및 문제 해결을 production에서 사용하는 방법을 설명합니다.
+## 공개 식별자
 
-AI Sonar public API, model metadata, 문서화된 response field를 계약으로 사용하세요.
+| 식별자 | 나타나는 위치 | 용도 |
+|--------|---------------|------|
+| `request_id` | 오류 본문, 관리 API 사용 기록, 대시보드 로그 | 지원 및 요청 수준 조정 |
+| `task_id` / `id` | 비동기 생성 및 상태 응답 | 이미지, 비디오, 음악 및 3D 작업 폴링 |
+| `poll_url` | 비동기 생성 응답 | 선호하는 상태 URL |
+| `billing_transaction_id` | 정산된 비스트리밍 응답, 작업 상태 응답, 관리 API 사용 기록, `X-Billing-Transaction-ID` 헤더 | 청구 조정 |
+| `X-Task-ID` | 비동기 작업 응답 | 헤더 수준 작업 상관관계 |
 
-## 현재 동작
+## 로그에 기록할 내용
 
-- 릴리스 전에 다음 값을 확인하세요: `request_id`, `task_id`, `billing_transaction_id`.
-- provider별 status URL, routing identifier, private execution metadata에 의존하지 마세요.
-- retry는 idempotent하게 만들고 중복 과금 work를 만들지 마세요.
+1. 엔드포인트, 모델, 상태 코드, 타임스탬프 및 공개 식별자를 기록합니다.
+2. 기본적으로 `Authorization`, API 키, 서명된 URL, 개인 미디어 URL 및 전체 프롬프트를 삭제합니다.
+3. 비동기 작업의 경우, 생성 응답 및 모든 최종 상태 응답을 기록합니다.
+4. 사용 질문의 경우, API 키 ID 및 날짜 필터와 함께 관리 API를 호출합니다.
+5. 제공자 텍스트를 파싱하는 대신 응답 본문에서 오류 `type`, `code`, 및 `param`을 사용합니다.
 
-## 프로덕션 체크리스트
+## 문제 해결 체크리스트
 
-- log는 support에 유용하게 남기되 secret, private file, prompt, 사용자 media는 저장하지 마세요.
-- support ticket에는 sanitizing된 request shape, endpoint, model, timestamp, public identifier를 포함하세요.
-- production traffic을 전환하기 전에 staging에서 flow를 검증하세요.
+| 증상 | 첫 번째 확인 | 유용한 페이지 |
+|------|--------------|----------------|
+| `401` 또는 `403` | API 키, 관리 토큰, 조직 접근 | [인증](/ko/authentication) |
+| `429` | 비율 제한 계층 및 클라이언트 재시도 동작 | [비율 제한](/ko/guides/rate-limits) |
+| `400 invalid_request_error` | 지원되지 않는 필드, 잘못된 엔드포인트 또는 모델 특정 계약 불일치 | [오류 처리](/ko/guides/error-handling) |
+| 비동기 작업이 끝나지 않음 | `poll_url` 폴링, 최종 `status` 검사, 중복 작업 생성을 피함 | [비동기 작업 및 폴링](/ko/guides/async-jobs-polling) |
+| 비용이 UI와 일치하지 않음 | 사용 기록에서 `request_id` 및 `billing_transaction_id` 비교 | [청구 및 가격 책정](/ko/guides/billing) |
 
-## 관련 페이지
+## 사용 조정
 
-- [오류 처리](/ko/guides/error-handling)
-- [결제 및 요금](/ko/guides/billing)
-- [비동기 작업 및 폴링](/ko/guides/async-jobs-polling)
-- [API 키 사용량 조회](/ko/api-reference/management/get-api-key-usage)
+`GET /v1/management/api-keys/{keyId}/usage`는 페이지 매김된 키 수준 사용을 반환합니다. `scene`, `accessChannel`, `logicalModel`, `modelVendor`, `startDate`, 및 `endDate`로 필터링할 수 있습니다. 대시보드를 스크래핑하는 대신 서버 측 조정에 사용합니다.
+
+```bash
+curl "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/usage?page=1&limit=20&scene=video" \\
+  -H "Authorization: Bearer mt-your-management-token"
+```
+
+스트리밍 응답은 스트림이 전송된 후 정산될 수 있으므로, 사용이 나중에 기록되더라도 청구 헤더가 없을 수 있습니다. 비동기 미디어 작업의 경우, 최종 폴링 후에 정산이 나타날 수 있습니다.
+
+## 지원 패킷
+
+지원에 연락할 때는 `request_id`, `task_id`, `billing_transaction_id`가 있을 경우 포함하고, 엔드포인트, 모델, 타임스탬프 및 정리된 요청 형식을 포함합니다. 지원에서 삭제된 샘플을 요청하지 않는 한 API 키, 개인 미디어 또는 전체 프롬프트를 포함하지 마십시오.
+
+AI Sonar 지원이 명시적으로 요청하지 않는 한 고객 로그나 지원 티켓에 제공자 이름, 채널 ID, 라우팅 식별자, Redis 키 또는 상위 작업 URL을 포함하지 마십시오.
+
+## API 참조
+
+| 주제 | 참조 |
+|------|------|
+| 오류 처리 | [오류 처리](/ko/guides/error-handling) |
+| 비율 제한 | [비율 제한](/ko/guides/rate-limits) |
+| 청구 및 가격 책정 | [청구 및 가격 책정](/ko/guides/billing) |
+| API 키 사용 가져오기 | [API 키 사용 가져오기](/ko/api-reference/management/get-api-key-usage) |
+| 작업 상태 가져오기 | [작업 상태 가져오기](/ko/api-reference/tasks/get-task-status) |

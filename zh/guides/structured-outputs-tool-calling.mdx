@@ -1,29 +1,74 @@
 ---
 title: "结构化输出与工具调用"
-description: "结构化输出与工具调用 的生产使用指南。"
+description: "使用 JSON 模式、功能工具和原生工具路由，而不假设每个模型都支持相同的合同。"
 ---
 
-## 概述
+结构化输出和工具是真正的 AI Sonar API 路径，但它们并不是每个模型和路由都具备的通用能力。选择拥有您所需行为的路由。
 
-本指南说明如何在生产环境中使用结构化输出与工具调用，同时避免把应用绑定到供应商实现细节。
+## JSON 和结构化输出
 
-以 AI Sonar 公开 API、模型元数据和已文档化响应字段作为契约。
+对于可移植的结构化响应，从 Chat Completions 开始 `response_format: {"type":"json_object"}` 并在您的应用程序中验证输出。这是 AI Sonar 共享验证中的稳定公共请求形状。
 
-## 当前行为
+```json
+{
+  "model": "gpt-5.4",
+  "messages": [{"role": "user", "content": "返回一个包含城市和天气的 JSON 对象。"}],
+  "response_format": {"type": "json_object"}
+}
+```
 
-- 上线前重点检查这些值：JSON schema, tools, function declarations。
-- 不要依赖供应商专有状态 URL、路由标识符或私有执行元数据。
-- 让重试保持幂等，避免创建重复计费工作。
+`json_schema` 和 `strict` 结构化输出路径在某些上游和转换代码中存在，但它们依赖于模型和路由。将它们视为与所选模型验证的能力，而不是 AI Sonar 每个路由的普遍承诺。
 
-## 生产检查清单
+## 工具调用边界
 
-- 日志要便于支持排障，但不要存储密钥、私有文件、prompt 或用户媒体。
-- 支持工单应包含脱敏请求结构、端点、模型、时间戳和公开标识符。
-- 生产流量切换前先在预发环境验证流程。
+| 工具形状 | 优先选择的路由 | 生产注意事项 |
+|----------|----------------|---------------|
+| OpenAI 功能工具 | `/v1/chat/completions` | 适用于用户定义的函数调用 |
+| OpenAI 响应工具 | `/v1/responses` | 用于响应特定的内置或托管工具 |
+| Anthropic 工具 | `/v1/messages` | 用于 Claude 原生工具使用和思维流程 |
+| Gemini 函数声明 / 内置工具 | `/v1beta/models/:model:generateContent` | 在 Gemini 路由上保留 Gemini 原生工具字段 |
 
-## 相关页面
+AI Sonar 不会为您执行函数。当模型返回 `tool_calls`、`function_call`、`tool_use` 或 Gemini 函数调用部分时，您的应用程序必须运行工具，将工具结果以路由所需的格式附加，并继续对话。
 
-- [✨ 多格式 API](/zh/guides/api-formats)
-- [创建聊天补全](/zh/api-reference/chat/create-completion)
-- [创建响应](/zh/api-reference/responses/create-response)
-- [创建消息](/zh/api-reference/messages/create-message)
+## 常见陷阱
+
+- 不要通过 Chat Completions 发送提供者原生的内置工具，并期望它们被静默翻译。
+- 不要依赖严格的 JSON Schema，除非所选路由和模型经过测试。
+- 保持模式小而明确；大型模式会增加令牌并降低可靠性。
+- 即使启用了 JSON 模式，也要在服务器端验证模型输出。
+- 将不支持字段错误视为合同反馈。删除该字段或使用拥有该字段的原生路由。
+
+## 示例
+
+```bash
+curl https://api.aisonar.dev/v1/chat/completions \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "gpt-5.4",
+    "messages": [{"role":"user","content":"提取名称和电子邮件作为 JSON。"}],
+    "response_format": {"type":"json_object"},
+    "tools": [{
+      "type": "function",
+      "function": {
+        "name": "lookup_customer",
+        "description": "通过电子邮件查找客户",
+        "parameters": {
+          "type": "object",
+          "properties": {"email": {"type": "string"}},
+          "required": ["email"]
+        }
+      }
+    }]
+  }'
+```
+
+## API 参考
+
+| 主题 | 参考 |
+|------|------|
+| 多格式 API | [多格式 API](/zh/guides/api-formats) |
+| 创建聊天完成 | [创建聊天完成](/zh/api-reference/chat/create-completion) |
+| 创建响应 | [创建响应](/zh/api-reference/responses/create-response) |
+| 创建消息 | [创建消息](/zh/api-reference/messages/create-message) |
+| 生成 Gemini 内容 | [生成 Gemini 内容](/zh/api-reference/gemini/generate-content) |

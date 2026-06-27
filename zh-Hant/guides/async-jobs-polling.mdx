@@ -1,29 +1,73 @@
 ---
 title: "非同步任務與輪詢"
-description: "非同步任務與輪詢 的生產使用指南。"
+description: "創建非同步生成任務，輪詢公共任務狀態，並在不需要提供者特定任務細節的情況下調和最終結果。"
 ---
 
-## 概述
+此頁面反映了 AI Sonar 的公共非同步任務合約。它不將提供者任務 URL、路由 ID 或上游回調行為視為面向用戶的整合合約。
 
-本指南說明如何在生產環境中使用非同步任務與輪詢，同時避免把應用綁定到供應商實作細節。
+## 公共合約
 
-以 AI Sonar 公開 API、模型中繼資料和已文件化回應欄位作為契約。
+AI Sonar 為生成的媒體公開一個非同步任務合約。創建端點可能返回 `id`、`task_id`、`status` 和 `poll_url`。將 `id` 和 `task_id` 視為相同的公共任務身份，並將任務 ID 和 `poll_url` 與您自己的任務記錄一起存儲。
 
-## 目前行為
+首先使用返回的 `poll_url`。如果您需要固定端點，請使用 `GET /v1/tasks/{id}`，並使用創建響應中的相同 `id` / `task_id`。
 
-- 上線前重點檢查這些值：`task_id`, `poll_url`, `/v1/tasks/{id}`。
-- 不要依賴供應商專有狀態 URL、路由識別符或私有執行中繼資料。
-- 讓重試保持冪等，避免建立重複計費工作。
+公共生成任務目前是基於輪詢的。AI Sonar 內部有上游回調接收器，但它們不是客戶的 webhook，並且不應用作整合合約。
 
-## 生產檢查清單
+## 建議流程
 
-- 日誌要便於支援排障，但不要儲存密鑰、私有檔案、prompt 或使用者媒體。
-- 支援工單應包含脫敏請求結構、端點、模型、時間戳和公開識別符。
-- 生產流量切換前先在預發環境驗證流程。
+1. 發送帶有明確 `model` 的創建請求。
+2. 如果響應是內聯的，立即讀取最終結果。
+3. 如果響應包含 `status: "pending"`、`task_id` 或 `poll_url`，請持久化任務並開始輪詢。
+4. 對於長媒體任務，每 `5-10s` 輪詢一次。僅在終端狀態時停止。
+5. 在 `completed` 時，讀取該媒體類型的結果字段。在 `failed` 時，存儲公共錯誤，並僅在重試會創建新的用戶可見任務時顯示重試操作。
 
-## 相關頁面
+```json
+{
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "pending",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "model": "veo3.1"
+}
+```
 
-- [取得任務狀態](/zh-Hant/api-reference/tasks/get-task-status)
-- [取消任務](/zh-Hant/api-reference/tasks/cancel-task)
-- [可觀測性與疑難排解](/zh-Hant/guides/observability-troubleshooting)
-- [影片生成](/zh-Hant/guides/video-generation)
+## 輪詢結果
+
+```bash
+curl "https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \\
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+預期的公共狀態為 `pending`、`processing`、`completed` 和 `failed`。取消的任務表示為 `failed`，並帶有 `cancelled: true` 和 `cancellation_status: "cancelled"`，以便舊的狀態處理繼續有效。
+
+請勿輪詢提供者特定的 URL、上游任務 ID、路由 ID 或私有執行元數據。它們不是穩定的公共合約。
+
+## 計費與調和
+
+- 創建響應可以為非同步工作保留預估金額。
+- 最終結算在任務達到終端狀態後進行。
+- 當結算可用時，任務狀態響應可以暴露 `billing_transaction_id` 和 `X-Billing-Transaction-ID` 標頭。
+- 如果在任務創建後發生客戶端超時，請勿盲目重新創建任務。從存儲的 `task_id` / `poll_url` 繼續。
+
+## 取消
+
+`DELETE /v1/tasks/{id}` 是故意狹窄的。它目前支持排隊的 Volcengine Seedance 視頻任務，如 `seedance-1.5-pro`、`seedance-2.0` 和 `seedance-2.0-fast`。不支持的任務返回 `400 unsupported_task_cancel`；已經運行或處於終端狀態的任務返回 `409 task_not_cancellable`。
+
+## 故障排除檢查清單
+
+- `async_task_not_found`：任務未知、過期、對此 API 密鑰不可訪問，或不屬於公共非同步任務合約。
+- 缺少最終媒體 URL：持續輪詢直到終端；不要假設 `pending` 響應包含輸出。
+- 重複任務：檢查您的重試路徑是否在 HTTP 超時後創建了第二個任務。
+- 計費不匹配：在儀表板或管理 API 中比較 `request_id`、`task_id` 和 `billing_transaction_id`。
+
+聯繫支持時，請包括 `request_id`、`task_id`、`billing_transaction_id`（如果存在）、端點、模型、時間戳和已清理的請求形狀。除非支持要求提供已編輯的示例，否則請勿包含 API 密鑰、私有媒體或完整提示。
+
+## API 參考
+
+| 主題 | 參考 |
+|-------|-----------|
+| 獲取任務狀態 | [獲取任務狀態](/zh-Hant/api-reference/tasks/get-task-status) |
+| 取消任務 | [取消任務](/zh-Hant/api-reference/tasks/cancel-task) |
+| 圖像生成 | [圖像生成](/zh-Hant/guides/image-generation) |
+| 視頻生成 | [視頻生成](/zh-Hant/guides/video-generation) |
+| 計費與定價 | [計費與定價](/zh-Hant/guides/billing) |

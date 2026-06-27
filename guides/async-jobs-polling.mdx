@@ -1,29 +1,73 @@
 ---
 title: "Async Jobs & Polling"
-description: "Production guide for Async Jobs & Polling."
+description: "Create async generation jobs, poll public task status, and reconcile final results without provider-specific task details."
 ---
 
-## Overview
+This page reflects AI Sonar's public async task contract. It does not treat provider task URLs, routing IDs, or upstream callback behavior as user-facing integration contracts.
 
-This guide explains how to use Async Jobs & Polling in production without binding your application to provider implementation details.
+## Public Contract
 
-Use AI Sonar public APIs, model metadata, and documented response fields as the contract.
+AI Sonar exposes one public async task contract for generated media. Create endpoints may return `id`, `task_id`, `status`, and `poll_url`. Treat `id` and `task_id` as the same public task identity and store both the task ID and `poll_url` with your own job record.
 
-## Current behavior
+Use the returned `poll_url` first. If you need a fixed endpoint, use `GET /v1/tasks/{id}` with the same `id` / `task_id` from the create response.
 
-- Review these values before release: `task_id`, `poll_url`, `/v1/tasks/{id}`.
-- Do not depend on provider-specific status URLs, routing identifiers, or private execution metadata.
-- Make retries idempotent and avoid creating duplicate billable work.
+Public generation tasks are polling-based today. AI Sonar has upstream callback receivers internally, but they are not customer webhooks and should not be used as an integration contract.
 
-## Production checklist
+## Recommended Flow
 
-- Keep logs useful for support without storing secrets, private files, prompts, or user media.
-- Support tickets should include sanitized request shape, endpoint, model, timestamp, and public identifiers.
-- Verify the flow in staging before moving production traffic.
+1. Send the create request with an explicit `model`.
+2. If the response is inline, read the final result immediately.
+3. If the response contains `status: "pending"`, `task_id`, or `poll_url`, persist the task and start polling.
+4. Poll every `5-10s` for long media tasks. Stop only on a terminal status.
+5. On `completed`, read the result fields for that media type. On `failed`, store the public error and show a retry action only when retrying will create a new user-visible job.
 
-## Related pages
+```json
+{
+  "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "task_id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "pending",
+  "poll_url": "/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "model": "veo3.1"
+}
+```
 
-- [Get Task Status](/api-reference/tasks/get-task-status)
-- [Cancel Task](/api-reference/tasks/cancel-task)
-- [Observability & Troubleshooting](/guides/observability-troubleshooting)
-- [Video Generation](/guides/video-generation)
+## Polling Results
+
+```bash
+curl "https://api.aisonar.dev/v1/tasks/ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \\
+  -H "Authorization: Bearer sk-your-api-key"
+```
+
+Expected public statuses are `pending`, `processing`, `completed`, and `failed`. Cancelled tasks are represented as `failed` with `cancelled: true` and `cancellation_status: "cancelled"` so older status handling keeps working.
+
+Do not poll provider-specific URLs, upstream task IDs, routing IDs, or private execution metadata. They are not stable public contracts.
+
+## Billing And Reconciliation
+
+- A create response can reserve an estimated amount for asynchronous work.
+- Final settlement happens after the task reaches a terminal state.
+- When settlement is available, task status responses can expose `billing_transaction_id` and the `X-Billing-Transaction-ID` header.
+- If a client timeout happens after task creation, do not recreate the job blindly. Resume from the stored `task_id` / `poll_url`.
+
+## Cancellation
+
+`DELETE /v1/tasks/{id}` is intentionally narrow. It currently supports queued Volcengine Seedance video tasks such as `seedance-1.5-pro`, `seedance-2.0`, and `seedance-2.0-fast`. Unsupported tasks return `400 unsupported_task_cancel`; tasks already running or terminal return `409 task_not_cancellable`.
+
+## Troubleshooting Checklist
+
+- `async_task_not_found`: the task is unknown, expired, inaccessible to this API key, or not part of the public async-task contract.
+- Missing final media URL: keep polling until terminal; do not assume `pending` responses include outputs.
+- Duplicate jobs: check whether your retry path created a second task after an HTTP timeout.
+- Billing mismatch: compare `request_id`, `task_id`, and `billing_transaction_id` in the dashboard or Management API.
+
+When contacting support, include `request_id`, `task_id`, `billing_transaction_id` when present, endpoint, model, timestamp, and a sanitized request shape. Do not include API keys, private media, or full prompts unless support asks for a redacted sample.
+
+## API Reference
+
+| Topic | Reference |
+|-------|-----------|
+| Get Task Status | [Get Task Status](/api-reference/tasks/get-task-status) |
+| Cancel Task | [Cancel Task](/api-reference/tasks/cancel-task) |
+| Image Generation | [Image Generation](/guides/image-generation) |
+| Video Generation | [Video Generation](/guides/video-generation) |
+| Billing & Pricing | [Billing & Pricing](/guides/billing) |

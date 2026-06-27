@@ -1,29 +1,61 @@
 ---
-title: "可觀測性與疑難排解"
-description: "可觀測性與疑難排解 的生產使用指南。"
+title: "可觀察性與故障排除"
+description: "捕捉 AI Sonar 為支援、使用對帳和異步任務調試所公開的識別碼。"
 ---
 
-## 概述
+本頁面是為在生產環境中運行 AI Sonar 的應用團隊編寫的。它專注於公共識別碼和用戶安全日誌，而非提供者路由的內部細節。
 
-本指南說明如何在生產環境中使用可觀測性與疑難排解，同時避免把應用綁定到供應商實作細節。
+## 公共識別碼
 
-以 AI Sonar 公開 API、模型中繼資料和已文件化回應欄位作為契約。
+| 識別碼 | 出現位置 | 用途 |
+|--------|----------|------|
+| `request_id` | 錯誤主體、管理 API 使用記錄、儀表板日誌 | 支援和請求級對帳 |
+| `task_id` / `id` | 異步創建和狀態響應 | 輪詢圖像、視頻、音樂和 3D 任務 |
+| `poll_url` | 異步創建響應 | 優先狀態 URL |
+| `billing_transaction_id` | 結算時的非串流響應、任務狀態響應、管理 API 使用記錄、`X-Billing-Transaction-ID` 標頭 | 計費對帳 |
+| `X-Task-ID` | 異步任務響應 | 標頭級任務關聯 |
 
-## 目前行為
+## 記錄內容
 
-- 上線前重點檢查這些值：`request_id`, `task_id`, `billing_transaction_id`。
-- 不要依賴供應商專有狀態 URL、路由識別符或私有執行中繼資料。
-- 讓重試保持冪等，避免建立重複計費工作。
+1. 記錄端點、模型、狀態碼、時間戳和公共識別碼。
+2. 預設情況下，隱藏 `Authorization`、API 金鑰、簽名 URL、私有媒體 URL 和完整提示。
+3. 對於異步任務，記錄創建響應和每個終端狀態響應。
+4. 對於使用問題，使用 API 金鑰 ID 和日期過濾器調用管理 API。
+5. 使用響應主體中的錯誤 `type`、`code` 和 `param`，而不是解析提供者文本。
 
-## 生產檢查清單
+## 故障排除檢查清單
 
-- 日誌要便於支援排障，但不要儲存密鑰、私有檔案、prompt 或使用者媒體。
-- 支援工單應包含脫敏請求結構、端點、模型、時間戳和公開識別符。
-- 生產流量切換前先在預發環境驗證流程。
+| 症狀 | 首先檢查 | 有用頁面 |
+|------|----------|----------|
+| `401` 或 `403` | API 金鑰、管理令牌、組織訪問 | [身份驗證](/zh-Hant/authentication) |
+| `429` | 速率限制層級和客戶端重試行為 | [速率限制](/zh-Hant/guides/rate-limits) |
+| `400 invalid_request_error` | 不支持的字段、錯誤的端點或模型特定的合約不匹配 | [錯誤處理](/zh-Hant/guides/error-handling) |
+| 異步任務永遠不會完成 | 輪詢 `poll_url`，檢查最終 `status`，避免重複創建任務 | [異步任務與輪詢](/zh-Hant/guides/async-jobs-polling) |
+| 成本與 UI 不匹配 | 比較使用記錄中的 `request_id` 和 `billing_transaction_id` | [計費與定價](/zh-Hant/guides/billing) |
 
-## 相關頁面
+## 使用對帳
 
-- [錯誤處理](/zh-Hant/guides/error-handling)
-- [計費與定價](/zh-Hant/guides/billing)
-- [非同步任務與輪詢](/zh-Hant/guides/async-jobs-polling)
-- [取得 API Key 用量](/zh-Hant/api-reference/management/get-api-key-usage)
+`GET /v1/management/api-keys/{keyId}/usage` 返回分頁的金鑰級使用情況。它可以根據 `scene`、`accessChannel`、`logicalModel`、`modelVendor`、`startDate` 和 `endDate` 進行過濾。用於伺服器端對帳，而不是抓取儀表板。
+
+```bash
+curl "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/usage?page=1&limit=20&scene=video" \\
+  -H "Authorization: Bearer mt-your-management-token"
+```
+
+串流響應可能在串流發送後結算，因此即使使用情況稍後被記錄，計費標頭也可能缺失。對於異步媒體任務，結算可能在終端輪詢後出現。
+
+## 支援包
+
+聯繫支援時，請包括 `request_id`、`task_id`、`billing_transaction_id`（如果存在）、端點、模型、時間戳和經過清理的請求形狀。除非支援要求提供經過隱藏的範例，否則請勿包括 API 金鑰、私有媒體或完整提示。
+
+在客戶日誌或支援票證中，除非 AI Sonar 支援明確要求，否則請勿包括提供者名稱、通道 ID、路由識別碼、Redis 鍵或上游任務 URL。
+
+## API 參考
+
+| 主題 | 參考 |
+|------|------|
+| 錯誤處理 | [錯誤處理](/zh-Hant/guides/error-handling) |
+| 速率限制 | [速率限制](/zh-Hant/guides/rate-limits) |
+| 計費與定價 | [計費與定價](/zh-Hant/guides/billing) |
+| 獲取 API 金鑰使用情況 | [獲取 API 金鑰使用情況](/zh-Hant/api-reference/management/get-api-key-usage) |
+| 獲取任務狀態 | [獲取任務狀態](/zh-Hant/api-reference/tasks/get-task-status) |

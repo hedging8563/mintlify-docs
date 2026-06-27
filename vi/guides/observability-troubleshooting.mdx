@@ -1,29 +1,61 @@
 ---
-title: "Quan sát và xử lý sự cố"
-description: "Hướng dẫn production cho Quan sát và xử lý sự cố."
+title: "Khả Năng Quan Sát & Khắc Phục Sự Cố"
+description: "Ghi lại các định danh công khai mà AI Sonar cung cấp cho hỗ trợ, đối chiếu sử dụng và gỡ lỗi tác vụ bất đồng bộ."
 ---
 
-## Tổng quan
+Trang này được viết cho các nhóm ứng dụng vận hành AI Sonar trong môi trường sản xuất. Nó tập trung vào các định danh công khai và nhật ký an toàn cho người dùng, không phải nội bộ định tuyến nhà cung cấp.
 
-Hướng dẫn này giải thích cách dùng Quan sát và xử lý sự cố trong production mà không gắn ứng dụng vào chi tiết triển khai của provider.
+## Định Danh Công Khai
 
-Dùng API công khai của AI Sonar, metadata mô hình và field phản hồi đã tài liệu hóa làm hợp đồng.
+| Định danh | Nơi xuất hiện | Sử dụng cho |
+|-----------|---------------|-------------|
+| `request_id` | Nội dung lỗi, hồ sơ sử dụng API quản lý, nhật ký bảng điều khiển | Hỗ trợ và đối chiếu cấp yêu cầu |
+| `task_id` / `id` | Phản hồi tạo và trạng thái bất đồng bộ | Lấy thông tin hình ảnh, video, âm nhạc và công việc 3D |
+| `poll_url` | Phản hồi tạo bất đồng bộ | URL trạng thái ưa thích |
+| `billing_transaction_id` | Phản hồi không phát trực tiếp khi đã thanh toán, phản hồi trạng thái tác vụ, hồ sơ sử dụng API quản lý, tiêu đề `X-Billing-Transaction-ID` | Đối chiếu thanh toán |
+| `X-Task-ID` | Phản hồi tác vụ bất đồng bộ | Tương quan tác vụ cấp tiêu đề |
 
-## Hành vi hiện tại
+## Những Gì Cần Ghi Lại
 
-- Kiểm tra các giá trị này trước khi phát hành: `request_id`, `task_id`, `billing_transaction_id`.
-- Không phụ thuộc URL trạng thái riêng của provider, định danh routing hoặc metadata thực thi riêng tư.
-- Làm retry có tính idempotent và tránh tạo công việc bị tính phí trùng lặp.
+1. Ghi lại điểm cuối, mô hình, mã trạng thái, dấu thời gian và các định danh công khai.
+2. Xóa thông tin `Authorization`, khóa API, URL đã ký, URL phương tiện riêng tư và toàn bộ yêu cầu theo mặc định.
+3. Đối với các công việc bất đồng bộ, ghi lại phản hồi tạo và mọi phản hồi trạng thái cuối cùng.
+4. Đối với các câu hỏi về sử dụng, gọi API quản lý với ID khóa API và bộ lọc ngày tháng.
+5. Sử dụng `type`, `code`, và `param` lỗi từ nội dung phản hồi thay vì phân tích văn bản nhà cung cấp.
 
-## Checklist production
+## Danh Sách Kiểm Tra Khắc Phục Sự Cố
 
-- Log cần hữu ích cho support nhưng không lưu secret, file riêng tư, prompt hoặc media người dùng.
-- Ticket support nên có request shape đã làm sạch, endpoint, model, timestamp và định danh công khai.
-- Xác minh flow ở staging trước khi chuyển traffic production.
+| Triệu Chứng | Kiểm Tra Đầu Tiên | Trang Hữu Ích |
+|-------------|-------------------|---------------|
+| `401` hoặc `403` | Khóa API, mã thông báo quản lý, quyền truy cập tổ chức | [Xác Thực](/vi/authentication) |
+| `429` | Tầng giới hạn tần suất và hành vi thử lại của khách hàng | [Giới Hạn Tần Suất](/vi/guides/rate-limits) |
+| `400 invalid_request_error` | Trường không được hỗ trợ, điểm cuối sai, hoặc không khớp hợp đồng theo mô hình | [Xử Lý Lỗi](/vi/guides/error-handling) |
+| Tác vụ bất đồng bộ không bao giờ hoàn thành | Lấy thông tin từ `poll_url`, kiểm tra `status` cuối cùng, tránh tạo tác vụ trùng lặp | [Công Việc Bất Đồng Bộ & Lấy Thông Tin](/vi/guides/async-jobs-polling) |
+| Chi phí không khớp với UI | So sánh `request_id` và `billing_transaction_id` trong hồ sơ sử dụng | [Thanh Toán & Giá Cả](/vi/guides/billing) |
 
-## Trang liên quan
+## Đối Chiếu Sử Dụng
 
-- [Xử lý lỗi](/vi/guides/error-handling)
-- [Thanh toán & Giá cả](/vi/guides/billing)
-- [Tác vụ bất đồng bộ và polling](/vi/guides/async-jobs-polling)
-- [Lấy mức sử dụng API key](/vi/api-reference/management/get-api-key-usage)
+`GET /v1/management/api-keys/{keyId}/usage` trả về mức sử dụng theo khóa được phân trang. Nó có thể lọc theo `scene`, `accessChannel`, `logicalModel`, `modelVendor`, `startDate`, và `endDate`. Sử dụng nó cho đối chiếu phía máy chủ thay vì thu thập thông tin từ bảng điều khiển.
+
+```bash
+curl "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/usage?page=1&limit=20&scene=video" \\
+  -H "Authorization: Bearer mt-your-management-token"
+```
+
+Các phản hồi phát trực tiếp có thể được thanh toán sau khi luồng được gửi, vì vậy tiêu đề thanh toán có thể không có ngay cả khi việc sử dụng được ghi lại sau đó. Đối với các tác vụ phương tiện bất đồng bộ, việc thanh toán có thể xuất hiện sau khi lấy thông tin cuối cùng.
+
+## Gói Hỗ Trợ
+
+Khi liên hệ với hỗ trợ, bao gồm `request_id`, `task_id`, `billing_transaction_id` khi có, điểm cuối, mô hình, dấu thời gian, và hình dạng yêu cầu đã được làm sạch. Không bao gồm khóa API, phương tiện riêng tư, hoặc toàn bộ yêu cầu trừ khi hỗ trợ yêu cầu mẫu đã được xóa.
+
+Không bao gồm tên nhà cung cấp, ID kênh, định danh định tuyến, khóa Redis, hoặc URL tác vụ upstream trong nhật ký khách hàng hoặc vé hỗ trợ trừ khi hỗ trợ AI Sonar yêu cầu rõ ràng.
+
+## Tài Liệu API
+
+| Chủ Đề | Tài Liệu |
+|--------|----------|
+| Xử Lý Lỗi | [Xử Lý Lỗi](/vi/guides/error-handling) |
+| Giới Hạn Tần Suất | [Giới Hạn Tần Suất](/vi/guides/rate-limits) |
+| Thanh Toán & Giá Cả | [Thanh Toán & Giá Cả](/vi/guides/billing) |
+| Lấy Sử Dụng Khóa API | [Lấy Sử Dụng Khóa API](/vi/api-reference/management/get-api-key-usage) |
+| Lấy Trạng Thái Tác Vụ | [Lấy Trạng Thái Tác Vụ](/vi/api-reference/tasks/get-task-status) |

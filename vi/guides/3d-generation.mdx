@@ -1,54 +1,60 @@
 ---
 title: "Tạo 3D"
-description: "Tạo tài sản 3D từ văn bản hoặc hình ảnh bằng API 3D của AI Sonar và polling tác vụ bất đồng bộ."
+description: "Tạo tài sản 3D từ văn bản hoặc hình ảnh và tải xuống các tệp mô hình hoàn chỉnh từ kết quả tác vụ bất đồng bộ."
 ---
-## Luồng đề xuất
 
-1. Gọi [Danh sách mô hình](/vi/api-reference/models/list-models) với `recommended_for=3d`.
-2. Dùng [Tạo 3D](/vi/api-reference/3d/create-3d) với `prompt` văn bản; chỉ thêm `image` hoặc `image_url` cho mô hình hỗ trợ ảnh sang 3D.
-3. Chọn các trường tùy chọn như `format`, `quality`, `style`, `seed` theo hợp đồng mô hình.
-4. Polling `poll_url` cho đến khi tài sản sẵn sàng, sau đó tải `model_url` hoặc URL theo định dạng như `glb_url` / `fbx_url`.
+Tạo 3D là bất đồng bộ. `POST /v1/3d/generations` tạo một tác vụ; phản hồi trạng thái hoàn thành trả về các URL tài sản mô hình có thể tải xuống.
 
-## Khám phá mô hình
-
-Tạo 3D là API dạng tác vụ. Hãy xem catalog mô hình là nguồn đúng thay vì giả định một provider hay mô hình cố định.
+## Khám Phá Mô Hình
 
 ```bash
-curl "https://api.aisonar.dev/v1/models?recommended_for=3d" \
+curl "https://api.aisonar.dev/v1/models?recommended_for=3d" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-## Tạo tác vụ 3D
+Đừng giả định rằng mọi mô hình 3D đều hỗ trợ cả text-to-3D và image-to-3D. Kiểm tra hợp đồng mô hình đã chọn trước khi gửi `image`, `image_url`, `format`, `quality`, `style`, hoặc `seed`.
 
-Request văn bản sang 3D cần `prompt`. Request ảnh sang 3D thêm dữ liệu base64 `image` hoặc `image_url`. Chỉ dùng `format` và `quality` khi hợp đồng mô hình có chúng.
+## Tạo Yêu Cầu
 
 ```bash
-curl https://api.aisonar.dev/v1/3d/generations \
-  -H "Authorization: Bearer sk-your-api-key" \
-  -H "Content-Type: application/json" \
+curl https://api.aisonar.dev/v1/3d/generations \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
   -d '{
     "model": "tripo3d-v2.5",
-    "prompt": "A stylized low-poly robot mascot with clean topology",
+    "prompt": "Một linh vật robot low-poly phong cách với topo sạch",
     "format": "glb",
     "quality": "standard"
   }'
 ```
 
-## Polling kết quả
+Text-to-3D yêu cầu một `prompt`. Image-to-3D sử dụng `image` hoặc `image_url` khi được mô hình hỗ trợ. Ưu tiên các URL công khai cho đầu vào sản xuất trừ khi hình ảnh nguồn là riêng tư và khách hàng của bạn cố ý tải lên dữ liệu base64.
 
-Dùng `poll_url` được trả về trước. Endpoint dự phòng ổn định là [Trạng thái tác vụ](/vi/api-reference/tasks/get-task-status). Tác vụ 3D hoàn tất trả `model_url` và có thể có `glb_url` hoặc `fbx_url`.
+## Lựa Chọn Đầu Ra
 
-```bash
-curl "https://api.aisonar.dev/v1/tasks/$TASK_ID" \
-  -H "Authorization: Bearer sk-your-api-key"
-```
+- `format` có thể yêu cầu đóng gói đầu ra như `glb`, `fbx`, `obj`, hoặc `usdz` khi được hỗ trợ.
+- Các giá trị `quality` như `draft`, `standard`, hoặc `high` ảnh hưởng đến độ trễ và chi phí khi mô hình công khai chúng.
+- `style` và `seed` phụ thuộc vào mô hình; bỏ qua chúng trừ khi hợp đồng đã chọn tài liệu chúng.
 
-## Tham chiếu API
+## Kiểm Tra Kết Quả
 
-| Mục | Tham chiếu |
+Sử dụng `poll_url` trả về trước. Nếu bạn cần một điểm cuối cố định, sử dụng `GET /v1/tasks/{id}` với cùng một `id` / `task_id` từ phản hồi tạo.
+
+Các tác vụ hoàn thành trả về `model_url` và có thể bao gồm các URL cụ thể theo định dạng như `glb_url`, `fbx_url`, `obj_url`, hoặc `usdz_url`. Tải xuống và lưu trữ tài sản trong sản phẩm của bạn nếu người dùng cần truy cập lặp lại.
+
+## Những Cạm Bẫy Thường Gặp
+
+- Đừng mong đợi một tài sản 3D trong phản hồi tạo; kiểm tra cho đến khi có trạng thái cuối cùng.
+- Đừng hứa hẹn mọi định dạng cho mọi mô hình.
+- Đừng thử lại các yêu cầu tạo sau khi thời gian chờ của khách hàng mà không kiểm tra xem tác vụ đã tồn tại hay chưa.
+- Đừng tiết lộ ID tác vụ của nhà cung cấp trong giao diện người dùng của bạn.
+
+## Tài Liệu API
+
+| Chủ Đề | Tài Liệu |
 |-------|-----------|
 | Tạo 3D | [Tạo 3D](/vi/api-reference/3d/create-3d) |
-| Trạng thái 3D | [Trạng thái 3D](/vi/api-reference/3d/get-3d-status) |
-| Trạng thái tác vụ | [Trạng thái tác vụ](/vi/api-reference/tasks/get-task-status) |
-| Danh sách mô hình | [Danh sách mô hình](/vi/api-reference/models/list-models) |
-| Lấy mô hình | [Lấy mô hình](/vi/api-reference/models/get-model) |
+| Lấy Trạng Thái 3D | [Lấy Trạng Thái 3D](/vi/api-reference/3d/get-3d-status) |
+| Lấy Trạng Thái Tác Vụ | [Lấy Trạng Thái Tác Vụ](/vi/api-reference/tasks/get-task-status) |
+| Danh Sách Mô Hình | [Danh Sách Mô Hình](/vi/api-reference/models/list-models) |
+| Thanh Toán & Giá Cả | [Thanh Toán & Giá Cả](/vi/guides/billing) |

@@ -1,55 +1,55 @@
 ---
-title: "Geração de música"
-description: "Crie músicas e letras com as APIs de música da AI Sonar e polling de tarefas assíncronas."
+title: "Geração de Música"
+description: "Crie canções, instrumentais, letras e continuações com as tarefas de música do AI Sonar."
 ---
-## Fluxo recomendado
 
-1. Chame [Listar modelos](/pt/api-reference/models/list-models) com `recommended_for=music`.
-2. Use [Criar música](/pt/api-reference/music/create-music) para criar uma tarefa com `prompt` e campos opcionais como `title`, `tags`, `action`, `mv` ou configurações de continuação.
-3. Guarde o `id` / `task_id` e o `poll_url` retornados.
-4. Consulte até a tarefa ficar `completed` ou `failed`, depois leia `audio_url`, `video_url` opcional, `title` e `lyrics`.
+A geração de música é assíncrona. `POST /v1/music/generations` cria uma tarefa e retorna `id` / `task_id`, `status` e geralmente `poll_url`. O áudio final e os metadados aparecem após a consulta.
 
-## Descobrir modelos
-
-A geração de música é assíncrona. Não dependa do nome do provedor upstream nem do ID de tarefa do provedor; a AI Sonar retorna uma identidade de tarefa normalizada e uma URL de polling.
+## Descoberta de Modelos
 
 ```bash
-curl "https://api.aisonar.dev/v1/models?recommended_for=music" \
+curl "https://api.aisonar.dev/v1/models?recommended_for=music" \\
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-## Criar uma tarefa de música
+O contrato público atual expõe `suno_music` para geração de música e `suno_lyrics` para fluxos apenas de letras. Consulte o catálogo de modelos antes do uso em produção, em vez de assumir suposições do provedor.
 
-`action: "MUSIC"` cria músicas ou instrumentais conforme o prompt e o modelo. `action: "LYRICS"` é para fluxos somente de letra quando o modelo selecionado aceita. Use `continue_clip_id` e `continue_at` apenas em fluxos de continuação documentados pelo contrato do modelo.
+## Criar Solicitação
 
 ```bash
-curl https://api.aisonar.dev/v1/music/generations \
-  -H "Authorization: Bearer sk-your-api-key" \
-  -H "Content-Type: application/json" \
+curl https://api.aisonar.dev/v1/music/generations \\
+  -H "Authorization: Bearer sk-your-api-key" \\
+  -H "Content-Type: application/json" \\
   -d '{
     "model": "suno_music",
-    "prompt": "An upbeat synth-pop track with warm vocals and a clean chorus",
-    "title": "Morning Static",
-    "tags": "synth-pop, upbeat",
+    "prompt": "Uma faixa de synth-pop animada com vocais quentes e um refrão limpo",
+    "title": "Estática da Manhã",
+    "tags": "synth-pop, animado",
     "action": "MUSIC"
   }'
 ```
 
-## Consultar resultados
+Use `action: "MUSIC"` para canções ou instrumentais. Use `action: "LYRICS"` apenas com modelos que suportam geração apenas de letras. Campos de continuação, como `continue_clip_id` e `continue_at`, são para fluxos de continuação e devem ser enviados apenas quando seu produto estiver continuando um clipe anterior.
 
-Prefira sempre o `poll_url` retornado. O fallback estável é [Status da tarefa](/pt/api-reference/tasks/get-task-status). Tarefas de música concluídas podem incluir `audio_url`, `video_url`, `title`, `lyrics` e metadados normalizados pelo modelo.
+## Consultando Resultados
 
-```bash
-curl "https://api.aisonar.dev/v1/tasks/$TASK_ID" \
-  -H "Authorization: Bearer sk-your-api-key"
-```
+Use o `poll_url` retornado primeiro. Se precisar de um endpoint fixo, use `GET /v1/tasks/{id}` com o mesmo `id` / `task_id` da resposta de criação.
+
+Tarefas de música concluídas podem incluir `audio_url`, `video_url`, `title`, `lyrics` e metadados normalizados pelo modelo. Armazene as URLs finais em seu aplicativo em vez de consultar repetidamente após o status terminal.
+
+## Armadilhas Comuns
+
+- Não exiba um player final até que a tarefa esteja `completed` e um `audio_url` exista.
+- Não use IDs de tarefas do provedor ou URLs de busca do provedor no estado do seu aplicativo.
+- Não misture ações apenas de letras e ações de música completa em uma única interface sem mostrar a diferença para os usuários.
+- Não recrie tarefas em cada atualização de página; retome a partir do `task_id` armazenado.
 
 ## Referência da API
 
 | Tópico | Referência |
 |-------|-----------|
-| Criar música | [Criar música](/pt/api-reference/music/create-music) |
-| Status da música | [Status da música](/pt/api-reference/music/get-music-status) |
-| Status da tarefa | [Status da tarefa](/pt/api-reference/tasks/get-task-status) |
-| Listar modelos | [Listar modelos](/pt/api-reference/models/list-models) |
-| Obter modelo | [Obter modelo](/pt/api-reference/models/get-model) |
+| Criar Música | [Criar Música](/pt/api-reference/music/create-music) |
+| Obter Status da Música | [Obter Status da Música](/pt/api-reference/music/get-music-status) |
+| Obter Status da Tarefa | [Obter Status da Tarefa](/pt/api-reference/tasks/get-task-status) |
+| Listar Modelos | [Listar Modelos](/pt/api-reference/models/list-models) |
+| Faturamento & Preços | [Faturamento & Preços](/pt/guides/billing) |
