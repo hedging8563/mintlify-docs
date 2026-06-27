@@ -34,8 +34,8 @@ Google Gemini في عقد اختيار واحد:
 
 **مهلة الطلبات المتزامنة:** قد يعيد بعض مزودي الصور الذين يتم التوجيه إليهم الصورة النهائية inline وينتظرون اكتمال التوليد. قد تستغرق طلبات الدقة العالية أو الجودة العالية ما يقارب دقيقة أو أكثر، لذا اضبط مهلة عميل HTTP على `120s` على الأقل. إذا احتوت استجابة الإنشاء على `status: "pending"` أو `task_id` أو `poll_url`، فاتبع `poll_url` المُعاد بدلًا من الانتظار.
 
-<ParamField body="model" type="string" default="dall-e-3">
-  النموذج المطلوب استخدامه (مثل `gpt-image-2` أو `dall-e-3` أو `flux-pro` أو `midjourney`).
+<ParamField body="model" type="string" required>
+  النموذج المطلوب استخدامه، مثل `gpt-image-2` أو `flux-pro` أو `qwen-image` أو `nano-banana-pro`. استخدم `GET /v1/models?recommended_for=image` للحصول على قائمة التوصيات الحالية.
 </ParamField>
 
 <ParamField body="prompt" type="string" required>
@@ -83,7 +83,7 @@ Google Gemini في عقد اختيار واحد:
 </ParamField>
 
 <ParamField body="quality" type="string" default="standard">
-  جودة الصورة. تستخدم نماذج DALL-E القيمتين `standard` أو `hd`؛ أما نماذج GPT Image مثل `gpt-image-2` فتستخدم `auto` أو `low` أو `medium` أو `high`.
+  جودة الصورة. تستخدم نماذج GPT Image مثل `gpt-image-2` القيم `auto` أو `low` أو `medium` أو `high`. قد تستخدم عائلات صور أخرى قيمًا خاصة بالمزوّد؛ راجع metadata النموذج المحدد قبل إرسال قيم غير افتراضية.
 </ParamField>
 
 <ParamField body="response_format" type="string" default="url">
@@ -96,8 +96,8 @@ Google Gemini في عقد اختيار واحد:
   اضبطه على `true` مع `gpt-image-2` أو نماذج الصور الرسمية FLUX/BFL لإنشاء مهمة أولاً. تعيد مهام الصور غير المتزامنة المكتملة روابط URL بغض النظر عن `response_format` المطلوب؛ استخدم الطلبات المتزامنة إذا كنت تحتاج إلى `b64_json`.
 </ParamField>
 
-<ParamField body="style" type="string" default="vivid">
-  النمط لـ DALL-E 3: `vivid` أو `natural`.
+<ParamField body="style" type="string">
+  محدد نمط اختياري. أرسله فقط عندما يوثّقه النموذج المحدد صراحة؛ احذفه مع `gpt-image-2` ما لم تذكر metadata النموذج خلاف ذلك.
 </ParamField>
 
 <ParamField body="user" type="string">
@@ -106,7 +106,7 @@ Google Gemini في عقد اختيار واحد:
 
 ## الاستجابة
 
-### الاستجابة المتزامنة (DALL-E, Flux Schnell, إلخ.)
+### الاستجابة المضمنة
 
 <ResponseField name="created" type="integer">
   الطابع الزمني Unix لوقت الإنشاء.
@@ -118,7 +118,7 @@ Google Gemini في عقد اختيار واحد:
   يحتوي كل كائن على:
   - `url` (string): عنوان URL للصورة المُنشأة
   - `b64_json` (string): صورة مرمّزة بـ Base64 (إذا تم طلبها)
-  - `revised_prompt` (string): الـ prompt المستخدم (DALL-E 3)
+  - `revised_prompt` (string): نسخة prompt معدّلة اختيارية يعيدها المزوّد، عندما يبلّغ عنها نموذج upstream
 </ResponseField>
 
 ### استجابة المهمة غير المتزامنة
@@ -282,7 +282,7 @@ curl -X POST "https://api.aisonar.dev/v1/images/generations" \
 }
 ```
 
-```json Asynchronous Response (Midjourney, Flux Pro, etc.)
+```json Async Task Response
 {
   "created": 1706000000,
   "id": "ldtask_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
@@ -296,15 +296,16 @@ curl -X POST "https://api.aisonar.dev/v1/images/generations" \
 
 ## النماذج المتاحة
 
+هذه أمثلة حالية للنماذج وليست كتالوجًا ثابتًا. استخدم `GET /v1/models?recommended_for=image` أو صفحة Models لمعرفة التوفر والأسعار الأحدث.
+
 | النموذج | النوع | الميزات |
 |-------|------|----------|
-| `dall-e-3` | متزامن | أفضل جودة، تحسين الـ prompt |
-| `dall-e-2` | متزامن | أسرع وأكثر توفيرًا |
-| `flux-pro` | **غير متزامن** | واقعي تصويريًا، جودة عالية |
-| `flux-schnell` | متزامن | سريع جدًا |
-| `midjourney` | **غير متزامن** | نمط فني |
-| `ideogram-v3` | **غير متزامن** | أفضل عرض للنصوص |
-| `stable-diffusion-3` | متزامن | مفتوح المصدر، قابل للتخصيص |
+| `gpt-image-2` | متزامن أو قائم على مهمة | نموذج GPT Image بتسعير حسب التوكنات وأحجام مرنة |
+| `flux-pro` | غالبًا قائم على مهمة | واقعي تصويريًا، جودة عالية |
+| `qwen-image` | غالبًا قائم على مهمة | عرض نص قوي واتباع جيد للـ prompt |
+| `nano-banana-pro` | غالبًا قائم على مهمة | سير عمل صور مرجعية وإخراج عالي الدقة |
+| `grok-imagine-image` | غالبًا قائم على مهمة | توليد صور xAI مع اختيار النسبة والدقة |
+| `ideogram-v3` | غالبًا قائم على مهمة | عرض نص قوي |
 
 **النماذج غير المتزامنة** تُرجع `status: "pending"` وتتطلب polling. راجع [حالة الصورة](/api-reference/images/get-image-status) لمعرفة كيفية استرجاع النتائج.
 
@@ -316,7 +317,7 @@ curl -X POST "https://api.aisonar.dev/v1/images/generations" \
 import requests
 import time
 
-def generate_image(prompt, model="midjourney"):
+def generate_image(prompt, model="flux-pro"):
     # Create image request
     response = requests.post(
         "https://api.aisonar.dev/v1/images/generations",
@@ -350,6 +351,6 @@ def generate_image(prompt, model="midjourney"):
         return data["data"][0]["url"]
 
 # Usage
-url = generate_image("a beautiful sunset over mountains", model="midjourney")
+url = generate_image("a beautiful sunset over mountains", model="flux-pro")
 print(f"Generated image: {url}")
 ```

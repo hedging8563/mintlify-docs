@@ -10,7 +10,7 @@ description: "プロンプトとソース画像を使用して画像を編集し
 
 このルートは次の両方をサポートします:
 
-- 下記で文書化されている従来の `multipart/form-data` DALL-E スタイルのアップロードフロー
+- 下記で説明する OpenAI 互換の `multipart/form-data` アップロードフロー
 - サポートされる画像-to-画像ファミリー向けの `image_url`、`image_urls`、または公式 `images` 参照を含む JSON リクエスト
 
 <Note>
@@ -32,7 +32,7 @@ xAI Grok Imagine の画像編集モデル（`grok-imagine-image`、`grok-imagine
 リモート画像 URL: ルーティング先プロバイダーが multipart 入力を要求する場合、AI Sonar は JSON `image_url`、`image_urls`、または `images[].image_url` を取得し、そのバイト列を multipart の `image` パートとして転送します。URL は公開 `http`/`https` で、埋め込み認証情報やフラグメントを含まず、localhost、プライベート IP、予約済み IP 範囲へ解決されてはいけません。リダイレクト先も毎回再検証されます。取得される内容は実際の PNG、JPEG、または WebP 画像である必要があります。制限は画像 1 枚あたり `50MB`、URL 取得画像の合計 `200MB`/リクエスト、取得 timeout `10s`、最大 `3` リダイレクトです。
 
 <ParamField body="image" type="file">
-  multipart のソース画像。複数の GPT Image ソースを渡す場合は `image` を繰り返してください。ファイルは PNG、JPEG、または WebP、最大 16 枚、各 `50MB` までです。xAI Grok Imagine 編集モデルは同じ入力フィールドを使用しますが、ソース画像は 3 枚までです。従来の DALL-E 2 マスク編集では、透明領域を持つ PNG 入力、または別の `mask` が引き続き必要です。
+  multipart のソース画像。複数の GPT Image ソースを渡す場合は `image` を繰り返してください。ファイルは PNG、JPEG、または WebP、最大 16 枚、各 `50MB` までです。xAI Grok Imagine 編集モデルは同じ入力フィールドを使用しますが、ソース画像は 3 枚までです。
 </ParamField>
 
 <ParamField body="prompt" type="string" required>
@@ -43,8 +43,8 @@ xAI Grok Imagine の画像編集モデル（`grok-imagine-image`、`grok-imagine
   完全に透明な領域が編集箇所を示す追加画像。有効な PNG ファイルで、50MB 未満、`image` と同じサイズである必要があります。
 </ParamField>
 
-<ParamField body="model" type="string" default="dall-e-2">
-  画像編集に使用するモデル。`gpt-image-2` に対応しています。従来の DALL-E 形式の編集では引き続き `dall-e-2` を使用できます。
+<ParamField body="model" type="string" required>
+  画像編集に使用するモデル。GPT Image 編集には `gpt-image-2` を使用するか、`GET /v1/models?recommended_for=image` が返す現在の画像編集モデルを使用してください。
 </ParamField>
 
 <ParamField body="n" type="integer" default="1">
@@ -52,7 +52,7 @@ xAI Grok Imagine の画像編集モデル（`grok-imagine-image`、`grok-imagine
 </ParamField>
 
 <ParamField body="size" type="string">
-  生成画像のサイズ。`gpt-image-2` では `auto` または `WIDTHxHEIGHT` を使用します。寸法は 16 の倍数、最長辺は `3840px` 以下、長辺/短辺比は `3:1` 以下、総ピクセル数は `655,360` から `8,294,400` の範囲である必要があります。従来の DALL-E 編集は `256x256`、`512x512`、`1024x1024` に対応します。
+  生成画像のサイズ。`gpt-image-2` では `auto` または `WIDTHxHEIGHT` を使用します。寸法は 16 の倍数、最長辺は `3840px` 以下、長辺/短辺比は `3:1` 以下、総ピクセル数は `655,360` から `8,294,400` の範囲である必要があります。
 </ParamField>
 
 <ParamField body="response_format" type="string" default="url">
@@ -95,6 +95,7 @@ xAI Grok Imagine の画像編集モデル（`grok-imagine-image`、`grok-imagine
 ```bash cURL
 curl -X POST "https://api.aisonar.dev/v1/images/edits" \
   -H "Authorization: Bearer sk-your-api-key" \
+  -F "model=gpt-image-2" \
   -F "image=@sunlit_lounge.png" \
   -F "mask=@mask.png" \
   -F "prompt=A sunlit indoor lounge area with a pool" \
@@ -111,7 +112,7 @@ client = OpenAI(
 )
 
 response = client.images.edit(
-    model="dall-e-2",
+    model="gpt-image-2",
     image=open("sunlit_lounge.png", "rb"),
     mask=open("mask.png", "rb"),
     prompt="A sunlit indoor lounge area with a pool",
@@ -132,7 +133,7 @@ const client = new OpenAI({
 });
 
 const response = await client.images.edit({
-  model: 'dall-e-2',
+  model: 'gpt-image-2',
   image: fs.createReadStream('sunlit_lounge.png'),
   mask: fs.createReadStream('mask.png'),
   prompt: 'A sunlit indoor lounge area with a pool',
@@ -158,6 +159,8 @@ import (
 func main() {
     body := &bytes.Buffer{}
     writer := multipart.NewWriter(body)
+
+    writer.WriteField("model", "gpt-image-2")
 
     image, _ := os.Open("sunlit_lounge.png")
     defer image.Close()
@@ -201,6 +204,7 @@ curl_setopt_array($ch, [
         'Authorization: Bearer sk-your-api-key'
     ],
     CURLOPT_POSTFIELDS => [
+        'model' => 'gpt-image-2',
         'image' => $image,
         'mask' => $mask,
         'prompt' => 'A sunlit indoor lounge area with a pool',

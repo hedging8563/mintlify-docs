@@ -333,7 +333,7 @@ response = requests.post(
     "https://api.aisonar.dev/v1/videos/generations",
     headers={"Authorization": "Bearer sk-your-api-key"},
     json={
-        "model": "topaz-video-upscale",
+        "model": "grok-imagine-upscale",
         "operation": "video-to-video",
         "video_url": "https://example.com/source.mp4",
         "prompt": "Upscale the clip while preserving the original motion.",
@@ -381,11 +381,8 @@ Bu liste, bu doküman derlemesinde etkin olan herkese açık video modeli envant
 | `kling-3.0-motion-control` | Hareket kontrolü |
 | `kling-3.0-video` | Metinden videoya, image-to-video, start-end-to-video, element referansları |
 | `kling-v2.5-turbo-pro` | Metinden videoya, image-to-video, start-end-to-video |
-| `kling-v2.5-turbo-std` | Metinden videoya, image-to-video |
 | `kling-v2.6-pro` | Metinden videoya, image-to-video, start-end-to-video |
 | `kling-v2.6-std` | Metinden videoya, image-to-video |
-| `kling-v3.0-pro` | Metinden videoya, image-to-video, start-end-to-video |
-| `kling-v3.0-std` | Metinden videoya, image-to-video, start-end-to-video |
 | `kling-video-o1-pro` | Metinden videoya, image-to-video, reference-to-video, start-end-to-video, video-to-video |
 | `kling-video-o1-std` | Metinden videoya, image-to-video, reference-to-video, start-end-to-video, video-to-video |
 
@@ -395,10 +392,8 @@ Bu liste, bu doküman derlemesinde etkin olan herkese açık video modeli envant
 |-------|-----------------------|
 | `veo3` | Metinden videoya, image-to-video |
 | `veo3-fast` | Metinden videoya, image-to-video |
-| `veo3-pro` | Metinden videoya, image-to-video |
 | `veo3.1` | Metinden videoya, image-to-video, reference-to-video, start-end-to-video |
 | `veo3.1-fast` | Metinden videoya, image-to-video, reference-to-video, start-end-to-video |
-| `veo3.1-pro` | Metinden videoya, image-to-video, start-end-to-video |
 
 ### ByteDance
 
@@ -447,4 +442,3 @@ Bu liste, bu doküman derlemesinde etkin olan herkese açık video modeli envant
 
 | Model | Herkese açık işlemler |
 |-------|-----------------------|
-| `topaz-video-upscale` | Videodan videoya |

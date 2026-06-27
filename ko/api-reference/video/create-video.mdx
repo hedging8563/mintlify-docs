@@ -313,7 +313,7 @@ response = requests.post(
     "https://api.aisonar.dev/v1/videos/generations",
     headers={"Authorization": "Bearer sk-your-api-key"},
     json={
-        "model": "topaz-video-upscale",
+        "model": "grok-imagine-upscale",
         "operation": "video-to-video",
         "video_url": "https://example.com/source.mp4",
         "prompt": "Upscale the clip while preserving the original motion.",
@@ -361,11 +361,8 @@ AI Sonar 의 공개 계약은 모델별 흐름을 위해 `audio-to-video` 와 `v
 | `kling-3.0-motion-control` | 모션 컨트롤 |
 | `kling-3.0-video` | 텍스트에서 비디오, 이미지에서 비디오, 시작-종료 프레임 비디오, 요소 참조 |
 | `kling-v2.5-turbo-pro` | 텍스트에서 비디오, 이미지에서 비디오, 시작-종료 프레임 비디오 |
-| `kling-v2.5-turbo-std` | 텍스트에서 비디오, 이미지에서 비디오 |
 | `kling-v2.6-pro` | 텍스트에서 비디오, 이미지에서 비디오, 시작-종료 프레임 비디오 |
 | `kling-v2.6-std` | 텍스트에서 비디오, 이미지에서 비디오 |
-| `kling-v3.0-pro` | 텍스트에서 비디오, 이미지에서 비디오, 시작-종료 프레임 비디오 |
-| `kling-v3.0-std` | 텍스트에서 비디오, 이미지에서 비디오, 시작-종료 프레임 비디오 |
 | `kling-video-o1-pro` | 텍스트에서 비디오, 이미지에서 비디오, 참조 이미지 기반 비디오, 시작-종료 프레임 비디오, 비디오에서 비디오 |
 | `kling-video-o1-std` | 텍스트에서 비디오, 이미지에서 비디오, 참조 이미지 기반 비디오, 시작-종료 프레임 비디오, 비디오에서 비디오 |
 
@@ -375,10 +372,8 @@ AI Sonar 의 공개 계약은 모델별 흐름을 위해 `audio-to-video` 와 `v
 |------|-----------|
 | `veo3` | 텍스트에서 비디오, 이미지에서 비디오 |
 | `veo3-fast` | 텍스트에서 비디오, 이미지에서 비디오 |
-| `veo3-pro` | 텍스트에서 비디오, 이미지에서 비디오 |
 | `veo3.1` | 텍스트에서 비디오, 이미지에서 비디오, 참조 이미지 기반 비디오, 시작-종료 프레임 비디오 |
 | `veo3.1-fast` | 텍스트에서 비디오, 이미지에서 비디오, 참조 이미지 기반 비디오, 시작-종료 프레임 비디오 |
-| `veo3.1-pro` | 텍스트에서 비디오, 이미지에서 비디오, 시작-종료 프레임 비디오 |
 
 ### ByteDance
 
@@ -427,4 +422,3 @@ AI Sonar 의 공개 계약은 모델별 흐름을 위해 `audio-to-video` 와 `v
 
 | 모델 | 공개 작업 |
 |------|-----------|
-| `topaz-video-upscale` | 비디오에서 비디오 |

@@ -24,15 +24,19 @@ AI Sonar é uma plataforma de agregação de APIs de IA que oferece acesso unifi
 
 ## Capacidades Suportadas
 
-| Capacidade | Descrição | Modelos de Exemplo |
-|------------|-------------|----------------|
-| **Chat e raciocínio** | Geração de texto, planejamento, ferramentas | `gpt-5.4`, `claude-sonnet-4-6`, `deepseek-r1` |
-| **Visão** | Entendimento de imagens e chat multimodal | `gpt-4o`, `claude-sonnet-4-6`, `gemini-2.5-flash` |
-| **Geração de imagens** | Texto-para-imagem e edição de imagens | `dall-e-3`, `flux-pro`, `midjourney` |
-| **Áudio** | TTS e transcrição | `gpt-4o-mini-tts`, `whisper-1`, `gpt-4o-transcribe` |
-| **Embeddings** | Vetorização de texto | `text-embedding-3-small`, `text-embedding-3-large` |
-| **Música** | Geração de música por IA | `suno` |
-| **3D** | Geração de ativos 3D | `tripo3d` |
+O catálogo público muda ao longo do tempo. Verifique a disponibilidade atual com `/v1/models`, `recommended_for` ou a página de modelos; os exemplos abaixo usam IDs públicos atuais.
+
+| Capacidade | Descrição | Modelos de exemplo |
+|---|---|---|
+| Chat e raciocínio | Geração de texto, planejamento, ferramentas | `gpt-5.4`, `claude-sonnet-4-6`, `deepseek-r1` |
+| Visão e multimodal | Compreensão de imagens e chat multimodal | `gpt-4o`, `claude-sonnet-4-6`, `gemini-3.5-flash` |
+| Geração e edição de imagens | Texto para imagem e edição de imagens | `gpt-image-2`, `flux-pro`, `qwen-image` |
+| Geração de vídeo | Texto/imagem/referência para vídeo e controle de movimento | `veo3.1`, `seedance-2.0`, `kling-3.0-video` |
+| Áudio e Realtime | TTS, transcrição, tradução e sessões em tempo real | `gpt-4o-mini-tts`, `whisper-1`, `gpt-realtime` |
+| Embeddings e rerank | Vetorização de texto e reordenação | `text-embedding-3-small`, `qwen3-vl-rerank` |
+| Tradução | Fluxos de tradução de texto e fala | `qwen-mt-plus`, `gpt-realtime-translate` |
+| Música e 3D | Geração de música e assets 3D | `suno-music`, `tripo3d-v2.5` |
+| Worlds | Geração de worlds, polling de status e media assets | Verifique disponibilidade com `/v1/worlds/generations` e Models API |
 
 ## Escolha o formato da requisição
 

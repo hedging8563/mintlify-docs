@@ -59,7 +59,7 @@ Thêm provider AI Sonar dưới `models.providers`:
         models: [
           { id: "gpt-4o", name: "GPT-4o" },
           { id: "deepseek-r1", name: "DeepSeek R1" },
-          { id: "qwen3-32b", name: "Qwen 3 32B" }
+          { id: "qwen3-coder-flash", name: "Qwen 3 Coder Flash" }
         ]
       },
       "aisonar-responses": {
@@ -85,8 +85,8 @@ Thêm provider AI Sonar dưới `models.providers`:
         baseUrl: "https://api.aisonar.dev",
         apiKey: "sk-your-api-key",
         models: [
-          { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash" },
-          { id: "gemini-3-flash-preview", name: "Gemini 3 Flash Preview" }
+          { id: "gemini-3.5-flash", name: "Gemini 3.5 Flash" },
+          { id: "gemini-3.5-flash", name: "Gemini 3.5 Flash" }
         ]
       },
       "aisonar-minimax": {
@@ -94,7 +94,7 @@ Thêm provider AI Sonar dưới `models.providers`:
         baseUrl: "https://api.aisonar.dev",
         apiKey: "sk-your-api-key",
         models: [
-          { id: "minimax-m1", name: "MiniMax M1" }
+          { id: "minimax-m2.1", name: "MiniMax M2.1" }
         ]
       }
     }
@@ -119,7 +119,7 @@ OpenClaw vẫn tham chiếu các model theo định dạng `provider/model`:
   agents: {
     defaults: {
       model: {
-        primary: "aisonar-gemini/gemini-2.5-flash"
+        primary: "aisonar-gemini/gemini-3.5-flash"
       }
     }
   }
@@ -134,8 +134,8 @@ OpenClaw vẫn tham chiếu các model theo định dạng `provider/model`:
 | `aisonar` | `aisonar/deepseek-r1` | Mô hình suy luận DeepSeek |
 | `aisonar-responses` | `aisonar-responses/gpt-4o` | Route Responses API |
 | `aisonar-claude` | `aisonar-claude/claude-sonnet-4-6` | Route Messages gốc của Claude |
-| `aisonar-gemini` | `aisonar-gemini/gemini-2.5-flash` | Route Gemini gốc |
-| `aisonar-minimax` | `aisonar-minimax/minimax-m1` | Route MiniMax gốc |
+| `aisonar-gemini` | `aisonar-gemini/gemini-3.5-flash` | Route Gemini gốc |
+| `aisonar-minimax` | `aisonar-minimax/minimax-m2.1` | Route MiniMax gốc |
 
 Browse all available models at [aisonar.dev/models](https://aisonar.dev/models).
 

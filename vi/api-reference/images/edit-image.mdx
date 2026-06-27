@@ -10,7 +10,7 @@ Tạo một hình ảnh đã chỉnh sửa hoặc mở rộng dựa trên ảnh 
 
 Route này hỗ trợ cả:
 
-- luồng upload kiểu DALL-E truyền thống bằng `multipart/form-data` được mô tả bên dưới
+- luồng upload `multipart/form-data` tương thích OpenAI được mô tả bên dưới
 - request JSON cung cấp `image_url`, `image_urls`, hoặc tham chiếu chính thức `images` cho các nhóm image-to-image được hỗ trợ
 
 <Note>
@@ -32,7 +32,7 @@ Ghi chu tuong thich: neu yeu cau `gpt-image-2` gui `input_fidelity`, AI Sonar se
 URL ảnh từ xa: khi provider được định tuyến yêu cầu input multipart, AI Sonar sẽ tải JSON `image_url`, `image_urls`, hoặc `images[].image_url` rồi chuyển byte dưới dạng các phần multipart `image`. URL phải là `http`/`https` công khai, không chứa credentials nhúng hoặc fragment, và không được resolve tới localhost, dải IP private hoặc reserved; mỗi redirect đều được kiểm tra lại. Payload tải về phải là ảnh PNG, JPEG hoặc WebP thật. Giới hạn: `50MB` mỗi ảnh, tổng `200MB` cho ảnh tải từ URL trong một request, timeout tải `10s`, và tối đa `3` redirect.
 
 <ParamField body="image" type="file">
-  Ảnh nguồn multipart. Lặp lại trường `image` để gửi nhiều nguồn GPT Image. File phải là PNG, JPEG hoặc WebP, tối đa 16 ảnh nguồn và `50MB` mỗi ảnh. Model edit xAI Grok Imagine dùng cùng các trường input nhưng giới hạn ảnh nguồn ở mức 3. Các edit mask DALL-E 2 legacy vẫn yêu cầu PNG có vùng trong suốt, hoặc một `mask` riêng.
+  Ảnh nguồn multipart. Lặp lại trường `image` để gửi nhiều nguồn GPT Image. File phải là PNG, JPEG hoặc WebP, tối đa 16 ảnh nguồn và `50MB` mỗi ảnh. Model edit xAI Grok Imagine dùng cùng các trường input nhưng giới hạn ảnh nguồn ở mức 3.
 </ParamField>
 
 <ParamField body="prompt" type="string" required>
@@ -43,8 +43,8 @@ URL ảnh từ xa: khi provider được định tuyến yêu cầu input multip
   Một ảnh bổ sung có các vùng trong suốt hoàn toàn để chỉ ra nơi ảnh sẽ được chỉnh sửa. Phải là tệp PNG hợp lệ, nhỏ hơn 50MB, và có cùng kích thước với `image`.
 </ParamField>
 
-<ParamField body="model" type="string" default="dall-e-2">
-  Model dùng cho edit ảnh. `gpt-image-2` được hỗ trợ; các edit kiểu DALL-E legacy vẫn có thể dùng `dall-e-2`.
+<ParamField body="model" type="string" required>
+  Model dùng cho edit ảnh. Dùng `gpt-image-2` cho edit GPT Image, hoặc một model edit ảnh hiện tại được trả về bởi `GET /v1/models?recommended_for=image`.
 </ParamField>
 
 <ParamField body="n" type="integer" default="1">
@@ -52,7 +52,7 @@ URL ảnh từ xa: khi provider được định tuyến yêu cầu input multip
 </ParamField>
 
 <ParamField body="size" type="string">
-  Kích thước ảnh được tạo. Với `gpt-image-2`, dùng `auto` hoặc `WIDTHxHEIGHT`; kích thước phải là bội số của 16, cạnh dài nhất tối đa `3840px`, tỷ lệ cạnh dài/ngắn tối đa `3:1`, và tổng pixel nằm trong khoảng `655,360` đến `8,294,400`. Edit DALL-E legacy hỗ trợ `256x256`, `512x512`, hoặc `1024x1024`.
+  Kích thước ảnh được tạo. Với `gpt-image-2`, dùng `auto` hoặc `WIDTHxHEIGHT`; kích thước phải là bội số của 16, cạnh dài nhất tối đa `3840px`, tỷ lệ cạnh dài/ngắn tối đa `3:1`, và tổng pixel nằm trong khoảng `655,360` đến `8,294,400`.
 </ParamField>
 
 <ParamField body="response_format" type="string" default="url">
@@ -95,6 +95,7 @@ Khi tạo tác vụ, hệ thống có thể tạm giữ chi phí ước tính. T
 ```bash cURL
 curl -X POST "https://api.aisonar.dev/v1/images/edits" \
   -H "Authorization: Bearer sk-your-api-key" \
+  -F "model=gpt-image-2" \
   -F "image=@sunlit_lounge.png" \
   -F "mask=@mask.png" \
   -F "prompt=A sunlit indoor lounge area with a pool" \
@@ -111,7 +112,7 @@ client = OpenAI(
 )
 
 response = client.images.edit(
-    model="dall-e-2",
+    model="gpt-image-2",
     image=open("sunlit_lounge.png", "rb"),
     mask=open("mask.png", "rb"),
     prompt="A sunlit indoor lounge area with a pool",
@@ -132,7 +133,7 @@ const client = new OpenAI({
 });
 
 const response = await client.images.edit({
-  model: 'dall-e-2',
+  model: 'gpt-image-2',
   image: fs.createReadStream('sunlit_lounge.png'),
   mask: fs.createReadStream('mask.png'),
   prompt: 'A sunlit indoor lounge area with a pool',
@@ -158,6 +159,8 @@ import (
 func main() {
     body := &bytes.Buffer{}
     writer := multipart.NewWriter(body)
+
+    writer.WriteField("model", "gpt-image-2")
 
     image, _ := os.Open("sunlit_lounge.png")
     defer image.Close()
@@ -201,6 +204,7 @@ curl_setopt_array($ch, [
         'Authorization: Bearer sk-your-api-key'
     ],
     CURLOPT_POSTFIELDS => [
+        'model' => 'gpt-image-2',
         'image' => $image,
         'mask' => $mask,
         'prompt' => 'A sunlit indoor lounge area with a pool',

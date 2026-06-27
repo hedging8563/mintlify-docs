@@ -11,21 +11,21 @@ description: "حسّن استخدامك لـ AI Sonar API من حيث التكل
 
 | المهمة | النماذج الموصى بها | السبب |
 |------|-------------------|-----------|
-| **أسئلة وأجوبة بسيطة** | `gpt-5-mini`, `gemini-2.5-flash` | سريع، منخفض التكلفة، وكافٍ |
+| **أسئلة وأجوبة بسيطة** | `gpt-5-mini`, `gemini-3.5-flash` | سريع، منخفض التكلفة، وكافٍ |
 | **استدلال معقد** | `gpt-5.4`, `claude-opus-4-6`, `deepseek-r1` | منطق وتخطيط أفضل |
-| **البرمجة** | `claude-sonnet-4-6`, `gpt-4o`, `deepseek-v3.2` | مُحسّن للكود |
+| **البرمجة** | `claude-sonnet-4-6`, `gpt-4o`, `deepseek-v3-2` | مُحسّن للكود |
 | **الكتابة الإبداعية** | `claude-sonnet-4-6`, `gpt-4o` | جودة نثر أفضل |
-| **الرؤية/الصور** | `gpt-4o`, `claude-sonnet-4-6`, `gemini-2.5-flash` | دعم رؤية أصلي |
+| **الرؤية/الصور** | `gpt-4o`, `claude-sonnet-4-6`, `gemini-3.5-flash` | دعم رؤية أصلي |
 | **سياق طويل** | `gemini-2.5-pro`, `claude-sonnet-4-6` | نوافذ token تتجاوز 1M |
-| **حساسية للتكلفة** | `gpt-5-mini`, `gemini-2.5-flash`, `deepseek-v3.2` | أفضل قيمة |
+| **حساسية للتكلفة** | `gpt-5-mini`, `gemini-3.5-flash`, `deepseek-v3-2` | أفضل قيمة |
 
 ### مستويات التكلفة
 
 ```
 $$$$ Premium: gpt-5.4, claude-opus-4-6
 $$$  Standard: claude-sonnet-4-6, gpt-4o
-$$   Budget:   gpt-5-mini, gemini-2.5-flash
-$    Economy:  deepseek-v3.2, deepseek-r1
+$$   Budget:   gpt-5-mini, gemini-3.5-flash
+$    Economy:  deepseek-v3-2, deepseek-r1
 ```
 
 ## تحسين التكلفة
@@ -125,7 +125,7 @@ for chunk in stream:
 
 | حالة الاستخدام | الموصى به | زمن الاستجابة |
 |----------|-------------|---------|
-| واجهة محادثة | `gpt-5-mini`, `gemini-2.5-flash` | ~200ms لأول token |
+| واجهة محادثة | `gpt-5-mini`, `gemini-3.5-flash` | ~200ms لأول token |
 | الإكمال عبر Tab | `claude-haiku-4-5` | ~150ms لأول token |
 | المعالجة في الخلفية | `gpt-4o`, `claude-sonnet-4-6` | ~500ms لأول token |
 
@@ -189,7 +189,7 @@ except APIError as e:
 ### 10. استخدم نماذج احتياطية
 
 ```python
-FALLBACK_CHAIN = ["gpt-4o", "claude-sonnet-4-6", "gemini-2.5-flash"]
+FALLBACK_CHAIN = ["gpt-4o", "claude-sonnet-4-6", "gemini-3.5-flash"]
 
 def chat_with_fallback(messages):
     for model in FALLBACK_CHAIN:

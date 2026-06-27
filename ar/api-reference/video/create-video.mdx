@@ -315,7 +315,7 @@ response = requests.post(
     "https://api.aisonar.dev/v1/videos/generations",
     headers={"Authorization": "Bearer sk-your-api-key"},
     json={
-        "model": "topaz-video-upscale",
+        "model": "grok-imagine-upscale",
         "operation": "video-to-video",
         "video_url": "https://example.com/source.mp4",
         "prompt": "Upscale the clip while preserving the original motion.",
@@ -363,11 +363,8 @@ response = requests.post(
 | `kling-3.0-motion-control` | تحكم في الحركة |
 | `kling-3.0-video` | نص إلى فيديو، image-to-video، start-end-to-video، مراجع العناصر |
 | `kling-v2.5-turbo-pro` | نص إلى فيديو، image-to-video، start-end-to-video |
-| `kling-v2.5-turbo-std` | نص إلى فيديو، image-to-video |
 | `kling-v2.6-pro` | نص إلى فيديو، image-to-video، start-end-to-video |
 | `kling-v2.6-std` | نص إلى فيديو، image-to-video |
-| `kling-v3.0-pro` | نص إلى فيديو، image-to-video، start-end-to-video |
-| `kling-v3.0-std` | نص إلى فيديو، image-to-video، start-end-to-video |
 | `kling-video-o1-pro` | نص إلى فيديو، image-to-video، reference-to-video، start-end-to-video، video-to-video |
 | `kling-video-o1-std` | نص إلى فيديو، image-to-video، reference-to-video، start-end-to-video، video-to-video |
 
@@ -377,10 +374,8 @@ response = requests.post(
 |--------|------------------|
 | `veo3` | نص إلى فيديو، image-to-video |
 | `veo3-fast` | نص إلى فيديو، image-to-video |
-| `veo3-pro` | نص إلى فيديو، image-to-video |
 | `veo3.1` | نص إلى فيديو، image-to-video، reference-to-video، start-end-to-video |
 | `veo3.1-fast` | نص إلى فيديو، image-to-video، reference-to-video، start-end-to-video |
-| `veo3.1-pro` | نص إلى فيديو، image-to-video، start-end-to-video |
 
 ### ByteDance
 
@@ -429,4 +424,3 @@ response = requests.post(
 
 | النموذج | العمليات العامة |
 |--------|------------------|
-| `topaz-video-upscale` | من فيديو إلى فيديو |

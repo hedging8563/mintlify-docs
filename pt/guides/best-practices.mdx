@@ -11,21 +11,21 @@ Escolher o modelo certo pode impactar significativamente o custo e a qualidade.
 
 | Tarefa | Modelos Recomendados | Justificativa |
 |------|-------------------|-----------|
-| **Perguntas e respostas simples** | `gpt-5-mini`, `gemini-2.5-flash` | Rápido, barato, suficiente |
+| **Perguntas e respostas simples** | `gpt-5-mini`, `gemini-3.5-flash` | Rápido, barato, suficiente |
 | **Raciocínio complexo** | `gpt-5.4`, `claude-opus-4-6`, `deepseek-r1` | Melhor lógica e planejamento |
-| **Programação** | `claude-sonnet-4-6`, `gpt-4o`, `deepseek-v3.2` | Otimizado para código |
+| **Programação** | `claude-sonnet-4-6`, `gpt-4o`, `deepseek-v3-2` | Otimizado para código |
 | **Escrita criativa** | `claude-sonnet-4-6`, `gpt-4o` | Melhor qualidade de prosa |
-| **Visão/Imagens** | `gpt-4o`, `claude-sonnet-4-6`, `gemini-2.5-flash` | Suporte nativo a visão |
+| **Visão/Imagens** | `gpt-4o`, `claude-sonnet-4-6`, `gemini-3.5-flash` | Suporte nativo a visão |
 | **Contexto longo** | `gemini-2.5-pro`, `claude-sonnet-4-6` | Janelas de 1M+ token |
-| **Sensível a custo** | `gpt-5-mini`, `gemini-2.5-flash`, `deepseek-v3.2` | Melhor custo-benefício |
+| **Sensível a custo** | `gpt-5-mini`, `gemini-3.5-flash`, `deepseek-v3-2` | Melhor custo-benefício |
 
 ### Faixas de Custo
 
 ```
 $$$$ Premium: gpt-5.4, claude-opus-4-6
 $$$  Standard: claude-sonnet-4-6, gpt-4o
-$$   Budget:   gpt-5-mini, gemini-2.5-flash
-$    Economy:  deepseek-v3.2, deepseek-r1
+$$   Budget:   gpt-5-mini, gemini-3.5-flash
+$    Economy:  deepseek-v3-2, deepseek-r1
 ```
 
 ## Otimização de Custos
@@ -125,7 +125,7 @@ for chunk in stream:
 
 | Caso de Uso | Recomendado | Latência |
 |----------|-------------|---------|
-| UI de chat | `gpt-5-mini`, `gemini-2.5-flash` | ~200ms para o primeiro token |
+| UI de chat | `gpt-5-mini`, `gemini-3.5-flash` | ~200ms para o primeiro token |
 | Completar com Tab | `claude-haiku-4-5` | ~150ms para o primeiro token |
 | Processamento em segundo plano | `gpt-4o`, `claude-sonnet-4-6` | ~500ms para o primeiro token |
 
@@ -189,7 +189,7 @@ except APIError as e:
 ### 10. Use Modelos de Fallback
 
 ```python
-FALLBACK_CHAIN = ["gpt-4o", "claude-sonnet-4-6", "gemini-2.5-flash"]
+FALLBACK_CHAIN = ["gpt-4o", "claude-sonnet-4-6", "gemini-3.5-flash"]
 
 def chat_with_fallback(messages):
     for model in FALLBACK_CHAIN:

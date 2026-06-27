@@ -67,7 +67,6 @@ Sözleşme ayrıca modele özgü akışlar için `audio-to-video` ve `video-exte
 | Alibaba | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Shengshu | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
 | xAI | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ |
-| Diğer | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
 
 ### Yetenek tanımları
 
@@ -88,14 +87,9 @@ Sözleşme ayrıca modele özgü akışlar için `audio-to-video` ve `video-exte
 | `kling-3.0-motion-control` | Hareket kontrolü |
 | `kling-3.0-video` | Metinden videoya, image-to-video, start-end-to-video, element referansları |
 | `kling-v2.1-master` | Metinden videoya, image-to-video |
-| `kling-v2.1-pro` | image-to-video, start-end-to-video |
-| `kling-v2.1-standard` | image-to-video |
 | `kling-v2.5-turbo-pro` | Metinden videoya, image-to-video, start-end-to-video |
-| `kling-v2.5-turbo-std` | Metinden videoya, image-to-video |
 | `kling-v2.6-pro` | Metinden videoya, image-to-video, start-end-to-video |
 | `kling-v2.6-std` | Metinden videoya, image-to-video |
-| `kling-v3.0-pro` | Metinden videoya, image-to-video, start-end-to-video |
-| `kling-v3.0-std` | Metinden videoya, image-to-video, start-end-to-video |
 | `kling-video-o1-pro` | Metinden videoya, image-to-video, reference-to-video, start-end-to-video, video-to-video |
 | `kling-video-o1-std` | Metinden videoya, image-to-video, reference-to-video, start-end-to-video, video-to-video |
 
@@ -105,10 +99,8 @@ Sözleşme ayrıca modele özgü akışlar için `audio-to-video` ve `video-exte
 |-------|-----------------------|
 | `veo3` | Metinden videoya, image-to-video |
 | `veo3-fast` | Metinden videoya, image-to-video |
-| `veo3-pro` | Metinden videoya, image-to-video |
 | `veo3.1` | Metinden videoya, image-to-video, reference-to-video, start-end-to-video |
 | `veo3.1-fast` | Metinden videoya, image-to-video, reference-to-video, start-end-to-video |
-| `veo3.1-pro` | Metinden videoya, image-to-video, start-end-to-video |
 
 ### ByteDance
 
@@ -153,11 +145,6 @@ Sözleşme ayrıca modele özgü akışlar için `audio-to-video` ve `video-exte
 | `grok-imagine-text-to-video` | Metinden videoya |
 | `grok-imagine-upscale` | Videodan videoya |
 
-### Diğer
-
-| Model | Herkese açık işlemler |
-|-------|-----------------------|
-| `topaz-video-upscale` | Videodan videoya |
 
 ## Kullanım örnekleri
 
@@ -268,7 +255,7 @@ response = requests.post(f"{BASE}/videos/generations",
 response = requests.post(f"{BASE}/videos/generations",
     headers=headers,
     json={
-        "model": "topaz-video-upscale",
+        "model": "grok-imagine-upscale",
         "operation": "video-to-video",
         "video_url": "https://example.com/source.mp4",
         "prompt": "Upscale this clip while preserving the original motion."
@@ -309,7 +296,7 @@ response = requests.post(f"{BASE}/videos/generations",
 
 <CardGroup cols={2}>
   <Card title="En yüksek kalite" icon="crown">
-    Kalite hızdan daha önemliyse **veo3.1-pro**, **kling-video-o1-pro** ve **viduq3-pro** güçlü seçeneklerdir.
+    Kalite hızdan daha önemliyse **veo3.1**, **kling-video-o1-pro** ve **viduq3-pro** güçlü seçeneklerdir.
   </Card>
   <Card title="Hızlı iterasyon" icon="bolt">
     Hızlı denemeler için **veo3.1-fast**, **hailuo-2.3-fast** ve **viduq3-turbo** iyi başlangıç noktalarıdır.
@@ -318,7 +305,7 @@ response = requests.post(f"{BASE}/videos/generations",
     Özel referans görsel kontrolü gerekiyorsa **veo3.1**, **veo3.1-fast**, **wan-2.6** veya **kling-video-o1-pro / std** ile başlayın.
   </Card>
   <Card title="Videodan videoya" icon="film">
-    Şu anda genel olarak etkin herkese açık `video-to-video` yolları ağırlıklı olarak **topaz-video-upscale**, **grok-imagine-upscale** ve **kling-video-o1-pro / std** modellerini kapsar.
+    Şu anda genel olarak etkin herkese açık `video-to-video` yolları ağırlıklı olarak **grok-imagine-upscale** ve **kling-video-o1-pro / std** modellerini kapsar.
   </Card>
 </CardGroup>
 

@@ -67,7 +67,6 @@ AI Sonar 当前公开视频契约重点覆盖以下操作：
 | Alibaba | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Shengshu | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
 | xAI | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ |
-| Other | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
 
 ### 能力定义
 
@@ -88,14 +87,9 @@ AI Sonar 当前公开视频契约重点覆盖以下操作：
 | `kling-3.0-motion-control` | 动作控制 |
 | `kling-3.0-video` | 文生视频、图生视频、首尾帧视频、元素引用 |
 | `kling-v2.1-master` | 文生视频、图生视频 |
-| `kling-v2.1-pro` | 图生视频、首尾帧视频 |
-| `kling-v2.1-standard` | 图生视频 |
 | `kling-v2.5-turbo-pro` | 文生视频、图生视频、首尾帧视频 |
-| `kling-v2.5-turbo-std` | 文生视频、图生视频 |
 | `kling-v2.6-pro` | 文生视频、图生视频、首尾帧视频 |
 | `kling-v2.6-std` | 文生视频、图生视频 |
-| `kling-v3.0-pro` | 文生视频、图生视频、首尾帧视频 |
-| `kling-v3.0-std` | 文生视频、图生视频、首尾帧视频 |
 | `kling-video-o1-pro` | 文生视频、图生视频、参考图生视频、首尾帧视频、视频转视频 |
 | `kling-video-o1-std` | 文生视频、图生视频、参考图生视频、首尾帧视频、视频转视频 |
 
@@ -105,10 +99,8 @@ AI Sonar 当前公开视频契约重点覆盖以下操作：
 |-------|----------|
 | `veo3` | 文生视频、图生视频 |
 | `veo3-fast` | 文生视频、图生视频 |
-| `veo3-pro` | 文生视频、图生视频 |
 | `veo3.1` | 文生视频、图生视频、参考图生视频、首尾帧视频 |
 | `veo3.1-fast` | 文生视频、图生视频、参考图生视频、首尾帧视频 |
-| `veo3.1-pro` | 文生视频、图生视频、首尾帧视频 |
 
 ### ByteDance
 
@@ -153,11 +145,6 @@ AI Sonar 当前公开视频契约重点覆盖以下操作：
 | `grok-imagine-text-to-video` | 文生视频 |
 | `grok-imagine-upscale` | 视频转视频 |
 
-### 其他
-
-| 模型 | 公开操作 |
-|-------|----------|
-| `topaz-video-upscale` | 视频转视频 |
 
 ## 使用示例
 
@@ -268,7 +255,7 @@ response = requests.post(f"{BASE}/videos/generations",
 response = requests.post(f"{BASE}/videos/generations",
     headers=headers,
     json={
-        "model": "topaz-video-upscale",
+        "model": "grok-imagine-upscale",
         "operation": "video-to-video",
         "video_url": "https://example.com/source.mp4",
         "prompt": "Upscale this clip while preserving the original motion."
@@ -309,7 +296,7 @@ response = requests.post(f"{BASE}/videos/generations",
 
 <CardGroup cols={2}>
   <Card title="高质量优先" icon="crown">
-    当画质优先于速度时，优先考虑 **veo3.1-pro**、**kling-video-o1-pro** 或 **viduq3-pro**。
+    当画质优先于速度时，优先考虑 **veo3.1**、**kling-video-o1-pro** 或 **viduq3-pro**。
   </Card>
   <Card title="更快迭代" icon="bolt">
     需要更快出结果时，可先尝试 **veo3.1-fast**、**hailuo-2.3-fast** 或 **viduq3-turbo**。
@@ -318,7 +305,7 @@ response = requests.post(f"{BASE}/videos/generations",
     需要专门的参考图条件控制时，可优先考虑 **veo3.1**、**veo3.1-fast**、**wan-2.6** 或 **kling-video-o1-pro / std**。
   </Card>
   <Card title="视频转视频" icon="film">
-    当前一般启用的公开视频 `video-to-video` 路径主要包括 **topaz-video-upscale**、**grok-imagine-upscale** 和 **kling-video-o1-pro / std**。
+    当前一般启用的公开视频 `video-to-video` 路径主要包括 **grok-imagine-upscale** 和 **kling-video-o1-pro / std**。
   </Card>
 </CardGroup>
 

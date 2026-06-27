@@ -34,8 +34,8 @@ Model gambar xAI Grok Imagine (`grok-imagine-image`, `grok-imagine-image-quality
 
 **Timeout permintaan sinkron:** beberapa penyedia gambar yang dirutekan mengembalikan gambar final secara inline dan menunggu proses generasi selesai. Permintaan resolusi tinggi atau kualitas tinggi dapat memakan waktu hampir satu menit atau lebih, jadi atur timeout HTTP client Anda minimal `120s`. Jika respons pembuatan berisi `status: "pending"`, `task_id`, atau `poll_url`, ikuti `poll_url` yang dikembalikan.
 
-<ParamField body="model" type="string" default="dall-e-3">
-  Model yang digunakan (misalnya `gpt-image-2`, `dall-e-3`, `flux-pro`, `midjourney`).
+<ParamField body="model" type="string" required>
+  Model yang digunakan (misalnya `gpt-image-2`, `flux-pro`, `qwen-image`, atau `nano-banana-pro`). Gunakan `GET /v1/models?recommended_for=image` untuk daftar rekomendasi terbaru.
 </ParamField>
 
 <ParamField body="prompt" type="string" required>
@@ -83,7 +83,7 @@ Model gambar xAI Grok Imagine (`grok-imagine-image`, `grok-imagine-image-quality
 </ParamField>
 
 <ParamField body="quality" type="string" default="standard">
-  Kualitas gambar. Model DALL-E memakai `standard` atau `hd`; model GPT Image seperti `gpt-image-2` memakai `auto`, `low`, `medium`, atau `high`.
+  Kualitas gambar. Model GPT Image seperti `gpt-image-2` memakai `auto`, `low`, `medium`, atau `high`. Keluarga gambar lain dapat memakai nilai khusus provider; periksa metadata model sebelum mengirim nilai non-default.
 </ParamField>
 
 <ParamField body="response_format" type="string" default="url">
@@ -96,8 +96,8 @@ Model gambar xAI Grok Imagine (`grok-imagine-image`, `grok-imagine-image-quality
   Setel ke `true` dengan `gpt-image-2` atau model gambar resmi FLUX/BFL untuk membuat task terlebih dahulu. Task gambar async yang selesai mengembalikan URL apa pun `response_format` yang diminta; gunakan request sinkron jika membutuhkan `b64_json`.
 </ParamField>
 
-<ParamField body="style" type="string" default="vivid">
-  Style untuk DALL-E 3: `vivid` atau `natural`.
+<ParamField body="style" type="string">
+  Selector style opsional. Kirim hanya jika model yang dipilih mendokumentasikannya secara eksplisit; hilangkan untuk `gpt-image-2` kecuali metadata model menyatakan sebaliknya.
 </ParamField>
 
 <ParamField body="user" type="string">
@@ -118,7 +118,7 @@ Model gambar xAI Grok Imagine (`grok-imagine-image`, `grok-imagine-image-quality
   Setiap object berisi:
   - `url` (string): URL gambar yang dihasilkan
   - `b64_json` (string): Gambar terenkripsi Base64 (jika diminta)
-  - `revised_prompt` (string): Prompt yang dipakai (DALL-E 3)
+  - `revised_prompt` (string): Revisi prompt opsional dari provider, jika model upstream melaporkannya
 </ResponseField>
 
 ### Respons Task Async
@@ -296,15 +296,16 @@ curl -X POST "https://api.aisonar.dev/v1/images/generations" \
 
 ## Model Tersedia
 
+Ini adalah contoh model saat ini, bukan katalog tetap. Gunakan `GET /v1/models?recommended_for=image` atau halaman Models untuk ketersediaan dan harga terbaru.
+
 | Model | Tipe | Fitur |
 |-------|------|-------|
-| `dall-e-3` | Biasanya inline | Kualitas terbaik, peningkatan prompt |
-| `dall-e-2` | Biasanya inline | Lebih cepat, lebih murah |
+| `gpt-image-2` | Inline atau berbasis task | Model GPT Image berbasis harga token, ukuran fleksibel |
 | `flux-pro` | Sering berbasis task | Fotorealistik, kualitas tinggi |
-| `flux-schnell` | Biasanya inline | Sangat cepat |
-| `midjourney` | Sering berbasis task | Gaya artistik |
-| `ideogram-v3` | Sering berbasis task | Rendering teks terbaik |
-| `stable-diffusion-3` | Biasanya inline | Open source, dapat dikustomisasi |
+| `qwen-image` | Sering berbasis task | Rendering teks dan kepatuhan prompt yang kuat |
+| `nano-banana-pro` | Sering berbasis task | Workflow gambar referensi dan output resolusi tinggi |
+| `grok-imagine-image` | Sering berbasis task | Generasi gambar xAI dengan pilihan rasio aspek dan resolusi |
+| `ideogram-v3` | Sering berbasis task | Rendering teks yang kuat |
 
 Jangan hard-code model sebagai selalu sinkron atau selalu asinkron. Jika response create mengembalikan `status: "pending"`, ikuti `poll_url` dan polling sampai selesai.
 

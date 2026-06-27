@@ -313,7 +313,7 @@ response = requests.post(
     "https://api.aisonar.dev/v1/videos/generations",
     headers={"Authorization": "Bearer sk-your-api-key"},
     json={
-        "model": "topaz-video-upscale",
+        "model": "grok-imagine-upscale",
         "operation": "video-to-video",
         "video_url": "https://example.com/source.mp4",
         "prompt": "Upscale the clip while preserving the original motion.",
@@ -361,11 +361,8 @@ Danh sách này bám theo inventory model video công khai đang được bật 
 | `kling-3.0-motion-control` | Điều khiển chuyển động |
 | `kling-3.0-video` | Văn bản sang video, image-to-video, start-end-to-video, tham chiếu phần tử |
 | `kling-v2.5-turbo-pro` | Văn bản sang video, image-to-video, start-end-to-video |
-| `kling-v2.5-turbo-std` | Văn bản sang video, image-to-video |
 | `kling-v2.6-pro` | Văn bản sang video, image-to-video, start-end-to-video |
 | `kling-v2.6-std` | Văn bản sang video, image-to-video |
-| `kling-v3.0-pro` | Văn bản sang video, image-to-video, start-end-to-video |
-| `kling-v3.0-std` | Văn bản sang video, image-to-video, start-end-to-video |
 | `kling-video-o1-pro` | Văn bản sang video, image-to-video, reference-to-video, start-end-to-video, video-to-video |
 | `kling-video-o1-std` | Văn bản sang video, image-to-video, reference-to-video, start-end-to-video, video-to-video |
 
@@ -375,10 +372,8 @@ Danh sách này bám theo inventory model video công khai đang được bật 
 |-------|--------------------|
 | `veo3` | Văn bản sang video, image-to-video |
 | `veo3-fast` | Văn bản sang video, image-to-video |
-| `veo3-pro` | Văn bản sang video, image-to-video |
 | `veo3.1` | Văn bản sang video, image-to-video, reference-to-video, start-end-to-video |
 | `veo3.1-fast` | Văn bản sang video, image-to-video, reference-to-video, start-end-to-video |
-| `veo3.1-pro` | Văn bản sang video, image-to-video, start-end-to-video |
 
 ### ByteDance
 
@@ -427,4 +422,3 @@ Danh sách này bám theo inventory model video công khai đang được bật 
 
 | Mô hình | Thao tác công khai |
 |-------|--------------------|
-| `topaz-video-upscale` | Từ video sang video |

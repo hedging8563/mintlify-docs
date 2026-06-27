@@ -12,21 +12,21 @@ description: "各コーディングタスクに最適なモデルを選択——
 | `claude-opus-4-6` | 中程度 | 優秀 | $$$$ | 200K | アーキテクチャ、複雑なリファクタリング |
 | `gpt-5.4` | 中程度 | 優秀 | $$$$ | 200K | 複雑な推論、計画 |
 | `claude-sonnet-4-6` | 高速 | 非常に良い | $$$ | 200K | 一般的なコーディング、レビュー |
-| `gemini-3-pro-preview` | 高速 | 非常に良い | $$$ | 1M | 大規模コードベース分析 |
+| `gemini-3.1-pro-preview` | 高速 | 非常に良い | $$$ | 1M | 大規模コードベース分析 |
 | `gpt-5-mini` | 非常に高速 | 良い | $$ | 128K | クイック編集、補完 |
-| `gemini-3-flash-preview` | 非常に高速 | 良い | $$ | 1M | 高速イテレーション、検索 |
+| `gemini-3.5-flash` | 非常に高速 | 良い | $$ | 1M | 高速イテレーション、検索 |
 | `deepseek-r1` | 中程度 | 非常に良い | $ | 64K | 推論重視タスク |
-| `deepseek-v3.2` | 高速 | 良い | $ | 128K | 一括生成、ボイラープレート |
+| `deepseek-v3-2` | 高速 | 良い | $ | 128K | 一括生成、ボイラープレート |
 
 ## タスク別推奨
 
 <AccordionGroup>
   <Accordion title="コード生成 / スキャフォールディング">
-    **推奨**: `claude-sonnet-4-6`、`gemini-3-pro-preview`
+    **推奨**: `claude-sonnet-4-6`、`gemini-3.1-pro-preview`
 
     クリーンで構造化されたコードを生成。複雑なマルチファイルスキャフォールディングには `claude-opus-4-6` を検討。
 
-    予算代替: `deepseek-v3.2` はボイラープレートを低コストで処理。
+    予算代替: `deepseek-v3-2` はボイラープレートを低コストで処理。
   </Accordion>
 
   <Accordion title="コードレビュー / リファクタリング">
@@ -50,7 +50,7 @@ description: "各コーディングタスクに最適なモデルを選択——
   </Accordion>
 
   <Accordion title="クイック編集 / タブ補完">
-    **推奨**: `gpt-5-mini`、`gemini-3-flash-preview`
+    **推奨**: `gpt-5-mini`、`gemini-3.5-flash`
 
     インタラクティブ使用では速度が重要。高速レスポンスの予算モデルが最適。
   </Accordion>

@@ -24,15 +24,19 @@ AI Sonar is an AI API aggregation platform that gives you unified access to **hu
 
 ## Supported Capabilities
 
-| Capability | Description | Example Models |
-|------------|-------------|----------------|
-| **Chat & Reasoning** | Text generation, planning, tools | `gpt-5.4`, `claude-sonnet-4-6`, `deepseek-r1` |
-| **Vision** | Image understanding and multimodal chat | `gpt-4o`, `claude-sonnet-4-6`, `gemini-2.5-flash` |
-| **Image Generation** | Text-to-image and image editing | `dall-e-3`, `flux-pro`, `midjourney` |
-| **Audio** | TTS and transcription | `gpt-4o-mini-tts`, `whisper-1`, `gpt-4o-transcribe` |
-| **Embeddings** | Text vectorization | `text-embedding-3-small`, `text-embedding-3-large` |
-| **Music** | AI music generation | `suno` |
-| **3D** | 3D asset generation | `tripo3d` |
+The public catalog changes over time. Use `/v1/models`, `recommended_for`, or the Models page for exact current availability; the examples below use current public model IDs.
+
+| Capability | Description | Example models |
+|---|---|---|
+| Chat & Reasoning | Text generation, planning, tools | `gpt-5.4`, `claude-sonnet-4-6`, `deepseek-r1` |
+| Vision & Multimodal | Image understanding and multimodal chat | `gpt-4o`, `claude-sonnet-4-6`, `gemini-3.5-flash` |
+| Image Generation & Editing | Text-to-image and image editing | `gpt-image-2`, `flux-pro`, `qwen-image` |
+| Video Generation | Text-to-video, image-to-video, reference video, and motion control | `veo3.1`, `seedance-2.0`, `kling-3.0-video` |
+| Audio & Realtime | TTS, transcription, translation, and realtime sessions | `gpt-4o-mini-tts`, `whisper-1`, `gpt-realtime` |
+| Embeddings & Rerank | Text vectorization and reranking | `text-embedding-3-small`, `qwen3-vl-rerank` |
+| Translation | Text and speech translation workflows | `qwen-mt-plus`, `gpt-realtime-translate` |
+| Music & 3D | Music and 3D asset generation | `suno-music`, `tripo3d-v2.5` |
+| Worlds | World generation, status polling, and media asset workflows | Use `/v1/worlds/generations` and the Models API for current availability |
 
 ## Choose the Request Format
 

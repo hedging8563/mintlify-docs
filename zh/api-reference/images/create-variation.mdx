@@ -6,7 +6,7 @@ description: "创建给定图像的变体"
 
 ## 概述
 
-创建给定图像的变体。需要 `multipart/form-data` 内容类型。
+该端点保留给旧版 OpenAI 兼容的变体客户端。它不是当前 image-to-image 工作流的推荐路径；能用新流程时，请使用 `/v1/images/edits` + `gpt-image-2`，或在 `/v1/images/generations` 中使用 `nano-banana-pro` 等 image-to-image 模型。请求必须使用 `multipart/form-data`。
 
 ## 请求体
 
@@ -16,8 +16,8 @@ description: "创建给定图像的变体"
   用作变体基础的图像。必须是有效的 PNG 文件，小于 50MB，且为正方形。
 </ParamField>
 
-<ParamField body="model" type="string" default="dall-e-2">
-  用于图像变体的模型。目前仅支持 `dall-e-2`。
+<ParamField body="model" type="string" required>
+  旧版变体兼容路由的必填模型 ID。没有隐式默认模型；当前 image-to-image 工作流请优先使用 `/v1/images/edits` 或 `/v1/images/generations` 搭配当前模型。
 </ParamField>
 
 <ParamField body="n" type="integer" default="1">
@@ -25,7 +25,7 @@ description: "创建给定图像的变体"
 </ParamField>
 
 <ParamField body="size" type="string">
-  生成图像的尺寸。必须是 `256x256`、`512x512` 或 `1024x1024` 之一。
+  旧版变体兼容路由生成图片的尺寸。支持的取值取决于所选模型。
 </ParamField>
 
 <ParamField body="response_format" type="string" default="url">
@@ -54,6 +54,7 @@ description: "创建给定图像的变体"
 ```bash cURL
 curl -X POST "https://api.aisonar.dev/v1/images/variations" \
   -H "Authorization: Bearer sk-your-api-key" \
+  -F "model=your-legacy-variation-model" \
   -F "image=@cat.png" \
   -F "n=2" \
   -F "size=1024x1024"
@@ -68,7 +69,7 @@ client = OpenAI(
 )
 
 response = client.images.create_variation(
-    model="dall-e-2",
+    model="your-legacy-variation-model",
     image=open("cat.png", "rb"),
     n=2,
     size="1024x1024"
@@ -88,7 +89,7 @@ const client = new OpenAI({
 });
 
 const response = await client.images.createVariation({
-  model: 'dall-e-2',
+  model: 'your-legacy-variation-model',
   image: fs.createReadStream('cat.png'),
   n: 2,
   size: '1024x1024'
@@ -117,5 +118,5 @@ response.data.forEach(image => console.log(image.url));
 ## 注意事项
 
 <Note>
-  图像变体仅适用于 DALL-E 2。模型将生成与原始图像在风格和内容上相似的新图像。
+  这是旧版兼容端点，不在当前推荐图片模型目录中。新接入请使用 `/v1/images/edits` + `gpt-image-2`，或在 `/v1/images/generations` 中设置 `operation: "image-to-image"` 并选择当前 image-to-image 模型。
 </Note>

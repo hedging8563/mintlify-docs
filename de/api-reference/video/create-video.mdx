@@ -313,7 +313,7 @@ response = requests.post(
     "https://api.aisonar.dev/v1/videos/generations",
     headers={"Authorization": "Bearer sk-your-api-key"},
     json={
-        "model": "topaz-video-upscale",
+        "model": "grok-imagine-upscale",
         "operation": "video-to-video",
         "video_url": "https://example.com/source.mp4",
         "prompt": "Upscale the clip while preserving the original motion.",
@@ -361,11 +361,8 @@ Diese Liste ist mit dem aktuell aktivierten öffentlichen Videomodellbestand in 
 | `kling-3.0-motion-control` | Bewegungssteuerung |
 | `kling-3.0-video` | Text-zu-Video, Bild-zu-Video, Start-Endbild-zu-Video, Elementreferenzen |
 | `kling-v2.5-turbo-pro` | Text-zu-Video, Bild-zu-Video, Start-Endbild-zu-Video |
-| `kling-v2.5-turbo-std` | Text-zu-Video, Bild-zu-Video |
 | `kling-v2.6-pro` | Text-zu-Video, Bild-zu-Video, Start-Endbild-zu-Video |
 | `kling-v2.6-std` | Text-zu-Video, Bild-zu-Video |
-| `kling-v3.0-pro` | Text-zu-Video, Bild-zu-Video, Start-Endbild-zu-Video |
-| `kling-v3.0-std` | Text-zu-Video, Bild-zu-Video, Start-Endbild-zu-Video |
 | `kling-video-o1-pro` | Text-zu-Video, Bild-zu-Video, Referenzbild-zu-Video, Start-Endbild-zu-Video, Video-zu-Video |
 | `kling-video-o1-std` | Text-zu-Video, Bild-zu-Video, Referenzbild-zu-Video, Start-Endbild-zu-Video, Video-zu-Video |
 
@@ -375,10 +372,8 @@ Diese Liste ist mit dem aktuell aktivierten öffentlichen Videomodellbestand in 
 |-------|----------|
 | `veo3` | Text-zu-Video, Bild-zu-Video |
 | `veo3-fast` | Text-zu-Video, Bild-zu-Video |
-| `veo3-pro` | Text-zu-Video, Bild-zu-Video |
 | `veo3.1` | Text-zu-Video, Bild-zu-Video, Referenzbild-zu-Video, Start-Endbild-zu-Video |
 | `veo3.1-fast` | Text-zu-Video, Bild-zu-Video, Referenzbild-zu-Video, Start-Endbild-zu-Video |
-| `veo3.1-pro` | Text-zu-Video, Bild-zu-Video, Start-Endbild-zu-Video |
 
 ### ByteDance
 
@@ -427,4 +422,3 @@ Diese Liste ist mit dem aktuell aktivierten öffentlichen Videomodellbestand in 
 
 | Modell | Öffentliche Operationen |
 |-------|----------|
-| `topaz-video-upscale` | Video-zu-Video |

@@ -6,7 +6,7 @@ description: "Verilen bir görselin varyasyonunu oluşturur"
 
 ## Genel Bakış
 
-Verilen bir görselin varyasyonunu oluşturur. `multipart/form-data` içerik türü gerektirir.
+Bu endpoint, eski OpenAI uyumlu variation istemcileri için korunur. Güncel image-to-image iş akışları için önerilen yol değildir; mümkünse `/v1/images/edits` ile `gpt-image-2` veya `/v1/images/generations` ile `nano-banana-pro` gibi bir image-to-image modeli kullanın. `multipart/form-data` gerektirir.
 
 ## İstek Gövdesi
 
@@ -16,8 +16,8 @@ Verilen bir görselin varyasyonunu oluşturur. `multipart/form-data` içerik tü
   Varyasyon için temel olarak kullanılacak görsel. Geçerli bir PNG dosyası, 50MB'dan küçük ve kare olmalıdır.
 </ParamField>
 
-<ParamField body="model" type="string" default="dall-e-2">
-  Görsel varyasyonları için kullanılacak model. Şu anda sadece `dall-e-2` desteklenmektedir.
+<ParamField body="model" type="string" required>
+  Eski variation uyumlu rotalar için zorunlu model kimliği. Örtük varsayılan yoktur; güncel image-to-image iş akışları için güncel bir modelle `/v1/images/edits` veya `/v1/images/generations` tercih edin.
 </ParamField>
 
 <ParamField body="n" type="integer" default="1">
@@ -25,7 +25,7 @@ Verilen bir görselin varyasyonunu oluşturur. `multipart/form-data` içerik tü
 </ParamField>
 
 <ParamField body="size" type="string">
-  Oluşturulan görsellerin boyutu. `256x256`, `512x512` veya `1024x1024` olmalıdır.
+  Eski variation uyumlu rotalarda üretilen görüntülerin boyutu. Desteklenen değerler seçilen modele bağlıdır.
 </ParamField>
 
 <ParamField body="response_format" type="string" default="url">
@@ -54,6 +54,7 @@ Verilen bir görselin varyasyonunu oluşturur. `multipart/form-data` içerik tü
 ```bash cURL
 curl -X POST "https://api.aisonar.dev/v1/images/variations" \
   -H "Authorization: Bearer sk-your-api-key" \
+  -F "model=your-legacy-variation-model" \
   -F "image=@cat.png" \
   -F "n=2" \
   -F "size=1024x1024"
@@ -68,7 +69,7 @@ client = OpenAI(
 )
 
 response = client.images.create_variation(
-    model="dall-e-2",
+    model="your-legacy-variation-model",
     image=open("cat.png", "rb"),
     n=2,
     size="1024x1024"
@@ -88,7 +89,7 @@ const client = new OpenAI({
 });
 
 const response = await client.images.createVariation({
-  model: 'dall-e-2',
+  model: 'your-legacy-variation-model',
   image: fs.createReadStream('cat.png'),
   n: 2,
   size: '1024x1024'
@@ -112,6 +113,8 @@ import (
 func main() {
     body := &bytes.Buffer{}
     writer := multipart.NewWriter(body)
+
+    writer.WriteField("model", "your-legacy-variation-model")
 
     file, _ := os.Open("cat.png")
     defer file.Close()
@@ -148,6 +151,7 @@ curl_setopt_array($ch, [
         'Authorization: Bearer sk-your-api-key'
     ],
     CURLOPT_POSTFIELDS => [
+        'model' => 'your-legacy-variation-model',
         'image' => $image,
         'n' => 2,
         'size' => '1024x1024'
@@ -183,5 +187,5 @@ foreach ($data['data'] as $image) {
 ## Notlar
 
 <Note>
-  Görsel varyasyonları sadece DALL-E 2 ile kullanılabilir. Model, orijinal görsele stil ve içerik olarak benzer yeni görseller oluşturacaktır.
+  Bu, legacy uyumluluk endpointidir. Güncel önerilen görüntü modeli kataloğuna dahil değildir. Yeni entegrasyonlar için `/v1/images/edits` ile `gpt-image-2` veya `/v1/images/generations` içinde `operation: "image-to-image"` ve güncel bir image-to-image modeli kullanın.
 </Note>

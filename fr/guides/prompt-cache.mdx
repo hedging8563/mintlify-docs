@@ -5,6 +5,8 @@ description: "Comprendre le cache de prompt au niveau du fournisseur et comment 
 
 ## Présentation
 
+Cette page ne décrit pas un cache sémantique séparé de AI Sonar. Elle explique le prompt cache des fournisseurs upstream, visible dans l’usage et la facturation lorsque le fournisseur routé renvoie des tokens de cache.
+
 ## Fonctionnement du cache de prompt fournisseur
 
 Le cache de prompt fournisseur stocke la représentation traitée du préfixe de votre prompt sur les serveurs du fournisseur. Lorsque vous envoyez une requête avec le même préfixe, le fournisseur peut éviter de retraiter ces jetons.

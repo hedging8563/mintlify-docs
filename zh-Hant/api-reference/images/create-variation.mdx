@@ -6,7 +6,7 @@ description: "建立給定圖像的變體"
 
 ## 概述
 
-建立給定圖像的變體。需要 `multipart/form-data` 內容類型。
+此端點保留給舊版 OpenAI 相容的變體客戶端。它不是目前 image-to-image 工作流的推薦路徑；可使用新流程時，請使用 `/v1/images/edits` + `gpt-image-2`，或在 `/v1/images/generations` 中使用 `nano-banana-pro` 等 image-to-image 模型。請求必須使用 `multipart/form-data`。
 
 ## 請求主體
 
@@ -16,8 +16,8 @@ description: "建立給定圖像的變體"
   用作變體基礎的圖像。必須是有效的 PNG 檔案，小於 50MB，且為正方形。
 </ParamField>
 
-<ParamField body="model" type="string" default="dall-e-2">
-  用於圖像變體的模型。目前僅支援 `dall-e-2`。
+<ParamField body="model" type="string" required>
+  舊版變體相容路由的必填模型 ID。沒有隱含預設模型；目前 image-to-image 工作流請優先使用 `/v1/images/edits` 或 `/v1/images/generations` 搭配目前模型。
 </ParamField>
 
 <ParamField body="n" type="integer" default="1">
@@ -25,7 +25,7 @@ description: "建立給定圖像的變體"
 </ParamField>
 
 <ParamField body="size" type="string">
-  生成圖像的尺寸。必須是 `256x256`、`512x512` 或 `1024x1024` 之一。
+  舊版變體相容路由生成圖片的尺寸。支援的取值取決於所選模型。
 </ParamField>
 
 <ParamField body="response_format" type="string" default="url">
@@ -54,6 +54,7 @@ description: "建立給定圖像的變體"
 ```bash cURL
 curl -X POST "https://api.aisonar.dev/v1/images/variations" \
   -H "Authorization: Bearer sk-your-api-key" \
+  -F "model=your-legacy-variation-model" \
   -F "image=@cat.png" \
   -F "n=2" \
   -F "size=1024x1024"
@@ -68,7 +69,7 @@ client = OpenAI(
 )
 
 response = client.images.create_variation(
-    model="dall-e-2",
+    model="your-legacy-variation-model",
     image=open("cat.png", "rb"),
     n=2,
     size="1024x1024"
@@ -88,7 +89,7 @@ const client = new OpenAI({
 });
 
 const response = await client.images.createVariation({
-  model: 'dall-e-2',
+  model: 'your-legacy-variation-model',
   image: fs.createReadStream('cat.png'),
   n: 2,
   size: '1024x1024'
@@ -112,6 +113,8 @@ import (
 func main() {
     body := &bytes.Buffer{}
     writer := multipart.NewWriter(body)
+
+    writer.WriteField("model", "your-legacy-variation-model")
 
     file, _ := os.Open("cat.png")
     defer file.Close()
@@ -148,6 +151,7 @@ curl_setopt_array($ch, [
         'Authorization: Bearer sk-your-api-key'
     ],
     CURLOPT_POSTFIELDS => [
+        'model' => 'your-legacy-variation-model',
         'image' => $image,
         'n' => 2,
         'size' => '1024x1024'
@@ -183,5 +187,5 @@ foreach ($data['data'] as $image) {
 ## 注意事項
 
 <Note>
-  圖像變體僅適用於 DALL-E 2。模型將生成與原始圖像在風格和內容上相似的新圖像。
+  這是舊版相容端點，不在目前推薦圖片模型目錄中。新接入請使用 `/v1/images/edits` + `gpt-image-2`，或在 `/v1/images/generations` 中設定 `operation: "image-to-image"` 並選擇目前 image-to-image 模型。
 </Note>

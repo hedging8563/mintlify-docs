@@ -12,21 +12,21 @@ description: "Escolha o modelo certo para cada tarefa de código — tabela comp
 | `claude-opus-4-6` | Moderada | Excelente | $$$$ | 200K | Arquitetura, refatoração complexa |
 | `gpt-5.4` | Moderada | Excelente | $$$$ | 200K | Raciocínio complexo, planejamento |
 | `claude-sonnet-4-6` | Rápida | Muito Boa | $$$ | 200K | Código geral, revisões |
-| `gemini-3-pro-preview` | Rápida | Muito Boa | $$$ | 1M | Análise de grandes bases de código |
+| `gemini-3.1-pro-preview` | Rápida | Muito Boa | $$$ | 1M | Análise de grandes bases de código |
 | `gpt-5-mini` | Muito Rápida | Boa | $$ | 128K | Edições rápidas, completions |
-| `gemini-3-flash-preview` | Muito Rápida | Boa | $$ | 1M | Iteração rápida, busca |
+| `gemini-3.5-flash` | Muito Rápida | Boa | $$ | 1M | Iteração rápida, busca |
 | `deepseek-r1` | Moderada | Muito Boa | $ | 64K | Tarefas com raciocínio intenso |
-| `deepseek-v3.2` | Rápida | Boa | $ | 128K | Geração em massa, boilerplate |
+| `deepseek-v3-2` | Rápida | Boa | $ | 128K | Geração em massa, boilerplate |
 
 ## Recomendações por Tarefa
 
 <AccordionGroup>
   <Accordion title="Geração de Código / Scaffolding">
-    **Recomendado**: `claude-sonnet-4-6`, `gemini-3-pro-preview`
+    **Recomendado**: `claude-sonnet-4-6`, `gemini-3.1-pro-preview`
 
     Esses modelos produzem código limpo e bem estruturado com boas convenções de nomenclatura. Para scaffolding complexo de múltiplos arquivos, considere `claude-opus-4-6`.
 
-    Alternativa econômica: `deepseek-v3.2` lida bem com boilerplate a uma fração do custo.
+    Alternativa econômica: `deepseek-v3-2` lida bem com boilerplate a uma fração do custo.
   </Accordion>
 
   <Accordion title="Revisão de Código / Refatoração">
@@ -50,7 +50,7 @@ description: "Escolha o modelo certo para cada tarefa de código — tabela comp
   </Accordion>
 
   <Accordion title="Edições Rápidas / Autocompletar">
-    **Recomendado**: `gpt-5-mini`, `gemini-3-flash-preview`
+    **Recomendado**: `gpt-5-mini`, `gemini-3.5-flash`
 
     A velocidade é crítica para uso interativo. Modelos econômicos com tempos de resposta rápidos proporcionam a melhor experiência. Não desperdice tokens premium em autocompletar.
   </Accordion>

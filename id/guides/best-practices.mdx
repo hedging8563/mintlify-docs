@@ -11,21 +11,21 @@ Memilih model yang tepat dapat berdampak signifikan pada biaya dan kualitas.
 
 | Tugas | Model yang Direkomendasikan | Alasan |
 |------|-------------------|-----------|
-| **Tanya Jawab Sederhana** | `gpt-5-mini`, `gemini-2.5-flash` | Cepat, murah, sudah memadai |
+| **Tanya Jawab Sederhana** | `gpt-5-mini`, `gemini-3.5-flash` | Cepat, murah, sudah memadai |
 | **Penalaran kompleks** | `gpt-5.4`, `claude-opus-4-6`, `deepseek-r1` | Logika dan perencanaan yang lebih baik |
-| **Coding** | `claude-sonnet-4-6`, `gpt-4o`, `deepseek-v3.2` | Dioptimalkan untuk code |
+| **Coding** | `claude-sonnet-4-6`, `gpt-4o`, `deepseek-v3-2` | Dioptimalkan untuk code |
 | **Penulisan kreatif** | `claude-sonnet-4-6`, `gpt-4o` | Kualitas prosa yang lebih baik |
-| **Vision/Gambar** | `gpt-4o`, `claude-sonnet-4-6`, `gemini-2.5-flash` | Dukungan vision native |
+| **Vision/Gambar** | `gpt-4o`, `claude-sonnet-4-6`, `gemini-3.5-flash` | Dukungan vision native |
 | **Konteks panjang** | `gemini-2.5-pro`, `claude-sonnet-4-6` | Jendela token 1M+ |
-| **Sensitif terhadap biaya** | `gpt-5-mini`, `gemini-2.5-flash`, `deepseek-v3.2` | Nilai terbaik |
+| **Sensitif terhadap biaya** | `gpt-5-mini`, `gemini-3.5-flash`, `deepseek-v3-2` | Nilai terbaik |
 
 ### Tingkatan Biaya
 
 ```
 $$$$ Premium: gpt-5.4, claude-opus-4-6
 $$$  Standar: claude-sonnet-4-6, gpt-4o
-$$   Hemat:   gpt-5-mini, gemini-2.5-flash
-$    Ekonomis:  deepseek-v3.2, deepseek-r1
+$$   Hemat:   gpt-5-mini, gemini-3.5-flash
+$    Ekonomis:  deepseek-v3-2, deepseek-r1
 ```
 
 ## Optimasi Biaya
@@ -125,7 +125,7 @@ for chunk in stream:
 
 | Kasus Penggunaan | Direkomendasikan | Latensi |
 |----------|-------------|---------|
-| Chat UI | `gpt-5-mini`, `gemini-2.5-flash` | ~200ms token pertama |
+| Chat UI | `gpt-5-mini`, `gemini-3.5-flash` | ~200ms token pertama |
 | Penyelesaian tab | `claude-haiku-4-5` | ~150ms token pertama |
 | Pemrosesan latar belakang | `gpt-4o`, `claude-sonnet-4-6` | ~500ms token pertama |
 
@@ -189,7 +189,7 @@ except APIError as e:
 ### 10. Gunakan Model Cadangan
 
 ```python
-FALLBACK_CHAIN = ["gpt-4o", "claude-sonnet-4-6", "gemini-2.5-flash"]
+FALLBACK_CHAIN = ["gpt-4o", "claude-sonnet-4-6", "gemini-3.5-flash"]
 
 def chat_with_fallback(messages):
     for model in FALLBACK_CHAIN:

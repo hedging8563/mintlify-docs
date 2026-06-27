@@ -67,7 +67,6 @@ Der Vertrag akzeptiert außerdem `audio-to-video` und `video-extension` für mod
 | Alibaba | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Shengshu | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
 | xAI | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ |
-| Other | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
 
 ### Begriffserläuterung
 
@@ -88,14 +87,9 @@ Der Vertrag akzeptiert außerdem `audio-to-video` und `video-extension` für mod
 | `kling-3.0-motion-control` | Bewegungssteuerung |
 | `kling-3.0-video` | Text-zu-Video, Bild-zu-Video, Start-Endbild-zu-Video, Elementreferenzen |
 | `kling-v2.1-master` | Text-zu-Video, Bild-zu-Video |
-| `kling-v2.1-pro` | Bild-zu-Video, Start-Endbild-zu-Video |
-| `kling-v2.1-standard` | Bild-zu-Video |
 | `kling-v2.5-turbo-pro` | Text-zu-Video, Bild-zu-Video, Start-Endbild-zu-Video |
-| `kling-v2.5-turbo-std` | Text-zu-Video, Bild-zu-Video |
 | `kling-v2.6-pro` | Text-zu-Video, Bild-zu-Video, Start-Endbild-zu-Video |
 | `kling-v2.6-std` | Text-zu-Video, Bild-zu-Video |
-| `kling-v3.0-pro` | Text-zu-Video, Bild-zu-Video, Start-Endbild-zu-Video |
-| `kling-v3.0-std` | Text-zu-Video, Bild-zu-Video, Start-Endbild-zu-Video |
 | `kling-video-o1-pro` | Text-zu-Video, Bild-zu-Video, Referenzbild-zu-Video, Start-Endbild-zu-Video, Video-zu-Video |
 | `kling-video-o1-std` | Text-zu-Video, Bild-zu-Video, Referenzbild-zu-Video, Start-Endbild-zu-Video, Video-zu-Video |
 
@@ -105,10 +99,8 @@ Der Vertrag akzeptiert außerdem `audio-to-video` und `video-extension` für mod
 |-------|----------|
 | `veo3` | Text-zu-Video, Bild-zu-Video |
 | `veo3-fast` | Text-zu-Video, Bild-zu-Video |
-| `veo3-pro` | Text-zu-Video, Bild-zu-Video |
 | `veo3.1` | Text-zu-Video, Bild-zu-Video, Referenzbild-zu-Video, Start-Endbild-zu-Video |
 | `veo3.1-fast` | Text-zu-Video, Bild-zu-Video, Referenzbild-zu-Video, Start-Endbild-zu-Video |
-| `veo3.1-pro` | Text-zu-Video, Bild-zu-Video, Start-Endbild-zu-Video |
 
 ### ByteDance
 
@@ -153,11 +145,6 @@ Der Vertrag akzeptiert außerdem `audio-to-video` und `video-extension` für mod
 | `grok-imagine-text-to-video` | Text-zu-Video |
 | `grok-imagine-upscale` | Video-zu-Video |
 
-### Sonstiges
-
-| Modell | Öffentliche Operationen |
-|-------|----------|
-| `topaz-video-upscale` | Video-zu-Video |
 
 ## Verwendungsbeispiele
 
@@ -268,7 +255,7 @@ Für `grok-imagine-video` video-to-video senden Sie eine öffentliche HTTPS-`.mp
 response = requests.post(f"{BASE}/videos/generations",
     headers=headers,
     json={
-        "model": "topaz-video-upscale",
+        "model": "grok-imagine-upscale",
         "operation": "video-to-video",
         "video_url": "https://example.com/source.mp4",
         "prompt": "Upscale this clip while preserving the original motion."
@@ -309,7 +296,7 @@ response = requests.post(f"{BASE}/videos/generations",
 
 <CardGroup cols={2}>
   <Card title="Höchste Qualität" icon="crown">
-    Wenn Qualität wichtiger ist als Geschwindigkeit, sind **veo3.1-pro**, **kling-video-o1-pro** und **viduq3-pro** starke Kandidaten.
+    Wenn Qualität wichtiger ist als Geschwindigkeit, sind **veo3.1**, **kling-video-o1-pro** und **viduq3-pro** starke Kandidaten.
   </Card>
   <Card title="Schnelle Iteration" icon="bolt">
     Für schnelle Schleifen eignen sich **veo3.1-fast**, **hailuo-2.3-fast** und **viduq3-turbo**.
@@ -318,7 +305,7 @@ response = requests.post(f"{BASE}/videos/generations",
     Für dedizierte Referenzbild-Steuerung sind **veo3.1**, **veo3.1-fast**, **wan-2.6** sowie **kling-video-o1-pro / std** gute Startpunkte.
   </Card>
   <Card title="Video-zu-Video" icon="film">
-    Die allgemein aktivierten öffentlichen `video-to-video`-Pfade sind derzeit vor allem **topaz-video-upscale**, **grok-imagine-upscale** und **kling-video-o1-pro / std**.
+    Die allgemein aktivierten öffentlichen `video-to-video`-Pfade sind derzeit vor allem **grok-imagine-upscale** und **kling-video-o1-pro / std**.
   </Card>
 </CardGroup>
 

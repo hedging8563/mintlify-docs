@@ -69,7 +69,6 @@ sequenceDiagram
 | Alibaba | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Shengshu | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
 | xAI | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ |
-| أخرى | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
 
 ### تعريفات القدرات
 
@@ -90,14 +89,9 @@ sequenceDiagram
 | `kling-3.0-motion-control` | تحكم في الحركة |
 | `kling-3.0-video` | نص إلى فيديو، image-to-video، start-end-to-video، مراجع العناصر |
 | `kling-v2.1-master` | نص إلى فيديو، image-to-video |
-| `kling-v2.1-pro` | image-to-video، start-end-to-video |
-| `kling-v2.1-standard` | image-to-video |
 | `kling-v2.5-turbo-pro` | نص إلى فيديو، image-to-video، start-end-to-video |
-| `kling-v2.5-turbo-std` | نص إلى فيديو، image-to-video |
 | `kling-v2.6-pro` | نص إلى فيديو، image-to-video، start-end-to-video |
 | `kling-v2.6-std` | نص إلى فيديو، image-to-video |
-| `kling-v3.0-pro` | نص إلى فيديو، image-to-video، start-end-to-video |
-| `kling-v3.0-std` | نص إلى فيديو، image-to-video، start-end-to-video |
 | `kling-video-o1-pro` | نص إلى فيديو، image-to-video، reference-to-video، start-end-to-video، video-to-video |
 | `kling-video-o1-std` | نص إلى فيديو، image-to-video، reference-to-video، start-end-to-video، video-to-video |
 
@@ -107,10 +101,8 @@ sequenceDiagram
 |--------|------------------|
 | `veo3` | نص إلى فيديو، image-to-video |
 | `veo3-fast` | نص إلى فيديو، image-to-video |
-| `veo3-pro` | نص إلى فيديو، image-to-video |
 | `veo3.1` | نص إلى فيديو، image-to-video، reference-to-video، start-end-to-video |
 | `veo3.1-fast` | نص إلى فيديو، image-to-video، reference-to-video، start-end-to-video |
-| `veo3.1-pro` | نص إلى فيديو، image-to-video، start-end-to-video |
 
 ### ByteDance
 
@@ -155,11 +147,6 @@ sequenceDiagram
 | `grok-imagine-text-to-video` | نص إلى فيديو |
 | `grok-imagine-upscale` | من فيديو إلى فيديو |
 
-### أخرى
-
-| النموذج | العمليات العامة |
-|--------|------------------|
-| `topaz-video-upscale` | من فيديو إلى فيديو |
 
 ## أمثلة الاستخدام
 
@@ -270,7 +257,7 @@ response = requests.post(f"{BASE}/videos/generations",
 response = requests.post(f"{BASE}/videos/generations",
     headers=headers,
     json={
-        "model": "topaz-video-upscale",
+        "model": "grok-imagine-upscale",
         "operation": "video-to-video",
         "video_url": "https://example.com/source.mp4",
         "prompt": "Upscale this clip while preserving the original motion."
@@ -311,7 +298,7 @@ response = requests.post(f"{BASE}/videos/generations",
 
 <CardGroup cols={2}>
   <Card title="أعلى جودة" icon="crown">
-    إذا كانت الجودة أهم من السرعة، فالنماذج **veo3.1-pro** و **kling-video-o1-pro** و **viduq3-pro** خيارات قوية.
+    إذا كانت الجودة أهم من السرعة، فالنماذج **veo3.1** و **kling-video-o1-pro** و **viduq3-pro** خيارات قوية.
   </Card>
   <Card title="تكرار سريع" icon="bolt">
     للتجارب السريعة، ابدأ مع **veo3.1-fast** أو **hailuo-2.3-fast** أو **viduq3-turbo**.
@@ -320,7 +307,7 @@ response = requests.post(f"{BASE}/videos/generations",
     إذا كنت تحتاج إلى تحكم مخصص بالصور المرجعية، فابدأ مع **veo3.1** أو **veo3.1-fast** أو **wan-2.6** أو **kling-video-o1-pro / std**.
   </Card>
   <Card title="video-to-video" icon="film">
-    المسارات العامة الأكثر شيوعًا حاليًا لعمليات `video-to-video` تعتمد خصوصًا على **topaz-video-upscale** و **grok-imagine-upscale** و **kling-video-o1-pro / std**.
+    المسارات العامة الأكثر شيوعًا حاليًا لعمليات `video-to-video` تعتمد خصوصًا على **grok-imagine-upscale** و **kling-video-o1-pro / std**.
   </Card>
 </CardGroup>
 

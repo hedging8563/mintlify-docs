@@ -65,7 +65,7 @@ Este é um caminho de integração orientado a chat-completions. Ele não deve s
     - `gpt-4o`
     - `claude-sonnet-4-6`
     - `claude-opus-4-6`
-    - `gemini-2.5-flash`
+    - `gemini-3.5-flash`
     - `gemini-2.5-pro`
     - `deepseek-r1`
   </Step>
@@ -91,7 +91,7 @@ Em seguida, defina-o como o modelo de embedding padrão nas configurações da b
 |----------|------------------|
 | Chat padrão | `gpt-5.4`, `gpt-5-mini`, `gpt-4o` |
 | Raciocínio profundo | `gpt-5.4`, `claude-opus-4-6`, `deepseek-r1` |
-| Rápido/barato | `gpt-5-mini`, `gemini-2.5-flash` |
+| Rápido/barato | `gpt-5-mini`, `gemini-3.5-flash` |
 | Embeddings | `text-embedding-3-small`, `text-embedding-3-large` |
 
 ## Boas práticas
@@ -102,7 +102,7 @@ Em seguida, defina-o como o modelo de embedding padrão nas configurações da b
   </Accordion>
 
   <Accordion title="Use modelos mais baratos para iteração">
-    Use `gpt-5-mini` ou `gemini-2.5-flash` durante a iteração e depois troque os fluxos de trabalho mais pesados por modelos mais robustos apenas onde for necessário.
+    Use `gpt-5-mini` ou `gemini-3.5-flash` durante a iteração e depois troque os fluxos de trabalho mais pesados por modelos mais robustos apenas onde for necessário.
   </Accordion>
 
   <Accordion title="Lembre-se de que o Dify geralmente é orientado a chat-completions">

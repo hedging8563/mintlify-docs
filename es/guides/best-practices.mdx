@@ -11,21 +11,21 @@ Elegir el modelo adecuado puede afectar significativamente el costo y la calidad
 
 | Tarea | Modelos recomendados | Motivo |
 |------|-------------------|-----------|
-| **Preguntas y respuestas simples** | `gpt-5-mini`, `gemini-2.5-flash` | Rápido, barato, suficientemente bueno |
+| **Preguntas y respuestas simples** | `gpt-5-mini`, `gemini-3.5-flash` | Rápido, barato, suficientemente bueno |
 | **Razonamiento complejo** | `gpt-5.4`, `claude-opus-4-6`, `deepseek-r1` | Mejor lógica y planificación |
-| **Programación** | `claude-sonnet-4-6`, `gpt-4o`, `deepseek-v3.2` | Optimizado para código |
+| **Programación** | `claude-sonnet-4-6`, `gpt-4o`, `deepseek-v3-2` | Optimizado para código |
 | **Escritura creativa** | `claude-sonnet-4-6`, `gpt-4o` | Mejor calidad de redacción |
-| **Visión/Imágenes** | `gpt-4o`, `claude-sonnet-4-6`, `gemini-2.5-flash` | Soporte nativo de visión |
+| **Visión/Imágenes** | `gpt-4o`, `claude-sonnet-4-6`, `gemini-3.5-flash` | Soporte nativo de visión |
 | **Contexto largo** | `gemini-2.5-pro`, `claude-sonnet-4-6` | Ventanas de 1M+ token |
-| **Sensible al costo** | `gpt-5-mini`, `gemini-2.5-flash`, `deepseek-v3.2` | Mejor relación calidad-precio |
+| **Sensible al costo** | `gpt-5-mini`, `gemini-3.5-flash`, `deepseek-v3-2` | Mejor relación calidad-precio |
 
 ### Niveles de costo
 
 ```
 $$$$ Premium: gpt-5.4, claude-opus-4-6
 $$$  Standard: claude-sonnet-4-6, gpt-4o
-$$   Budget:   gpt-5-mini, gemini-2.5-flash
-$    Economy:  deepseek-v3.2, deepseek-r1
+$$   Budget:   gpt-5-mini, gemini-3.5-flash
+$    Economy:  deepseek-v3-2, deepseek-r1
 ```
 
 ## Optimización de costos
@@ -125,7 +125,7 @@ for chunk in stream:
 
 | Caso de uso | Recomendado | Latencia |
 |----------|-------------|---------|
-| UI de chat | `gpt-5-mini`, `gemini-2.5-flash` | ~200ms hasta el primer token |
+| UI de chat | `gpt-5-mini`, `gemini-3.5-flash` | ~200ms hasta el primer token |
 | Autocompletado de pestañas | `claude-haiku-4-5` | ~150ms hasta el primer token |
 | Procesamiento en segundo plano | `gpt-4o`, `claude-sonnet-4-6` | ~500ms hasta el primer token |
 
@@ -189,7 +189,7 @@ except APIError as e:
 ### 10. Usa modelos de respaldo
 
 ```python
-FALLBACK_CHAIN = ["gpt-4o", "claude-sonnet-4-6", "gemini-2.5-flash"]
+FALLBACK_CHAIN = ["gpt-4o", "claude-sonnet-4-6", "gemini-3.5-flash"]
 
 def chat_with_fallback(messages):
     for model in FALLBACK_CHAIN:

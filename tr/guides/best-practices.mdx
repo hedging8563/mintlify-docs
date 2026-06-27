@@ -11,21 +11,21 @@ Doğru modeli seçmek, maliyet ve kaliteyi önemli ölçüde etkileyebilir.
 
 | Görev | Önerilen Modeller | Gerekçe |
 |------|-------------------|-----------|
-| **Basit Soru-Cevap** | `gpt-5-mini`, `gemini-2.5-flash` | Hızlı, ucuz, yeterince iyi |
+| **Basit Soru-Cevap** | `gpt-5-mini`, `gemini-3.5-flash` | Hızlı, ucuz, yeterince iyi |
 | **Karmaşık akıl yürütme** | `gpt-5.4`, `claude-opus-4-6`, `deepseek-r1` | Daha iyi mantık ve planlama |
-| **Kodlama** | `claude-sonnet-4-6`, `gpt-4o`, `deepseek-v3.2` | Kod için optimize edilmiş |
+| **Kodlama** | `claude-sonnet-4-6`, `gpt-4o`, `deepseek-v3-2` | Kod için optimize edilmiş |
 | **Yaratıcı yazım** | `claude-sonnet-4-6`, `gpt-4o` | Daha iyi düzyazı kalitesi |
-| **Görsel/Resimler** | `gpt-4o`, `claude-sonnet-4-6`, `gemini-2.5-flash` | Yerel vision desteği |
+| **Görsel/Resimler** | `gpt-4o`, `claude-sonnet-4-6`, `gemini-3.5-flash` | Yerel vision desteği |
 | **Uzun bağlam** | `gemini-2.5-pro`, `claude-sonnet-4-6` | 1M+ token pencereleri |
-| **Maliyete duyarlı** | `gpt-5-mini`, `gemini-2.5-flash`, `deepseek-v3.2` | En iyi fiyat/performans |
+| **Maliyete duyarlı** | `gpt-5-mini`, `gemini-3.5-flash`, `deepseek-v3-2` | En iyi fiyat/performans |
 
 ### Maliyet Katmanları
 
 ```
 $$$$ Premium: gpt-5.4, claude-opus-4-6
 $$$  Standard: claude-sonnet-4-6, gpt-4o
-$$   Budget:   gpt-5-mini, gemini-2.5-flash
-$    Economy:  deepseek-v3.2, deepseek-r1
+$$   Budget:   gpt-5-mini, gemini-3.5-flash
+$    Economy:  deepseek-v3-2, deepseek-r1
 ```
 
 ## Maliyet Optimizasyonu
@@ -125,7 +125,7 @@ for chunk in stream:
 
 | Kullanım Durumu | Önerilen | Gecikme |
 |----------|-------------|---------|
-| Chat UI | `gpt-5-mini`, `gemini-2.5-flash` | ~200ms ilk token |
+| Chat UI | `gpt-5-mini`, `gemini-3.5-flash` | ~200ms ilk token |
 | Tab tamamlama | `claude-haiku-4-5` | ~150ms ilk token |
 | Arka plan işleme | `gpt-4o`, `claude-sonnet-4-6` | ~500ms ilk token |
 
@@ -189,7 +189,7 @@ except APIError as e:
 ### 10. Fallback Modeller Kullanın
 
 ```python
-FALLBACK_CHAIN = ["gpt-4o", "claude-sonnet-4-6", "gemini-2.5-flash"]
+FALLBACK_CHAIN = ["gpt-4o", "claude-sonnet-4-6", "gemini-3.5-flash"]
 
 def chat_with_fallback(messages):
     for model in FALLBACK_CHAIN:

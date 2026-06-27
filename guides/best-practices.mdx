@@ -11,21 +11,21 @@ Choosing the right model can significantly impact cost and quality.
 
 | Task | Recommended Models | Reasoning |
 |------|-------------------|-----------|
-| **Simple Q&A** | `gpt-5-mini`, `gemini-2.5-flash` | Fast, cheap, good enough |
+| **Simple Q&A** | `gpt-5-mini`, `gemini-3.5-flash` | Fast, cheap, good enough |
 | **Complex reasoning** | `gpt-5.4`, `claude-opus-4-6`, `deepseek-r1` | Better logic and planning |
-| **Coding** | `claude-sonnet-4-6`, `gpt-4o`, `deepseek-v3.2` | Optimized for code |
+| **Coding** | `claude-sonnet-4-6`, `gpt-4o`, `deepseek-v3-2` | Optimized for code |
 | **Creative writing** | `claude-sonnet-4-6`, `gpt-4o` | Better prose quality |
-| **Vision/Images** | `gpt-4o`, `claude-sonnet-4-6`, `gemini-2.5-flash` | Native vision support |
+| **Vision/Images** | `gpt-4o`, `claude-sonnet-4-6`, `gemini-3.5-flash` | Native vision support |
 | **Long context** | `gemini-2.5-pro`, `claude-sonnet-4-6` | 1M+ token windows |
-| **Cost-sensitive** | `gpt-5-mini`, `gemini-2.5-flash`, `deepseek-v3.2` | Best value |
+| **Cost-sensitive** | `gpt-5-mini`, `gemini-3.5-flash`, `deepseek-v3-2` | Best value |
 
 ### Cost Tiers
 
 ```
 $$$$ Premium: gpt-5.4, claude-opus-4-6
 $$$  Standard: claude-sonnet-4-6, gpt-4o
-$$   Budget:   gpt-5-mini, gemini-2.5-flash
-$    Economy:  deepseek-v3.2, deepseek-r1
+$$   Budget:   gpt-5-mini, gemini-3.5-flash
+$    Economy:  deepseek-v3-2, deepseek-r1
 ```
 
 ## Cost Optimization
@@ -125,7 +125,7 @@ for chunk in stream:
 
 | Use Case | Recommended | Latency |
 |----------|-------------|---------|
-| Chat UI | `gpt-5-mini`, `gemini-2.5-flash` | ~200ms first token |
+| Chat UI | `gpt-5-mini`, `gemini-3.5-flash` | ~200ms first token |
 | Tab completion | `claude-haiku-4-5` | ~150ms first token |
 | Background processing | `gpt-4o`, `claude-sonnet-4-6` | ~500ms first token |
 
@@ -189,7 +189,7 @@ except APIError as e:
 ### 10. Use Fallback Models
 
 ```python
-FALLBACK_CHAIN = ["gpt-4o", "claude-sonnet-4-6", "gemini-2.5-flash"]
+FALLBACK_CHAIN = ["gpt-4o", "claude-sonnet-4-6", "gemini-3.5-flash"]
 
 def chat_with_fallback(messages):
     for model in FALLBACK_CHAIN:

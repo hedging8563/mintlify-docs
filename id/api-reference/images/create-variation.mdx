@@ -6,7 +6,7 @@ description: "Membuat variasi dari gambar yang diberikan"
 
 ## Ikhtisar
 
-Membuat variasi dari gambar yang diberikan. Memerlukan content type `multipart/form-data`.
+Endpoint ini dipertahankan untuk client variasi legacy yang kompatibel dengan OpenAI. Ini bukan jalur yang direkomendasikan untuk workflow image-to-image saat ini; gunakan `/v1/images/edits` dengan `gpt-image-2` atau `/v1/images/generations` dengan model image-to-image seperti `nano-banana-pro` jika memungkinkan. Memerlukan `multipart/form-data`.
 
 ## Isi Permintaan
 
@@ -16,8 +16,8 @@ Membuat variasi dari gambar yang diberikan. Memerlukan content type `multipart/f
   Gambar yang digunakan sebagai dasar untuk variasi. Harus berupa file PNG yang valid, kurang dari 50MB, dan berbentuk persegi.
 </ParamField>
 
-<ParamField body="model" type="string" default="dall-e-2">
-  Model yang digunakan untuk variasi gambar. Saat ini hanya `dall-e-2` yang didukung.
+<ParamField body="model" type="string" required>
+  ID model wajib untuk rute legacy yang kompatibel dengan variasi. Tidak ada default implisit; untuk workflow image-to-image saat ini, pilih `/v1/images/edits` atau `/v1/images/generations` dengan model saat ini.
 </ParamField>
 
 <ParamField body="n" type="integer" default="1">
@@ -25,7 +25,7 @@ Membuat variasi dari gambar yang diberikan. Memerlukan content type `multipart/f
 </ParamField>
 
 <ParamField body="size" type="string">
-  Ukuran gambar yang dihasilkan. Harus salah satu dari `256x256`, `512x512`, atau `1024x1024`.
+  Ukuran gambar yang dihasilkan untuk rute legacy yang kompatibel dengan variasi. Nilai yang didukung bergantung pada model yang dipilih.
 </ParamField>
 
 <ParamField body="response_format" type="string" default="url">
@@ -54,6 +54,7 @@ Membuat variasi dari gambar yang diberikan. Memerlukan content type `multipart/f
 ```bash cURL
 curl -X POST "https://api.aisonar.dev/v1/images/variations" \
   -H "Authorization: Bearer sk-your-api-key" \
+  -F "model=your-legacy-variation-model" \
   -F "image=@cat.png" \
   -F "n=2" \
   -F "size=1024x1024"
@@ -68,7 +69,7 @@ client = OpenAI(
 )
 
 response = client.images.create_variation(
-    model="dall-e-2",
+    model="your-legacy-variation-model",
     image=open("cat.png", "rb"),
     n=2,
     size="1024x1024"
@@ -88,7 +89,7 @@ const client = new OpenAI({
 });
 
 const response = await client.images.createVariation({
-  model: 'dall-e-2',
+  model: 'your-legacy-variation-model',
   image: fs.createReadStream('cat.png'),
   n: 2,
   size: '1024x1024'
@@ -112,6 +113,8 @@ import (
 func main() {
     body := &bytes.Buffer{}
     writer := multipart.NewWriter(body)
+
+    writer.WriteField("model", "your-legacy-variation-model")
 
     file, _ := os.Open("cat.png")
     defer file.Close()
@@ -148,6 +151,7 @@ curl_setopt_array($ch, [
         'Authorization: Bearer sk-your-api-key'
     ],
     CURLOPT_POSTFIELDS => [
+        'model' => 'your-legacy-variation-model',
         'image' => $image,
         'n' => 2,
         'size' => '1024x1024'
@@ -183,5 +187,5 @@ foreach ($data['data'] as $image) {
 ## Catatan
 
 <Note>
-  Variasi gambar hanya tersedia dengan DALL-E 2. Model akan menghasilkan gambar baru yang mirip dalam gaya dan konten dengan gambar asli.
+  Ini adalah endpoint kompatibilitas legacy. Endpoint ini tidak termasuk dalam katalog model gambar rekomendasi saat ini. Untuk integrasi baru, gunakan `/v1/images/edits` dengan `gpt-image-2`, atau `/v1/images/generations` dengan `operation: "image-to-image"` dan model image-to-image saat ini.
 </Note>

@@ -16,36 +16,33 @@ AI Sonar **kullandıkça öde fiyatlandırması** kullanır. Abonelik veya minim
 
 ## Fiyatlandırma Modelleri
 
-### Token Başına Fiyatlandırma
+Canlı fiyatlar sağlayıcı, route ve model contract değiştikçe değişebilir. Dashboard, Models sayfası, `GET /v1/models/:model/pricing` ve [Pricing API](/api-reference/pricing/get-pricing) doğru kaynak kabul edilmelidir.
 
-Çoğu metin oluşturma modeli, milyon token başına fiyatlandırılır:
+### Token bazlı fiyatlandırma
 
-| Model | Girdi (1M token başına) | Çıktı (1M token başına) |
-|-------|----------------------|------------------------|
-| GPT-4o | $1.75 | $7.00 |
-| GPT-4o-mini | $0.105 | $0.42 |
-| Claude Opus 4.5 | $3.50 | $17.50 |
-| Claude Sonnet 4.5 | $2.10 | $10.50 |
-| Claude Haiku 4.5 | $0.70 | $3.50 |
-| Gemini 2.5 Pro | $0.875 | $7.00 |
-| Gemini 2.5 Flash | $0.1225 | $0.525 |
-| DeepSeek R1 | $0.385 | $1.533 |
-| DeepSeek V3.2 | $0.196 | $0.294 |
+Çoğu chat, reasoning, embedding, rerank ve bazı görüntü modelleri input, output, cache veya image-output token üzerinden fiyatlanır.
+
+| Fiyat ailesi | Örnekler | Güncel fiyatı doğrula |
+|---|---|---|
+| Chat / Responses | `gpt-5.4`, `claude-sonnet-4-6`, `gemini-3.5-flash` | 模型页或 Pricing API |
+| 嵌入 / rerank | `text-embedding-3-small`, `qwen3-vl-rerank` | 模型价格详情 |
+| 按 token 计费的图像 | `gpt-image-2` | `GET /v1/models/gpt-image-2/pricing` |
 
 <Note>
-  Gösterilen fiyatlar indirimli platform fiyatlarıdır. Gerçek fiyatlar değişiklik gösterebilir. Güncel oranlar için [fiyatlandırma sayfasını](https://aisonar.dev/tr/pricing) kontrol edin.
+Statik fiyat tablolarını production mantığına kopyalamayın. Kodda yalnızca model ID saklayın ve yayından önce güncel fiyatı kontrol edin.
 </Note>
 
-### İstek Başına Fiyatlandırma
+### İstek ve görev fiyatlandırması
 
-Görüntü, video ve ses modelleri istek başına fiyatlandırılır:
+Görüntü, video, müzik, 3D, ses ve world generation modelleri istek, görüntü, saniye/dakika, görev veya sağlayıcıya özel kullanıma göre fiyatlanabilir.
 
-| Model | İstek Başına Fiyat |
-|-------|-------------------|
-| DALL-E 3 (1024x1024) | $0.04 |
-| Midjourney | $0.05 |
-| Whisper (dakika başına) | $0.006 |
-| TTS-1 | $0.015 |
+| Aile | Örnekler |
+|---|---|
+| 图像 | `flux-pro`, `qwen-image` |
+| 视频 | `veo3.1`, `seedance-2.0` |
+| 音乐 | `suno-music` |
+| 3D | `tripo3d-v2.5` |
+| 音频 | `tts-1`, `whisper-1` |
 
 ### Asenkron Görev Faturalandırması (Video/Müzik/3D ve Bazı Görüntü Modelleri)
 

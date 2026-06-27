@@ -34,8 +34,8 @@ xAI Grok Imagine 圖片模型（`grok-imagine-image`、`grok-imagine-image-quali
 
 **同步請求逾時：** 某些路由到的圖片提供者會以内嵌方式返回最終圖片，並等待生成完成。高解析度或高品質請求可能接近一分鐘甚至更久，因此請將 HTTP 用戶端逾時設定為至少 `120s`。如果建立回應包含 `status: "pending"`、`task_id` 或 `poll_url`，請改為依照返回的 `poll_url` 輪詢。
 
-<ParamField body="model" type="string" default="dall-e-3">
-  要使用的模型（例如：`gpt-image-2`、`dall-e-3`、`flux-pro`、`midjourney`）。
+<ParamField body="model" type="string" required>
+  要使用的模型（例如 `gpt-image-2`、`flux-pro`、`qwen-image` 或 `nano-banana-pro`）。使用 `GET /v1/models?recommended_for=image` 取得目前推薦清單。
 </ParamField>
 
 <ParamField body="prompt" type="string" required>
@@ -83,7 +83,7 @@ xAI Grok Imagine 圖片模型（`grok-imagine-image`、`grok-imagine-image-quali
 </ParamField>
 
 <ParamField body="quality" type="string" default="standard">
-  圖像品質。DALL-E 模型使用 `standard` 或 `hd`；`gpt-image-2` 等 GPT Image 模型使用 `auto`、`low`、`medium` 或 `high`。
+  圖片品質。`gpt-image-2` 等 GPT Image 模型使用 `auto`、`low`、`medium` 或 `high`。其他圖片系列可能使用提供者特定取值；傳送非預設值前請先查看所選模型的 metadata。
 </ParamField>
 
 <ParamField body="response_format" type="string" default="url">
@@ -96,8 +96,8 @@ xAI Grok Imagine 圖片模型（`grok-imagine-image`、`grok-imagine-image-quali
   搭配 `gpt-image-2` 或官方 FLUX/BFL 圖像模型設為 `true` 時，會先建立任務。完成後的非同步圖片任務無論請求的 `response_format` 是什麼，都只返回 URL；如果需要 `b64_json`，請使用同步請求。
 </ParamField>
 
-<ParamField body="style" type="string" default="vivid">
-  DALL-E 3 的風格：`vivid` 或 `natural`。
+<ParamField body="style" type="string">
+  選填風格選擇器。只有所選模型明確文件化支援時才傳送；除非模型 metadata 另有說明，否則不要對 `gpt-image-2` 傳送此欄位。
 </ParamField>
 
 <ParamField body="user" type="string">
@@ -118,7 +118,7 @@ xAI Grok Imagine 圖片模型（`grok-imagine-image`、`grok-imagine-image-quali
   每個物件包含：
   - `url`（string）：產生圖片的 URL
   - `b64_json`（string）：Base64 編碼的圖片（若有要求）
-  - `revised_prompt`（string）：實際使用的 prompt（DALL-E 3）
+  - `revised_prompt` (string): 上游模型回傳的選填 prompt 改寫結果（僅在提供者回傳時出現）
 </ResponseField>
 
 ### 非同步任務回應
@@ -293,3 +293,59 @@ curl -X POST "https://api.aisonar.dev/v1/images/generations" \
 }
 ```
 </ResponseExample>
+
+## 可用模型
+
+以下是目前常見模型範例，不是固定目錄。最新可用性和價格請查詢 `GET /v1/models?recommended_for=image` 或模型頁面。
+
+| 模型 | 類型 | 特性 |
+|-------|------|------|
+| `gpt-image-2` | Inline 或 task-based | 按 token 計費的 GPT Image 模型，支援彈性尺寸 |
+| `flux-pro` | 通常為 task-based | 寫實、高品質 |
+| `qwen-image` | 通常為 task-based | 文字渲染與 prompt 遵循較強 |
+| `nano-banana-pro` | 通常為 task-based | 參考圖工作流與高解析度輸出 |
+| `grok-imagine-image` | 通常為 task-based | xAI 圖片生成，支援比例與解析度選擇 |
+| `ideogram-v3` | 通常為 task-based | 文字渲染較強 |
+
+不要把模型硬編碼為永遠同步或永遠非同步。如果建立回應返回 `status: "pending"`，請跟隨 `poll_url` 輪詢直到完成。
+
+## 處理任務式回應
+
+對於圖片模型，請一律檢查回應是否包含 `status: "pending"`：
+
+```python
+import requests
+import time
+
+def generate_image(prompt, model="flux-pro"):
+    response = requests.post(
+        "https://api.aisonar.dev/v1/images/generations",
+        headers={"Authorization": "Bearer sk-your-api-key"},
+        json={"model": model, "prompt": prompt}
+    )
+    data = response.json()
+
+    if data.get("status") == "pending":
+        task_id = data["task_id"]
+        poll_url = data.get("poll_url")
+        print(f"Image task started: {task_id}")
+
+        while True:
+            status_resp = requests.get(
+                f"https://api.aisonar.dev{poll_url}" if poll_url else f"https://api.aisonar.dev/v1/tasks/{task_id}",
+                headers={"Authorization": "Bearer sk-your-api-key"}
+            )
+            status_data = status_resp.json()
+
+            if status_data["status"] == "completed":
+                return status_data["data"][0]["url"]
+            if status_data["status"] == "failed":
+                raise Exception(status_data.get("error", "Generation failed"))
+
+            time.sleep(3)
+
+    return data["data"][0]["url"]
+
+url = generate_image("a beautiful sunset over mountains", model="flux-pro")
+print(f"Generated image: {url}")
+```

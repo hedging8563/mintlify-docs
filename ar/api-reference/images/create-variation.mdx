@@ -6,7 +6,7 @@ description: "إنشاء تنويع من صورة معينة"
 
 ## نظرة عامة
 
-إنشاء تنويع من صورة معينة. يتطلب نوع المحتوى `multipart/form-data`.
+يبقى هذا endpoint لعملاء variation القدامى المتوافقين مع OpenAI. ليس المسار الموصى به لتدفقات image-to-image الحالية؛ استخدم `/v1/images/edits` مع `gpt-image-2` أو `/v1/images/generations` مع نموذج image-to-image مثل `nano-banana-pro` عندما يكون ذلك ممكنًا. يتطلب `multipart/form-data`.
 
 ## جسم الطلب
 
@@ -16,8 +16,8 @@ description: "إنشاء تنويع من صورة معينة"
   الصورة المستخدمة كأساس للتنويع. يجب أن تكون ملف PNG صالح، أقل من 50MB، ومربعة.
 </ParamField>
 
-<ParamField body="model" type="string" default="dall-e-2">
-  النموذج المستخدم لتنويعات الصور. حالياً يُدعم `dall-e-2` فقط.
+<ParamField body="model" type="string" required>
+  معرّف نموذج مطلوب للمسارات القديمة المتوافقة مع variation. لا توجد قيمة افتراضية ضمنية؛ لتدفقات image-to-image الحالية، فضّل `/v1/images/edits` أو `/v1/images/generations` مع نموذج حالي.
 </ParamField>
 
 <ParamField body="n" type="integer" default="1">
@@ -25,7 +25,7 @@ description: "إنشاء تنويع من صورة معينة"
 </ParamField>
 
 <ParamField body="size" type="string">
-  حجم الصور المُنشأة. يجب أن يكون أحد: `256x256`، `512x512`، أو `1024x1024`.
+  حجم الصور المُنشأة للمسارات القديمة المتوافقة مع variation. تعتمد القيم المدعومة على النموذج المحدد.
 </ParamField>
 
 <ParamField body="response_format" type="string" default="url">
@@ -54,6 +54,7 @@ description: "إنشاء تنويع من صورة معينة"
 ```bash cURL
 curl -X POST "https://api.aisonar.dev/v1/images/variations" \
   -H "Authorization: Bearer sk-your-api-key" \
+  -F "model=your-legacy-variation-model" \
   -F "image=@cat.png" \
   -F "n=2" \
   -F "size=1024x1024"
@@ -68,7 +69,7 @@ client = OpenAI(
 )
 
 response = client.images.create_variation(
-    model="dall-e-2",
+    model="your-legacy-variation-model",
     image=open("cat.png", "rb"),
     n=2,
     size="1024x1024"
@@ -88,7 +89,7 @@ const client = new OpenAI({
 });
 
 const response = await client.images.createVariation({
-  model: 'dall-e-2',
+  model: 'your-legacy-variation-model',
   image: fs.createReadStream('cat.png'),
   n: 2,
   size: '1024x1024'
@@ -112,6 +113,8 @@ import (
 func main() {
     body := &bytes.Buffer{}
     writer := multipart.NewWriter(body)
+
+    writer.WriteField("model", "your-legacy-variation-model")
 
     file, _ := os.Open("cat.png")
     defer file.Close()
@@ -148,6 +151,7 @@ curl_setopt_array($ch, [
         'Authorization: Bearer sk-your-api-key'
     ],
     CURLOPT_POSTFIELDS => [
+        'model' => 'your-legacy-variation-model',
         'image' => $image,
         'n' => 2,
         'size' => '1024x1024'
@@ -183,5 +187,5 @@ foreach ($data['data'] as $image) {
 ## ملاحظات
 
 <Note>
-  تنويعات الصور متاحة فقط مع DALL-E 2. سيُنشئ النموذج صوراً جديدة مشابهة في الأسلوب والمحتوى للصورة الأصلية.
+  هذا endpoint توافق قديم. لا يظهر في كتالوج نماذج الصور الموصى بها حاليًا. للتكاملات الجديدة استخدم `/v1/images/edits` مع `gpt-image-2`، أو `/v1/images/generations` مع `operation: "image-to-image"` ونموذج image-to-image حالي.
 </Note>

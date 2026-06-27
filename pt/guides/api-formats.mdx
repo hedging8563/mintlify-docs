@@ -127,7 +127,7 @@ for block in message.content:
 Formato nativo da API Google Gemini para integração ao ecossistema Google.
 
 ```bash
-curl "https://api.aisonar.dev/v1beta/models/gemini-2.5-flash:generateContent" \
+curl "https://api.aisonar.dev/v1beta/models/gemini-3.5-flash:generateContent" \
   -H "Authorization: Bearer sk-your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -143,7 +143,7 @@ curl "https://api.aisonar.dev/v1beta/models/gemini-2.5-flash:generateContent" \
 ### Streaming
 
 ```bash
-curl "https://api.aisonar.dev/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse" \
+curl "https://api.aisonar.dev/v1beta/models/gemini-3.5-flash:streamGenerateContent?alt=sse" \
   -H "Authorization: Bearer sk-your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -223,7 +223,7 @@ genai.configure(api_key="google-api-key")
 import requests
 
 response = requests.post(
-    "https://api.aisonar.dev/v1beta/models/gemini-2.5-flash:generateContent",
+    "https://api.aisonar.dev/v1beta/models/gemini-3.5-flash:generateContent",
     headers={"Authorization": "Bearer sk-your-api-key"},
     json={"contents": [{"parts": [{"text": "Hello"}]}]}
 )
@@ -251,7 +251,7 @@ response = client.messages.create(
 )
 
 # Same compatibility SDK for portable chat; native-only features still need native routes
-response = client.messages.create(model="gemini-2.5-flash", ...)  # ✅ Works!
+response = client.messages.create(model="gemini-3.5-flash", ...)  # ✅ Works!
 response = client.messages.create(model="deepseek-r1", ...)       # ✅ Works!
 ```
 
@@ -265,7 +265,7 @@ client = OpenAI(base_url="https://api.aisonar.dev/v1", api_key="sk-...")
 # These portable chat calls use the same /v1 compatibility SDK:
 response = client.chat.completions.create(model="gpt-4o", ...)
 response = client.chat.completions.create(model="claude-sonnet-4-6", ...)
-response = client.chat.completions.create(model="gemini-2.5-flash", ...)
+response = client.chat.completions.create(model="gemini-3.5-flash", ...)
 ```
 
 ### Comparação entre Plataformas

@@ -6,7 +6,7 @@ description: "Tạo biến thể của một hình ảnh cho trước"
 
 ## Tổng quan
 
-Tạo biến thể của một hình ảnh cho trước. Yêu cầu content type `multipart/form-data`.
+Endpoint này được giữ lại cho client tạo biến thể legacy tương thích OpenAI. Đây không phải đường dẫn được khuyến nghị cho workflow image-to-image hiện tại; hãy dùng `/v1/images/edits` với `gpt-image-2` hoặc `/v1/images/generations` với model image-to-image như `nano-banana-pro` khi có thể. Yêu cầu `multipart/form-data`.
 
 ## Nội dung yêu cầu
 
@@ -16,8 +16,8 @@ Tạo biến thể của một hình ảnh cho trước. Yêu cầu content type
   Hình ảnh dùng làm cơ sở cho biến thể. Phải là file PNG hợp lệ, nhỏ hơn 50MB và có tỷ lệ vuông.
 </ParamField>
 
-<ParamField body="model" type="string" default="dall-e-2">
-  Mô hình sử dụng cho biến thể hình ảnh. Hiện tại chỉ hỗ trợ `dall-e-2`.
+<ParamField body="model" type="string" required>
+  ID model bắt buộc cho các route legacy tương thích biến thể. Không có default ngầm định; với workflow image-to-image hiện tại, ưu tiên `/v1/images/edits` hoặc `/v1/images/generations` với model hiện tại.
 </ParamField>
 
 <ParamField body="n" type="integer" default="1">
@@ -25,7 +25,7 @@ Tạo biến thể của một hình ảnh cho trước. Yêu cầu content type
 </ParamField>
 
 <ParamField body="size" type="string">
-  Kích thước của hình ảnh được tạo. Phải là một trong `256x256`, `512x512`, hoặc `1024x1024`.
+  Kích thước ảnh được tạo cho các route legacy tương thích biến thể. Giá trị hỗ trợ phụ thuộc vào model đã chọn.
 </ParamField>
 
 <ParamField body="response_format" type="string" default="url">
@@ -54,6 +54,7 @@ Tạo biến thể của một hình ảnh cho trước. Yêu cầu content type
 ```bash cURL
 curl -X POST "https://api.aisonar.dev/v1/images/variations" \
   -H "Authorization: Bearer sk-your-api-key" \
+  -F "model=your-legacy-variation-model" \
   -F "image=@cat.png" \
   -F "n=2" \
   -F "size=1024x1024"
@@ -68,7 +69,7 @@ client = OpenAI(
 )
 
 response = client.images.create_variation(
-    model="dall-e-2",
+    model="your-legacy-variation-model",
     image=open("cat.png", "rb"),
     n=2,
     size="1024x1024"
@@ -88,7 +89,7 @@ const client = new OpenAI({
 });
 
 const response = await client.images.createVariation({
-  model: 'dall-e-2',
+  model: 'your-legacy-variation-model',
   image: fs.createReadStream('cat.png'),
   n: 2,
   size: '1024x1024'
@@ -112,6 +113,8 @@ import (
 func main() {
     body := &bytes.Buffer{}
     writer := multipart.NewWriter(body)
+
+    writer.WriteField("model", "your-legacy-variation-model")
 
     file, _ := os.Open("cat.png")
     defer file.Close()
@@ -148,6 +151,7 @@ curl_setopt_array($ch, [
         'Authorization: Bearer sk-your-api-key'
     ],
     CURLOPT_POSTFIELDS => [
+        'model' => 'your-legacy-variation-model',
         'image' => $image,
         'n' => 2,
         'size' => '1024x1024'
@@ -183,5 +187,5 @@ foreach ($data['data'] as $image) {
 ## Ghi chú
 
 <Note>
-  Biến thể hình ảnh chỉ khả dụng với DALL-E 2. Mô hình sẽ tạo ra các hình ảnh mới có phong cách và nội dung tương tự với hình ảnh gốc.
+  Đây là endpoint tương thích legacy. Endpoint này không nằm trong catalog model ảnh được khuyến nghị hiện tại. Với tích hợp mới, dùng `/v1/images/edits` với `gpt-image-2`, hoặc `/v1/images/generations` với `operation: "image-to-image"` và một model image-to-image hiện tại.
 </Note>

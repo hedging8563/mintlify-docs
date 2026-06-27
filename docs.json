@@ -254,7 +254,7 @@
                 ]
               },
               {
-                "group": "Coding Agents",
+                "group": "编码代理",
                 "pages": [
                   "zh/guides/coding-agents",
                   "zh/guides/coding-agent-cost",
@@ -434,7 +434,7 @@
                 ]
               },
               {
-                "group": "Coding Agents",
+                "group": "程式代理",
                 "pages": [
                   "zh-Hant/guides/coding-agents",
                   "zh-Hant/guides/coding-agent-cost",
@@ -974,7 +974,7 @@
                 ]
               },
               {
-                "group": "Coding Agents",
+                "group": "Coding-Agenten",
                 "pages": [
                   "de/guides/coding-agents",
                   "de/guides/coding-agent-cost",
@@ -1874,7 +1874,7 @@
                 ]
               },
               {
-                "group": "Coding Agents",
+                "group": "Tác nhân lập trình",
                 "pages": [
                   "vi/guides/coding-agents",
                   "vi/guides/coding-agent-cost",
@@ -2054,7 +2054,7 @@
                 ]
               },
               {
-                "group": "Coding Agents",
+                "group": "Agen Coding",
                 "pages": [
                   "id/guides/coding-agents",
                   "id/guides/coding-agent-cost",

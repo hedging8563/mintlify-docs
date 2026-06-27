@@ -34,8 +34,8 @@ xAI Grok Imagine 画像モデル（`grok-imagine-image`、`grok-imagine-image-qu
 
 **同期リクエストのタイムアウト:** ルーティング先の画像プロバイダーによっては、生成完了まで待って最終画像をインラインで返します。高解像度または高品質のリクエストは 1 分前後、またはそれ以上かかることがあるため、HTTP クライアントのタイムアウトは少なくとも `120s` に設定してください。作成レスポンスに `status: "pending"`、`task_id`、または `poll_url` が含まれる場合は、返された `poll_url` をポーリングしてください。
 
-<ParamField body="model" type="string" default="dall-e-3">
-  使用するモデル（例: `gpt-image-2`、`dall-e-3`、`flux-pro`、`midjourney`）。
+<ParamField body="model" type="string" required>
+  使用するモデル（例: `gpt-image-2`、`flux-pro`、`qwen-image`、`nano-banana-pro`）。現在の推奨リストは `GET /v1/models?recommended_for=image` で確認してください。
 </ParamField>
 
 <ParamField body="prompt" type="string" required>
@@ -83,7 +83,7 @@ xAI Grok Imagine 画像モデル（`grok-imagine-image`、`grok-imagine-image-qu
 </ParamField>
 
 <ParamField body="quality" type="string" default="standard">
-  画像品質。DALL-E モデルでは `standard` または `hd` を使用します。`gpt-image-2` などの GPT Image モデルでは `auto`、`low`、`medium`、`high` を使用します。
+  画像品質。`gpt-image-2` などの GPT Image モデルは `auto`、`low`、`medium`、`high` を使用します。他の画像ファミリーではプロバイダー固有の値を使う場合があるため、非デフォルト値を送る前に選択したモデルのメタデータを確認してください。
 </ParamField>
 
 <ParamField body="response_format" type="string" default="url">
@@ -96,8 +96,8 @@ xAI Grok Imagine 画像モデル（`grok-imagine-image`、`grok-imagine-image-qu
   `gpt-image-2` または公式 FLUX/BFL 画像モデルで `true` にすると、まずタスクを作成します。完了した非同期画像タスクは、要求された `response_format` に関係なく URL を返します。`b64_json` が必要な場合は同期リクエストを使用してください。
 </ParamField>
 
-<ParamField body="style" type="string" default="vivid">
-  DALL-E 3のスタイル：`vivid` または `natural`。
+<ParamField body="style" type="string">
+  任意のスタイル指定です。選択したモデルが明示的に文書化している場合のみ送信してください。モデルメタデータに別途記載がない限り、`gpt-image-2` には送信しないでください。
 </ParamField>
 
 <ParamField body="user" type="string">
@@ -118,7 +118,7 @@ xAI Grok Imagine 画像モデル（`grok-imagine-image`、`grok-imagine-image-qu
   各オブジェクトに含まれるもの：
   - `url` (string): 生成された画像のURL
   - `b64_json` (string): Base64エンコードされた画像（リクエストされた場合）
-  - `revised_prompt` (string): 使用されたプロンプト（DALL-E 3）
+  - `revised_prompt` (string): 上流モデルが返した任意のプロンプト修正版（提供者が返す場合のみ）
 </ResponseField>
 
 ### 非同期タスクレスポンス
@@ -293,3 +293,59 @@ curl -X POST "https://api.aisonar.dev/v1/images/generations" \
 }
 ```
 </ResponseExample>
+
+## 利用可能なモデル
+
+以下は現在の代表的なモデル例であり、固定カタログではありません。最新の提供状況と価格は `GET /v1/models?recommended_for=image` または Models ページで確認してください。
+
+| モデル | タイプ | 特徴 |
+|-------|------|------|
+| `gpt-image-2` | インラインまたはタスクベース | トークン課金の GPT Image モデル、柔軟なサイズ指定 |
+| `flux-pro` | 多くの場合タスクベース | フォトリアルで高品質 |
+| `qwen-image` | 多くの場合タスクベース | テキストレンダリングとプロンプト追従が強い |
+| `nano-banana-pro` | 多くの場合タスクベース | 参照画像ワークフローと高解像度出力 |
+| `grok-imagine-image` | 多くの場合タスクベース | xAI 画像生成、アスペクト比と解像度選択に対応 |
+| `ideogram-v3` | 多くの場合タスクベース | テキストレンダリングが強い |
+
+モデルを常に同期または常に非同期としてハードコードしないでください。作成レスポンスが `status: "pending"` を返す場合は、`poll_url` に従って完了までポーリングしてください。
+
+## タスクベースレスポンスの扱い
+
+画像モデルでは、レスポンスに `status: "pending"` が含まれるかを必ず確認してください。
+
+```python
+import requests
+import time
+
+def generate_image(prompt, model="flux-pro"):
+    response = requests.post(
+        "https://api.aisonar.dev/v1/images/generations",
+        headers={"Authorization": "Bearer sk-your-api-key"},
+        json={"model": model, "prompt": prompt}
+    )
+    data = response.json()
+
+    if data.get("status") == "pending":
+        task_id = data["task_id"]
+        poll_url = data.get("poll_url")
+        print(f"Image task started: {task_id}")
+
+        while True:
+            status_resp = requests.get(
+                f"https://api.aisonar.dev{poll_url}" if poll_url else f"https://api.aisonar.dev/v1/tasks/{task_id}",
+                headers={"Authorization": "Bearer sk-your-api-key"}
+            )
+            status_data = status_resp.json()
+
+            if status_data["status"] == "completed":
+                return status_data["data"][0]["url"]
+            if status_data["status"] == "failed":
+                raise Exception(status_data.get("error", "Generation failed"))
+
+            time.sleep(3)
+
+    return data["data"][0]["url"]
+
+url = generate_image("a beautiful sunset over mountains", model="flux-pro")
+print(f"Generated image: {url}")
+```

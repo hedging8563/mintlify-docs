@@ -16,36 +16,33 @@ AI Sonar sử dụng **mô hình giá pay-as-you-go**. Bạn chỉ trả tiền 
 
 ## Các mô hình giá
 
-### Giá theo Token
+Giá live có thể thay đổi theo provider, route và hợp đồng model. Hãy coi Dashboard, trang Models, `GET /v1/models/:model/pricing` và [Pricing API](/api-reference/pricing/get-pricing) là nguồn sự thật.
 
-Hầu hết các mô hình tạo văn bản được tính giá trên mỗi triệu token:
+### Giá theo token
 
-| Mô hình | Đầu vào (trên 1M tokens) | Đầu ra (trên 1M tokens) |
-|-------|----------------------|------------------------|
-| GPT-4o | $1.75 | $7.00 |
-| GPT-4o-mini | $0.105 | $0.42 |
-| Claude Opus 4.5 | $3.50 | $17.50 |
-| Claude Sonnet 4.5 | $2.10 | $10.50 |
-| Claude Haiku 4.5 | $0.70 | $3.50 |
-| Gemini 2.5 Pro | $0.875 | $7.00 |
-| Gemini 2.5 Flash | $0.1225 | $0.525 |
-| DeepSeek R1 | $0.385 | $1.533 |
-| DeepSeek V3.2 | $0.196 | $0.294 |
+Phần lớn model chat, reasoning, embedding, rerank và một số model ảnh được tính theo token đầu vào, đầu ra, cache hoặc token đầu ra ảnh.
+
+| Nhóm giá | Ví dụ | Kiểm tra giá hiện tại |
+|---|---|---|
+| Chat / Responses | `gpt-5.4`, `claude-sonnet-4-6`, `gemini-3.5-flash` | 模型页或 Pricing API |
+| 嵌入 / rerank | `text-embedding-3-small`, `qwen3-vl-rerank` | 模型价格详情 |
+| 按 token 计费的图像 | `gpt-image-2` | `GET /v1/models/gpt-image-2/pricing` |
 
 <Note>
-  Giá hiển thị là giá ưu đãi của nền tảng. Giá thực tế có thể thay đổi. Kiểm tra [pricing page](https://aisonar.dev/vi/pricing) để biết tỷ giá hiện tại.
+Đừng sao chép bảng giá tĩnh vào logic production. Chỉ lưu model ID trong code và kiểm tra giá hiện tại trước khi launch.
 </Note>
 
-### Giá theo yêu cầu
+### Giá theo yêu cầu và tác vụ
 
-Các mô hình hình ảnh, video và âm thanh được tính giá trên mỗi yêu cầu:
+Model ảnh, video, nhạc, 3D, audio và world có thể tính theo request, ảnh, giây/phút, task hoặc usage đặc thù provider.
 
-| Mô hình | Giá mỗi yêu cầu |
-|-------|-------------------|
-| DALL-E 3 (1024x1024) | $0.04 |
-| Midjourney | $0.05 |
-| Whisper (mỗi phút) | $0.006 |
-| TTS-1 | $0.015 |
+| Nhóm | Ví dụ |
+|---|---|
+| 图像 | `flux-pro`, `qwen-image` |
+| 视频 | `veo3.1`, `seedance-2.0` |
+| 音乐 | `suno-music` |
+| 3D | `tripo3d-v2.5` |
+| 音频 | `tts-1`, `whisper-1` |
 
 ### Thanh toán tác vụ không đồng bộ (Video/Nhạc/3D và một số mô hình hình ảnh)
 

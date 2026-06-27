@@ -315,7 +315,7 @@ response = requests.post(
     "https://api.aisonar.dev/v1/videos/generations",
     headers={"Authorization": "Bearer sk-your-api-key"},
     json={
-        "model": "topaz-video-upscale",
+        "model": "grok-imagine-upscale",
         "operation": "video-to-video",
         "video_url": "https://example.com/source.mp4",
         "prompt": "Upscale the clip while preserving the original motion.",
@@ -363,11 +363,8 @@ Daftar ini diselaraskan dengan inventaris model video publik yang aktif pada bui
 | `kling-3.0-motion-control` | Kontrol gerakan |
 | `kling-3.0-video` | Teks ke video, image-to-video, start-end-to-video, referensi elemen |
 | `kling-v2.5-turbo-pro` | Teks ke video, image-to-video, start-end-to-video |
-| `kling-v2.5-turbo-std` | Teks ke video, image-to-video |
 | `kling-v2.6-pro` | Teks ke video, image-to-video, start-end-to-video |
 | `kling-v2.6-std` | Teks ke video, image-to-video |
-| `kling-v3.0-pro` | Teks ke video, image-to-video, start-end-to-video |
-| `kling-v3.0-std` | Teks ke video, image-to-video, start-end-to-video |
 | `kling-video-o1-pro` | Teks ke video, image-to-video, reference-to-video, start-end-to-video, video-to-video |
 | `kling-video-o1-std` | Teks ke video, image-to-video, reference-to-video, start-end-to-video, video-to-video |
 
@@ -377,10 +374,8 @@ Daftar ini diselaraskan dengan inventaris model video publik yang aktif pada bui
 |-------|----------------|
 | `veo3` | Teks ke video, image-to-video |
 | `veo3-fast` | Teks ke video, image-to-video |
-| `veo3-pro` | Teks ke video, image-to-video |
 | `veo3.1` | Teks ke video, image-to-video, reference-to-video, start-end-to-video |
 | `veo3.1-fast` | Teks ke video, image-to-video, reference-to-video, start-end-to-video |
-| `veo3.1-pro` | Teks ke video, image-to-video, start-end-to-video |
 
 ### ByteDance
 
@@ -429,4 +424,3 @@ Daftar ini diselaraskan dengan inventaris model video publik yang aktif pada bui
 
 | Model | Operasi publik |
 |-------|----------------|
-| `topaz-video-upscale` | Video-ke-video |

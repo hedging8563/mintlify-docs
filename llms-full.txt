@@ -2,7 +2,7 @@
 
 > Unified AI API Gateway - Access hundreds of AI models through a single API
 
-Generated: 2026-06-25
+Generated: 2026-06-27
 Source: https://docs.aisonar.dev
 
 ---
@@ -29,15 +29,19 @@ AI Sonar is an AI API aggregation platform that gives you unified access to **hu
 
 ## Supported Capabilities
 
-| Capability | Description | Example Models |
-|------------|-------------|----------------|
-| **Chat & Reasoning** | Text generation, planning, tools | `gpt-5.4`, `claude-sonnet-4-6`, `deepseek-r1` |
-| **Vision** | Image understanding and multimodal chat | `gpt-4o`, `claude-sonnet-4-6`, `gemini-2.5-flash` |
-| **Image Generation** | Text-to-image and image editing | `dall-e-3`, `flux-pro`, `midjourney` |
-| **Audio** | TTS and transcription | `gpt-4o-mini-tts`, `whisper-1`, `gpt-4o-transcribe` |
-| **Embeddings** | Text vectorization | `text-embedding-3-small`, `text-embedding-3-large` |
-| **Music** | AI music generation | `suno` |
-| **3D** | 3D asset generation | `tripo3d` |
+The public catalog changes over time. Use `/v1/models`, `recommended_for`, or the Models page for exact current availability; the examples below use current public model IDs.
+
+| Capability | Description | Example models |
+|---|---|---|
+| Chat & Reasoning | Text generation, planning, tools | `gpt-5.4`, `claude-sonnet-4-6`, `deepseek-r1` |
+| Vision & Multimodal | Image understanding and multimodal chat | `gpt-4o`, `claude-sonnet-4-6`, `gemini-3.5-flash` |
+| Image Generation & Editing | Text-to-image and image editing | `gpt-image-2`, `flux-pro`, `qwen-image` |
+| Video Generation | Text-to-video, image-to-video, reference video, and motion control | `veo3.1`, `seedance-2.0`, `kling-3.0-video` |
+| Audio & Realtime | TTS, transcription, translation, and realtime sessions | `gpt-4o-mini-tts`, `whisper-1`, `gpt-realtime` |
+| Embeddings & Rerank | Text vectorization and reranking | `text-embedding-3-small`, `qwen3-vl-rerank` |
+| Translation | Text and speech translation workflows | `qwen-mt-plus`, `gpt-realtime-translate` |
+| Music & 3D | Music and 3D asset generation | `suno-music`, `tripo3d-v2.5` |
+| Worlds | World generation, status polling, and media asset workflows | Use `/v1/worlds/generations` and the Models API for current availability |
 
 ## Choose the Request Format
 
@@ -125,7 +129,7 @@ AI Sonar supports hundreds of models. Change only the `model` field:
 response = client.chat.completions.create(model="gpt-5.4", messages=[{"role": "user", "content": "Hello"}])
 response = client.chat.completions.create(model="gpt-5-mini", messages=[{"role": "user", "content": "Hello"}])
 response = client.chat.completions.create(model="claude-sonnet-4-6", messages=[{"role": "user", "content": "Hello"}])
-response = client.chat.completions.create(model="gemini-2.5-flash", messages=[{"role": "user", "content": "Hello"}])
+response = client.chat.completions.create(model="gemini-3.5-flash", messages=[{"role": "user", "content": "Hello"}])
 response = client.chat.completions.create(model="deepseek-r1", messages=[{"role": "user", "content": "Hello"}])
 ```
 
@@ -693,7 +697,7 @@ for block in message.content:
 Native Google Gemini API format for Google ecosystem integration.
 
 ```bash
-curl "https://api.aisonar.dev/v1beta/models/gemini-2.5-flash:generateContent" \
+curl "https://api.aisonar.dev/v1beta/models/gemini-3.5-flash:generateContent" \
   -H "Authorization: Bearer sk-your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -709,7 +713,7 @@ curl "https://api.aisonar.dev/v1beta/models/gemini-2.5-flash:generateContent" \
 ### Streaming
 
 ```bash
-curl "https://api.aisonar.dev/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse" \
+curl "https://api.aisonar.dev/v1beta/models/gemini-3.5-flash:streamGenerateContent?alt=sse" \
   -H "Authorization: Bearer sk-your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -789,7 +793,7 @@ genai.configure(api_key="google-api-key")
 import requests
 
 response = requests.post(
-    "https://api.aisonar.dev/v1beta/models/gemini-2.5-flash:generateContent",
+    "https://api.aisonar.dev/v1beta/models/gemini-3.5-flash:generateContent",
     headers={"Authorization": "Bearer sk-your-api-key"},
     json={"contents": [{"parts": [{"text": "Hello"}]}]}
 )
@@ -817,7 +821,7 @@ response = client.messages.create(
 )
 
 # Same compatibility SDK for portable chat; native-only features still need native routes
-response = client.messages.create(model="gemini-2.5-flash", ...)  # ✅ Works!
+response = client.messages.create(model="gemini-3.5-flash", ...)  # ✅ Works!
 response = client.messages.create(model="deepseek-r1", ...)       # ✅ Works!
 ```
 
@@ -831,7 +835,7 @@ client = OpenAI(base_url="https://api.aisonar.dev/v1", api_key="sk-...")
 # These portable chat calls use the same /v1 compatibility SDK:
 response = client.chat.completions.create(model="gpt-4o", ...)
 response = client.chat.completions.create(model="claude-sonnet-4-6", ...)
-response = client.chat.completions.create(model="gemini-2.5-flash", ...)
+response = client.chat.completions.create(model="gemini-3.5-flash", ...)
 ```
 
 ### Industry Comparison
@@ -854,6 +858,8 @@ response = client.chat.completions.create(model="gemini-2.5-flash", ...)
 URL: https://docs.aisonar.dev/guides/prompt-cache
 
 ## Overview
+
+AI Sonar does not add a separate semantic cache in this guide. This page explains upstream provider prompt caching, which appears in usage and billing when the routed provider reports cache tokens.
 
 ## How Provider Prompt Cache Works
 
@@ -1001,25 +1007,23 @@ Yes! When using your own API keys (BYOK), provider caching works the same way. T
 
 ---
 
-### ✨ AI Sonar API Integration Skill
+### AI Sonar API Integration Skill
 
-> Install the shared AI Sonar API integration skill for any coding agent, with Agent-First error recovery.
+> Install the maintained AI Sonar API integration skill and teach coding agents to discover models, read public contracts, and recover from API errors.
 
 URL: https://docs.aisonar.dev/integrations/coding-agent-skill
 
-> Note: This skill teaches your coding agent how to integrate AI Sonar's **hundreds of AI APIs** just by describing what you need. It is packaged as one shared agent-first skill and works with any coding agent that supports skill or rules files.
+> Note: This page documents the maintained shared `aisonar-api-integration` skill. The canonical distribution lives in [hedging8563/aisonar-skills](https://github.com/hedging8563/aisonar-skills), where the public repository intentionally keeps only this skill.
 
-The API is **[Agent-First](/guides/agent-first-api)** — even if the agent guesses a model name wrong, the error response tells it exactly how to fix it.
+> Note: Use this page for skill installation and agent workflow guidance. For endpoint-specific setup, use the dedicated SDK, client, or API reference page for that tool.
 
-> Note: This page documents a reusable skill packaging layer, not a protocol-compatibility surface. If you need endpoint, SDK, or client setup guidance, use the dedicated integration pages for those tools.
+## What The Skill Does
 
-## How It Works
-
-1. **You describe what you need** — "I want to use GPT-4 in my Python project"
-2. **The agent calls the API** — it may guess a model name or endpoint
-3. **If anything goes wrong** — the API returns structured hints (`did_you_mean`, `suggestions`, `retry_after`)
-4. **The agent self-corrects** — reads the hints and retries with the right parameters
-5. **You get working code** — typically on the first or second attempt
+- Generates minimal runnable examples for AI Sonar chat, image, audio, video, translation, and other API families.
+- Uses `https://api.aisonar.dev/v1` for OpenAI-compatible clients and explains when to switch to native Anthropic or Gemini routes.
+- Discovers models with `/v1/models`, `/llms.txt`, and `recommended_for` shortlists instead of guessing from stale lists.
+- Reads a model public contract before retrying non-chat requests, so unsupported fields are not silently dropped.
+- Handles Agent-First error hints such as `did_you_mean`, `suggestions`, `retry_after`, and `recommended_request`.
 
 ## Install
 
@@ -1031,16 +1035,21 @@ npx skills add https://github.com/hedging8563/aisonar-skills --skill aisonar-api
 
 This installs the shared `aisonar-api-integration` skill from the AI Sonar skills repository.
 
-If your tool does not support the installer, copy the `skills/aisonar-api-integration/` folder from the repository into your tool's shared skills or rules directory.
+If your tool does not support the installer, copy `skills/aisonar-api-integration/` from the repository into your tool's shared skills or rules directory.
+
+### Update Existing Installs
+
+If you installed the skill before the AI Sonar repository cleanup, rerun the same command. The current public package is smaller and no longer depends on generated local search scripts.
 
 ### Verify Installation
 
 Ask your coding agent:
+
 ```
 What skills are available?
 ```
 
-If you see `aisonar-api-integration`, the installation was successful.
+If you see `aisonar-api-integration`, the installation succeeded.
 
 ## Get Your API Key
 
@@ -1057,25 +1066,27 @@ Create an account or log in
 
 #### Get API Key
 
-Navigate to [Dashboard → API Keys](https://console.aisonar.dev/api) and create a new key
+Open [Dashboard → API Keys](https://console.aisonar.dev/api) and create a new key
 
 
-#### Copy the Key
+#### Copy The Key
 
-Your key starts with `sk-...` — save it securely
+Your key starts with `sk-...`. Store it securely.
 
-> Tip: You do not need to paste an API key into prompts or source files. The skill should ask which environment variable to use, then generate code that reads the key from that environment.
+> Tip: Do not paste API keys into prompts or source files. The skill should ask which environment variable to use and generate code that reads the key from that variable.
 
-## Examples
+## Recommended Agent Workflow
 
-### Chat Completion
+1. Start with the smallest working example that matches the user's requested language and API family.
+2. When model choice is open, call `/v1/models` or `https://api.aisonar.dev/llms.txt` before hardcoding a model.
+3. For non-chat work, call `/v1/models?recommended_for=` where `` is `image`, `video`, `music`, `3d`, `tts`, `stt`, `embedding`, `rerank`, or `translation`.
+4. Before changing a failed non-chat request, read `/v1/models/:model` and align with `supported_operations`, `supported_parameters`, `request_endpoint`, `request_shape_mode`, and `recommended_request`.
+5. If the API returns an Agent-First error, use the structured fields to correct the request and retry only when the error is retryable.
 
-**You say:**
-```
-I want to use GPT-4 in my Python project
-```
+## Minimal Chat Example
 
-**The agent generates:**
+This example uses the OpenAI Python SDK with the AI Sonar base URL:
+
 ```python
 import os
 from openai import OpenAI
@@ -1086,7 +1097,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="gpt-5.4",
+    model="gpt-4o-mini",
     messages=[{"role": "user", "content": "Hello!"}]
 )
 
@@ -1096,97 +1107,68 @@ print(response.choices[0].message.content)
 Run it with:
 
 ```bash
+pip install openai
 export TOKENLAB_API_KEY="sk-your-api-key"
 python app.py
 ```
 
-If the agent guesses a wrong model name (e.g. `gpt5`), the API returns:
-```json
-{
-  "error": {
-    "code": "model_not_found",
-    "did_you_mean": "gpt-5.4",
-    "suggestions": [{"id": "gpt-5.4"}, {"id": "gpt-5-mini"}],
-    "hint": "Did you mean 'gpt-5.4'? Use GET https://api.aisonar.dev/v1/models to list all available models."
-  }
-}
-```
+## Model Discovery And Contracts
 
-The agent reads `did_you_mean`, corrects the model name, and retries — all automatically.
-
-### Image Generation
-
-**You say:**
-```
-Generate images with Flux in Node.js
-```
-
-The agent calls the image API, handles errors, and generates complete code with download and save logic.
-
-### Speech Recognition
-
-**You say:**
-```
-Integrate speech-to-text in my app
-```
-
-The agent generates code with the correct `/v1/audio/transcriptions` endpoint and audio file handling.
-
-## Agent-First Error Recovery
-
-Every error response includes structured hints that any coding agent can parse. See the [full Agent-First API reference](/guides/agent-first-api) for details.
-
-| Error | What the API Returns | What the Agent Does |
-|-------|---------------------|---------------------|
-| Wrong model name | `did_you_mean` + `suggestions` | Auto-corrects and retries |
-| Insufficient balance | `balance_usd` + cheaper `suggestions` | Switches to affordable model |
-| Model unavailable | `alternatives` + `retry_after` | Switches to available model |
-| Rate limited | `retry_after` (exact seconds) | Waits and retries |
-| Context too long | `suggestions` with larger models | Switches to bigger context model |
-| Non-chat request contract mismatch | `supported_operations`, `supported_parameters`, `request_endpoint`, `recommended_request` | Rebuilds the request from the public model contract |
-
-### Native Endpoint Optimization
-
-When you call `/v1/chat/completions` with a Claude or Gemini model, a successful response may include optimization headers:
-
-
-
-Treat these headers as routing hints, not a forced automatic switch. Claude-native calls use `/v1/messages`; Gemini-native calls should follow the endpoint advertised by the native endpoint hint header, commonly `/v1beta/gemini`.
-
-### Model Discovery
-
-No need to search documentation:
+Prefer live discovery over stale bundled lists:
 
 ```bash
 # Machine-readable API overview
 curl https://api.aisonar.dev/llms.txt
 
-# List models by category
-curl "https://api.aisonar.dev/v1/models?category=chat" -H "Authorization: Bearer sk-KEY"
+# List models
+curl "https://api.aisonar.dev/v1/models" -H "Authorization: Bearer sk-KEY"
 curl "https://api.aisonar.dev/v1/models?category=image" -H "Authorization: Bearer sk-KEY"
 
-# Ranked non-chat shortlist
+# Ranked non-chat shortlists
 curl "https://api.aisonar.dev/v1/models?recommended_for=image" -H "Authorization: Bearer sk-KEY"
+curl "https://api.aisonar.dev/v1/models?recommended_for=video" -H "Authorization: Bearer sk-KEY"
 curl "https://api.aisonar.dev/v1/models?recommended_for=translation" -H "Authorization: Bearer sk-KEY"
 
-# Read the public contract for one model before retrying a non-chat request
+# Read one model public contract before retrying non-chat requests
 curl "https://api.aisonar.dev/v1/models/gpt-image-2" -H "Authorization: Bearer sk-KEY"
 
-# Filter by capability
-curl "https://api.aisonar.dev/v1/models?tag=coding" -H "Authorization: Bearer sk-KEY"
+# Pricing-only detail
+curl "https://api.aisonar.dev/v1/models/gpt-image-2/pricing" -H "Authorization: Bearer sk-KEY"
 ```
 
-## Supported Capabilities
+## Native Routing Hints
 
-| Type | Examples |
-|------|----------|
-| Chat | GPT-5.4, Claude, Gemini, DeepSeek |
-| Image Generation | GPT Image, Flux, Stable Diffusion, Gemini image models |
-| Music Generation | Suno |
-| 3D Models | Tripo3D |
-| Audio | Text-to-Speech, Speech-to-Text |
-| Embeddings | text-embedding-3 |
-| Rerank | bce-reranker, qwen3-rerank |
+OpenAI-compatible `/v1` is the default path for common chat, responses, image, embedding, audio, and rerank examples. Use native Anthropic or Gemini routes only when the request needs provider-specific behavior or AI Sonar returns the native endpoint hint header as an optimization hint.
+
+
+
+## Agent-First Error Recovery
+
+Errors include fields that coding agents can parse without scraping docs:
+
+| Error | Useful fields | Agent action |
+|---|---|---|
+| Wrong model name | `did_you_mean`, `suggestions`, `hint` | Retry with the corrected model or one suggested alternative |
+| Insufficient balance | `balance_usd`, `estimated_cost_usd`, `suggestions` | Ask for approval or switch to an affordable model |
+| Rate limit or temporary unavailability | `retryable`, `retry_after`, `alternatives` | Wait, retry, or choose a listed alternative |
+| Non-chat contract mismatch | `supported_operations`, `supported_parameters`, `request_endpoint`, `request_shape_mode`, `recommended_request` | Rebuild the request from the public contract and fail closed on intent-changing fields |
+
+## Supported API Families
+
+| Family | Primary path |
+|---|---|
+| Chat and Responses | `/v1/chat/completions`, `/v1/responses` |
+| Claude-native messages | `/v1/messages` |
+| Gemini-native requests | `/v1beta/models/{model}:generateContent` |
+| Images | `/v1/images/generations`, `/v1/images/edits` |
+| Video | `/v1/videos/generations` |
+| Music | `/v1/music/generations` |
+| Worlds | `/v1/worlds/generations` plus world status and media asset endpoints |
+| 3D | `/v1/3d/generations` |
+| Audio | `/v1/audio/speech`, `/v1/audio/transcriptions`, `/v1/audio/translations` |
+| Realtime | `/v1/realtime?model={model}` |
+| Embeddings and rerank | `/v1/embeddings`, `/v1/rerank` |
+| Text translation | `/v1/translations` |
 
 ## Best Practices
 
@@ -1198,25 +1180,18 @@ curl "https://api.aisonar.dev/v1/models?tag=coding" -H "Authorization: Bearer sk
 
 #### Skill not triggering automatically?
 
-Try mentioning "AI Sonar" or "AI Sonar API" in your request:
-    ```
-    Use AI Sonar to integrate GPT-4 in my project
-    ```
-
-
-#### How does the API help the agent find the right model?
-
-AI Sonar's [Agent-First API](/guides/agent-first-api) returns structured error hints. If the agent guesses a wrong model name, the error includes `did_you_mean` with the correct name and `suggestions` with alternatives. The agent reads these and auto-corrects on the next attempt.
+Mention “AI Sonar” or “AI Sonar API” in the request, for example: `Use AI Sonar to add image generation to my Node.js app`.
 
 
 #### Which coding agents are supported?
 
-Any coding agent that supports shared skill or rules directories. When the installer is supported, `npx skills add` places the shared `aisonar-api-integration` skill in the detected location automatically.
+Any coding agent that supports shared skill or rules directories can use the folder. The `skills` installer handles supported agents automatically.
 
 
-#### How to update the skill?
+#### How do I update the skill?
 
-Re-run the installer:
+Rerun the install command. It refreshes the local copy from the canonical public repository.
+
     ```bash
     npx skills add https://github.com/hedging8563/aisonar-skills --skill aisonar-api-integration -y
     ```
@@ -1227,7 +1202,7 @@ Re-run the installer:
 
 
 
-> Info: **Have questions?** Check our [GitHub Issues](https://github.com/hedging8563/aisonar-skills/issues) or contact [support@aisonar.dev](mailto:support@aisonar.dev)
+> Info: Questions? Use [GitHub Issues](https://github.com/hedging8563/aisonar-skills/issues) or contact [support@aisonar.dev](mailto:support@aisonar.dev).
 
 ---
 
@@ -1769,34 +1744,31 @@ AI Sonar uses **pay-as-you-go pricing**. You only pay for what you use, with no 
 
 ## Pricing Models
 
-### Per-Token Pricing
+Live prices can change as providers, routes, and model contracts change. Treat the Dashboard, the Models page, `GET /v1/models/:model/pricing`, and [Pricing API](/api-reference/pricing/get-pricing) as the source of truth.
 
-Most text generation models are priced per million tokens:
+### Token-Based Pricing
 
-| Model | Input (per 1M tokens) | Output (per 1M tokens) |
-|-------|----------------------|------------------------|
-| GPT-4o | $1.75 | $7.00 |
-| GPT-4o-mini | $0.105 | $0.42 |
-| Claude Opus 4.5 | $3.50 | $17.50 |
-| Claude Sonnet 4.5 | $2.10 | $10.50 |
-| Claude Haiku 4.5 | $0.70 | $3.50 |
-| Gemini 2.5 Pro | $0.875 | $7.00 |
-| Gemini 2.5 Flash | $0.1225 | $0.525 |
-| DeepSeek R1 | $0.385 | $1.533 |
-| DeepSeek V3.2 | $0.196 | $0.294 |
+Most chat, reasoning, embedding, rerank, and some image models are priced by input, output, cache, or image-output tokens.
 
-> Note: Prices shown are discounted platform prices. Actual prices may vary. Check the [pricing page](https://aisonar.dev/en/pricing) for current rates.
+| Pricing family | Examples | Verify current price |
+|---|---|---|
+| Chat / Responses | `gpt-5.4`, `claude-sonnet-4-6`, `gemini-3.5-flash` | Models page or Pricing API |
+| Embeddings / rerank | `text-embedding-3-small`, `qwen3-vl-rerank` | Model pricing detail |
+| Token-priced images | `gpt-image-2` | `GET /v1/models/gpt-image-2/pricing` |
 
-### Per-Request Pricing
+> Note: Avoid copying static price tables into production logic. Store only model IDs in code and fetch or review current pricing before launch.
 
-Image, video, and audio models are priced per request:
+### Request and Task Pricing
 
-| Model | Price per Request |
-|-------|-------------------|
-| DALL-E 3 (1024x1024) | $0.04 |
-| Midjourney | $0.05 |
-| Whisper (per minute) | $0.006 |
-| TTS-1 | $0.015 |
+Image, video, music, 3D, audio, and world-generation models may be priced per request, per image, per second/minute, per task, or by provider-specific usage. Check the selected model contract before production usage.
+
+| Family | Examples |
+|---|---|
+| Image | `flux-pro`, `qwen-image` |
+| Video | `veo3.1`, `seedance-2.0` |
+| Music | `suno-music` |
+| 3D | `tripo3d-v2.5` |
+| Audio | `tts-1`, `whisper-1` |
 
 ### Async Task Billing (Video/Music/3D and Some Image Models)
 
@@ -1954,21 +1926,21 @@ Choosing the right model can significantly impact cost and quality.
 
 | Task | Recommended Models | Reasoning |
 |------|-------------------|-----------|
-| **Simple Q&A** | `gpt-5-mini`, `gemini-2.5-flash` | Fast, cheap, good enough |
+| **Simple Q&A** | `gpt-5-mini`, `gemini-3.5-flash` | Fast, cheap, good enough |
 | **Complex reasoning** | `gpt-5.4`, `claude-opus-4-6`, `deepseek-r1` | Better logic and planning |
-| **Coding** | `claude-sonnet-4-6`, `gpt-4o`, `deepseek-v3.2` | Optimized for code |
+| **Coding** | `claude-sonnet-4-6`, `gpt-4o`, `deepseek-v3-2` | Optimized for code |
 | **Creative writing** | `claude-sonnet-4-6`, `gpt-4o` | Better prose quality |
-| **Vision/Images** | `gpt-4o`, `claude-sonnet-4-6`, `gemini-2.5-flash` | Native vision support |
+| **Vision/Images** | `gpt-4o`, `claude-sonnet-4-6`, `gemini-3.5-flash` | Native vision support |
 | **Long context** | `gemini-2.5-pro`, `claude-sonnet-4-6` | 1M+ token windows |
-| **Cost-sensitive** | `gpt-5-mini`, `gemini-2.5-flash`, `deepseek-v3.2` | Best value |
+| **Cost-sensitive** | `gpt-5-mini`, `gemini-3.5-flash`, `deepseek-v3-2` | Best value |
 
 ### Cost Tiers
 
 ```
 $$$$ Premium: gpt-5.4, claude-opus-4-6
 $$$  Standard: claude-sonnet-4-6, gpt-4o
-$$   Budget:   gpt-5-mini, gemini-2.5-flash
-$    Economy:  deepseek-v3.2, deepseek-r1
+$$   Budget:   gpt-5-mini, gemini-3.5-flash
+$    Economy:  deepseek-v3-2, deepseek-r1
 ```
 
 ## Cost Optimization
@@ -2068,7 +2040,7 @@ for chunk in stream:
 
 | Use Case | Recommended | Latency |
 |----------|-------------|---------|
-| Chat UI | `gpt-5-mini`, `gemini-2.5-flash` | ~200ms first token |
+| Chat UI | `gpt-5-mini`, `gemini-3.5-flash` | ~200ms first token |
 | Tab completion | `claude-haiku-4-5` | ~150ms first token |
 | Background processing | `gpt-4o`, `claude-sonnet-4-6` | ~500ms first token |
 
@@ -2132,7 +2104,7 @@ except APIError as e:
 ### 10. Use Fallback Models
 
 ```python
-FALLBACK_CHAIN = ["gpt-4o", "claude-sonnet-4-6", "gemini-2.5-flash"]
+FALLBACK_CHAIN = ["gpt-4o", "claude-sonnet-4-6", "gemini-3.5-flash"]
 
 def chat_with_fallback(messages):
     for model in FALLBACK_CHAIN:
@@ -2310,7 +2282,6 @@ The request contract also accepts `audio-to-video` and `video-extension` for mod
 | Alibaba | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Shengshu | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
 | xAI | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ |
-| Other | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
 
 ### Capability Definitions
 
@@ -2330,14 +2301,9 @@ The request contract also accepts `audio-to-video` and `video-extension` for mod
 | `kling-3.0-motion-control` | Motion control |
 | `kling-3.0-video` | Text-to-video, image-to-video, start-end-to-video, element references |
 | `kling-v2.1-master` | Text-to-video, image-to-video |
-| `kling-v2.1-pro` | Image-to-video, start-end-to-video |
-| `kling-v2.1-standard` | Image-to-video |
 | `kling-v2.5-turbo-pro` | Text-to-video, image-to-video, start-end-to-video |
-| `kling-v2.5-turbo-std` | Text-to-video, image-to-video |
 | `kling-v2.6-pro` | Text-to-video, image-to-video, start-end-to-video |
 | `kling-v2.6-std` | Text-to-video, image-to-video |
-| `kling-v3.0-pro` | Text-to-video, image-to-video, start-end-to-video |
-| `kling-v3.0-std` | Text-to-video, image-to-video, start-end-to-video |
 | `kling-video-o1-pro` | Text-to-video, image-to-video, reference-to-video, start-end-to-video, video-to-video |
 | `kling-video-o1-std` | Text-to-video, image-to-video, reference-to-video, start-end-to-video, video-to-video |
 
@@ -2347,10 +2313,8 @@ The request contract also accepts `audio-to-video` and `video-extension` for mod
 |-------|-------------------|
 | `veo3` | Text-to-video, image-to-video |
 | `veo3-fast` | Text-to-video, image-to-video |
-| `veo3-pro` | Text-to-video, image-to-video |
 | `veo3.1` | Text-to-video, image-to-video, reference-to-video, start-end-to-video |
 | `veo3.1-fast` | Text-to-video, image-to-video, reference-to-video, start-end-to-video |
-| `veo3.1-pro` | Text-to-video, image-to-video, start-end-to-video |
 
 ### ByteDance
 
@@ -2394,12 +2358,6 @@ The request contract also accepts `audio-to-video` and `video-extension` for mod
 | `grok-imagine-image-to-video` | Image-to-video |
 | `grok-imagine-text-to-video` | Text-to-video |
 | `grok-imagine-upscale` | Video-to-video |
-
-### Other
-
-| Model | Public operations |
-|-------|-------------------|
-| `topaz-video-upscale` | Video-to-video |
 
 ## Usage Examples
 
@@ -2510,7 +2468,7 @@ For `grok-imagine-video` video-to-video, send a public HTTPS `.mp4` URL in `vide
 response = requests.post(f"{BASE}/videos/generations",
     headers=headers,
     json={
-        "model": "topaz-video-upscale",
+        "model": "grok-imagine-upscale",
         "operation": "video-to-video",
         "video_url": "https://example.com/source.mp4",
         "prompt": "Upscale this clip while preserving the original motion."
@@ -2624,11 +2582,11 @@ Not every coding task needs the most expensive model. Match the task to the righ
 | Task | Recommended | Cost Tier | Why |
 |------|-------------|-----------|-----|
 | Architecture design | `claude-opus-4-6`, `gpt-5.4` | $$$$ Premium | Complex reasoning needed |
-| Code generation | `claude-sonnet-4-6`, `gemini-3-pro-preview` | $$$ Standard | Best quality/cost balance |
+| Code generation | `claude-sonnet-4-6`, `gemini-3.1-pro-preview` | $$$ Standard | Best quality/cost balance |
 | Code review | `claude-sonnet-4-6`, `deepseek-r1` | $$–$$$ | Pattern matching, less creativity |
 | Bug fixing | `claude-sonnet-4-6`, `gpt-5-mini` | $$–$$$ | Focused, well-defined tasks |
-| Tab completion | `gpt-5-mini`, `gemini-3-flash-preview` | $$ Budget | Speed matters more than depth |
-| Boilerplate | `deepseek-v3.2`, `gpt-5-mini` | $ Economy | Simple, repetitive patterns |
+| Tab completion | `gpt-5-mini`, `gemini-3.5-flash` | $$ Budget | Speed matters more than depth |
+| Boilerplate | `deepseek-v3-2`, `gpt-5-mini` | $ Economy | Simple, repetitive patterns |
 
 > Tip: See [Model Selection Guide](/guides/coding-agent-models) for detailed model comparisons and per-tool configuration.
 
@@ -2756,21 +2714,21 @@ URL: https://docs.aisonar.dev/guides/coding-agent-models
 | `claude-opus-4-6` | Moderate | Excellent | $$$$ | 200K | Architecture, complex refactoring |
 | `gpt-5.4` | Moderate | Excellent | $$$$ | 200K | Complex reasoning, planning |
 | `claude-sonnet-4-6` | Fast | Very Good | $$$ | 200K | General coding, reviews |
-| `gemini-3-pro-preview` | Fast | Very Good | $$$ | 1M | Large codebase analysis |
+| `gemini-3.1-pro-preview` | Fast | Very Good | $$$ | 1M | Large codebase analysis |
 | `gpt-5-mini` | Very Fast | Good | $$ | 128K | Quick edits, completions |
-| `gemini-3-flash-preview` | Very Fast | Good | $$ | 1M | Fast iteration, search |
+| `gemini-3.5-flash` | Very Fast | Good | $$ | 1M | Fast iteration, search |
 | `deepseek-r1` | Moderate | Very Good | $ | 64K | Reasoning-heavy tasks |
-| `deepseek-v3.2` | Fast | Good | $ | 128K | Bulk generation, boilerplate |
+| `deepseek-v3-2` | Fast | Good | $ | 128K | Bulk generation, boilerplate |
 
 ## Task-Specific Recommendations
 
 #### Code Generation / Scaffolding
 
-**Recommended**: `claude-sonnet-4-6`, `gemini-3-pro-preview`
+**Recommended**: `claude-sonnet-4-6`, `gemini-3.1-pro-preview`
 
     These models produce clean, well-structured code with good naming conventions. For complex multi-file scaffolding, consider `claude-opus-4-6`.
 
-    Budget alternative: `deepseek-v3.2` handles boilerplate well at a fraction of the cost.
+    Budget alternative: `deepseek-v3-2` handles boilerplate well at a fraction of the cost.
 
 
 #### Code Review / Refactoring
@@ -2798,7 +2756,7 @@ URL: https://docs.aisonar.dev/guides/coding-agent-models
 
 #### Quick Edits / Tab Completion
 
-**Recommended**: `gpt-5-mini`, `gemini-3-flash-preview`
+**Recommended**: `gpt-5-mini`, `gemini-3.5-flash`
 
     Speed is critical for interactive use. Budget models with fast response times provide the best experience. Don't waste premium tokens on autocomplete.
 
@@ -2958,7 +2916,7 @@ Add AI Sonar providers under `models.providers`:
         models: [
           { id: "gpt-4o", name: "GPT-4o" },
           { id: "deepseek-r1", name: "DeepSeek R1" },
-          { id: "qwen3-32b", name: "Qwen 3 32B" }
+          { id: "qwen3-coder-flash", name: "Qwen 3 Coder Flash" }
         ]
       },
       "aisonar-responses": {
@@ -2984,8 +2942,8 @@ Add AI Sonar providers under `models.providers`:
         baseUrl: "https://api.aisonar.dev",
         apiKey: "sk-your-api-key",
         models: [
-          { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash" },
-          { id: "gemini-3-flash-preview", name: "Gemini 3 Flash Preview" }
+          { id: "gemini-3.5-flash", name: "Gemini 3.5 Flash" },
+          { id: "gemini-3.5-flash", name: "Gemini 3.5 Flash" }
         ]
       },
       "aisonar-minimax": {
@@ -2993,7 +2951,7 @@ Add AI Sonar providers under `models.providers`:
         baseUrl: "https://api.aisonar.dev",
         apiKey: "sk-your-api-key",
         models: [
-          { id: "minimax-m1", name: "MiniMax M1" }
+          { id: "minimax-m2.1", name: "MiniMax M2.1" }
         ]
       }
     }
@@ -3014,7 +2972,7 @@ OpenClaw still references models with the `provider/model` format:
   agents: {
     defaults: {
       model: {
-        primary: "aisonar-gemini/gemini-2.5-flash"
+        primary: "aisonar-gemini/gemini-3.5-flash"
       }
     }
   }
@@ -3029,8 +2987,8 @@ OpenClaw still references models with the `provider/model` format:
 | `aisonar` | `aisonar/deepseek-r1` | DeepSeek reasoning model |
 | `aisonar-responses` | `aisonar-responses/gpt-4o` | Responses API route |
 | `aisonar-claude` | `aisonar-claude/claude-sonnet-4-6` | Native Claude Messages route |
-| `aisonar-gemini` | `aisonar-gemini/gemini-2.5-flash` | Native Gemini route |
-| `aisonar-minimax` | `aisonar-minimax/minimax-m1` | Native MiniMax route |
+| `aisonar-gemini` | `aisonar-gemini/gemini-3.5-flash` | Native Gemini route |
+| `aisonar-minimax` | `aisonar-minimax/minimax-m2.1` | Native MiniMax route |
 
 Browse all available models at [aisonar.dev/models](https://aisonar.dev/models).
 
@@ -3327,9 +3285,9 @@ anthropic_models = [m for m in models.data if m.owned_by == "anthropic"]
 
 | Provider | Example Models |
 |----------|----------------|
-| `openai` | gpt-5.4, gpt-5.4-mini, gpt-5-mini, gpt-4o, dall-e-3 |
+| `openai` | gpt-5.4, gpt-5.4-mini, gpt-5-mini, gpt-4o, gpt-image-2 |
 | `anthropic` | claude-opus-4-6, claude-sonnet-4-6, claude-haiku-4-5 |
-| `google` | gemini-3-pro-preview, gemini-3-flash-preview, gemini-2.5-pro |
+| `google` | gemini-3.1-pro-preview, gemini-3.5-flash, gemini-2.5-pro |
 | `deepseek` | deepseek-r1, deepseek-v3-2 |
 | `xai` | grok-4.1 |
 | `moonshot` | kimi-k2.5 |
@@ -4023,15 +3981,16 @@ When you receive `status: "pending"`, use `poll_url` or `GET /v1/tasks/{task_id}
 
 ## Available Models
 
+These are current example models, not a fixed catalog. Query `GET /v1/models?recommended_for=image` or the Models page for the latest availability and pricing.
+
 | Model | Type | Features |
 |-------|------|----------|
-| `dall-e-3` | Usually inline | Best quality, prompt enhancement |
-| `dall-e-2` | Usually inline | Faster, more affordable |
+| `gpt-image-2` | Inline or task-based | Token-priced GPT Image model, flexible sizes |
 | `flux-pro` | Often task-based | Photorealistic, high quality |
-| `flux-schnell` | Usually inline | Very fast |
-| `midjourney` | Often task-based | Artistic style |
-| `ideogram-v3` | Often task-based | Best text rendering |
-| `stable-diffusion-3` | Usually inline | Open source, customizable |
+| `qwen-image` | Often task-based | Strong text rendering and prompt following |
+| `nano-banana-pro` | Often task-based | Reference-image workflows and high-resolution output |
+| `grok-imagine-image` | Often task-based | xAI image generation with aspect ratio and resolution selection |
+| `ideogram-v3` | Often task-based | Strong text rendering |
 
 Do not hard-code a model as always synchronous or always asynchronous. If the create response returns `status: "pending"`, follow `poll_url` and poll until completion.
 
@@ -4043,7 +4002,7 @@ For image models, always check whether the response contains `status: "pending"`
 import requests
 import time
 
-def generate_image(prompt, model="midjourney"):
+def generate_image(prompt, model="flux-pro"):
     # Create image request
     response = requests.post(
         "https://api.aisonar.dev/v1/images/generations",
@@ -4077,7 +4036,7 @@ def generate_image(prompt, model="midjourney"):
         return data["data"][0]["url"]
 
 # Usage
-url = generate_image("a beautiful sunset over mountains", model="midjourney")
+url = generate_image("a beautiful sunset over mountains", model="flux-pro")
 print(f"Generated image: {url}")
 ```
 
@@ -4095,7 +4054,7 @@ Creates an edited or extended image given an original image and a prompt.
 
 The route supports both:
 
-- the classic `multipart/form-data` DALL-E style upload flow documented below
+- the OpenAI-compatible `multipart/form-data` upload flow documented below
 - JSON requests that provide `image_url`, `image_urls`, or official `images` references for supported image-to-image families
 
 > Note: `gpt-image-2` is supported here. It accepts multipart `image` uploads, JSON `image_url` / `image_urls`, and official `images[]` references (`image_url` or `file_id`), with up to 16 source images. Create `file_id` values through `/v1/files` first. Set `async: true` to return a task first; official FLUX/BFL edit models also use the same task polling flow.
@@ -4138,7 +4097,7 @@ URL: https://docs.aisonar.dev/api-reference/images/create-variation
 
 ## Overview
 
-Creates a variation of a given image. Requires `multipart/form-data` content type.
+This endpoint is retained for legacy OpenAI-compatible variation clients. It is not the recommended path for current image-to-image workflows; use `/v1/images/edits` with `gpt-image-2` or `/v1/images/generations` with an image-to-image model such as `nano-banana-pro` when possible. Requires `multipart/form-data` content type.
 
 ## Request Body
 
@@ -4148,7 +4107,7 @@ Creates a variation of a given image. Requires `multipart/form-data` content typ
 
 ## Notes
 
-> Note: Image variations are only available with DALL-E 2. The model will generate new images that are similar in style and content to the original image.
+> Note: This is a legacy compatibility endpoint. It is not included in the current recommended image model catalog. For new integrations, use `/v1/images/edits` with `gpt-image-2`, or `/v1/images/generations` with `operation: "image-to-image"` and a current image-to-image model.
 
 ---
 
@@ -4502,7 +4461,7 @@ response = requests.post(
     "https://api.aisonar.dev/v1/videos/generations",
     headers={"Authorization": "Bearer sk-your-api-key"},
     json={
-        "model": "topaz-video-upscale",
+        "model": "grok-imagine-upscale",
         "operation": "video-to-video",
         "video_url": "https://example.com/source.mp4",
         "prompt": "Upscale the clip while preserving the original motion.",
@@ -4550,11 +4509,8 @@ This list is aligned with the current enabled public video model inventory in th
 | `kling-3.0-motion-control` | Motion control |
 | `kling-3.0-video` | Text-to-video, image-to-video, start-end-to-video, element references |
 | `kling-v2.5-turbo-pro` | Text-to-video, image-to-video, start-end-to-video |
-| `kling-v2.5-turbo-std` | Text-to-video, image-to-video |
 | `kling-v2.6-pro` | Text-to-video, image-to-video, start-end-to-video |
 | `kling-v2.6-std` | Text-to-video, image-to-video |
-| `kling-v3.0-pro` | Text-to-video, image-to-video, start-end-to-video |
-| `kling-v3.0-std` | Text-to-video, image-to-video, start-end-to-video |
 | `kling-video-o1-pro` | Text-to-video, image-to-video, reference-to-video, start-end-to-video, video-to-video |
 | `kling-video-o1-std` | Text-to-video, image-to-video, reference-to-video, start-end-to-video, video-to-video |
 
@@ -4564,10 +4520,8 @@ This list is aligned with the current enabled public video model inventory in th
 |-------|-------------------|
 | `veo3` | Text-to-video, image-to-video |
 | `veo3-fast` | Text-to-video, image-to-video |
-| `veo3-pro` | Text-to-video, image-to-video |
 | `veo3.1` | Text-to-video, image-to-video, reference-to-video, start-end-to-video |
 | `veo3.1-fast` | Text-to-video, image-to-video, reference-to-video, start-end-to-video |
-| `veo3.1-pro` | Text-to-video, image-to-video, start-end-to-video |
 
 ### ByteDance
 
@@ -4616,7 +4570,6 @@ This list is aligned with the current enabled public video model inventory in th
 
 | Model | Public operations |
 |-------|-------------------|
-| `topaz-video-upscale` | Video-to-video |
 
 ---
 
@@ -6435,7 +6388,7 @@ On first run, you'll:
 | Model | Description |
 |-------|-------------|
 | `gemini-2.5-pro` | Most capable Gemini model |
-| `gemini-2.5-flash` | Fast, efficient for most tasks |
+| `gemini-3.5-flash` | Fast, efficient for most tasks |
 | `gemini-2.0-flash` | Previous generation, stable |
 
 ## Common Commands
@@ -6699,7 +6652,7 @@ opencode --model aisonar/gpt-5.4 "Fix the bugs in main.py"
 | `gpt-5-mini` | Quick fixes, simple queries |
 | `claude-sonnet-4-6` | Code review, documentation |
 | `claude-opus-4-6` | Complex reasoning |
-| `gemini-2.5-flash` | Fast responses |
+| `gemini-3.5-flash` | Fast responses |
 | `deepseek-r1` | Algorithm design |
 
 ## Common Commands
@@ -7457,7 +7410,7 @@ claude = ChatOpenAI(
 )
 
 gemini = ChatOpenAI(
-    model="gemini-2.5-flash",
+    model="gemini-3.5-flash",
     api_key="sk-your-key",
     base_url="https://api.aisonar.dev/v1",
 )
@@ -7801,7 +7754,7 @@ Add the models you want to use, for example:
     - `gpt-4o`
     - `claude-sonnet-4-6`
     - `claude-opus-4-6`
-    - `gemini-2.5-flash`
+    - `gemini-3.5-flash`
     - `gemini-2.5-pro`
     - `deepseek-r1`
 
@@ -7825,7 +7778,7 @@ Then set it as the default embedding model in the relevant knowledge base or app
 |----------|------------------|
 | Default chat | `gpt-5.4`, `gpt-5-mini`, `gpt-4o` |
 | Deep reasoning | `gpt-5.4`, `claude-opus-4-6`, `deepseek-r1` |
-| Fast/cheap | `gpt-5-mini`, `gemini-2.5-flash` |
+| Fast/cheap | `gpt-5-mini`, `gemini-3.5-flash` |
 | Embeddings | `text-embedding-3-small`, `text-embedding-3-large` |
 
 ## Best Practices
@@ -7837,7 +7790,7 @@ In newer Dify versions, the built-in OpenAI provider with a custom base URL is u
 
 #### Use cheaper models for iteration
 
-Use `gpt-5-mini` or `gemini-2.5-flash` while iterating, then switch heavier workflows to stronger models only where needed.
+Use `gpt-5-mini` or `gemini-3.5-flash` while iterating, then switch heavier workflows to stronger models only where needed.
 
 
 #### Remember Dify is usually chat-completions oriented
@@ -7936,7 +7889,7 @@ If an app asks for a **full endpoint URL** instead of a base URL, use:
 |----------|------------------|
 | General default | `gpt-5.4`, `gpt-5-mini`, `gpt-4o` |
 | Anthropic | `claude-sonnet-4-6`, `claude-opus-4-6` |
-| Google | `gemini-2.5-flash`, `gemini-2.5-pro` |
+| Google | `gemini-3.5-flash`, `gemini-2.5-pro` |
 | DeepSeek | `deepseek-r1`, `deepseek-v3-2` |
 
 ## Tips

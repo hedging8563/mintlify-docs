@@ -12,21 +12,21 @@ description: "Chọn mô hình phù hợp cho từng tác vụ lập trình — 
 | `claude-opus-4-6` | Trung bình | Xuất sắc | $$$$ | 200K | Kiến trúc, refactoring phức tạp |
 | `gpt-5.4` | Trung bình | Xuất sắc | $$$$ | 200K | Suy luận phức tạp, lập kế hoạch |
 | `claude-sonnet-4-6` | Nhanh | Rất tốt | $$$ | 200K | Lập trình chung, review |
-| `gemini-3-pro-preview` | Nhanh | Rất tốt | $$$ | 1M | Phân tích codebase lớn |
+| `gemini-3.1-pro-preview` | Nhanh | Rất tốt | $$$ | 1M | Phân tích codebase lớn |
 | `gpt-5-mini` | Rất nhanh | Tốt | $$ | 128K | Chỉnh sửa nhanh, hoàn thành |
-| `gemini-3-flash-preview` | Rất nhanh | Tốt | $$ | 1M | Lặp nhanh, tìm kiếm |
+| `gemini-3.5-flash` | Rất nhanh | Tốt | $$ | 1M | Lặp nhanh, tìm kiếm |
 | `deepseek-r1` | Trung bình | Rất tốt | $ | 64K | Tác vụ nặng suy luận |
-| `deepseek-v3.2` | Nhanh | Tốt | $ | 128K | Tạo hàng loạt, boilerplate |
+| `deepseek-v3-2` | Nhanh | Tốt | $ | 128K | Tạo hàng loạt, boilerplate |
 
 ## Đề xuất theo tác vụ
 
 <AccordionGroup>
   <Accordion title="Tạo code / Scaffolding">
-    **Đề xuất**: `claude-sonnet-4-6`, `gemini-3-pro-preview`
+    **Đề xuất**: `claude-sonnet-4-6`, `gemini-3.1-pro-preview`
 
     Code sạch, cấu trúc tốt. Scaffolding đa file phức tạp: dùng `claude-opus-4-6`.
 
-    Thay thế tiết kiệm: `deepseek-v3.2` xử lý boilerplate với chi phí thấp.
+    Thay thế tiết kiệm: `deepseek-v3-2` xử lý boilerplate với chi phí thấp.
   </Accordion>
 
   <Accordion title="Review code / Refactoring">
@@ -48,7 +48,7 @@ description: "Chọn mô hình phù hợp cho từng tác vụ lập trình — 
   </Accordion>
 
   <Accordion title="Chỉnh sửa nhanh / Tab completion">
-    **Đề xuất**: `gpt-5-mini`, `gemini-3-flash-preview`
+    **Đề xuất**: `gpt-5-mini`, `gemini-3.5-flash`
 
     Tốc độ là yếu tố quan trọng nhất cho sử dụng tương tác.
   </Accordion>

@@ -1,80 +1,85 @@
 ---
-title: "✨ مهارة تكامل AI Sonar API"
-description: "ثبّت مهارة تكامل AI Sonar API المشتركة لأي وكيل برمجة، مع استرداد أخطاء Agent-First."
+title: "مهارة تكامل AI Sonar API"
+description: "ثبّت مهارة تكامل AI Sonar API المُحدّثة وعلّم وكلاء البرمجة اكتشاف النماذج وقراءة العقود العامة والتعافي من أخطاء API."
 ---
 
 <Note>
-تُعلّم هذه المهارة وكيل البرمجة الخاص بك كيفية تكامل **مئات واجهات API للذكاء الاصطناعي** من AI Sonar فقط عبر وصف ما تحتاجه. وهي مُجمّعة كمهارة مشتركة واحدة بنهج agent-first وتعمل مع أي وكيل برمجة يدعم ملفات المهارات أو القواعد.
-
-إن الـ API **[Agent-First](/guides/agent-first-api)** — حتى إذا خمّن الوكيل اسم نموذج بشكل خاطئ، فإن استجابة الخطأ تخبره بالضبط كيف يُصلح ذلك.
+تشرح هذه الصفحة مهارة `aisonar-api-integration` المشتركة والمُحدّثة. التوزيع الرسمي موجود في [hedging8563/aisonar-skills](https://github.com/hedging8563/aisonar-skills)، حيث يحتفظ المستودع العام بهذه المهارة فقط بشكل مقصود.
 </Note>
 
 <Note>
-توضح هذه الصفحة طبقة تغليف مهارة قابلة لإعادة الاستخدام، وليست طبقة توافق بروتوكولي. إذا كنت تحتاج إلى إعداد نقطة نهاية أو SDK أو عميل، فاستخدم صفحات التكامل المخصصة لتلك الأدوات.
+استخدم هذه الصفحة لتثبيت المهارة وإرشاد سير عمل agent. لإعداد endpoint محدد، استخدم صفحة SDK أو العميل أو مرجع API الخاصة به.
 </Note>
 
-## كيف تعمل
+## ما الذي تفعله المهارة
 
-1. **أنت تصف ما تحتاجه** — "أريد استخدام GPT-4 في مشروع Python الخاص بي"
-2. **يستدعي الوكيل الـ API** — وقد يخمّن اسم نموذج أو نقطة نهاية
-3. **إذا حدث أي خطأ** — يعيد الـ API تلميحات منظّمة (`did_you_mean`, `suggestions`, `retry_after`)
-4. **يقوم الوكيل بالتصحيح الذاتي** — يقرأ التلميحات ويعيد المحاولة باستخدام المعلمات الصحيحة
-5. **تحصل على كود يعمل** — عادةً من المحاولة الأولى أو الثانية
+- تولّد أمثلة صغيرة قابلة للتشغيل لعائلات AI Sonar API مثل chat والصور والصوت والفيديو والترجمة وغيرها.
+- تستخدم `https://api.aisonar.dev/v1` للعملاء المتوافقين مع OpenAI وتوضح متى يجب الانتقال إلى مسارات Anthropic أو Gemini الأصلية.
+- تكتشف النماذج عبر `/v1/models` و`/llms.txt` وقوائم `recommended_for` بدل التخمين من قوائم قديمة.
+- تقرأ العقد العام للنموذج قبل إعادة محاولة طلبات غير المحادثة حتى لا تُزال الحقول غير المدعومة بصمت.
+- تتعامل مع تلميحات Agent-First مثل `did_you_mean` و`suggestions` و`retry_after` و`recommended_request`.
 
 ## التثبيت
 
 <Note>
-استخدم أمر التثبيت canonical غير التفاعلي:
+استخدم أمر التثبيت الرسمي غير التفاعلي:
 
 ```bash
 npx skills add https://github.com/hedging8563/aisonar-skills --skill aisonar-api-integration -y
 ```
 
-يؤدي ذلك إلى تثبيت المهارة المشتركة `aisonar-api-integration` من مستودع مهارات AI Sonar.
+يثبّت هذا الأمر مهارة `aisonar-api-integration` المشتركة من مستودع AI Sonar skills.
 
-إذا كانت أداتك لا تدعم أداة التثبيت، فانْسَخ المجلد `skills/aisonar-api-integration/` من المستودع إلى دليل المهارات أو القواعد المشتركة في أداتك.
+إذا لم تدعم أداتك installer، انسخ `skills/aisonar-api-integration/` من المستودع إلى مجلد skills أو rules المشترك في أداتك.
 </Note>
+
+### تحديث التثبيتات الحالية
+
+إذا ثبّت المهارة قبل تنظيف مستودع AI Sonar، أعد تشغيل الأمر نفسه. الحزمة العامة الحالية أصغر ولم تعد تعتمد على سكربتات بحث محلية مولّدة.
 
 ### التحقق من التثبيت
 
-اطلب من وكيل البرمجة الخاص بك:
+اسأل coding agent لديك:
+
 ```
-ما هي المهارات المتاحة؟
+ما skills المتاحة؟
 ```
 
-إذا رأيت `aisonar-api-integration`، فقد نجح التثبيت.
+إذا رأيت `aisonar-api-integration` فهذا يعني أن التثبيت نجح.
 
-## احصل على API Key الخاص بك
+## الحصول على API Key
 
 <Steps>
-  <Step title="زيارة AI Sonar">
+  <Step title="افتح AI Sonar">
     انتقل إلى [aisonar.dev](https://aisonar.dev)
   </Step>
-  <Step title="تسجيل الدخول">
+  <Step title="سجّل الدخول">
     أنشئ حسابًا أو سجّل الدخول
   </Step>
-  <Step title="الحصول على API Key">
-    انتقل إلى [Dashboard → API Keys](https://console.aisonar.dev/api) وأنشئ مفتاحًا جديدًا
+  <Step title="احصل على API Key">
+    افتح [Dashboard → API Keys](https://console.aisonar.dev/api) وأنشئ key جديدًا
   </Step>
-  <Step title="نسخ المفتاح">
-    يبدأ مفتاحك بـ `sk-...` — احفظه بأمان
+  <Step title="انسخ key">
+    يبدأ key بـ `sk-...`. خزّنه بأمان.
   </Step>
 </Steps>
 
 <Tip>
-لا تحتاج إلى لصق مفتاح API داخل المطالبات أو ملفات المصدر. يجب أن يسأل skill عن متغير البيئة المطلوب ثم يولد كودا يقرأ المفتاح منه.
+لا تلصق API keys في prompts أو ملفات المصدر. يجب أن تسأل المهارة عن متغير البيئة المستخدم وتولّد كودًا يقرأ key من ذلك المتغير.
 </Tip>
 
-## أمثلة
+## سير عمل Agent الموصى به
 
-### إكمال الدردشة
+1. ابدأ بأصغر مثال يعمل ويطابق لغة المستخدم وعائلة API المطلوبة.
+2. عندما يكون اختيار النموذج مفتوحًا، استدعِ `/v1/models` أو `https://api.aisonar.dev/llms.txt` قبل تثبيت نموذج في الكود.
+3. لأعمال غير المحادثة، استدعِ `/v1/models?recommended_for=<scene>` حيث تكون `<scene>` واحدة من `image` أو `video` أو `music` أو `3d` أو `tts` أو `stt` أو `embedding` أو `rerank` أو `translation`.
+4. قبل تعديل طلب غير محادثة فشل، اقرأ `/v1/models/:model` ووافق `supported_operations` و`supported_parameters` و`request_endpoint` و`request_shape_mode` و`recommended_request`.
+5. إذا أعادت API خطأ Agent-First، استخدم الحقول المنظمة لتصحيح الطلب ولا تعِد المحاولة إلا إذا كان الخطأ retryable.
 
-**أنت تقول:**
-```
-أريد استخدام GPT-4 في مشروع Python الخاص بي
-```
+## مثال محادثة بسيط
 
-**يُنشئ الوكيل:**
+يستخدم هذا المثال OpenAI Python SDK مع base URL الخاص بـ AI Sonar:
+
 ```python
 import os
 from openai import OpenAI
@@ -85,7 +90,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="gpt-5.4",
+    model="gpt-4o-mini",
     messages=[{"role": "user", "content": "Hello!"}]
 )
 
@@ -95,135 +100,100 @@ print(response.choices[0].message.content)
 شغّله باستخدام:
 
 ```bash
+pip install openai
 export TOKENLAB_API_KEY="sk-your-api-key"
 python app.py
 ```
 
-إذا خمّن الوكيل اسم نموذج خاطئًا (مثل `gpt5`)، يعيد الـ API:
-```json
-{
-  "error": {
-    "code": "model_not_found",
-    "did_you_mean": "gpt-5.4",
-    "suggestions": [{"id": "gpt-5.4"}, {"id": "gpt-5-mini"}],
-    "hint": "Did you mean 'gpt-5.4'? Use GET https://api.aisonar.dev/v1/models to list all available models."
-  }
-}
-```
+## اكتشاف النماذج والعقود العامة
 
-يقرأ الوكيل `did_you_mean`، ويصحح اسم النموذج، ثم يعيد المحاولة — وكل ذلك تلقائيًا.
-
-### إنشاء الصور
-
-**أنت تقول:**
-```
-Generate images with Flux in Node.js
-```
-
-يستدعي الوكيل API الصور، ويتعامل مع الأخطاء، ويُنشئ كودًا كاملًا مع منطق التنزيل والحفظ.
-
-### التعرّف على الكلام
-
-**أنت تقول:**
-```
-Integrate speech-to-text in my app
-```
-
-يُنشئ الوكيل كودًا باستخدام نقطة النهاية الصحيحة `/v1/audio/transcriptions` ومعالجة ملفات الصوت.
-
-## استرداد أخطاء Agent-First
-
-تتضمن كل استجابة خطأ تلميحات منظّمة يمكن لأي وكيل برمجة تحليلها. راجع [المرجع الكامل لـ Agent-First API](/guides/agent-first-api) للحصول على التفاصيل.
-
-| الخطأ | ما الذي يعيده الـ API | ما الذي يفعله الوكيل |
-|-------|---------------------|---------------------|
-| اسم نموذج خاطئ | `did_you_mean` + `suggestions` | يُصحح تلقائيًا ويعيد المحاولة |
-| رصيد غير كافٍ | `balance_usd` + `suggestions` أرخص | ينتقل إلى نموذج بسعر مناسب |
-| النموذج غير متاح | `alternatives` + `retry_after` | ينتقل إلى نموذج متاح |
-| تم تطبيق rate limit | `retry_after` (بالثواني الدقيقة) | ينتظر ويعيد المحاولة |
-| السياق طويل جدًا | `suggestions` مع نماذج أكبر | ينتقل إلى نموذج بسياق أكبر |
-| عدم تطابق عقد طلب غير دردشة | `supported_operations`, `supported_parameters`, `request_endpoint`, `recommended_request` | يُعيد بناء الطلب من عقد النموذج العام |
-
-### تحسين نقطة النهاية الأصلية
-
-عند استدعاء `/v1/chat/completions` باستخدام نموذج Claude أو Gemini، يعيد الـ API ترويسات تحسين:
-
-
-
-تعامل مع هذه الترويسات كتلميحات توجيه، وليست تحويلاً تلقائيًا إجباريًا. تستخدم استدعاءات Claude الأصلية `/v1/messages`؛ أما استدعاءات Gemini الأصلية فيجب أن تتبع endpoint المعلن في the native endpoint hint header، وغالبًا يكون `/v1beta/gemini`.
-
-### اكتشاف النماذج
-
-لا حاجة للبحث في الوثائق:
+فضّل الاكتشاف الحي بدل القوائم المضمّنة القديمة:
 
 ```bash
 # نظرة عامة على API قابلة للقراءة آليًا
 curl https://api.aisonar.dev/llms.txt
 
-# List models by category
-curl "https://api.aisonar.dev/v1/models?category=chat" -H "Authorization: Bearer sk-KEY"
+# عرض النماذج
+curl "https://api.aisonar.dev/v1/models" -H "Authorization: Bearer sk-KEY"
 curl "https://api.aisonar.dev/v1/models?category=image" -H "Authorization: Bearer sk-KEY"
 
-# قائمة مختصرة موصى بها للسيناريوهات غير الخاصة بالدردشة
+# قوائم مختصرة مرتبة لغير المحادثة
 curl "https://api.aisonar.dev/v1/models?recommended_for=image" -H "Authorization: Bearer sk-KEY"
+curl "https://api.aisonar.dev/v1/models?recommended_for=video" -H "Authorization: Bearer sk-KEY"
 curl "https://api.aisonar.dev/v1/models?recommended_for=translation" -H "Authorization: Bearer sk-KEY"
 
-# اقرأ عقد نموذج واحد العام قبل إعادة محاولة طلب غير دردشة
+# اقرأ العقد العام لنموذج واحد قبل إعادة محاولة طلب غير محادثة
 curl "https://api.aisonar.dev/v1/models/gpt-image-2" -H "Authorization: Bearer sk-KEY"
 
-# التصفية حسب القدرة
-curl "https://api.aisonar.dev/v1/models?tag=coding" -H "Authorization: Bearer sk-KEY"
+# تفاصيل التسعير فقط
+curl "https://api.aisonar.dev/v1/models/gpt-image-2/pricing" -H "Authorization: Bearer sk-KEY"
 ```
 
-## الإمكانات المدعومة
+## تلميحات التوجيه الأصلي
 
-| النوع | أمثلة |
-|------|----------|
-| الدردشة | GPT-5.4, Claude, Gemini, DeepSeek |
-| إنشاء الصور | GPT Image, Flux, Stable Diffusion, نماذج صور Gemini |
-| إنشاء الموسيقى | Suno |
-| نماذج ثلاثية الأبعاد | Tripo3D |
-| الصوت | تحويل النص إلى كلام، وتحويل الكلام إلى نص |
-| التضمينات | text-embedding-3 |
-| إعادة الترتيب | bce-reranker, qwen3-rerank |
+المسار المتوافق مع OpenAI `/v1` هو الافتراضي لأمثلة chat وResponses والصور وembedding والصوت وrerank. استخدم مسارات Anthropic أو Gemini الأصلية فقط عندما يحتاج الطلب إلى سلوك خاص بالمزوّد أو عندما يعيد AI Sonar تلميح التحسين the native endpoint hint header.
+
+
+
+## استرداد أخطاء Agent-First
+
+تتضمن الأخطاء حقولًا يمكن لوكلاء البرمجة تحليلها من دون استخراج النص من الوثائق:
+
+| الخطأ | حقول مفيدة | إجراء agent |
+|---|---|---|
+| اسم النموذج غير صحيح | `did_you_mean`, `suggestions`, `hint` | أعِد المحاولة بالنموذج المصحح أو ببديل مقترح |
+| الرصيد غير كافٍ | `balance_usd`, `estimated_cost_usd`, `suggestions` | اطلب موافقة أو انتقل إلى نموذج ميسور التكلفة |
+| حد معدل أو عدم توفر مؤقت | `retryable`, `retry_after`, `alternatives` | انتظر ثم أعد المحاولة أو اختر بديلًا من القائمة |
+| عدم تطابق عقد غير المحادثة | `supported_operations`, `supported_parameters`, `request_endpoint`, `request_shape_mode`, `recommended_request` | أعد بناء الطلب من العقد العام، واستخدم fail closed للحقول التي تغير النية |
+
+## عائلات API المدعومة
+
+| العائلة | المسار الرئيسي |
+|---|---|
+| Chat وResponses | `/v1/chat/completions`, `/v1/responses` |
+| رسائل Claude الأصلية | `/v1/messages` |
+| طلبات Gemini الأصلية | `/v1beta/models/{model}:generateContent` |
+| الصور | `/v1/images/generations`, `/v1/images/edits` |
+| الفيديو | `/v1/videos/generations` |
+| الموسيقى | `/v1/music/generations` |
+| Worlds | `/v1/worlds/generations` مع endpoints لحالة world وmedia asset |
+| 3D | `/v1/3d/generations` |
+| الصوت | `/v1/audio/speech`, `/v1/audio/transcriptions`, `/v1/audio/translations` |
+| Realtime | `/v1/realtime?model={model}` |
+| Embeddings وrerank | `/v1/embeddings`, `/v1/rerank` |
+| ترجمة النص | `/v1/translations` |
 
 ## أفضل الممارسات
 
 <CardGroup cols={2}>
   <Card title="أمان API Key" icon="shield">
-    استخدم متغيرات البيئة. لا تقم أبدًا بتضمين المفاتيح في git أو كشفها في كود الواجهة الأمامية.
+    استخدم متغيرات البيئة والاستدعاءات من الخادم. لا تكشف keys في كود الواجهة الأمامية.
   </Card>
-  <Card title="إدارة التكلفة" icon="wallet">
-    حدّد حدود الاستخدام في [dashboard](https://console.aisonar.dev) الخاصة بك. تحقّق من `error.balance_usd` لمراقبة التكاليف برمجيًا.
+  <Card title="العقد أولًا لغير المحادثة" icon="file-code">
+    اقرأ `/v1/models?recommended_for=...` و`/v1/models/:model` قبل إعادة محاولة طلبات الصور أو الفيديو أو الموسيقى أو 3D أو الترجمة أو الصوت أو embedding أو rerank.
   </Card>
-  <Card title="كن مباشرًا" icon="bullseye">
-    قل "أريد إنشاء صور باستخدام Python" بدلًا من "هل لدى AI Sonar واجهة API للصور؟"
+  <Card title="أصغر مثال قابل للتشغيل" icon="terminal">
+    أنشئ استدعاءً واحدًا يعمل قبل إضافة التجريدات أو الطوابير أو تدفقات UI.
   </Card>
-  <Card title="صِف السيناريو الخاص بك" icon="message">
-    "أنا أبني chatbot باستخدام GPT-4" يمنح الوكيل سياقًا أكبر من "استخدم GPT-4".
+  <Card title="استخدم التلميحات المنظمة" icon="rotate-cw">
+    حلّل `did_you_mean` و`retry_after` و`alternatives` و`recommended_request` قبل تغيير الكود.
   </Card>
 </CardGroup>
 
-## الأسئلة الشائعة
+## FAQ
 
 <AccordionGroup>
-  <Accordion title="المهارة لا يتم تفعيلها تلقائيًا؟">
-    جرّب ذكر "AI Sonar" أو "AI Sonar API" في طلبك:
-    ```
-    أريد استخدام AI Sonar لدمج GPT-4 في مشروعي
-    ```
+  <Accordion title="المهارة لا تعمل تلقائيًا؟">
+    اذكر “AI Sonar” أو “AI Sonar API” في الطلب، مثل: `استخدم AI Sonar لإضافة توليد الصور إلى تطبيق Node.js`.
   </Accordion>
 
-  <Accordion title="كيف يساعد الـ API الوكيل في العثور على النموذج الصحيح؟">
-    يعيد [Agent-First API](/guides/agent-first-api) الخاص بـ AI Sonar تلميحات أخطاء منظّمة. إذا خمّن الوكيل اسم نموذج خاطئًا، يتضمن الخطأ `did_you_mean` مع الاسم الصحيح و`suggestions` مع بدائل. يقرأ الوكيل هذه ويصحح تلقائيًا في المحاولة التالية.
+  <Accordion title="ما coding agents المدعومة؟">
+    أي coding agent يدعم مجلدات skills أو rules المشتركة يمكنه استخدام هذا المجلد. يتولى installer `skills` التعامل مع agents المدعومة تلقائيًا.
   </Accordion>
 
-  <Accordion title="ما هي وكلاء البرمجة المدعومة؟">
-    أي وكيل برمجة يدعم أدلة المهارات أو القواعد المشتركة. عندما تكون أداة التثبيت مدعومة، يضع `npx skills add` المهارة المشتركة `aisonar-api-integration` تلقائيًا في الموقع الذي تم اكتشافه.
-  </Accordion>
+  <Accordion title="كيف أحدّث المهارة؟">
+    أعد تشغيل أمر التثبيت. سيحدّث النسخة المحلية من المستودع العام الرسمي.
 
-  <Accordion title="كيف يتم تحديث المهارة؟">
-    أعد تشغيل أداة التثبيت:
     ```bash
     npx skills add https://github.com/hedging8563/aisonar-skills --skill aisonar-api-integration -y
     ```
@@ -234,19 +204,19 @@ curl "https://api.aisonar.dev/v1/models?tag=coding" -H "Authorization: Bearer sk
 
 <CardGroup cols={2}>
   <Card title="Agent-First API" icon="robot" href="/ar/guides/agent-first-api">
-    المرجع الكامل لتلميحات الأخطاء المنظّمة
+    تلميحات أخطاء منظمة وسلوك الاسترداد
   </Card>
   <Card title="وثائق API" icon="book" href="https://docs.aisonar.dev">
-    المرجع الكامل لـ API
+    إعداد خاص بكل endpoint وAPI Reference
   </Card>
   <Card title="النماذج" icon="sparkles" href="https://aisonar.dev/models">
-    تصفّح جميع النماذج المتاحة وعددها بالمئات
+    تصفح النماذج المتاحة
   </Card>
   <Card title="llms.txt" icon="file-lines" href="https://api.aisonar.dev/llms.txt">
-    نظرة عامة قابلة للقراءة آليًا على API لوكلاء الذكاء الاصطناعي
+    نظرة عامة على API قابلة للقراءة آليًا للوكلاء
   </Card>
 </CardGroup>
 
 <Info>
-**هل لديك أسئلة؟** اطّلع على [GitHub Issues](https://github.com/hedging8563/aisonar-skills/issues) الخاصة بنا أو تواصل مع [support@aisonar.dev](mailto:support@aisonar.dev)
+لديك أسئلة؟ استخدم [GitHub Issues](https://github.com/hedging8563/aisonar-skills/issues) أو تواصل عبر [support@aisonar.dev](mailto:support@aisonar.dev).
 </Info>

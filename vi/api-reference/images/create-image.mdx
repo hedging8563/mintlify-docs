@@ -34,8 +34,8 @@ Các model hình ảnh xAI Grok Imagine (`grok-imagine-image`, `grok-imagine-ima
 
 **Timeout cho yêu cầu đồng bộ:** một số nhà cung cấp hình ảnh được định tuyến sẽ trả ảnh cuối cùng inline và chờ quá trình tạo hoàn tất. Yêu cầu độ phân giải cao hoặc chất lượng cao có thể mất gần một phút hoặc lâu hơn, vì vậy hãy đặt timeout của HTTP client ít nhất là `120s`. Nếu phản hồi tạo có `status: "pending"`, `task_id`, hoặc `poll_url`, hãy theo `poll_url` được trả về để polling.
 
-<ParamField body="model" type="string" default="dall-e-3">
-  Model cần dùng (ví dụ: `gpt-image-2`, `dall-e-3`, `flux-pro`, `midjourney`).
+<ParamField body="model" type="string" required>
+  Model cần dùng (ví dụ: `gpt-image-2`, `flux-pro`, `qwen-image` hoặc `nano-banana-pro`). Dùng `GET /v1/models?recommended_for=image` để lấy danh sách đề xuất hiện tại.
 </ParamField>
 
 <ParamField body="prompt" type="string" required>
@@ -83,7 +83,7 @@ Các model hình ảnh xAI Grok Imagine (`grok-imagine-image`, `grok-imagine-ima
 </ParamField>
 
 <ParamField body="quality" type="string" default="standard">
-  Chất lượng ảnh. Model DALL-E dùng `standard` hoặc `hd`; các model GPT Image như `gpt-image-2` dùng `auto`, `low`, `medium` hoặc `high`.
+  Chất lượng ảnh. Các model GPT Image như `gpt-image-2` dùng `auto`, `low`, `medium` hoặc `high`. Các họ ảnh khác có thể dùng giá trị riêng của provider; hãy kiểm tra metadata của model trước khi gửi giá trị khác mặc định.
 </ParamField>
 
 <ParamField body="response_format" type="string" default="url">
@@ -96,8 +96,8 @@ Các model hình ảnh xAI Grok Imagine (`grok-imagine-image`, `grok-imagine-ima
   Đặt `true` với `gpt-image-2` hoặc các model hình ảnh FLUX/BFL chính thức để tạo task trước. Task ảnh async hoàn tất trả về URL bất kể `response_format` được yêu cầu; dùng request đồng bộ nếu cần `b64_json`.
 </ParamField>
 
-<ParamField body="style" type="string" default="vivid">
-  Phong cách cho DALL-E 3: `vivid` hoặc `natural`.
+<ParamField body="style" type="string">
+  Bộ chọn style tùy chọn. Chỉ gửi khi model đã chọn tài liệu hóa rõ ràng tham số này; bỏ qua với `gpt-image-2` trừ khi metadata của model nói khác.
 </ParamField>
 
 <ParamField body="user" type="string">
@@ -118,7 +118,7 @@ Các model hình ảnh xAI Grok Imagine (`grok-imagine-image`, `grok-imagine-ima
   Mỗi object chứa:
   - `url` (string): URL của hình ảnh được tạo
   - `b64_json` (string): Hình ảnh mã hoá Base64 (nếu được yêu cầu)
-  - `revised_prompt` (string): Prompt đã được dùng (DALL-E 3)
+  - `revised_prompt` (string): Bản sửa prompt tùy chọn do provider trả về, khi model upstream báo cáo trường này
 </ResponseField>
 
 ### Phản hồi task async
@@ -296,15 +296,16 @@ curl -X POST "https://api.aisonar.dev/v1/images/generations" \
 
 ## Model Khả Dụng
 
+Đây là các ví dụ model hiện tại, không phải catalog cố định. Dùng `GET /v1/models?recommended_for=image` hoặc trang Models để xem khả dụng và giá mới nhất.
+
 | Mô hình | Loại | Tính năng |
 |-------|------|----------|
-| `dall-e-3` | Thường là inline | Chất lượng tốt nhất, cải thiện prompt |
-| `dall-e-2` | Thường là inline | Nhanh hơn, chi phí thấp hơn |
+| `gpt-image-2` | Inline hoặc task | Model GPT Image tính giá theo token, kích thước linh hoạt |
 | `flux-pro` | Thường là task | Photorealistic, chất lượng cao |
-| `flux-schnell` | Thường là inline | Rất nhanh |
-| `midjourney` | Thường là task | Phong cách nghệ thuật |
-| `ideogram-v3` | Thường là task | Xử lý chữ tốt nhất |
-| `stable-diffusion-3` | Thường là inline | Mã nguồn mở, tuỳ biến cao |
+| `qwen-image` | Thường là task | Render chữ và bám prompt tốt |
+| `nano-banana-pro` | Thường là task | Workflow ảnh tham chiếu và đầu ra độ phân giải cao |
+| `grok-imagine-image` | Thường là task | Tạo ảnh xAI với chọn tỉ lệ và độ phân giải |
+| `ideogram-v3` | Thường là task | Render chữ tốt |
 
 Đừng hard-code một model là luôn đồng bộ hay luôn bất đồng bộ. Nếu response tạo ra trả về `status: "pending"`, hãy theo `poll_url` và polling đến khi hoàn tất.
 

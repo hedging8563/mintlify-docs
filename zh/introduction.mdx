@@ -24,15 +24,19 @@ AI Sonar 是一个 AI API 聚合平台，提供对来自 OpenAI、Anthropic、Go
 
 ## 支持的功能
 
-| 能力 | 描述 | 示例模型 |
-|------------|-------------|----------------|
-| **聊天与推理** | 文本生成、规划、工具 | `gpt-5.4`, `claude-sonnet-4-6`, `deepseek-r1` |
-| **Vision** | 图像理解与多模态对话 | `gpt-4o`, `claude-sonnet-4-6`, `gemini-2.5-flash` |
-| **图像生成** | 文本到图像及图像编辑 | `dall-e-3`, `flux-pro`, `midjourney` |
-| **Audio** | TTS 与转录 | `gpt-4o-mini-tts`, `whisper-1`, `gpt-4o-transcribe` |
-| **Embeddings** | 文本向量化 | `text-embedding-3-small`, `text-embedding-3-large` |
-| **Music** | AI 音乐生成 | `suno` |
-| **3D** | 3D 资产生成 | `tripo3d` |
+公开模型目录会随时间变化。请用 `/v1/models`、`recommended_for` 或模型页确认当前可用性；下面示例使用当前公开模型 ID。
+
+| 能力 | 说明 | 示例模型 |
+|---|---|---|
+| 聊天与推理 | 文本生成、规划、工具调用 | `gpt-5.4`, `claude-sonnet-4-6`, `deepseek-r1` |
+| 视觉与多模态 | 图像理解与多模态对话 | `gpt-4o`, `claude-sonnet-4-6`, `gemini-3.5-flash` |
+| 图像生成与编辑 | 文生图与图像编辑 | `gpt-image-2`, `flux-pro`, `qwen-image` |
+| 视频生成 | 文生视频、图生视频、参考视频与运动控制 | `veo3.1`, `seedance-2.0`, `kling-3.0-video` |
+| 音频与 Realtime | TTS、转写、翻译和实时会话 | `gpt-4o-mini-tts`, `whisper-1`, `gpt-realtime` |
+| 嵌入与 rerank | 文本向量化与重排序 | `text-embedding-3-small`, `qwen3-vl-rerank` |
+| 翻译 | 文本与语音翻译流程 | `qwen-mt-plus`, `gpt-realtime-translate` |
+| 音乐与 3D | 音乐和 3D 资产生成 | `suno-music`, `tripo3d-v2.5` |
+| Worlds | World 生成、状态轮询和媒体资产流程 | 使用 `/v1/worlds/generations` 与 Models API 确认当前可用性 |
 
 ## 先选择请求格式
 

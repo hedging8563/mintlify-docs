@@ -5,6 +5,8 @@ description: "Understand provider-level prompt caching and how it reduces costs"
 
 ## Overview
 
+AI Sonar does not add a separate semantic cache in this guide. This page explains upstream provider prompt caching, which appears in usage and billing when the routed provider reports cache tokens.
+
 ## How Provider Prompt Cache Works
 
 Provider prompt caching stores the processed representation of your prompt prefix on the provider's servers. When you send a request with the same prefix, the provider can skip reprocessing those tokens.

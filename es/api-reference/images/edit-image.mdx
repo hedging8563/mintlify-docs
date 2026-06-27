@@ -10,7 +10,7 @@ Crea una imagen editada o extendida dada una imagen original y un prompt.
 
 El endpoint admite ambos flujos:
 
-- el flujo clásico de carga `multipart/form-data` al estilo DALL-E que se documenta abajo
+- el flujo de carga `multipart/form-data` compatible con OpenAI documentado abajo
 - solicitudes JSON que proporcionan `image_url`, `image_urls` o referencias oficiales `images` para familias de imagen a imagen compatibles
 
 <Note>
@@ -32,7 +32,7 @@ Nota de compatibilidad: si una solicitud `gpt-image-2` incluye `input_fidelity`,
 URLs de imagen remotas: cuando el proveedor enrutado requiere entrada multipart, AI Sonar descarga JSON `image_url`, `image_urls` o `images[].image_url` y reenvía los bytes como partes multipart `image`. Las URLs deben ser públicas `http`/`https`, sin credenciales incrustadas ni fragmentos, y no deben resolver a localhost ni a rangos IP privados o reservados; cada redirección se valida de nuevo. El contenido descargado debe ser una imagen PNG, JPEG o WebP real. Límites: `50MB` por imagen, `200MB` en total para imágenes descargadas por URL en una solicitud, timeout de `10s` y hasta `3` redirecciones.
 
 <ParamField body="image" type="file">
-  Imágenes fuente multipart. Repite `image` para enviar varias fuentes de GPT Image. Los archivos deben ser PNG, JPEG o WebP, hasta 16 imágenes fuente y `50MB` cada una. Los modelos de edición xAI Grok Imagine usan los mismos campos de entrada, pero limitan las imágenes fuente a 3. Las ediciones legacy de DALL-E 2 con máscara siguen esperando PNG con áreas transparentes, o una `mask` separada.
+  Imágenes fuente multipart. Repite `image` para enviar varias fuentes de GPT Image. Los archivos deben ser PNG, JPEG o WebP, hasta 16 imágenes fuente y `50MB` cada una. Los modelos de edición xAI Grok Imagine usan los mismos campos de entrada, pero limitan las imágenes fuente a 3.
 </ParamField>
 
 <ParamField body="prompt" type="string" required>
@@ -43,8 +43,8 @@ URLs de imagen remotas: cuando el proveedor enrutado requiere entrada multipart,
   Una imagen adicional cuyas áreas completamente transparentes indican dónde se debe editar la imagen. Debe ser un archivo PNG válido, menor de 50MB y tener las mismas dimensiones que `image`.
 </ParamField>
 
-<ParamField body="model" type="string" default="dall-e-2">
-  Modelo que se usará para editar imágenes. `gpt-image-2` es compatible; las ediciones clásicas estilo DALL-E pueden seguir usando `dall-e-2`.
+<ParamField body="model" type="string" required>
+  Modelo que se usará para editar imágenes. Usa `gpt-image-2` para ediciones GPT Image, u otro modelo actual de edición de imágenes devuelto por `GET /v1/models?recommended_for=image`.
 </ParamField>
 
 <ParamField body="n" type="integer" default="1">
@@ -52,7 +52,7 @@ URLs de imagen remotas: cuando el proveedor enrutado requiere entrada multipart,
 </ParamField>
 
 <ParamField body="size" type="string">
-  Tamaño de la imagen generada. Para `gpt-image-2`, usa `auto` o `WIDTHxHEIGHT`; las dimensiones deben ser múltiplos de 16, el lado más largo como máximo `3840px`, la relación lado largo/corto como máximo `3:1`, y el total de píxeles entre `655,360` y `8,294,400`. Las ediciones clásicas de DALL-E admiten `256x256`, `512x512` o `1024x1024`.
+  Tamaño de la imagen generada. Para `gpt-image-2`, usa `auto` o `WIDTHxHEIGHT`; las dimensiones deben ser múltiplos de 16, el lado más largo como máximo `3840px`, la relación lado largo/corto como máximo `3:1`, y el total de píxeles entre `655,360` y `8,294,400`.
 </ParamField>
 
 <ParamField body="response_format" type="string" default="url">
@@ -95,6 +95,7 @@ Al crear la tarea puede reservarse el importe estimado. Las tareas completadas s
 ```bash cURL
 curl -X POST "https://api.aisonar.dev/v1/images/edits" \
   -H "Authorization: Bearer sk-your-api-key" \
+  -F "model=gpt-image-2" \
   -F "image=@sunlit_lounge.png" \
   -F "mask=@mask.png" \
   -F "prompt=A sunlit indoor lounge area with a pool" \
@@ -111,7 +112,7 @@ client = OpenAI(
 )
 
 response = client.images.edit(
-    model="dall-e-2",
+    model="gpt-image-2",
     image=open("sunlit_lounge.png", "rb"),
     mask=open("mask.png", "rb"),
     prompt="A sunlit indoor lounge area with a pool",
@@ -132,7 +133,7 @@ const client = new OpenAI({
 });
 
 const response = await client.images.edit({
-  model: 'dall-e-2',
+  model: 'gpt-image-2',
   image: fs.createReadStream('sunlit_lounge.png'),
   mask: fs.createReadStream('mask.png'),
   prompt: 'A sunlit indoor lounge area with a pool',
@@ -158,6 +159,8 @@ import (
 func main() {
     body := &bytes.Buffer{}
     writer := multipart.NewWriter(body)
+
+    writer.WriteField("model", "gpt-image-2")
 
     image, _ := os.Open("sunlit_lounge.png")
     defer image.Close()
@@ -201,6 +204,7 @@ curl_setopt_array($ch, [
         'Authorization: Bearer sk-your-api-key'
     ],
     CURLOPT_POSTFIELDS => [
+        'model' => 'gpt-image-2',
         'image' => $image,
         'mask' => $mask,
         'prompt' => 'A sunlit indoor lounge area with a pool',

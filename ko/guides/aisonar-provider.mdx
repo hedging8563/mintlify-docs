@@ -59,7 +59,7 @@ OpenClaw 구성 파일을 편집하세요:
         models: [
           { id: "gpt-4o", name: "GPT-4o" },
           { id: "deepseek-r1", name: "DeepSeek R1" },
-          { id: "qwen3-32b", name: "Qwen 3 32B" }
+          { id: "qwen3-coder-flash", name: "Qwen 3 Coder Flash" }
         ]
       },
       "aisonar-responses": {
@@ -85,8 +85,8 @@ OpenClaw 구성 파일을 편집하세요:
         baseUrl: "https://api.aisonar.dev",
         apiKey: "sk-your-api-key",
         models: [
-          { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash" },
-          { id: "gemini-3-flash-preview", name: "Gemini 3 Flash Preview" }
+          { id: "gemini-3.5-flash", name: "Gemini 3.5 Flash" },
+          { id: "gemini-3.5-flash", name: "Gemini 3.5 Flash" }
         ]
       },
       "aisonar-minimax": {
@@ -94,7 +94,7 @@ OpenClaw 구성 파일을 편집하세요:
         baseUrl: "https://api.aisonar.dev",
         apiKey: "sk-your-api-key",
         models: [
-          { id: "minimax-m1", name: "MiniMax M1" }
+          { id: "minimax-m2.1", name: "MiniMax M2.1" }
         ]
       }
     }
@@ -119,7 +119,7 @@ OpenClaw은 여전히 `provider/model` 형식으로 모델을 참조합니다:
   agents: {
     defaults: {
       model: {
-        primary: "aisonar-gemini/gemini-2.5-flash"
+        primary: "aisonar-gemini/gemini-3.5-flash"
       }
     }
   }
@@ -134,8 +134,8 @@ OpenClaw은 여전히 `provider/model` 형식으로 모델을 참조합니다:
 | `aisonar` | `aisonar/deepseek-r1` | DeepSeek 추론 모델 |
 | `aisonar-responses` | `aisonar-responses/gpt-4o` | Responses API 경로 |
 | `aisonar-claude` | `aisonar-claude/claude-sonnet-4-6` | Claude Messages 네이티브 경로 |
-| `aisonar-gemini` | `aisonar-gemini/gemini-2.5-flash` | Gemini 네이티브 경로 |
-| `aisonar-minimax` | `aisonar-minimax/minimax-m1` | MiniMax 네이티브 경로 |
+| `aisonar-gemini` | `aisonar-gemini/gemini-3.5-flash` | Gemini 네이티브 경로 |
+| `aisonar-minimax` | `aisonar-minimax/minimax-m2.1` | MiniMax 네이티브 경로 |
 
 사용 가능한 모든 모델은 [aisonar.dev/models](https://aisonar.dev/models)에서 확인하세요.
 

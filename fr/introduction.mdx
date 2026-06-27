@@ -24,15 +24,19 @@ AI Sonar est une plateforme d'agrégation d'API d'IA qui vous donne un accès un
 
 ## Capacités prises en charge
 
-| Capacité | Description | Modèles d'exemple |
-|------------|-------------|----------------|
-| **Chat et raisonnement** | Génération de texte, planification, outils | `gpt-5.4`, `claude-sonnet-4-6`, `deepseek-r1` |
-| **Vision** | Compréhension d'images et chat multimodal | `gpt-4o`, `claude-sonnet-4-6`, `gemini-2.5-flash` |
-| **Génération d'images** | Texte vers image et édition d'images | `dall-e-3`, `flux-pro`, `midjourney` |
-| **Audio** | TTS et transcription | `gpt-4o-mini-tts`, `whisper-1`, `gpt-4o-transcribe` |
-| **Embeddings** | Vectorisation de texte | `text-embedding-3-small`, `text-embedding-3-large` |
-| **Musique** | Génération de musique par IA | `suno` |
-| **3D** | Génération d'actifs 3D | `tripo3d` |
+Le catalogue public évolue dans le temps. Vérifiez la disponibilité actuelle avec `/v1/models`, `recommended_for` ou la page Modèles ; les exemples ci-dessous utilisent des IDs publics actuels.
+
+| Capacité | Description | Modèles exemples |
+|---|---|---|
+| Chat et raisonnement | Génération de texte, planification, outils | `gpt-5.4`, `claude-sonnet-4-6`, `deepseek-r1` |
+| Vision et multimodal | Compréhension d’image et chat multimodal | `gpt-4o`, `claude-sonnet-4-6`, `gemini-3.5-flash` |
+| Génération et édition d’images | Texte vers image et édition d’image | `gpt-image-2`, `flux-pro`, `qwen-image` |
+| Génération vidéo | Texte/image/référence vers vidéo et contrôle de mouvement | `veo3.1`, `seedance-2.0`, `kling-3.0-video` |
+| Audio et Realtime | TTS, transcription, traduction et sessions temps réel | `gpt-4o-mini-tts`, `whisper-1`, `gpt-realtime` |
+| Embeddings et rerank | Vectorisation de texte et reclassement | `text-embedding-3-small`, `qwen3-vl-rerank` |
+| Traduction | Workflows de traduction texte et parole | `qwen-mt-plus`, `gpt-realtime-translate` |
+| Musique et 3D | Génération de musique et d’assets 3D | `suno-music`, `tripo3d-v2.5` |
+| Worlds | Génération de worlds, polling de statut et media assets | Vérifiez la disponibilité avec `/v1/worlds/generations` et la Models API |
 
 ## Choisir le format de requête
 

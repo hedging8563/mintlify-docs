@@ -24,15 +24,19 @@ AI Sonar는 OpenAI, Anthropic, Google, DeepSeek, Moonshot, MiniMax 등과 같은
 
 ## 지원되는 기능
 
+공개 카탈로그는 시간이 지나며 바뀝니다. 현재 사용 가능 여부는 `/v1/models`, `recommended_for`, 또는 모델 페이지에서 확인하세요. 아래 예시는 현재 공개 모델 ID를 사용합니다.
+
 | 기능 | 설명 | 예시 모델 |
-|------------|-------------|----------------|
-| **채팅 및 추론** | 텍스트 생성, 계획 수립, 도구 활용 | `gpt-5.4`, `claude-sonnet-4-6`, `deepseek-r1` |
-| **비전** | 이미지 이해 및 멀티모달 채팅 | `gpt-4o`, `claude-sonnet-4-6`, `gemini-2.5-flash` |
-| **이미지 생성** | 텍스트-투-이미지 및 이미지 편집 | `dall-e-3`, `flux-pro`, `midjourney` |
-| **오디오** | TTS 및 전사 | `gpt-4o-mini-tts`, `whisper-1`, `gpt-4o-transcribe` |
-| **임베딩** | 텍스트 벡터화 | `text-embedding-3-small`, `text-embedding-3-large` |
-| **음악** | AI 음악 생성 | `suno` |
-| **3D** | 3D 자산 생성 | `tripo3d` |
+|---|---|---|
+| 채팅 및 추론 | 텍스트 생성, 계획, 도구 사용 | `gpt-5.4`, `claude-sonnet-4-6`, `deepseek-r1` |
+| 비전 및 멀티모달 | 이미지 이해와 멀티모달 채팅 | `gpt-4o`, `claude-sonnet-4-6`, `gemini-3.5-flash` |
+| 이미지 생성 및 편집 | 텍스트-이미지 생성과 이미지 편집 | `gpt-image-2`, `flux-pro`, `qwen-image` |
+| 비디오 생성 | 텍스트/이미지/참조 비디오 기반 생성과 모션 제어 | `veo3.1`, `seedance-2.0`, `kling-3.0-video` |
+| 오디오 및 Realtime | TTS, 전사, 번역, 실시간 세션 | `gpt-4o-mini-tts`, `whisper-1`, `gpt-realtime` |
+| Embeddings 및 rerank | 텍스트 벡터화와 재정렬 | `text-embedding-3-small`, `qwen3-vl-rerank` |
+| 번역 | 텍스트 및 음성 번역 워크플로 | `qwen-mt-plus`, `gpt-realtime-translate` |
+| 음악 및 3D | 음악과 3D asset 생성 | `suno-music`, `tripo3d-v2.5` |
+| Worlds | World 생성, 상태 polling, media asset 워크플로 | 현재 사용 가능 여부는 `/v1/worlds/generations`와 Models API로 확인하세요 |
 
 ## 요청 형식 선택
 

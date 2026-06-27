@@ -69,7 +69,6 @@ sequenceDiagram
 | Alibaba | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Shengshu | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
 | xAI | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ |
-| 기타 | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
 
 ### 기능 정의
 
@@ -90,14 +89,9 @@ sequenceDiagram
 | `kling-3.0-motion-control` | 모션 컨트롤 |
 | `kling-3.0-video` | 텍스트에서 비디오, 이미지에서 비디오, 시작-종료 프레임 비디오, 요소 참조 |
 | `kling-v2.1-master` | 텍스트에서 비디오, 이미지에서 비디오 |
-| `kling-v2.1-pro` | 이미지에서 비디오, 시작-종료 프레임 비디오 |
-| `kling-v2.1-standard` | 이미지에서 비디오 |
 | `kling-v2.5-turbo-pro` | 텍스트에서 비디오, 이미지에서 비디오, 시작-종료 프레임 비디오 |
-| `kling-v2.5-turbo-std` | 텍스트에서 비디오, 이미지에서 비디오 |
 | `kling-v2.6-pro` | 텍스트에서 비디오, 이미지에서 비디오, 시작-종료 프레임 비디오 |
 | `kling-v2.6-std` | 텍스트에서 비디오, 이미지에서 비디오 |
-| `kling-v3.0-pro` | 텍스트에서 비디오, 이미지에서 비디오, 시작-종료 프레임 비디오 |
-| `kling-v3.0-std` | 텍스트에서 비디오, 이미지에서 비디오, 시작-종료 프레임 비디오 |
 | `kling-video-o1-pro` | 텍스트에서 비디오, 이미지에서 비디오, 참조 이미지 기반 비디오, 시작-종료 프레임 비디오, 비디오에서 비디오 |
 | `kling-video-o1-std` | 텍스트에서 비디오, 이미지에서 비디오, 참조 이미지 기반 비디오, 시작-종료 프레임 비디오, 비디오에서 비디오 |
 
@@ -107,10 +101,8 @@ sequenceDiagram
 |------|-----------|
 | `veo3` | 텍스트에서 비디오, 이미지에서 비디오 |
 | `veo3-fast` | 텍스트에서 비디오, 이미지에서 비디오 |
-| `veo3-pro` | 텍스트에서 비디오, 이미지에서 비디오 |
 | `veo3.1` | 텍스트에서 비디오, 이미지에서 비디오, 참조 이미지 기반 비디오, 시작-종료 프레임 비디오 |
 | `veo3.1-fast` | 텍스트에서 비디오, 이미지에서 비디오, 참조 이미지 기반 비디오, 시작-종료 프레임 비디오 |
-| `veo3.1-pro` | 텍스트에서 비디오, 이미지에서 비디오, 시작-종료 프레임 비디오 |
 
 ### ByteDance
 
@@ -155,11 +147,6 @@ sequenceDiagram
 | `grok-imagine-text-to-video` | 텍스트에서 비디오 |
 | `grok-imagine-upscale` | 비디오에서 비디오 |
 
-### 기타
-
-| 모델 | 공개 작업 |
-|------|-----------|
-| `topaz-video-upscale` | 비디오에서 비디오 |
 
 ## 사용 예시
 
@@ -270,7 +257,7 @@ response = requests.post(f"{BASE}/videos/generations",
 response = requests.post(f"{BASE}/videos/generations",
     headers=headers,
     json={
-        "model": "topaz-video-upscale",
+        "model": "grok-imagine-upscale",
         "operation": "video-to-video",
         "video_url": "https://example.com/source.mp4",
         "prompt": "Upscale this clip while preserving the original motion."
@@ -311,7 +298,7 @@ response = requests.post(f"{BASE}/videos/generations",
 
 <CardGroup cols={2}>
   <Card title="최고 화질" icon="crown">
-    속도보다 품질이 중요하다면 **veo3.1-pro**, **kling-video-o1-pro**, **viduq3-pro** 가 좋은 선택입니다.
+    속도보다 품질이 중요하다면 **veo3.1**, **kling-video-o1-pro**, **viduq3-pro** 가 좋은 선택입니다.
   </Card>
   <Card title="빠른 반복" icon="bolt">
     빠르게 반복 실험하려면 **veo3.1-fast**, **hailuo-2.3-fast**, **viduq3-turbo** 부터 시작해볼 수 있습니다.
@@ -320,7 +307,7 @@ response = requests.post(f"{BASE}/videos/generations",
     전용 참조 이미지 제어가 필요하다면 **veo3.1**, **veo3.1-fast**, **wan-2.6**, **kling-video-o1-pro / std** 가 좋은 출발점입니다.
   </Card>
   <Card title="비디오에서 비디오로" icon="film">
-    현재 공개적으로 널리 활성화된 `video-to-video` 경로는 주로 **topaz-video-upscale**, **grok-imagine-upscale**, **kling-video-o1-pro / std** 입니다.
+    현재 공개적으로 널리 활성화된 `video-to-video` 경로는 주로 **grok-imagine-upscale**, **kling-video-o1-pro / std** 입니다.
   </Card>
 </CardGroup>
 

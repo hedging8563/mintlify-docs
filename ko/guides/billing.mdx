@@ -16,36 +16,33 @@ AI Sonar는 **종량제 요금제(pay-as-you-go)**를 사용합니다. 구독이
 
 ## 요금 모델
 
-### 토큰당 요금
+실시간 가격은 제공자, 라우트, 모델 계약에 따라 바뀔 수 있습니다. Dashboard, 모델 페이지, `GET /v1/models/:model/pricing`, [Pricing API](/api-reference/pricing/get-pricing)를 기준으로 삼으세요.
 
-대부분의 텍스트 생성 모델은 100만 토큰당 요금이 책정됩니다:
+### 토큰 기반 요금
 
-| 모델 | 입력 (100만 토큰당) | 출력 (100만 토큰당) |
-|-------|----------------------|------------------------|
-| GPT-4o | $1.75 | $7.00 |
-| GPT-4o-mini | $0.105 | $0.42 |
-| Claude Opus 4.5 | $3.50 | $17.50 |
-| Claude Sonnet 4.5 | $2.10 | $10.50 |
-| Claude Haiku 4.5 | $0.70 | $3.50 |
-| Gemini 2.5 Pro | $0.875 | $7.00 |
-| Gemini 2.5 Flash | $0.1225 | $0.525 |
-| DeepSeek R1 | $0.385 | $1.533 |
-| DeepSeek V3.2 | $0.196 | $0.294 |
+대부분의 chat, reasoning, embedding, rerank 및 일부 이미지 모델은 입력, 출력, 캐시 또는 이미지 출력 token 기준으로 과금됩니다.
+
+| 요금 유형 | 예시 | 현재 가격 확인 |
+|---|---|---|
+| Chat / Responses | `gpt-5.4`, `claude-sonnet-4-6`, `gemini-3.5-flash` | 模型页或 Pricing API |
+| 嵌入 / rerank | `text-embedding-3-small`, `qwen3-vl-rerank` | 模型价格详情 |
+| 按 token 计费的图像 | `gpt-image-2` | `GET /v1/models/gpt-image-2/pricing` |
 
 <Note>
-  표시된 가격은 할인된 플랫폼 가격입니다. 실제 가격은 변동될 수 있습니다. 현재 요율은 [pricing page](https://aisonar.dev/ko/pricing)에서 확인하세요.
+정적 가격표를 프로덕션 로직에 복사하지 마세요. 코드에는 model ID만 저장하고 출시 전에 현재 가격을 가져오거나 검토하세요.
 </Note>
 
-### 요청당 요금
+### 요청 및 작업 기반 요금
 
-이미지, 비디오 및 오디오 모델은 요청당 요금이 책정됩니다:
+이미지, 비디오, 음악, 3D, 오디오, world 생성 모델은 요청, 이미지, 초/분, 작업 또는 제공자별 사용량 기준으로 과금될 수 있습니다.
 
-| 모델 | 요청당 가격 |
-|-------|-------------------|
-| DALL-E 3 (1024x1024) | $0.04 |
-| Midjourney | $0.05 |
-| Whisper (분당) | $0.006 |
-| TTS-1 | $0.015 |
+| 제품군 | 예시 |
+|---|---|
+| 图像 | `flux-pro`, `qwen-image` |
+| 视频 | `veo3.1`, `seedance-2.0` |
+| 音乐 | `suno-music` |
+| 3D | `tripo3d-v2.5` |
+| 音频 | `tts-1`, `whisper-1` |
 
 ### 비동기 작업 결제 (비디오/음악/3D 및 일부 이미지 모델)
 

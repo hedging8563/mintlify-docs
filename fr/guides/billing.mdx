@@ -16,36 +16,33 @@ AI Sonar utilise une **tarification à l'usage (pay-as-you-go)**. Vous ne payez 
 
 ## Modèles de tarification
 
-### Tarification par Token
+Les prix en direct peuvent changer selon les fournisseurs, routes et contrats de modèle. Le Dashboard, la page Modèles, `GET /v1/models/:model/pricing` et la [Pricing API](/api-reference/pricing/get-pricing) font foi.
 
-La plupart des modèles de génération de texte sont facturés par million de tokens :
+### Tarification par token
 
-| Modèle | Entrée (par 1M de tokens) | Sortie (par 1M de tokens) |
-|-------|----------------------|------------------------|
-| GPT-4o | $1.75 | $7.00 |
-| GPT-4o-mini | $0.105 | $0.42 |
-| Claude Opus 4.5 | $3.50 | $17.50 |
-| Claude Sonnet 4.5 | $2.10 | $10.50 |
-| Claude Haiku 4.5 | $0.70 | $3.50 |
-| Gemini 2.5 Pro | $0.875 | $7.00 |
-| Gemini 2.5 Flash | $0.1225 | $0.525 |
-| DeepSeek R1 | $0.385 | $1.533 |
-| DeepSeek V3.2 | $0.196 | $0.294 |
+La plupart des modèles chat, raisonnement, embedding, rerank et certains modèles image sont facturés selon les tokens d’entrée, de sortie, de cache ou de sortie image.
+
+| Famille de prix | Exemples | Vérifier le prix actuel |
+|---|---|---|
+| Chat / Responses | `gpt-5.4`, `claude-sonnet-4-6`, `gemini-3.5-flash` | 模型页或 Pricing API |
+| 嵌入 / rerank | `text-embedding-3-small`, `qwen3-vl-rerank` | 模型价格详情 |
+| 按 token 计费的图像 | `gpt-image-2` | `GET /v1/models/gpt-image-2/pricing` |
 
 <Note>
-  Les prix affichés sont des prix de plateforme réduits. Les prix réels peuvent varier. Consultez la [page de tarification](https://aisonar.dev/fr/pricing) pour les tarifs actuels.
+Ne copiez pas de tableaux de prix statiques dans la logique de production. Gardez seulement les IDs de modèle dans le code et vérifiez les prix avant le lancement.
 </Note>
 
-### Tarification par requête
+### Tarification par requête et tâche
 
-Les modèles d'image, de vidéo et d'audio sont facturés par requête :
+Les modèles image, vidéo, musique, 3D, audio et world peuvent être facturés par requête, image, seconde/minute, tâche ou usage propre au fournisseur.
 
-| Modèle | Prix par requête |
-|-------|-------------------|
-| DALL-E 3 (1024x1024) | $0.04 |
-| Midjourney | $0.05 |
-| Whisper (par minute) | $0.006 |
-| TTS-1 | $0.015 |
+| Famille | Exemples |
+|---|---|
+| 图像 | `flux-pro`, `qwen-image` |
+| 视频 | `veo3.1`, `seedance-2.0` |
+| 音乐 | `suno-music` |
+| 3D | `tripo3d-v2.5` |
+| 音频 | `tts-1`, `whisper-1` |
 
 ### Facturation des tâches asynchrones (Vidéo/Musique/3D et certains modèles d'image)
 

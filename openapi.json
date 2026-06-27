@@ -340,19 +340,19 @@
                 "basic": {
                   "summary": "Basic image generation",
                   "value": {
-                    "model": "dall-e-3",
-                    "prompt": "A white siamese cat",
-                    "size": "1024x1024"
+                    "model": "gpt-image-2",
+                    "prompt": "A white cat sitting on a rainy windowsill",
+                    "size": "1024x1024",
+                    "quality": "auto"
                   }
                 },
-                "hd": {
-                  "summary": "HD quality image",
+                "high_quality": {
+                  "summary": "High quality image",
                   "value": {
-                    "model": "dall-e-3",
-                    "prompt": "A beautiful sunset over mountains",
-                    "size": "1792x1024",
-                    "quality": "hd",
-                    "style": "vivid"
+                    "model": "gpt-image-2",
+                    "prompt": "A cinematic product photo of matte black headphones on a glass desk",
+                    "size": "1536x1024",
+                    "quality": "high"
                   }
                 }
               }
@@ -3254,7 +3254,8 @@
                 ],
                 "properties": {
                   "model": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Model to use for image edits. Send this explicitly."
                   },
                   "prompt": {
                     "type": "string"
@@ -3383,6 +3384,7 @@
               "schema": {
                 "type": "object",
                 "required": [
+                  "model",
                   "prompt"
                 ],
                 "properties": {
@@ -3409,7 +3411,8 @@
                     "format": "binary"
                   },
                   "model": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Model to use for image edits. Send this explicitly, for example gpt-image-2."
                   },
                   "prompt": {
                     "type": "string"
@@ -3535,6 +3538,7 @@
               "schema": {
                 "type": "object",
                 "required": [
+                  "model",
                   "image"
                 ],
                 "properties": {
@@ -3544,7 +3548,7 @@
                   },
                   "model": {
                     "type": "string",
-                    "default": "dall-e-2"
+                    "description": "Required model identifier for legacy variation-compatible routes. For current image-to-image workflows, prefer /v1/images/edits with gpt-image-2 or /v1/images/generations with an image-to-image model."
                   },
                   "n": {
                     "type": "integer",
@@ -5231,6 +5235,7 @@
       "ImageGenerationRequest": {
         "type": "object",
         "required": [
+          "model",
           "prompt"
         ],
         "properties": {
@@ -5241,8 +5246,7 @@
           },
           "model": {
             "type": "string",
-            "default": "dall-e-3",
-            "description": "Model to use"
+            "description": "Model to use. Send this explicitly; query GET /v1/models?recommended_for=image for current recommendations."
           },
           "n": {
             "type": "integer",
@@ -5267,7 +5271,7 @@
               "high"
             ],
             "default": "standard",
-            "description": "Image quality. DALL-E models use standard/hd; GPT Image models such as gpt-image-2 use auto/low/medium/high."
+            "description": "Image quality. GPT Image models such as gpt-image-2 use auto/low/medium/high. Other image families may use provider-specific values."
           },
           "style": {
             "type": "string",
@@ -5275,8 +5279,7 @@
               "vivid",
               "natural"
             ],
-            "default": "vivid",
-            "description": "Image style (dall-e-3 only)"
+            "description": "Optional model-specific style selector. Only send when the selected model documents support for this parameter."
           },
           "response_format": {
             "type": "string",
@@ -5359,7 +5362,7 @@
                 },
                 "revised_prompt": {
                   "type": "string",
-                  "description": "Revised prompt (dall-e-3)"
+                  "description": "Revised prompt returned by models that rewrite or enhance the submitted prompt."
                 }
               }
             }

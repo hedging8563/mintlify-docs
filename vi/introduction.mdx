@@ -24,15 +24,19 @@ AI Sonar là một nền tảng tổng hợp API AI cho phép bạn truy cập t
 
 ## Các khả năng được hỗ trợ
 
-| Khả năng | Mô tả | Ví dụ mô hình |
-|------------|-------------|----------------|
-| **Chat & Lập luận** | Sinh văn bản, lập kế hoạch, công cụ | `gpt-5.4`, `claude-sonnet-4-6`, `deepseek-r1` |
-| **Thị giác** | Hiểu ảnh và chat đa phương thức | `gpt-4o`, `claude-sonnet-4-6`, `gemini-2.5-flash` |
-| **Tạo ảnh** | Chuyển văn bản thành ảnh và chỉnh sửa ảnh | `dall-e-3`, `flux-pro`, `midjourney` |
-| **Âm thanh** | TTS và chuyển âm thanh thành văn bản (transcription) | `gpt-4o-mini-tts`, `whisper-1`, `gpt-4o-transcribe` |
-| **Nhúng** | Vector hóa văn bản | `text-embedding-3-small`, `text-embedding-3-large` |
-| **Âm nhạc** | Sinh nhạc bằng AI | `suno` |
-| **3D** | Tạo tài sản 3D | `tripo3d` |
+Danh mục công khai thay đổi theo thời gian. Hãy kiểm tra khả dụng hiện tại bằng `/v1/models`, `recommended_for` hoặc trang Models; các ví dụ dưới đây dùng ID model công khai hiện tại.
+
+| Khả năng | Mô tả | Model ví dụ |
+|---|---|---|
+| Chat và suy luận | Sinh văn bản, lập kế hoạch, công cụ | `gpt-5.4`, `claude-sonnet-4-6`, `deepseek-r1` |
+| Thị giác và đa phương thức | Hiểu hình ảnh và chat đa phương thức | `gpt-4o`, `claude-sonnet-4-6`, `gemini-3.5-flash` |
+| Tạo và chỉnh sửa ảnh | Text-to-image và chỉnh sửa ảnh | `gpt-image-2`, `flux-pro`, `qwen-image` |
+| Tạo video | Text/image/reference-to-video và điều khiển chuyển động | `veo3.1`, `seedance-2.0`, `kling-3.0-video` |
+| Âm thanh và Realtime | TTS, transcription, translation và phiên realtime | `gpt-4o-mini-tts`, `whisper-1`, `gpt-realtime` |
+| Embeddings và rerank | Vector hóa văn bản và xếp hạng lại | `text-embedding-3-small`, `qwen3-vl-rerank` |
+| Dịch | Quy trình dịch văn bản và giọng nói | `qwen-mt-plus`, `gpt-realtime-translate` |
+| Nhạc và 3D | Tạo nhạc và asset 3D | `suno-music`, `tripo3d-v2.5` |
+| Worlds | Tạo world, polling trạng thái và luồng media asset | Kiểm tra khả dụng bằng `/v1/worlds/generations` và Models API |
 
 ## Chọn định dạng yêu cầu
 

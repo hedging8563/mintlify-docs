@@ -34,8 +34,8 @@ Los modelos de imagen xAI Grok Imagine (`grok-imagine-image`, `grok-imagine-imag
 
 **Tiempo de espera de solicitudes síncronas:** algunos proveedores de imagen enrutados devuelven la imagen final inline y esperan a que termine la generación. Las solicitudes de alta resolución o alta calidad pueden tardar cerca de un minuto o más, así que configura el timeout de tu cliente HTTP en al menos `120s`. Si la respuesta de creación incluye `status: "pending"`, `task_id` o `poll_url`, sigue el `poll_url` devuelto en su lugar.
 
-<ParamField body="model" type="string" default="dall-e-3">
-  Modelo a usar (por ejemplo, `gpt-image-2`, `dall-e-3`, `flux-pro`, `midjourney`).
+<ParamField body="model" type="string" required>
+  Modelo a usar (por ejemplo, `gpt-image-2`, `flux-pro`, `qwen-image` o `nano-banana-pro`). Consulta `GET /v1/models?recommended_for=image` para la lista recomendada actual.
 </ParamField>
 
 <ParamField body="prompt" type="string" required>
@@ -83,7 +83,7 @@ Los modelos de imagen xAI Grok Imagine (`grok-imagine-image`, `grok-imagine-imag
 </ParamField>
 
 <ParamField body="quality" type="string" default="standard">
-  Calidad de imagen. Los modelos DALL-E usan `standard` o `hd`; los modelos GPT Image como `gpt-image-2` usan `auto`, `low`, `medium` o `high`.
+  Calidad de imagen. Los modelos GPT Image como `gpt-image-2` usan `auto`, `low`, `medium` o `high`. Otras familias de imagen pueden usar valores específicos del proveedor; revisa los metadatos del modelo antes de enviar valores no predeterminados.
 </ParamField>
 
 <ParamField body="response_format" type="string" default="url">
@@ -96,8 +96,8 @@ Los modelos de imagen xAI Grok Imagine (`grok-imagine-image`, `grok-imagine-imag
   Establécelo en `true` con `gpt-image-2` o modelos de imagen oficiales FLUX/BFL para crear una tarea primero. Las tareas asíncronas completadas devuelven URL sin importar el `response_format` solicitado; usa solicitudes síncronas si necesitas `b64_json`.
 </ParamField>
 
-<ParamField body="style" type="string" default="vivid">
-  Estilo para DALL-E 3: `vivid` o `natural`.
+<ParamField body="style" type="string">
+  Selector de estilo opcional. Envíalo solo cuando el modelo seleccionado lo documente explícitamente; omítelo para `gpt-image-2` salvo que los metadatos del modelo indiquen lo contrario.
 </ParamField>
 
 <ParamField body="user" type="string">
@@ -118,7 +118,7 @@ Los modelos de imagen xAI Grok Imagine (`grok-imagine-image`, `grok-imagine-imag
   Cada objeto contiene:
   - `url` (string): URL de la imagen generada
   - `b64_json` (string): Imagen codificada en Base64, si se solicita
-  - `revised_prompt` (string): El prompt usado (DALL-E 3)
+  - `revised_prompt` (string): Revisión opcional del prompt devuelta por el proveedor, cuando el modelo upstream la reporta
 </ResponseField>
 
 ### Respuesta de tarea asíncrona
@@ -296,15 +296,16 @@ curl -X POST "https://api.aisonar.dev/v1/images/generations" \
 
 ## Modelos disponibles
 
+Estos son ejemplos actuales, no un catálogo fijo. Consulta `GET /v1/models?recommended_for=image` o la página Models para ver disponibilidad y precios actualizados.
+
 | Modelo | Tipo | Funciones |
 |-------|------|----------|
-| `dall-e-3` | Normalmente inline | Mejor calidad, mejora de prompt |
-| `dall-e-2` | Normalmente inline | Más rápido, más económico |
+| `gpt-image-2` | Inline o basado en tareas | Modelo GPT Image con precio por token y tamaños flexibles |
 | `flux-pro` | A menudo basado en tareas | Fotorrealista, alta calidad |
-| `flux-schnell` | Normalmente inline | Muy rápido |
-| `midjourney` | A menudo basado en tareas | Estilo artístico |
-| `ideogram-v3` | A menudo basado en tareas | Mejor renderizado de texto |
-| `stable-diffusion-3` | Normalmente inline | Código abierto, configurable |
+| `qwen-image` | A menudo basado en tareas | Buen renderizado de texto y seguimiento del prompt |
+| `nano-banana-pro` | A menudo basado en tareas | Flujos con imágenes de referencia y salida de alta resolución |
+| `grok-imagine-image` | A menudo basado en tareas | Generación de imagen xAI con selección de aspecto y resolución |
+| `ideogram-v3` | A menudo basado en tareas | Buen renderizado de texto |
 
 No codifiques un modelo como si fuera siempre síncrono o siempre asíncrono. Si la respuesta de creación devuelve `status: "pending"`, sigue `poll_url` y haz polling hasta que termine.
 
@@ -316,7 +317,7 @@ Para los modelos de imagen, comprueba siempre si la respuesta contiene `status: 
 import requests
 import time
 
-def generate_image(prompt, model="midjourney"):
+def generate_image(prompt, model="flux-pro"):
     # Create image request
     response = requests.post(
         "https://api.aisonar.dev/v1/images/generations",
@@ -350,6 +351,6 @@ def generate_image(prompt, model="midjourney"):
         return data["data"][0]["url"]
 
 # Usage
-url = generate_image("a beautiful sunset over mountains", model="midjourney")
+url = generate_image("a beautiful sunset over mountains", model="flux-pro")
 print(f"Generated image: {url}")
 ```

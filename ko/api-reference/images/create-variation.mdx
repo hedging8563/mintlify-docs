@@ -6,7 +6,7 @@ description: "주어진 이미지의 변형을 생성합니다"
 
 ## 개요
 
-주어진 이미지의 변형을 생성합니다. `multipart/form-data` 콘텐츠 타입이 필요합니다.
+이 엔드포인트는 기존 OpenAI 호환 variation 클라이언트를 위해 유지됩니다. 현재 image-to-image 워크플로에는 권장 경로가 아닙니다. 가능하면 `/v1/images/edits`와 `gpt-image-2`를 사용하거나 `/v1/images/generations`에서 `nano-banana-pro` 같은 image-to-image 모델을 사용하세요. `multipart/form-data`가 필요합니다.
 
 ## 요청 본문
 
@@ -16,8 +16,8 @@ description: "주어진 이미지의 변형을 생성합니다"
   변형의 기반으로 사용할 이미지. 유효한 PNG 파일이어야 하며, 50MB 미만이고 정사각형이어야 합니다.
 </ParamField>
 
-<ParamField body="model" type="string" default="dall-e-2">
-  이미지 변형에 사용할 모델. 현재 `dall-e-2`만 지원됩니다.
+<ParamField body="model" type="string" required>
+  기존 variation 호환 라우트용 필수 모델 ID입니다. 암시적 기본값은 없습니다. 현재 image-to-image 워크플로에서는 현재 모델과 함께 `/v1/images/edits` 또는 `/v1/images/generations`를 우선 사용하세요.
 </ParamField>
 
 <ParamField body="n" type="integer" default="1">
@@ -25,7 +25,7 @@ description: "주어진 이미지의 변형을 생성합니다"
 </ParamField>
 
 <ParamField body="size" type="string">
-  생성된 이미지의 크기. `256x256`, `512x512` 또는 `1024x1024` 중 하나여야 합니다.
+  기존 variation 호환 라우트에서 생성되는 이미지 크기입니다. 지원 값은 선택한 모델에 따라 달라집니다.
 </ParamField>
 
 <ParamField body="response_format" type="string" default="url">
@@ -54,6 +54,7 @@ description: "주어진 이미지의 변형을 생성합니다"
 ```bash cURL
 curl -X POST "https://api.aisonar.dev/v1/images/variations" \
   -H "Authorization: Bearer sk-your-api-key" \
+  -F "model=your-legacy-variation-model" \
   -F "image=@cat.png" \
   -F "n=2" \
   -F "size=1024x1024"
@@ -68,7 +69,7 @@ client = OpenAI(
 )
 
 response = client.images.create_variation(
-    model="dall-e-2",
+    model="your-legacy-variation-model",
     image=open("cat.png", "rb"),
     n=2,
     size="1024x1024"
@@ -88,7 +89,7 @@ const client = new OpenAI({
 });
 
 const response = await client.images.createVariation({
-  model: 'dall-e-2',
+  model: 'your-legacy-variation-model',
   image: fs.createReadStream('cat.png'),
   n: 2,
   size: '1024x1024'
@@ -112,6 +113,8 @@ import (
 func main() {
     body := &bytes.Buffer{}
     writer := multipart.NewWriter(body)
+
+    writer.WriteField("model", "your-legacy-variation-model")
 
     file, _ := os.Open("cat.png")
     defer file.Close()
@@ -148,6 +151,7 @@ curl_setopt_array($ch, [
         'Authorization: Bearer sk-your-api-key'
     ],
     CURLOPT_POSTFIELDS => [
+        'model' => 'your-legacy-variation-model',
         'image' => $image,
         'n' => 2,
         'size' => '1024x1024'
@@ -183,5 +187,5 @@ foreach ($data['data'] as $image) {
 ## 참고 사항
 
 <Note>
-  이미지 변형은 DALL-E 2에서만 사용할 수 있습니다. 모델은 원본 이미지와 스타일 및 내용이 유사한 새 이미지를 생성합니다.
+  이 엔드포인트는 기존 호환용이며 현재 추천 이미지 모델 카탈로그에 포함되지 않습니다. 새 연동에서는 `/v1/images/edits`와 `gpt-image-2`를 사용하거나 `/v1/images/generations`에서 `operation: "image-to-image"` 및 현재 image-to-image 모델을 사용하세요.
 </Note>

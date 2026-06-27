@@ -12,21 +12,21 @@ description: "Elige el modelo adecuado para cada tarea de codificación — tabl
 | `claude-opus-4-6` | Medio | Excelente | $$$$ | 200K | Arquitectura, refactoring complejo |
 | `gpt-5.4` | Medio | Excelente | $$$$ | 200K | Razonamiento complejo, planificación |
 | `claude-sonnet-4-6` | Rápido | Muy bueno | $$$ | 200K | Codificación general, revisiones |
-| `gemini-3-pro-preview` | Rápido | Muy bueno | $$$ | 1M | Análisis de grandes codebases |
+| `gemini-3.1-pro-preview` | Rápido | Muy bueno | $$$ | 1M | Análisis de grandes codebases |
 | `gpt-5-mini` | Muy rápido | Bueno | $$ | 128K | Ediciones rápidas, completado |
-| `gemini-3-flash-preview` | Muy rápido | Bueno | $$ | 1M | Iteración rápida, búsqueda |
+| `gemini-3.5-flash` | Muy rápido | Bueno | $$ | 1M | Iteración rápida, búsqueda |
 | `deepseek-r1` | Medio | Muy bueno | $ | 64K | Tareas intensivas en razonamiento |
-| `deepseek-v3.2` | Rápido | Bueno | $ | 128K | Generación masiva, boilerplate |
+| `deepseek-v3-2` | Rápido | Bueno | $ | 128K | Generación masiva, boilerplate |
 
 ## Recomendaciones por tarea
 
 <AccordionGroup>
   <Accordion title="Generación de código / Scaffolding">
-    **Recomendado**: `claude-sonnet-4-6`, `gemini-3-pro-preview`
+    **Recomendado**: `claude-sonnet-4-6`, `gemini-3.1-pro-preview`
 
     Código limpio y bien estructurado. Para scaffolding multi-archivo complejo: `claude-opus-4-6`.
 
-    Alternativa económica: `deepseek-v3.2` para boilerplate a bajo costo.
+    Alternativa económica: `deepseek-v3-2` para boilerplate a bajo costo.
   </Accordion>
 
   <Accordion title="Revisión de código / Refactoring">
@@ -48,7 +48,7 @@ description: "Elige el modelo adecuado para cada tarea de codificación — tabl
   </Accordion>
 
   <Accordion title="Ediciones rápidas / Completado por tab">
-    **Recomendado**: `gpt-5-mini`, `gemini-3-flash-preview`
+    **Recomendado**: `gpt-5-mini`, `gemini-3.5-flash`
 
     La velocidad es crucial para el uso interactivo.
   </Accordion>

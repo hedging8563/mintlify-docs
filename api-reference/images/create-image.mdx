@@ -34,8 +34,8 @@ xAI Grok Imagine image models (`grok-imagine-image`, `grok-imagine-image-quality
 
 **Synchronous request timeout:** Some routed image providers return the final image inline and wait for generation to finish. High-resolution or high-quality requests can take close to a minute or longer, so set your HTTP client timeout to at least `120s`. If the create response includes `status: "pending"`, `task_id`, or `poll_url`, follow the returned `poll_url` instead.
 
-<ParamField body="model" type="string" default="dall-e-3">
-  Model to use (e.g., `gpt-image-2`, `dall-e-3`, `flux-pro`, `midjourney`).
+<ParamField body="model" type="string" required>
+  Model to use (for example, `gpt-image-2`, `flux-pro`, `qwen-image`, or `nano-banana-pro`). Query `GET /v1/models?recommended_for=image` for the current recommended list.
 </ParamField>
 
 <ParamField body="prompt" type="string" required>
@@ -83,7 +83,7 @@ xAI Grok Imagine image models (`grok-imagine-image`, `grok-imagine-image-quality
 </ParamField>
 
 <ParamField body="quality" type="string" default="standard">
-  Image quality. DALL-E models use `standard` or `hd`; GPT Image models such as `gpt-image-2` use `auto`, `low`, `medium`, or `high`.
+  Image quality. GPT Image models such as `gpt-image-2` use `auto`, `low`, `medium`, or `high`. Other image families may use provider-specific values; check the selected model metadata before sending non-default values.
 </ParamField>
 
 <ParamField body="response_format" type="string" default="url">
@@ -96,8 +96,8 @@ xAI Grok Imagine image models (`grok-imagine-image`, `grok-imagine-image-quality
   Set to `true` with `gpt-image-2` or official FLUX/BFL image models to create a task first. Completed async image tasks return URLs regardless of the requested `response_format`; use synchronous requests when you need `b64_json`.
 </ParamField>
 
-<ParamField body="style" type="string" default="vivid">
-  Style for DALL-E 3: `vivid` or `natural`.
+<ParamField body="style" type="string">
+  Optional style selector. Only send this when the selected model explicitly documents it; omit it for `gpt-image-2` unless the model metadata says otherwise.
 </ParamField>
 
 <ParamField body="user" type="string">
@@ -118,7 +118,7 @@ xAI Grok Imagine image models (`grok-imagine-image`, `grok-imagine-image-quality
   Each object contains:
   - `url` (string): URL of the generated image
   - `b64_json` (string): Base64-encoded image (if requested)
-  - `revised_prompt` (string): The prompt used (DALL-E 3)
+  - `revised_prompt` (string): Optional provider-returned prompt revision, when the upstream model reports one
 </ResponseField>
 
 ### Async Task Response
@@ -296,15 +296,16 @@ curl -X POST "https://api.aisonar.dev/v1/images/generations" \
 
 ## Available Models
 
+These are current example models, not a fixed catalog. Query `GET /v1/models?recommended_for=image` or the Models page for the latest availability and pricing.
+
 | Model | Type | Features |
 |-------|------|----------|
-| `dall-e-3` | Usually inline | Best quality, prompt enhancement |
-| `dall-e-2` | Usually inline | Faster, more affordable |
+| `gpt-image-2` | Inline or task-based | Token-priced GPT Image model, flexible sizes |
 | `flux-pro` | Often task-based | Photorealistic, high quality |
-| `flux-schnell` | Usually inline | Very fast |
-| `midjourney` | Often task-based | Artistic style |
-| `ideogram-v3` | Often task-based | Best text rendering |
-| `stable-diffusion-3` | Usually inline | Open source, customizable |
+| `qwen-image` | Often task-based | Strong text rendering and prompt following |
+| `nano-banana-pro` | Often task-based | Reference-image workflows and high-resolution output |
+| `grok-imagine-image` | Often task-based | xAI image generation with aspect ratio and resolution selection |
+| `ideogram-v3` | Often task-based | Strong text rendering |
 
 Do not hard-code a model as always synchronous or always asynchronous. If the create response returns `status: "pending"`, follow `poll_url` and poll until completion.
 
@@ -316,7 +317,7 @@ For image models, always check whether the response contains `status: "pending"`
 import requests
 import time
 
-def generate_image(prompt, model="midjourney"):
+def generate_image(prompt, model="flux-pro"):
     # Create image request
     response = requests.post(
         "https://api.aisonar.dev/v1/images/generations",
@@ -350,6 +351,6 @@ def generate_image(prompt, model="midjourney"):
         return data["data"][0]["url"]
 
 # Usage
-url = generate_image("a beautiful sunset over mountains", model="midjourney")
+url = generate_image("a beautiful sunset over mountains", model="flux-pro")
 print(f"Generated image: {url}")
 ```

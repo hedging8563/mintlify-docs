@@ -12,21 +12,21 @@ description: "Her kodlama görevi için doğru modeli seçin — karşılaştır
 | `claude-opus-4-6` | Orta | Mükemmel | $$$$ | 200K | Mimari, karmaşık refactoring |
 | `gpt-5.4` | Orta | Mükemmel | $$$$ | 200K | Karmaşık muhakeme, planlama |
 | `claude-sonnet-4-6` | Hızlı | Çok iyi | $$$ | 200K | Genel kodlama, incelemeler |
-| `gemini-3-pro-preview` | Hızlı | Çok iyi | $$$ | 1M | Büyük kod tabanı analizi |
+| `gemini-3.1-pro-preview` | Hızlı | Çok iyi | $$$ | 1M | Büyük kod tabanı analizi |
 | `gpt-5-mini` | Çok hızlı | İyi | $$ | 128K | Hızlı düzenlemeler, tamamlama |
-| `gemini-3-flash-preview` | Çok hızlı | İyi | $$ | 1M | Hızlı iterasyon, arama |
+| `gemini-3.5-flash` | Çok hızlı | İyi | $$ | 1M | Hızlı iterasyon, arama |
 | `deepseek-r1` | Orta | Çok iyi | $ | 64K | Muhakeme yoğun görevler |
-| `deepseek-v3.2` | Hızlı | İyi | $ | 128K | Toplu üretim, şablon kod |
+| `deepseek-v3-2` | Hızlı | İyi | $ | 128K | Toplu üretim, şablon kod |
 
 ## Göreve Göre Öneriler
 
 <AccordionGroup>
   <Accordion title="Kod üretimi / Scaffolding">
-    **Önerilen**: `claude-sonnet-4-6`, `gemini-3-pro-preview`
+    **Önerilen**: `claude-sonnet-4-6`, `gemini-3.1-pro-preview`
 
     Temiz, iyi yapılandırılmış kod. Karmaşık çoklu dosya scaffolding: `claude-opus-4-6`.
 
-    Bütçe alternatifi: `deepseek-v3.2` şablon kodu düşük maliyetle işler.
+    Bütçe alternatifi: `deepseek-v3-2` şablon kodu düşük maliyetle işler.
   </Accordion>
 
   <Accordion title="Kod incelemesi / Refactoring">
@@ -48,7 +48,7 @@ description: "Her kodlama görevi için doğru modeli seçin — karşılaştır
   </Accordion>
 
   <Accordion title="Hızlı düzenlemeler / Tab tamamlama">
-    **Önerilen**: `gpt-5-mini`, `gemini-3-flash-preview`
+    **Önerilen**: `gpt-5-mini`, `gemini-3.5-flash`
 
     Etkileşimli kullanımda hız kritiktir.
   </Accordion>

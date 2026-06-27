@@ -24,15 +24,19 @@ AI Sonar adalah platform agregasi API AI yang memberi Anda akses terpadu ke **ra
 
 ## Kemampuan yang Didukung
 
-| Kapabilitas | Deskripsi | Contoh Model |
-|------------|-------------|----------------|
-| **Obrolan & Penalaran** | Pembuatan teks, perencanaan, alat | `gpt-5.4`, `claude-sonnet-4-6`, `deepseek-r1` |
-| **Visi** | Pemahaman gambar dan chat multimodal | `gpt-4o`, `claude-sonnet-4-6`, `gemini-2.5-flash` |
-| **Generasi Gambar** | Teks ke gambar dan penyuntingan gambar | `dall-e-3`, `flux-pro`, `midjourney` |
-| **Audio** | TTS dan transkripsi | `gpt-4o-mini-tts`, `whisper-1`, `gpt-4o-transcribe` |
-| **Embedding** | Vektorisasi teks | `text-embedding-3-small`, `text-embedding-3-large` |
-| **Musik** | Generasi musik AI | `suno` |
-| **3D** | generasi aset 3D | `tripo3d` |
+Katalog publik berubah seiring waktu. Periksa ketersediaan saat ini lewat `/v1/models`, `recommended_for`, atau halaman Models; contoh di bawah memakai ID model publik saat ini.
+
+| Kemampuan | Deskripsi | Contoh model |
+|---|---|---|
+| Chat dan penalaran | Pembuatan teks, perencanaan, tools | `gpt-5.4`, `claude-sonnet-4-6`, `deepseek-r1` |
+| Vision dan multimodal | Pemahaman gambar dan chat multimodal | `gpt-4o`, `claude-sonnet-4-6`, `gemini-3.5-flash` |
+| Pembuatan dan edit gambar | Text-to-image dan edit gambar | `gpt-image-2`, `flux-pro`, `qwen-image` |
+| Pembuatan video | Text/image/reference-to-video dan kontrol gerak | `veo3.1`, `seedance-2.0`, `kling-3.0-video` |
+| Audio dan Realtime | TTS, transkripsi, terjemahan, dan sesi realtime | `gpt-4o-mini-tts`, `whisper-1`, `gpt-realtime` |
+| Embeddings dan rerank | Vektorisasi teks dan pemeringkatan ulang | `text-embedding-3-small`, `qwen3-vl-rerank` |
+| Terjemahan | Alur terjemahan teks dan ucapan | `qwen-mt-plus`, `gpt-realtime-translate` |
+| Musik dan 3D | Pembuatan musik dan asset 3D | `suno-music`, `tripo3d-v2.5` |
+| Worlds | Pembuatan world, polling status, dan alur media asset | Periksa ketersediaan lewat `/v1/worlds/generations` dan Models API |
 
 ## Pilih Format Permintaan
 

@@ -24,15 +24,19 @@ AI Sonar ist eine KI-API-Aggregationsplattform, die Ihnen einheitlichen Zugriff 
 
 ## Unterstützte Funktionen
 
+Der öffentliche Katalog ändert sich mit der Zeit. Prüfen Sie die aktuelle Verfügbarkeit über `/v1/models`, `recommended_for` oder die Modellseite; die Beispiele unten verwenden aktuelle öffentliche Modell-IDs.
+
 | Fähigkeit | Beschreibung | Beispielmodelle |
-|------------|-------------|----------------|
-| **Chat und Reasoning** | Textgenerierung, Planung, Tools | `gpt-5.4`, `claude-sonnet-4-6`, `deepseek-r1` |
-| **Vision** | Bildverständnis und multimodaler Chat | `gpt-4o`, `claude-sonnet-4-6`, `gemini-2.5-flash` |
-| **Bildgenerierung** | Text-zu-Bild und Bildbearbeitung | `dall-e-3`, `flux-pro`, `midjourney` |
-| **Audio** | TTS und Transkription | `gpt-4o-mini-tts`, `whisper-1`, `gpt-4o-transcribe` |
-| **Embeddings** | Text-Vektorisierung | `text-embedding-3-small`, `text-embedding-3-large` |
-| **Music** | KI-Musikgenerierung | `suno` |
-| **3D** | 3D-Asset-Generierung | `tripo3d` |
+|---|---|---|
+| Chat & Reasoning | Textgenerierung, Planung, Tools | `gpt-5.4`, `claude-sonnet-4-6`, `deepseek-r1` |
+| Vision & Multimodal | Bildverständnis und multimodaler Chat | `gpt-4o`, `claude-sonnet-4-6`, `gemini-3.5-flash` |
+| Bildgenerierung & Bearbeitung | Text-zu-Bild und Bildbearbeitung | `gpt-image-2`, `flux-pro`, `qwen-image` |
+| Videogenerierung | Text-zu-Video, Bild-zu-Video, Referenzvideo und Bewegungssteuerung | `veo3.1`, `seedance-2.0`, `kling-3.0-video` |
+| Audio & Realtime | TTS, Transkription, Übersetzung und Echtzeitsitzungen | `gpt-4o-mini-tts`, `whisper-1`, `gpt-realtime` |
+| Embeddings & Rerank | Textvektorisierung und Re-Ranking | `text-embedding-3-small`, `qwen3-vl-rerank` |
+| Übersetzung | Text- und Sprachübersetzungs-Workflows | `qwen-mt-plus`, `gpt-realtime-translate` |
+| Musik & 3D | Musik- und 3D-Asset-Generierung | `suno-music`, `tripo3d-v2.5` |
+| Worlds | World-Generierung, Status-Polling und Medien-Asset-Workflows | Aktuelle Verfügbarkeit über `/v1/worlds/generations` und die Models API prüfen |
 
 ## Anfrageformat auswählen
 

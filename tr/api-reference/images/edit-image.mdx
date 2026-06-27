@@ -10,7 +10,7 @@ Bir orijinal görsel ve prompt verilince düzenlenmiş veya genişletilmiş bir 
 
 Route şunları destekler:
 
-- aşağıda belgelenen klasik `multipart/form-data` DALL-E tarzı upload akışı
+- aşağıda belgelenen OpenAI uyumlu `multipart/form-data` upload akışı
 - desteklenen image-to-image aileleri için `image_url`, `image_urls` veya resmi `images` referansları sağlayan JSON istekleri
 
 <Note>
@@ -32,7 +32,7 @@ Uyumluluk notu: Bir `gpt-image-2` isteği `input_fidelity` gönderirse AI Sonar 
 Uzak görüntü URL’leri: yönlendirilen sağlayıcı multipart girdi istediğinde AI Sonar, JSON `image_url`, `image_urls` veya `images[].image_url` değerlerini indirir ve baytları multipart `image` parçaları olarak iletir. URL’ler herkese açık `http`/`https` olmalı, gömülü kimlik bilgisi veya fragment içermemeli ve localhost, özel ya da ayrılmış IP aralıklarına çözülmemelidir; her redirect yeniden kontrol edilir. İndirilen payload gerçek PNG, JPEG veya WebP görüntüsü olmalıdır. Limitler: görüntü başına `50MB`, tek istekte URL’den indirilen görüntüler için toplam `200MB`, `10s` fetch timeout ve en fazla `3` redirect.
 
 <ParamField body="image" type="file">
-  Multipart kaynak görüntüler. Birden çok GPT Image kaynağı göndermek için `image` alanını tekrarlayın. Dosyalar PNG, JPEG veya WebP olmalı; en fazla 16 kaynak görüntü ve her biri `50MB` desteklenir. xAI Grok Imagine düzenleme modelleri aynı giriş alanlarını kullanır, ancak kaynak görsel sayısını 3 ile sınırlar. Eski DALL-E 2 mask düzenlemeleri hâlâ şeffaf alanları olan PNG girdileri veya ayrı bir `mask` bekler.
+  Multipart kaynak görüntüler. Birden çok GPT Image kaynağı göndermek için `image` alanını tekrarlayın. Dosyalar PNG, JPEG veya WebP olmalı; en fazla 16 kaynak görüntü ve her biri `50MB` desteklenir. xAI Grok Imagine düzenleme modelleri aynı giriş alanlarını kullanır, ancak kaynak görsel sayısını 3 ile sınırlar.
 </ParamField>
 
 <ParamField body="prompt" type="string" required>
@@ -43,8 +43,8 @@ Uzak görüntü URL’leri: yönlendirilen sağlayıcı multipart girdi istediğ
   Görselin nerede düzenleneceğini gösteren tamamen transparan alanlara sahip ek bir görsel. Geçerli bir PNG dosyası olmalı, 50MB'tan küçük olmalı ve `image` ile aynı boyutta olmalıdır.
 </ParamField>
 
-<ParamField body="model" type="string" default="dall-e-2">
-  Görüntü düzenleme için kullanılacak model. `gpt-image-2` desteklenir; eski DALL-E tarzı düzenlemeler `dall-e-2` kullanmaya devam edebilir.
+<ParamField body="model" type="string" required>
+  Görüntü düzenleme için kullanılacak model. GPT Image düzenlemeleri için `gpt-image-2` kullanın veya `GET /v1/models?recommended_for=image` tarafından döndürülen güncel bir görüntü düzenleme modeli seçin.
 </ParamField>
 
 <ParamField body="n" type="integer" default="1">
@@ -52,7 +52,7 @@ Uzak görüntü URL’leri: yönlendirilen sağlayıcı multipart girdi istediğ
 </ParamField>
 
 <ParamField body="size" type="string">
-  Üretilen görüntünün boyutu. `gpt-image-2` için `auto` veya `WIDTHxHEIGHT` kullanın; boyutlar 16’nın katı olmalı, en uzun kenar en fazla `3840px`, uzun/kısa kenar oranı en fazla `3:1`, toplam piksel sayısı `655,360` ile `8,294,400` arasında olmalıdır. Eski DALL-E düzenlemeleri `256x256`, `512x512` veya `1024x1024` destekler.
+  Üretilen görüntünün boyutu. `gpt-image-2` için `auto` veya `WIDTHxHEIGHT` kullanın; boyutlar 16’nın katı olmalı, en uzun kenar en fazla `3840px`, uzun/kısa kenar oranı en fazla `3:1`, toplam piksel sayısı `655,360` ile `8,294,400` arasında olmalıdır.
 </ParamField>
 
 <ParamField body="response_format" type="string" default="url">
@@ -95,6 +95,7 @@ Görev oluşturulurken tahmini tutar önce rezerve edilebilir. Tamamlanan görev
 ```bash cURL
 curl -X POST "https://api.aisonar.dev/v1/images/edits" \
   -H "Authorization: Bearer sk-your-api-key" \
+  -F "model=gpt-image-2" \
   -F "image=@sunlit_lounge.png" \
   -F "mask=@mask.png" \
   -F "prompt=A sunlit indoor lounge area with a pool" \
@@ -111,7 +112,7 @@ client = OpenAI(
 )
 
 response = client.images.edit(
-    model="dall-e-2",
+    model="gpt-image-2",
     image=open("sunlit_lounge.png", "rb"),
     mask=open("mask.png", "rb"),
     prompt="A sunlit indoor lounge area with a pool",
@@ -132,7 +133,7 @@ const client = new OpenAI({
 });
 
 const response = await client.images.edit({
-  model: 'dall-e-2',
+  model: 'gpt-image-2',
   image: fs.createReadStream('sunlit_lounge.png'),
   mask: fs.createReadStream('mask.png'),
   prompt: 'A sunlit indoor lounge area with a pool',
@@ -158,6 +159,8 @@ import (
 func main() {
     body := &bytes.Buffer{}
     writer := multipart.NewWriter(body)
+
+    writer.WriteField("model", "gpt-image-2")
 
     image, _ := os.Open("sunlit_lounge.png")
     defer image.Close()
@@ -201,6 +204,7 @@ curl_setopt_array($ch, [
         'Authorization: Bearer sk-your-api-key'
     ],
     CURLOPT_POSTFIELDS => [
+        'model' => 'gpt-image-2',
         'image' => $image,
         'mask' => $mask,
         'prompt' => 'A sunlit indoor lounge area with a pool',

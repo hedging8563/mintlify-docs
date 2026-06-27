@@ -63,7 +63,7 @@ Some older Dify builds expose this as `OpenAI-API-compatible` instead of the bui
     - `gpt-4o`
     - `claude-sonnet-4-6`
     - `claude-opus-4-6`
-    - `gemini-2.5-flash`
+    - `gemini-3.5-flash`
     - `gemini-2.5-pro`
     - `deepseek-r1`
   </Step>
@@ -89,7 +89,7 @@ Then set it as the default embedding model in the relevant knowledge base or app
 |----------|------------------|
 | Default chat | `gpt-5.4`, `gpt-5-mini`, `gpt-4o` |
 | Deep reasoning | `gpt-5.4`, `claude-opus-4-6`, `deepseek-r1` |
-| Fast/cheap | `gpt-5-mini`, `gemini-2.5-flash` |
+| Fast/cheap | `gpt-5-mini`, `gemini-3.5-flash` |
 | Embeddings | `text-embedding-3-small`, `text-embedding-3-large` |
 
 ## Best Practices
@@ -100,7 +100,7 @@ Then set it as the default embedding model in the relevant knowledge base or app
   </Accordion>
 
   <Accordion title="Use cheaper models for iteration">
-    Use `gpt-5-mini` or `gemini-2.5-flash` while iterating, then switch heavier workflows to stronger models only where needed.
+    Use `gpt-5-mini` or `gemini-3.5-flash` while iterating, then switch heavier workflows to stronger models only where needed.
   </Accordion>
 
   <Accordion title="Remember Dify is usually chat-completions oriented">

@@ -1,80 +1,85 @@
 ---
-title: "✨ Kỹ năng tích hợp API AI Sonar"
-description: "Cài đặt kỹ năng tích hợp API AI Sonar dùng chung cho bất kỳ coding agent nào, với khả năng khôi phục lỗi Agent-First."
+title: "Skill tích hợp AI Sonar API"
+description: "Cài skill tích hợp AI Sonar API đang được duy trì và hướng dẫn coding agent khám phá model, đọc hợp đồng công khai và phục hồi từ lỗi API."
 ---
 
 <Note>
-Kỹ năng này hướng dẫn coding agent của bạn cách tích hợp **hàng trăm API AI** của AI Sonar chỉ bằng cách mô tả những gì bạn cần. Nó được đóng gói thành một kỹ năng dùng chung agent-first và hoạt động với bất kỳ coding agent nào hỗ trợ file skill hoặc rules.
-
-API là **[Agent-First](/guides/agent-first-api)** — ngay cả khi agent đoán sai tên model, phản hồi lỗi sẽ cho biết chính xác cách khắc phục.
+Trang này mô tả skill dùng chung `aisonar-api-integration` đang được duy trì. Bản phân phối chuẩn nằm ở [hedging8563/aisonar-skills](https://github.com/hedging8563/aisonar-skills), nơi repository công khai chủ ý chỉ giữ skill này.
 </Note>
 
 <Note>
-Trang này mô tả một lớp đóng gói skill có thể tái sử dụng, chứ không phải một bề mặt tương thích giao thức. Nếu bạn cần thiết lập điểm cuối, SDK hoặc client, hãy dùng các trang tích hợp chuyên biệt cho từng công cụ.
+Dùng trang này để cài skill và hướng dẫn workflow cho agent. Với thiết lập theo endpoint, hãy dùng trang SDK, client hoặc API reference riêng của công cụ đó.
 </Note>
 
-## Cách hoạt động
+## Skill này làm gì
 
-1. **Bạn mô tả những gì bạn cần** — "Tôi muốn sử dụng GPT-4 trong dự án Python của mình"
-2. **Agent gọi API** — nó có thể đoán tên model hoặc điểm cuối
-3. **Nếu có bất kỳ lỗi nào xảy ra** — API trả về các gợi ý có cấu trúc (`did_you_mean`, `suggestions`, `retry_after`)
-4. **Agent tự sửa lỗi** — đọc các gợi ý và thử lại với các tham số đúng
-5. **Bạn nhận được code hoạt động** — thường là ở lần thử đầu tiên hoặc lần thứ hai
+- Tạo ví dụ tối thiểu chạy được cho các nhóm API AI Sonar như chat, image, audio, video, translation và nhiều nhóm khác.
+- Dùng `https://api.aisonar.dev/v1` cho client tương thích OpenAI và giải thích khi nào nên chuyển sang route native Anthropic hoặc Gemini.
+- Khám phá model bằng `/v1/models`, `/llms.txt` và danh sách `recommended_for` thay vì đoán từ danh sách cũ.
+- Đọc hợp đồng công khai của model trước khi thử lại yêu cầu non-chat để không âm thầm bỏ các trường không hỗ trợ.
+- Xử lý gợi ý lỗi Agent-First như `did_you_mean`, `suggestions`, `retry_after` và `recommended_request`.
 
 ## Cài đặt
 
 <Note>
-Sử dụng lệnh cài đặt không tương tác chính thức:
+Dùng lệnh cài đặt chuẩn không tương tác:
 
 ```bash
 npx skills add https://github.com/hedging8563/aisonar-skills --skill aisonar-api-integration -y
 ```
 
-Lệnh này cài đặt kỹ năng dùng chung `aisonar-api-integration` từ repository skills của AI Sonar.
+Lệnh này cài skill dùng chung `aisonar-api-integration` từ repository AI Sonar skills.
 
-Nếu công cụ của bạn không hỗ trợ trình cài đặt, hãy sao chép thư mục `skills/aisonar-api-integration/` từ repository vào thư mục skills hoặc rules dùng chung của công cụ.
+Nếu công cụ của bạn không hỗ trợ installer, hãy sao chép `skills/aisonar-api-integration/` từ repository vào thư mục skills hoặc rules dùng chung của công cụ.
 </Note>
 
-### Xác minh cài đặt
+### Cập nhật bản cài hiện có
+
+Nếu bạn đã cài skill trước khi repository AI Sonar được dọn dẹp, hãy chạy lại cùng lệnh. Gói công khai hiện nhỏ hơn và không còn phụ thuộc vào script tìm kiếm cục bộ được tạo.
+
+### Kiểm tra cài đặt
 
 Hỏi coding agent của bạn:
+
 ```
-Có những skills nào khả dụng?
+Có những skills nào?
 ```
 
-Nếu bạn thấy `aisonar-api-integration`, việc cài đặt đã thành công.
+Nếu thấy `aisonar-api-integration`, cài đặt đã thành công.
 
-## Lấy API Key của bạn
+## Lấy API Key
 
 <Steps>
   <Step title="Truy cập AI Sonar">
-    Truy cập [aisonar.dev](https://aisonar.dev)
+    Đi tới [aisonar.dev](https://aisonar.dev)
   </Step>
   <Step title="Đăng nhập">
     Tạo tài khoản hoặc đăng nhập
   </Step>
   <Step title="Lấy API Key">
-    Đi đến [Dashboard → API Keys](https://console.aisonar.dev/api) và tạo key mới
+    Mở [Dashboard → API Keys](https://console.aisonar.dev/api) và tạo key mới
   </Step>
-  <Step title="Sao chép Key">
-    Key của bạn bắt đầu bằng `sk-...` — hãy lưu trữ nó một cách an toàn
+  <Step title="Sao chép key">
+    Key bắt đầu bằng `sk-...`. Hãy lưu an toàn.
   </Step>
 </Steps>
 
 <Tip>
-Bạn không cần dán API key vào prompt hoặc mã nguồn. Skill nên hỏi cần dùng biến môi trường nào, rồi tạo code đọc key từ biến đó.
+Đừng dán API keys vào prompt hoặc file nguồn. Skill nên hỏi biến môi trường nào sẽ dùng và tạo code đọc key từ biến đó.
 </Tip>
 
-## Ví dụ
+## Quy trình Agent được khuyến nghị
 
-### Chat Completion
+1. Bắt đầu với ví dụ chạy được nhỏ nhất khớp với ngôn ngữ và nhóm API người dùng yêu cầu.
+2. Khi chưa chốt model, gọi `/v1/models` hoặc `https://api.aisonar.dev/llms.txt` trước khi hard-code model.
+3. Với tác vụ non-chat, gọi `/v1/models?recommended_for=<scene>` trong đó `<scene>` là `image`, `video`, `music`, `3d`, `tts`, `stt`, `embedding`, `rerank` hoặc `translation`.
+4. Trước khi đổi một yêu cầu non-chat bị lỗi, đọc `/v1/models/:model` và căn theo `supported_operations`, `supported_parameters`, `request_endpoint`, `request_shape_mode`, `recommended_request`.
+5. Nếu API trả lỗi Agent-First, dùng trường có cấu trúc để sửa yêu cầu và chỉ thử lại khi lỗi retryable.
 
-**Bạn nói:**
-```
-Tôi muốn sử dụng GPT-4 trong dự án Python của mình
-```
+## Ví dụ chat tối thiểu
 
-**Agent tạo ra:**
+Ví dụ này dùng OpenAI Python SDK với base URL của AI Sonar:
+
 ```python
 import os
 from openai import OpenAI
@@ -85,7 +90,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="gpt-5.4",
+    model="gpt-4o-mini",
     messages=[{"role": "user", "content": "Hello!"}]
 )
 
@@ -95,135 +100,100 @@ print(response.choices[0].message.content)
 Chạy bằng:
 
 ```bash
+pip install openai
 export TOKENLAB_API_KEY="sk-your-api-key"
 python app.py
 ```
 
-Nếu agent đoán sai tên model (ví dụ: `gpt5`), API sẽ trả về:
-```json
-{
-  "error": {
-    "code": "model_not_found",
-    "did_you_mean": "gpt-5.4",
-    "suggestions": [{"id": "gpt-5.4"}, {"id": "gpt-5-mini"}],
-    "hint": "Did you mean 'gpt-5.4'? Use GET https://api.aisonar.dev/v1/models to list all available models."
-  }
-}
-```
+## Khám phá model và hợp đồng công khai
 
-Agent đọc `did_you_mean`, sửa tên model và thử lại — tất cả đều tự động.
-
-### Tạo ảnh
-
-**Bạn nói:**
-```
-Generate images with Flux in Node.js
-```
-
-Agent gọi image API, xử lý lỗi và tạo code hoàn chỉnh với logic tải xuống và lưu tệp.
-
-### Nhận dạng giọng nói
-
-**Bạn nói:**
-```
-Integrate speech-to-text in my app
-```
-
-Agent tạo code với điểm cuối `/v1/audio/transcriptions` chính xác và xử lý file âm thanh.
-
-## Khôi phục lỗi Agent-First
-
-Mỗi phản hồi lỗi đều bao gồm các gợi ý có cấu trúc mà bất kỳ coding agent nào cũng có thể phân tích. Xem [tài liệu tham chiếu Agent-First API đầy đủ](/guides/agent-first-api) để biết chi tiết.
-
-| Lỗi | API trả về gì | Agent làm gì |
-|-------|---------------------|---------------------|
-| Sai tên model | `did_you_mean` + `suggestions` | Tự động sửa và thử lại |
-| Số dư không đủ | `balance_usd` + `suggestions` rẻ hơn | Chuyển sang model có chi phí phù hợp |
-| Model không khả dụng | `alternatives` + `retry_after` | Chuyển sang model khả dụng |
-| Bị giới hạn tốc độ | `retry_after` (số giây chính xác) | Chờ và thử lại |
-| Context quá dài | `suggestions` với các model lớn hơn | Chuyển sang model có context lớn hơn |
-| Không khớp hợp đồng cho request không phải chat | `supported_operations`, `supported_parameters`, `request_endpoint`, `recommended_request` | Dựng lại request từ hợp đồng công khai của model |
-
-### Tối ưu hóa điểm cuối native
-
-Khi bạn gọi `/v1/chat/completions` với model Claude hoặc Gemini, API sẽ trả về các header tối ưu hóa:
-
-
-
-Hãy xem các header này là gợi ý định tuyến, không phải một chuyển đổi tự động bắt buộc. Lệnh gọi Claude native dùng `/v1/messages`; lệnh gọi Gemini native nên theo endpoint do the native endpoint hint header trả về, thường là `/v1beta/gemini`.
-
-### Khám phá model
-
-Không cần tìm kiếm trong tài liệu:
+Ưu tiên khám phá trực tiếp thay vì danh sách đóng gói đã cũ:
 
 ```bash
-# Tổng quan API máy có thể đọc
+# Tổng quan API đọc được bằng máy
 curl https://api.aisonar.dev/llms.txt
 
-# List models by category
-curl "https://api.aisonar.dev/v1/models?category=chat" -H "Authorization: Bearer sk-KEY"
+# Liệt kê model
+curl "https://api.aisonar.dev/v1/models" -H "Authorization: Bearer sk-KEY"
 curl "https://api.aisonar.dev/v1/models?category=image" -H "Authorization: Bearer sk-KEY"
 
-# Danh sách đề xuất cho kịch bản không phải chat
+# Danh sách đề xuất có xếp hạng cho non-chat
 curl "https://api.aisonar.dev/v1/models?recommended_for=image" -H "Authorization: Bearer sk-KEY"
+curl "https://api.aisonar.dev/v1/models?recommended_for=video" -H "Authorization: Bearer sk-KEY"
 curl "https://api.aisonar.dev/v1/models?recommended_for=translation" -H "Authorization: Bearer sk-KEY"
 
-# Đọc hợp đồng công khai của một model trước khi thử lại request không phải chat
+# Đọc hợp đồng công khai của một model trước khi thử lại yêu cầu non-chat
 curl "https://api.aisonar.dev/v1/models/gpt-image-2" -H "Authorization: Bearer sk-KEY"
 
-# Lọc theo năng lực
-curl "https://api.aisonar.dev/v1/models?tag=coding" -H "Authorization: Bearer sk-KEY"
+# Chi tiết chỉ về giá
+curl "https://api.aisonar.dev/v1/models/gpt-image-2/pricing" -H "Authorization: Bearer sk-KEY"
 ```
 
-## Các khả năng được hỗ trợ
+## Gợi ý định tuyến native
 
-| Loại | Ví dụ |
-|------|----------|
-| Trò chuyện | GPT-5.4, Claude, Gemini, DeepSeek |
-| Tạo ảnh | GPT Image, Flux, Stable Diffusion, model ảnh Gemini |
-| Tạo nhạc | Suno |
-| Mô hình 3D | Tripo3D |
-| Âm thanh | Chuyển văn bản thành giọng nói, Chuyển giọng nói thành văn bản |
-| Nhúng | text-embedding-3 |
-| Xếp hạng lại | bce-reranker, qwen3-rerank |
+Đường dẫn tương thích OpenAI `/v1` là mặc định cho ví dụ chat, Responses, image, embedding, audio và rerank phổ biến. Chỉ dùng route native Anthropic hoặc Gemini khi yêu cầu cần hành vi đặc thù của nhà cung cấp hoặc AI Sonar trả về the native endpoint hint header như một gợi ý tối ưu.
 
-## Thực tiễn tốt nhất
+
+
+## Phục hồi lỗi Agent-First
+
+Lỗi bao gồm các trường mà coding agent có thể phân tích mà không cần đọc thủ công tài liệu:
+
+| Lỗi | Trường hữu ích | Hành động của agent |
+|---|---|---|
+| Sai tên model | `did_you_mean`, `suggestions`, `hint` | Thử lại với model đã sửa hoặc một lựa chọn thay thế được gợi ý |
+| Không đủ số dư | `balance_usd`, `estimated_cost_usd`, `suggestions` | Xin xác nhận hoặc chuyển sang model phù hợp chi phí |
+| Giới hạn tốc độ hoặc tạm thời không khả dụng | `retryable`, `retry_after`, `alternatives` | Chờ rồi thử lại hoặc chọn một lựa chọn thay thế được liệt kê |
+| Hợp đồng non-chat không khớp | `supported_operations`, `supported_parameters`, `request_endpoint`, `request_shape_mode`, `recommended_request` | Dựng lại yêu cầu từ hợp đồng công khai và fail closed với trường làm đổi ý định |
+
+## Các nhóm API được hỗ trợ
+
+| Nhóm | Đường dẫn chính |
+|---|---|
+| Chat và Responses | `/v1/chat/completions`, `/v1/responses` |
+| Claude-native messages | `/v1/messages` |
+| Yêu cầu Gemini-native | `/v1beta/models/{model}:generateContent` |
+| Hình ảnh | `/v1/images/generations`, `/v1/images/edits` |
+| Video | `/v1/videos/generations` |
+| Nhạc | `/v1/music/generations` |
+| Worlds | `/v1/worlds/generations` cùng endpoint trạng thái world và media asset |
+| 3D | `/v1/3d/generations` |
+| Âm thanh | `/v1/audio/speech`, `/v1/audio/transcriptions`, `/v1/audio/translations` |
+| Realtime | `/v1/realtime?model={model}` |
+| Embeddings và rerank | `/v1/embeddings`, `/v1/rerank` |
+| Dịch văn bản | `/v1/translations` |
+
+## Thực hành tốt nhất
 
 <CardGroup cols={2}>
-  <Card title="Bảo mật API Key" icon="shield">
-    Sử dụng biến môi trường. Không bao giờ commit key vào git hoặc để lộ chúng trong code frontend.
+  <Card title="An toàn API Key" icon="shield">
+    Dùng biến môi trường và lệnh gọi phía server. Không để lộ keys trong code frontend.
   </Card>
-  <Card title="Quản lý chi phí" icon="wallet">
-    Đặt giới hạn sử dụng trong [dashboard](https://console.aisonar.dev). Kiểm tra `error.balance_usd` để theo dõi chi phí theo chương trình.
+  <Card title="Hợp đồng trước cho non-chat" icon="file-code">
+    Đọc `/v1/models?recommended_for=...` và `/v1/models/:model` trước khi thử lại yêu cầu image, video, music, 3D, translation, audio, embedding hoặc rerank.
   </Card>
-  <Card title="Hãy nói trực tiếp" icon="bullseye">
-    Hãy nói "Tôi muốn tạo ảnh bằng Python" thay vì "AI Sonar có image API không?"
+  <Card title="Ví dụ chạy được nhỏ nhất" icon="terminal">
+    Tạo một lệnh gọi hoạt động trước khi thêm abstraction, queue hoặc luồng UI.
   </Card>
-  <Card title="Mô tả tình huống của bạn" icon="message">
-    "Tôi đang xây dựng một chatbot với GPT-4" cung cấp cho agent nhiều ngữ cảnh hơn so với "Dùng GPT-4".
+  <Card title="Dùng gợi ý có cấu trúc" icon="rotate-cw">
+    Phân tích `did_you_mean`, `retry_after`, `alternatives` và `recommended_request` trước khi sửa code.
   </Card>
 </CardGroup>
 
-## Câu hỏi thường gặp
+## FAQ
 
 <AccordionGroup>
-  <Accordion title="Kỹ năng không tự động được kích hoạt?">
-    Hãy thử nhắc đến "AI Sonar" hoặc "AI Sonar API" trong yêu cầu của bạn:
-    ```
-    Tôi muốn dùng AI Sonar để tích hợp GPT-4 vào dự án của mình
-    ```
+  <Accordion title="Skill không tự kích hoạt?">
+    Nhắc “AI Sonar” hoặc “AI Sonar API” trong yêu cầu, ví dụ: `Dùng AI Sonar để thêm tạo ảnh vào app Node.js của tôi`.
   </Accordion>
 
-  <Accordion title="API giúp agent tìm đúng model như thế nào?">
-    [Agent-First API](/guides/agent-first-api) của AI Sonar trả về các gợi ý lỗi có cấu trúc. Nếu agent đoán sai tên model, lỗi sẽ bao gồm `did_you_mean` với tên đúng và `suggestions` với các lựa chọn thay thế. Agent đọc các thông tin này và tự động sửa ở lần thử tiếp theo.
+  <Accordion title="Hỗ trợ coding agent nào?">
+    Bất kỳ coding agent nào hỗ trợ thư mục skill hoặc rules dùng chung đều dùng được thư mục này. Installer `skills` tự xử lý các agent được hỗ trợ.
   </Accordion>
 
-  <Accordion title="Những coding agent nào được hỗ trợ?">
-    Bất kỳ coding agent nào hỗ trợ thư mục skill hoặc rules dùng chung. Khi trình cài đặt được hỗ trợ, `npx skills add` sẽ tự động đặt kỹ năng dùng chung `aisonar-api-integration` vào vị trí được phát hiện.
-  </Accordion>
+  <Accordion title="Cập nhật skill thế nào?">
+    Chạy lại lệnh cài đặt. Lệnh này làm mới bản sao cục bộ từ repository công khai chuẩn.
 
-  <Accordion title="Làm thế nào để cập nhật kỹ năng?">
-    Chạy lại trình cài đặt:
     ```bash
     npx skills add https://github.com/hedging8563/aisonar-skills --skill aisonar-api-integration -y
     ```
@@ -234,19 +204,19 @@ curl "https://api.aisonar.dev/v1/models?tag=coding" -H "Authorization: Bearer sk
 
 <CardGroup cols={2}>
   <Card title="Agent-First API" icon="robot" href="/vi/guides/agent-first-api">
-    Tài liệu tham chiếu đầy đủ cho các gợi ý lỗi có cấu trúc
+    Gợi ý lỗi có cấu trúc và hành vi phục hồi
   </Card>
   <Card title="Tài liệu API" icon="book" href="https://docs.aisonar.dev">
-    Tài liệu tham chiếu API đầy đủ
+    Thiết lập theo endpoint và API Reference
   </Card>
-  <Card title="Mô hình" icon="sparkles" href="https://aisonar.dev/models">
-    Duyệt hàng trăm model khả dụng
+  <Card title="Model" icon="sparkles" href="https://aisonar.dev/models">
+    Duyệt các model có sẵn
   </Card>
   <Card title="llms.txt" icon="file-lines" href="https://api.aisonar.dev/llms.txt">
-    Tổng quan API máy có thể đọc cho AI agents
+    Tổng quan API đọc được bằng máy cho agents
   </Card>
 </CardGroup>
 
 <Info>
-**Có câu hỏi?** Hãy xem [GitHub Issues](https://github.com/hedging8563/aisonar-skills/issues) của chúng tôi hoặc liên hệ [support@aisonar.dev](mailto:support@aisonar.dev)
+Có câu hỏi? Dùng [GitHub Issues](https://github.com/hedging8563/aisonar-skills/issues) hoặc liên hệ [support@aisonar.dev](mailto:support@aisonar.dev).
 </Info>

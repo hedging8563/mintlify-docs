@@ -6,7 +6,7 @@ description: "指定された画像のバリエーションを作成します"
 
 ## 概要
 
-指定された画像のバリエーションを作成します。`multipart/form-data` コンテンツタイプが必要です。
+このエンドポイントは、従来の OpenAI 互換 variation クライアント向けに保持されています。現在の image-to-image ワークフローでは推奨パスではありません。可能な場合は `/v1/images/edits` と `gpt-image-2`、または `/v1/images/generations` で `nano-banana-pro` などの image-to-image モデルを使用してください。`multipart/form-data` が必要です。
 
 ## リクエストボディ
 
@@ -16,8 +16,8 @@ description: "指定された画像のバリエーションを作成します"
   バリエーションの基となる画像。有効な PNG ファイルで、50MB 未満、正方形である必要があります。
 </ParamField>
 
-<ParamField body="model" type="string" default="dall-e-2">
-  画像バリエーションに使用するモデル。現在は `dall-e-2` のみサポートされています。
+<ParamField body="model" type="string" required>
+  従来の variation 互換ルート向けの必須モデル ID。暗黙のデフォルトはありません。現在の image-to-image ワークフローでは、現在のモデルを使って `/v1/images/edits` または `/v1/images/generations` を優先してください。
 </ParamField>
 
 <ParamField body="n" type="integer" default="1">
@@ -25,7 +25,7 @@ description: "指定された画像のバリエーションを作成します"
 </ParamField>
 
 <ParamField body="size" type="string">
-  生成される画像のサイズ。`256x256`、`512x512`、または `1024x1024` のいずれかである必要があります。
+  従来の variation 互換ルートで生成される画像サイズ。サポートされる値は選択したモデルによって異なります。
 </ParamField>
 
 <ParamField body="response_format" type="string" default="url">
@@ -54,6 +54,7 @@ description: "指定された画像のバリエーションを作成します"
 ```bash cURL
 curl -X POST "https://api.aisonar.dev/v1/images/variations" \
   -H "Authorization: Bearer sk-your-api-key" \
+  -F "model=your-legacy-variation-model" \
   -F "image=@cat.png" \
   -F "n=2" \
   -F "size=1024x1024"
@@ -68,7 +69,7 @@ client = OpenAI(
 )
 
 response = client.images.create_variation(
-    model="dall-e-2",
+    model="your-legacy-variation-model",
     image=open("cat.png", "rb"),
     n=2,
     size="1024x1024"
@@ -88,7 +89,7 @@ const client = new OpenAI({
 });
 
 const response = await client.images.createVariation({
-  model: 'dall-e-2',
+  model: 'your-legacy-variation-model',
   image: fs.createReadStream('cat.png'),
   n: 2,
   size: '1024x1024'
@@ -112,6 +113,8 @@ import (
 func main() {
     body := &bytes.Buffer{}
     writer := multipart.NewWriter(body)
+
+    writer.WriteField("model", "your-legacy-variation-model")
 
     file, _ := os.Open("cat.png")
     defer file.Close()
@@ -148,6 +151,7 @@ curl_setopt_array($ch, [
         'Authorization: Bearer sk-your-api-key'
     ],
     CURLOPT_POSTFIELDS => [
+        'model' => 'your-legacy-variation-model',
         'image' => $image,
         'n' => 2,
         'size' => '1024x1024'
@@ -183,5 +187,5 @@ foreach ($data['data'] as $image) {
 ## 注意事項
 
 <Note>
-  画像バリエーションは DALL-E 2 でのみ利用可能です。モデルは元の画像とスタイルや内容が類似した新しい画像を生成します。
+  これは従来互換のエンドポイントであり、現在の推奨画像モデルカタログには含まれません。新規連携では `/v1/images/edits` と `gpt-image-2`、または `/v1/images/generations` で `operation: "image-to-image"` と現在の image-to-image モデルを使用してください。
 </Note>

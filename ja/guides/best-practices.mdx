@@ -11,21 +11,21 @@ description: "コスト、パフォーマンス、信頼性の観点から AI So
 
 | タスク | 推奨モデル | 理由 |
 |------|-------------------|-----------|
-| **シンプルな Q&A** | `gpt-5-mini`, `gemini-2.5-flash` | 高速、低コスト、十分な性能 |
+| **シンプルな Q&A** | `gpt-5-mini`, `gemini-3.5-flash` | 高速、低コスト、十分な性能 |
 | **複雑な推論** | `gpt-5.4`, `claude-opus-4-6`, `deepseek-r1` | より優れたロジックと計画能力 |
-| **コーディング** | `claude-sonnet-4-6`, `gpt-4o`, `deepseek-v3.2` | コード向けに最適化 |
+| **コーディング** | `claude-sonnet-4-6`, `gpt-4o`, `deepseek-v3-2` | コード向けに最適化 |
 | **クリエイティブライティング** | `claude-sonnet-4-6`, `gpt-4o` | より高品質な文章生成 |
-| **Vision/画像** | `gpt-4o`, `claude-sonnet-4-6`, `gemini-2.5-flash` | ネイティブな vision サポート |
+| **Vision/画像** | `gpt-4o`, `claude-sonnet-4-6`, `gemini-3.5-flash` | ネイティブな vision サポート |
 | **長いコンテキスト** | `gemini-2.5-pro`, `claude-sonnet-4-6` | 1M+ token ウィンドウ |
-| **コスト重視** | `gpt-5-mini`, `gemini-2.5-flash`, `deepseek-v3.2` | 最も高いコストパフォーマンス |
+| **コスト重視** | `gpt-5-mini`, `gemini-3.5-flash`, `deepseek-v3-2` | 最も高いコストパフォーマンス |
 
 ### コスト階層
 
 ```
 $$$$ Premium: gpt-5.4, claude-opus-4-6
 $$$  Standard: claude-sonnet-4-6, gpt-4o
-$$   Budget:   gpt-5-mini, gemini-2.5-flash
-$    Economy:  deepseek-v3.2, deepseek-r1
+$$   Budget:   gpt-5-mini, gemini-3.5-flash
+$    Economy:  deepseek-v3-2, deepseek-r1
 ```
 
 ## コスト最適化
@@ -125,7 +125,7 @@ for chunk in stream:
 
 | ユースケース | 推奨 | レイテンシ |
 |----------|-------------|---------|
-| Chat UI | `gpt-5-mini`, `gemini-2.5-flash` | 初回 token まで約 200ms |
+| Chat UI | `gpt-5-mini`, `gemini-3.5-flash` | 初回 token まで約 200ms |
 | Tab completion | `claude-haiku-4-5` | 初回 token まで約 150ms |
 | バックグラウンド処理 | `gpt-4o`, `claude-sonnet-4-6` | 初回 token まで約 500ms |
 
@@ -189,7 +189,7 @@ except APIError as e:
 ### 10. フォールバックモデルを使う
 
 ```python
-FALLBACK_CHAIN = ["gpt-4o", "claude-sonnet-4-6", "gemini-2.5-flash"]
+FALLBACK_CHAIN = ["gpt-4o", "claude-sonnet-4-6", "gemini-3.5-flash"]
 
 def chat_with_fallback(messages):
     for model in FALLBACK_CHAIN:

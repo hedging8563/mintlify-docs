@@ -67,7 +67,6 @@ Kontrak juga menerima `audio-to-video` dan `video-extension` untuk alur spesifik
 | Alibaba | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Shengshu | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
 | xAI | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ |
-| Lainnya | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
 
 ### Definisi kemampuan
 
@@ -88,14 +87,9 @@ Kontrak juga menerima `audio-to-video` dan `video-extension` untuk alur spesifik
 | `kling-3.0-motion-control` | Kontrol gerakan |
 | `kling-3.0-video` | Teks ke video, image-to-video, start-end-to-video, referensi elemen |
 | `kling-v2.1-master` | Teks ke video, image-to-video |
-| `kling-v2.1-pro` | image-to-video, start-end-to-video |
-| `kling-v2.1-standard` | image-to-video |
 | `kling-v2.5-turbo-pro` | Teks ke video, image-to-video, start-end-to-video |
-| `kling-v2.5-turbo-std` | Teks ke video, image-to-video |
 | `kling-v2.6-pro` | Teks ke video, image-to-video, start-end-to-video |
 | `kling-v2.6-std` | Teks ke video, image-to-video |
-| `kling-v3.0-pro` | Teks ke video, image-to-video, start-end-to-video |
-| `kling-v3.0-std` | Teks ke video, image-to-video, start-end-to-video |
 | `kling-video-o1-pro` | Teks ke video, image-to-video, reference-to-video, start-end-to-video, video-to-video |
 | `kling-video-o1-std` | Teks ke video, image-to-video, reference-to-video, start-end-to-video, video-to-video |
 
@@ -105,10 +99,8 @@ Kontrak juga menerima `audio-to-video` dan `video-extension` untuk alur spesifik
 |-------|----------------|
 | `veo3` | Teks ke video, image-to-video |
 | `veo3-fast` | Teks ke video, image-to-video |
-| `veo3-pro` | Teks ke video, image-to-video |
 | `veo3.1` | Teks ke video, image-to-video, reference-to-video, start-end-to-video |
 | `veo3.1-fast` | Teks ke video, image-to-video, reference-to-video, start-end-to-video |
-| `veo3.1-pro` | Teks ke video, image-to-video, start-end-to-video |
 
 ### ByteDance
 
@@ -153,11 +145,6 @@ Kontrak juga menerima `audio-to-video` dan `video-extension` untuk alur spesifik
 | `grok-imagine-text-to-video` | Teks ke video |
 | `grok-imagine-upscale` | Video-ke-video |
 
-### Lainnya
-
-| Model | Operasi publik |
-|-------|----------------|
-| `topaz-video-upscale` | Video-ke-video |
 
 ## Contoh penggunaan
 
@@ -268,7 +255,7 @@ Untuk video-to-video dengan `grok-imagine-video`, kirim URL HTTPS publik `.mp4` 
 response = requests.post(f"{BASE}/videos/generations",
     headers=headers,
     json={
-        "model": "topaz-video-upscale",
+        "model": "grok-imagine-upscale",
         "operation": "video-to-video",
         "video_url": "https://example.com/source.mp4",
         "prompt": "Upscale this clip while preserving the original motion."
@@ -309,7 +296,7 @@ response = requests.post(f"{BASE}/videos/generations",
 
 <CardGroup cols={2}>
   <Card title="Kualitas tertinggi" icon="crown">
-    Jika kualitas lebih penting daripada kecepatan, **veo3.1-pro**, **kling-video-o1-pro**, dan **viduq3-pro** adalah pilihan yang kuat.
+    Jika kualitas lebih penting daripada kecepatan, **veo3.1**, **kling-video-o1-pro**, dan **viduq3-pro** adalah pilihan yang kuat.
   </Card>
   <Card title="Iterasi cepat" icon="bolt">
     Untuk iterasi cepat, **veo3.1-fast**, **hailuo-2.3-fast**, dan **viduq3-turbo** adalah titik awal yang bagus.
@@ -318,7 +305,7 @@ response = requests.post(f"{BASE}/videos/generations",
     Jika Anda membutuhkan conditioning khusus dengan gambar referensi, mulai dari **veo3.1**, **veo3.1-fast**, **wan-2.6**, atau **kling-video-o1-pro / std**.
   </Card>
   <Card title="Video ke video" icon="film">
-    Jalur `video-to-video` publik yang saat ini paling umum diaktifkan terutama adalah **topaz-video-upscale**, **grok-imagine-upscale**, dan **kling-video-o1-pro / std**.
+    Jalur `video-to-video` publik yang saat ini paling umum diaktifkan terutama adalah **grok-imagine-upscale**, dan **kling-video-o1-pro / std**.
   </Card>
 </CardGroup>
 

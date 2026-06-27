@@ -1,57 +1,51 @@
 ---
-title: "✨ AI Sonar API 통합 스킬"
-description: "Agent-First 오류 복구와 함께, 모든 코딩 에이전트용 공유 AI Sonar API 통합 스킬을 설치하세요."
+title: "AI Sonar API 통합 스킬"
+description: "관리 중인 AI Sonar API 통합 스킬을 설치하고 coding agent가 모델을 찾고 공개 계약을 읽으며 API 오류에서 복구하도록 안내합니다."
 ---
 
 <Note>
-이 스킬은 코딩 에이전트에게 필요한 내용을 설명하는 것만으로 AI Sonar의 **수백 개의 AI API**를 통합하는 방법을 알려줍니다. 하나의 공유 Agent-First 스킬로 패키징되어 있으며, 스킬 또는 rules 파일을 지원하는 모든 코딩 에이전트에서 작동합니다.
-
-이 API는 **[Agent-First](/guides/agent-first-api)** 입니다 — 에이전트가 모델 이름을 잘못 추측하더라도, 오류 응답이 이를 정확히 어떻게 수정해야 하는지 알려줍니다.
+이 페이지는 관리 중인 공유 `aisonar-api-integration` 스킬을 설명합니다. 공식 배포 원본은 [hedging8563/aisonar-skills](https://github.com/hedging8563/aisonar-skills) 이며 공개 저장소에는 의도적으로 이 스킬만 유지됩니다.
 </Note>
 
 <Note>
-이 페이지는 재사용 가능한 스킬 패키징 계층을 설명하는 것이지, 프로토콜 호환 표면을 설명하는 페이지가 아닙니다. 엔드포인트, SDK, 클라이언트 설정이 필요하다면 해당 전용 통합 페이지를 참고하세요.
+이 페이지는 스킬 설치와 agent 워크플로 안내용입니다. 엔드포인트, SDK, 클라이언트 설정은 해당 도구의 전용 통합 페이지나 API Reference를 보세요.
 </Note>
 
-<Note>
-**유형**: 공유 스킬
+## 이 스킬이 하는 일
 
-**주요 경로**: 재사용 가능한 공유 스킬을 통한 API 사용
-
-**지원 수준**: best-effort
-</Note>
-
-
-## 작동 방식
-
-1. **필요한 것을 설명합니다** — "Python 프로젝트에서 GPT-4를 사용하고 싶어요"
-2. **에이전트가 API를 호출합니다** — 모델 이름이나 엔드포인트를 추측할 수 있습니다
-3. **문제가 발생하면** — API가 구조화된 힌트(`did_you_mean`, `suggestions`, `retry_after`)를 반환합니다
-4. **에이전트가 스스로 수정합니다** — 힌트를 읽고 올바른 parameter로 다시 시도합니다
-5. **동작하는 코드를 얻게 됩니다** — 일반적으로 첫 번째 또는 두 번째 시도에서 해결됩니다
+- AI Sonar chat, image, audio, video, translation 및 기타 API 제품군을 위한 최소 실행 예제를 만듭니다.
+- OpenAI 호환 클라이언트에는 `https://api.aisonar.dev/v1`을 사용하고, Anthropic 또는 Gemini 네이티브 라우트로 전환해야 하는 경우를 설명합니다.
+- 오래된 목록을 추측하지 않고 `/v1/models`, `/llms.txt`, `recommended_for` 후보로 모델을 탐색합니다.
+- 비채팅 요청을 재시도하기 전에 모델 공개 계약을 읽어 지원되지 않는 필드가 조용히 제거되지 않게 합니다.
+- `did_you_mean`, `suggestions`, `retry_after`, `recommended_request` 같은 Agent-First 오류 힌트를 처리합니다.
 
 ## 설치
 
 <Note>
-정식 비대화형 설치 명령을 사용하세요:
+공식 비대화형 설치 명령을 사용하세요:
 
 ```bash
 npx skills add https://github.com/hedging8563/aisonar-skills --skill aisonar-api-integration -y
 ```
 
-이 명령은 AI Sonar 스킬 저장소에서 공유 `aisonar-api-integration` 스킬을 설치합니다.
+AI Sonar skills 저장소에서 공유 `aisonar-api-integration` 스킬을 설치합니다.
 
-도구가 installer를 지원하지 않는 경우, 저장소의 `skills/aisonar-api-integration/` 폴더를 도구의 공유 스킬 또는 rules 디렉터리로 복사하세요.
+도구가 installer를 지원하지 않으면 저장소의 `skills/aisonar-api-integration/` 폴더를 도구의 공유 skills 또는 rules 디렉터리로 복사하세요.
 </Note>
+
+### 기존 설치 업데이트
+
+AI Sonar skills 저장소 정리 전에 설치했다면 같은 명령을 다시 실행하세요. 현재 공개 패키지는 더 작고 생성된 로컬 검색 스크립트에 의존하지 않습니다.
 
 ### 설치 확인
 
-코딩 에이전트에게 다음과 같이 물어보세요:
+coding agent에게 물어보세요:
+
 ```
 사용 가능한 skills는 무엇인가요?
 ```
 
-`aisonar-api-integration`가 보이면 설치가 성공한 것입니다.
+`aisonar-api-integration`이 보이면 설치가 성공한 것입니다.
 
 ## API Key 받기
 
@@ -60,30 +54,32 @@ npx skills add https://github.com/hedging8563/aisonar-skills --skill aisonar-api
     [aisonar.dev](https://aisonar.dev)로 이동합니다
   </Step>
   <Step title="로그인">
-    계정을 생성하거나 로그인합니다
+    계정을 만들거나 로그인합니다
   </Step>
   <Step title="API Key 받기">
-    [Dashboard → API Keys](https://console.aisonar.dev/api)로 이동하여 새 key를 생성합니다
+    [Dashboard → API Keys](https://console.aisonar.dev/api)를 열고 새 key를 만듭니다
   </Step>
-  <Step title="Key 복사">
-    key는 `sk-...`로 시작합니다 — 안전하게 저장하세요
+  <Step title="key 복사">
+    key는 `sk-...`로 시작합니다. 안전하게 보관하세요.
   </Step>
 </Steps>
 
 <Tip>
-API key를 프롬프트나 소스 파일에 직접 붙여넣을 필요는 없습니다. 이 스킬은 사용할 환경 변수를 확인한 뒤 그 환경 변수에서 key를 읽는 코드를 생성해야 합니다.
+API key를 프롬프트나 소스 파일에 붙여 넣지 마세요. 스킬은 사용할 환경 변수를 물어보고 그 변수에서 key를 읽는 코드를 생성해야 합니다.
 </Tip>
 
-## 예시
+## 권장 Agent 워크플로
 
-### 채팅 완성
+1. 사용자가 요청한 언어와 API 제품군에 맞는 최소 동작 예제부터 시작합니다.
+2. 모델 선택이 열려 있으면 모델을 하드코딩하기 전에 `/v1/models` 또는 `https://api.aisonar.dev/llms.txt`를 호출합니다.
+3. 비채팅 작업은 `/v1/models?recommended_for=<scene>`를 호출합니다. `<scene>` 값은 `image`, `video`, `music`, `3d`, `tts`, `stt`, `embedding`, `rerank`, `translation` 중 하나입니다.
+4. 실패한 비채팅 요청을 바꾸기 전에 `/v1/models/:model`을 읽고 `supported_operations`, `supported_parameters`, `request_endpoint`, `request_shape_mode`, `recommended_request`에 맞춥니다.
+5. API가 Agent-First 오류를 반환하면 구조화 필드로 요청을 수정하고, `retryable`일 때만 재시도합니다.
 
-**입력:**
-```
-Python 프로젝트에서 GPT-4를 사용하고 싶어요
-```
+## 최소 채팅 예제
 
-**에이전트가 생성하는 내용:**
+이 예제는 OpenAI Python SDK와 AI Sonar base URL을 사용합니다:
+
 ```python
 import os
 from openai import OpenAI
@@ -94,7 +90,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="gpt-5.4",
+    model="gpt-4o-mini",
     messages=[{"role": "user", "content": "Hello!"}]
 )
 
@@ -104,112 +100,83 @@ print(response.choices[0].message.content)
 실행 방법:
 
 ```bash
+pip install openai
 export TOKENLAB_API_KEY="sk-your-api-key"
 python app.py
 ```
 
-에이전트가 잘못된 모델 이름(예: `gpt5`)을 추측하면, API는 다음을 반환합니다:
-```json
-{
-  "error": {
-    "code": "model_not_found",
-    "did_you_mean": "gpt-5.4",
-    "suggestions": [{"id": "gpt-5.4"}, {"id": "gpt-5-mini"}],
-    "hint": "Did you mean 'gpt-5.4'? Use GET https://api.aisonar.dev/v1/models to list all available models."
-  }
-}
-```
+## 모델 탐색과 공개 계약
 
-에이전트는 `did_you_mean`을 읽고, 모델 이름을 수정한 뒤 자동으로 다시 시도합니다.
-
-### 이미지 생성
-
-**입력:**
-```
-Generate images with Flux in Node.js
-```
-
-에이전트는 image API를 호출하고, 오류를 처리하며, 다운로드 및 저장 로직이 포함된 완전한 코드를 생성합니다.
-
-### 음성 인식
-
-**입력:**
-```
-Integrate speech-to-text in my app
-```
-
-에이전트는 올바른 `/v1/audio/transcriptions` 엔드포인트와 오디오 파일 처리가 포함된 코드를 생성합니다.
-
-## Agent-First 오류 복구
-
-모든 오류 응답에는 어떤 코딩 에이전트든 파싱할 수 있는 구조화된 힌트가 포함됩니다. 자세한 내용은 [전체 Agent-First API reference](/guides/agent-first-api)를 참조하세요.
-
-| 오류 | API가 반환하는 내용 | 에이전트가 수행하는 작업 |
-|-------|---------------------|---------------------|
-| 잘못된 모델 이름 | `did_you_mean` + `suggestions` | 자동 수정 후 재시도 |
-| 잔액 부족 | `balance_usd` + 더 저렴한 `suggestions` | 감당 가능한 모델로 전환 |
-| 모델 사용 불가 | `alternatives` + `retry_after` | 사용 가능한 모델로 전환 |
-| Rate limit 초과 | `retry_after` (정확한 초 단위) | 대기 후 재시도 |
-| Context가 너무 김 | 더 큰 모델이 포함된 `suggestions` | 더 큰 context 모델로 전환 |
-| Non-chat 요청 계약 불일치 | `supported_operations`, `supported_parameters`, `request_endpoint`, `recommended_request` | 공개 모델 계약을 기준으로 요청을 다시 구성 |
-
-### 네이티브 엔드포인트 최적화
-
-Claude 또는 Gemini 모델로 `/v1/chat/completions`를 호출하면, API는 최적화 헤더를 반환합니다:
-
-
-
-이 header들은 강제 자동 전환이 아니라 라우팅 힌트로 취급하세요. Claude 네이티브 호출은 `/v1/messages`를 사용합니다. Gemini 네이티브 호출은 the native endpoint hint header가 알려주는 endpoint를 따라야 하며, 일반적으로 `/v1beta/gemini`입니다.
-
-### 모델 검색
-
-문서를 검색할 필요가 없습니다:
+오래된 번들 목록보다 실시간 탐색을 우선하세요:
 
 ```bash
 # 기계가 읽을 수 있는 API 개요
 curl https://api.aisonar.dev/llms.txt
 
-# List models by category
-curl "https://api.aisonar.dev/v1/models?category=chat" -H "Authorization: Bearer sk-KEY"
+# 모델 목록
+curl "https://api.aisonar.dev/v1/models" -H "Authorization: Bearer sk-KEY"
 curl "https://api.aisonar.dev/v1/models?category=image" -H "Authorization: Bearer sk-KEY"
 
-# Non-chat 시나리오 추천 목록
+# 비채팅 추천 후보
 curl "https://api.aisonar.dev/v1/models?recommended_for=image" -H "Authorization: Bearer sk-KEY"
+curl "https://api.aisonar.dev/v1/models?recommended_for=video" -H "Authorization: Bearer sk-KEY"
 curl "https://api.aisonar.dev/v1/models?recommended_for=translation" -H "Authorization: Bearer sk-KEY"
 
-# Non-chat 요청을 재시도하기 전에 단일 모델의 공개 계약 확인
+# 비채팅 요청을 재시도하기 전 단일 모델 공개 계약 읽기
 curl "https://api.aisonar.dev/v1/models/gpt-image-2" -H "Authorization: Bearer sk-KEY"
 
-# 기능별 필터링
-curl "https://api.aisonar.dev/v1/models?tag=coding" -H "Authorization: Bearer sk-KEY"
+# 가격 전용 상세
+curl "https://api.aisonar.dev/v1/models/gpt-image-2/pricing" -H "Authorization: Bearer sk-KEY"
 ```
 
-## 지원되는 기능
+## 네이티브 라우팅 힌트
 
-| 유형 | 예시 |
-|------|----------|
-| 채팅 | GPT-5.4, Claude, Gemini, DeepSeek |
-| 이미지 생성 | GPT Image, Flux, Stable Diffusion, Gemini 이미지 모델 |
-| 음악 생성 | Suno |
-| 3D 모델 | Tripo3D |
-| 오디오 | 텍스트 음성 변환, 음성 텍스트 변환 |
-| 임베딩 | text-embedding-3 |
-| 재정렬 | bce-reranker, qwen3-rerank |
+일반적인 chat, Responses, image, embedding, audio, rerank 예제는 OpenAI 호환 `/v1`이 기본 경로입니다. 공급자별 동작이 필요하거나 AI Sonar이 최적화 힌트로 the native endpoint hint header를 반환할 때만 Anthropic 또는 Gemini 네이티브 라우트를 사용하세요.
+
+
+
+## Agent-First 오류 복구
+
+오류에는 coding agent가 문서를 긁지 않고 파싱할 수 있는 필드가 포함됩니다:
+
+| 오류 | 유용한 필드 | Agent 조치 |
+|---|---|---|
+| 잘못된 모델 이름 | `did_you_mean`, `suggestions`, `hint` | 수정된 모델 또는 제안된 대체 모델로 재시도합니다 |
+| 잔액 부족 | `balance_usd`, `estimated_cost_usd`, `suggestions` | 승인을 요청하거나 감당 가능한 모델로 전환합니다 |
+| 속도 제한 또는 일시적 사용 불가 | `retryable`, `retry_after`, `alternatives` | 기다렸다가 재시도하거나 나열된 대체 모델을 선택합니다 |
+| 비채팅 계약 불일치 | `supported_operations`, `supported_parameters`, `request_endpoint`, `request_shape_mode`, `recommended_request` | 공개 계약에서 요청을 다시 만들고 의도를 바꾸는 필드는 fail closed 처리합니다 |
+
+## 지원 API 제품군
+
+| 제품군 | 기본 경로 |
+|---|---|
+| Chat 및 Responses | `/v1/chat/completions`, `/v1/responses` |
+| Claude 네이티브 messages | `/v1/messages` |
+| Gemini 네이티브 요청 | `/v1beta/models/{model}:generateContent` |
+| 이미지 | `/v1/images/generations`, `/v1/images/edits` |
+| 비디오 | `/v1/videos/generations` |
+| 음악 | `/v1/music/generations` |
+| Worlds | `/v1/worlds/generations` 및 world 상태와 미디어 asset endpoint |
+| 3D | `/v1/3d/generations` |
+| 오디오 | `/v1/audio/speech`, `/v1/audio/transcriptions`, `/v1/audio/translations` |
+| Realtime | `/v1/realtime?model={model}` |
+| Embeddings 및 rerank | `/v1/embeddings`, `/v1/rerank` |
+| 텍스트 번역 | `/v1/translations` |
 
 ## 모범 사례
 
 <CardGroup cols={2}>
-  <Card title="API Key 보안" icon="shield">
-    환경 변수를 사용하세요. key를 git에 commit하거나 frontend 코드에 노출하지 마세요.
+  <Card title="API Key 안전" icon="shield">
+    환경 변수와 서버 측 호출을 사용하세요. 프런트엔드 코드에 key를 노출하지 마세요.
   </Card>
-  <Card title="비용 관리" icon="wallet">
-    [dashboard](https://console.aisonar.dev)에서 사용량 제한을 설정하세요. `error.balance_usd`를 확인하여 비용을 프로그래밍 방식으로 모니터링하세요.
+  <Card title="비채팅은 계약 우선" icon="file-code">
+    image, video, music, 3D, translation, audio, embedding, rerank 요청을 재시도하기 전에 `/v1/models?recommended_for=...`와 `/v1/models/:model`을 읽으세요.
   </Card>
-  <Card title="직접적으로 요청하세요" icon="bullseye">
-    "AI Sonar에 image API가 있나요?" 대신 "Python에서 이미지를 생성하고 싶어요"라고 말하세요.
+  <Card title="최소 실행 예제" icon="terminal">
+    추상화, 큐, UI 흐름을 추가하기 전에 먼저 하나의 동작 호출을 만드세요.
   </Card>
-  <Card title="시나리오를 설명하세요" icon="message">
-    "GPT-4를 사용해"보다 "GPT-4로 chatbot을 만들고 있어"라고 말하면 에이전트에 더 많은 context를 제공합니다.
+  <Card title="구조화 힌트 사용" icon="rotate-cw">
+    코드를 변경하기 전에 `did_you_mean`, `retry_after`, `alternatives`, `recommended_request`를 파싱하세요.
   </Card>
 </CardGroup>
 
@@ -217,22 +184,16 @@ curl "https://api.aisonar.dev/v1/models?tag=coding" -H "Authorization: Bearer sk
 
 <AccordionGroup>
   <Accordion title="스킬이 자동으로 트리거되지 않나요?">
-    요청에 "AI Sonar" 또는 "AI Sonar API"를 포함해 보세요:
-    ```
-    AI Sonar를 사용해 내 프로젝트에 GPT-4를 통합하고 싶어요
-    ```
+    요청에 “AI Sonar” 또는 “AI Sonar API”를 언급하세요. 예: `AI Sonar으로 내 Node.js 앱에 이미지 생성을 추가해줘`.
   </Accordion>
 
-  <Accordion title="API는 에이전트가 올바른 모델을 찾도록 어떻게 도와주나요?">
-    AI Sonar의 [Agent-First API](/guides/agent-first-api)는 구조화된 오류 힌트를 반환합니다. 에이전트가 잘못된 모델 이름을 추측하면, 오류에는 올바른 이름이 담긴 `did_you_mean`과 대안이 담긴 `suggestions`가 포함됩니다. 에이전트는 이를 읽고 다음 시도에서 자동으로 수정합니다.
+  <Accordion title="어떤 coding agent가 지원되나요?">
+    공유 skill 또는 rules 디렉터리를 지원하는 모든 coding agent가 이 폴더를 사용할 수 있습니다. `skills` installer는 지원되는 agent를 자동으로 처리합니다.
   </Accordion>
 
-  <Accordion title="어떤 코딩 에이전트가 지원되나요?">
-    공유 스킬 또는 rules 디렉터리를 지원하는 모든 코딩 에이전트가 가능합니다. installer가 지원되는 경우, `npx skills add`가 감지된 위치에 공유 `aisonar-api-integration` 스킬을 자동으로 배치합니다.
-  </Accordion>
+  <Accordion title="스킬을 어떻게 업데이트하나요?">
+    설치 명령을 다시 실행하세요. 공식 공개 저장소에서 로컬 사본을 새로 고칩니다.
 
-  <Accordion title="Skill은 어떻게 업데이트하나요?">
-    installer를 다시 실행하세요:
     ```bash
     npx skills add https://github.com/hedging8563/aisonar-skills --skill aisonar-api-integration -y
     ```
@@ -243,19 +204,19 @@ curl "https://api.aisonar.dev/v1/models?tag=coding" -H "Authorization: Bearer sk
 
 <CardGroup cols={2}>
   <Card title="Agent-First API" icon="robot" href="/ko/guides/agent-first-api">
-    구조화된 오류 힌트에 대한 전체 reference
+    구조화 오류 힌트와 복구 동작
   </Card>
   <Card title="API 문서" icon="book" href="https://docs.aisonar.dev">
-    전체 API reference
+    엔드포인트별 설정과 API Reference
   </Card>
   <Card title="모델" icon="sparkles" href="https://aisonar.dev/models">
-    사용 가능한 수백 개의 모델 둘러보기
+    사용 가능한 모델 보기
   </Card>
   <Card title="llms.txt" icon="file-lines" href="https://api.aisonar.dev/llms.txt">
-    AI 에이전트를 위한 기계가 읽을 수 있는 API 개요
+    agents를 위한 기계 판독 API 개요
   </Card>
 </CardGroup>
 
 <Info>
-**질문이 있으신가요?** [GitHub Issues](https://github.com/hedging8563/aisonar-skills/issues)를 확인하거나 [support@aisonar.dev](mailto:support@aisonar.dev)로 문의하세요
+질문은 [GitHub Issues](https://github.com/hedging8563/aisonar-skills/issues)를 사용하거나 [support@aisonar.dev](mailto:support@aisonar.dev)로 문의하세요.
 </Info>

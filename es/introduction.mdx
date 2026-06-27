@@ -24,15 +24,19 @@ AI Sonar es una plataforma de agregación de APIs de IA que te brinda acceso uni
 
 ## Capacidades compatibles
 
+El catálogo público cambia con el tiempo. Verifica la disponibilidad actual con `/v1/models`, `recommended_for` o la página de modelos; los ejemplos de abajo usan IDs públicos actuales.
+
 | Capacidad | Descripción | Modelos de ejemplo |
-|------------|-------------|----------------|
-| **Chat y razonamiento** | Generación de texto, planificación, herramientas | `gpt-5.4`, `claude-sonnet-4-6`, `deepseek-r1` |
-| **Visión** | Comprensión de imágenes y chat multimodal | `gpt-4o`, `claude-sonnet-4-6`, `gemini-2.5-flash` |
-| **Generación de imágenes** | Texto a imagen y edición de imágenes | `dall-e-3`, `flux-pro`, `midjourney` |
-| **Audio** | TTS y transcripción | `gpt-4o-mini-tts`, `whisper-1`, `gpt-4o-transcribe` |
-| **Embeddings** | Vectorización de texto | `text-embedding-3-small`, `text-embedding-3-large` |
-| **Música** | Generación de música por IA | `suno` |
-| **3D** | Generación de activos 3D | `tripo3d` |
+|---|---|---|
+| Chat y razonamiento | Generación de texto, planificación, herramientas | `gpt-5.4`, `claude-sonnet-4-6`, `deepseek-r1` |
+| Visión y multimodal | Comprensión de imágenes y chat multimodal | `gpt-4o`, `claude-sonnet-4-6`, `gemini-3.5-flash` |
+| Generación y edición de imágenes | Texto a imagen y edición de imágenes | `gpt-image-2`, `flux-pro`, `qwen-image` |
+| Generación de video | Texto/imagen/referencia a video y control de movimiento | `veo3.1`, `seedance-2.0`, `kling-3.0-video` |
+| Audio y Realtime | TTS, transcripción, traducción y sesiones en tiempo real | `gpt-4o-mini-tts`, `whisper-1`, `gpt-realtime` |
+| Embeddings y rerank | Vectorización de texto y reordenamiento | `text-embedding-3-small`, `qwen3-vl-rerank` |
+| Traducción | Flujos de traducción de texto y voz | `qwen-mt-plus`, `gpt-realtime-translate` |
+| Música y 3D | Generación de música y assets 3D | `suno-music`, `tripo3d-v2.5` |
+| Worlds | Generación de worlds, polling de estado y media assets | Verifica disponibilidad con `/v1/worlds/generations` y Models API |
 
 ## Elige el formato de solicitud
 

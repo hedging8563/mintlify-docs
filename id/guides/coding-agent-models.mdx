@@ -12,21 +12,21 @@ description: "Pilih model yang tepat untuk setiap tugas coding — tabel perband
 | `claude-opus-4-6` | Sedang | Sangat Baik | $$$$ | 200K | Arsitektur, refactoring kompleks |
 | `gpt-5.4` | Sedang | Sangat Baik | $$$$ | 200K | Penalaran kompleks, perencanaan |
 | `claude-sonnet-4-6` | Cepat | Baik Sekali | $$$ | 200K | Coding umum, review |
-| `gemini-3-pro-preview` | Cepat | Baik Sekali | $$$ | 1M | Analisis codebase besar |
+| `gemini-3.1-pro-preview` | Cepat | Baik Sekali | $$$ | 1M | Analisis codebase besar |
 | `gpt-5-mini` | Sangat Cepat | Baik | $$ | 128K | Edit cepat, completions |
-| `gemini-3-flash-preview` | Sangat Cepat | Baik | $$ | 1M | Iterasi cepat, pencarian |
+| `gemini-3.5-flash` | Sangat Cepat | Baik | $$ | 1M | Iterasi cepat, pencarian |
 | `deepseek-r1` | Sedang | Baik Sekali | $ | 64K | Tugas yang membutuhkan penalaran |
-| `deepseek-v3.2` | Cepat | Baik | $ | 128K | Pembuatan massal, boilerplate |
+| `deepseek-v3-2` | Cepat | Baik | $ | 128K | Pembuatan massal, boilerplate |
 
 ## Rekomendasi per Tugas
 
 <AccordionGroup>
   <Accordion title="Pembuatan Kode / Scaffolding">
-    **Rekomendasi**: `claude-sonnet-4-6`, `gemini-3-pro-preview`
+    **Rekomendasi**: `claude-sonnet-4-6`, `gemini-3.1-pro-preview`
 
     Model-model ini menghasilkan kode yang bersih dan terstruktur dengan baik serta konvensi penamaan yang bagus. Untuk scaffolding multi-file yang kompleks, pertimbangkan `claude-opus-4-6`.
 
-    Alternatif hemat: `deepseek-v3.2` menangani boilerplate dengan baik dengan biaya yang jauh lebih rendah.
+    Alternatif hemat: `deepseek-v3-2` menangani boilerplate dengan baik dengan biaya yang jauh lebih rendah.
   </Accordion>
 
   <Accordion title="Review Kode / Refactoring">
@@ -50,7 +50,7 @@ description: "Pilih model yang tepat untuk setiap tugas coding — tabel perband
   </Accordion>
 
   <Accordion title="Edit Cepat / Tab Completion">
-    **Rekomendasi**: `gpt-5-mini`, `gemini-3-flash-preview`
+    **Rekomendasi**: `gpt-5-mini`, `gemini-3.5-flash`
 
     Kecepatan sangat penting untuk penggunaan interaktif. Model budget dengan waktu respons cepat memberikan pengalaman terbaik. Jangan buang token premium untuk autocomplete.
   </Accordion>

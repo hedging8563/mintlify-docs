@@ -313,7 +313,7 @@ response = requests.post(
     "https://api.aisonar.dev/v1/videos/generations",
     headers={"Authorization": "Bearer sk-your-api-key"},
     json={
-        "model": "topaz-video-upscale",
+        "model": "grok-imagine-upscale",
         "operation": "video-to-video",
         "video_url": "https://example.com/source.mp4",
         "prompt": "Upscale the clip while preserving the original motion.",
@@ -361,11 +361,8 @@ Cette liste est alignée sur l’inventaire actuel des modèles vidéo publics a
 | `kling-3.0-motion-control` | Contrôle du mouvement |
 | `kling-3.0-video` | Texte vers vidéo, Image vers vidéo, Début-fin vers vidéo, références d’éléments |
 | `kling-v2.5-turbo-pro` | Texte vers vidéo, Image vers vidéo, Début-fin vers vidéo |
-| `kling-v2.5-turbo-std` | Texte vers vidéo, Image vers vidéo |
 | `kling-v2.6-pro` | Texte vers vidéo, Image vers vidéo, Début-fin vers vidéo |
 | `kling-v2.6-std` | Texte vers vidéo, Image vers vidéo |
-| `kling-v3.0-pro` | Texte vers vidéo, Image vers vidéo, Début-fin vers vidéo |
-| `kling-v3.0-std` | Texte vers vidéo, Image vers vidéo, Début-fin vers vidéo |
 | `kling-video-o1-pro` | Texte vers vidéo, Image vers vidéo, Référence vers vidéo, Début-fin vers vidéo, Vidéo vers vidéo |
 | `kling-video-o1-std` | Texte vers vidéo, Image vers vidéo, Référence vers vidéo, Début-fin vers vidéo, Vidéo vers vidéo |
 
@@ -375,10 +372,8 @@ Cette liste est alignée sur l’inventaire actuel des modèles vidéo publics a
 |-------|----------|
 | `veo3` | Texte vers vidéo, Image vers vidéo |
 | `veo3-fast` | Texte vers vidéo, Image vers vidéo |
-| `veo3-pro` | Texte vers vidéo, Image vers vidéo |
 | `veo3.1` | Texte vers vidéo, Image vers vidéo, Référence vers vidéo, Début-fin vers vidéo |
 | `veo3.1-fast` | Texte vers vidéo, Image vers vidéo, Référence vers vidéo, Début-fin vers vidéo |
-| `veo3.1-pro` | Texte vers vidéo, Image vers vidéo, Début-fin vers vidéo |
 
 ### ByteDance
 
@@ -427,4 +422,3 @@ Cette liste est alignée sur l’inventaire actuel des modèles vidéo publics a
 
 | Modèle | Opérations publiques |
 |-------|----------|
-| `topaz-video-upscale` | Vidéo vers vidéo |

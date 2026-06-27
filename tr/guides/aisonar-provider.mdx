@@ -59,7 +59,7 @@ AI Sonar sağlayıcılarını `models.providers` altında ekleyin:
         models: [
           { id: "gpt-4o", name: "GPT-4o" },
           { id: "deepseek-r1", name: "DeepSeek R1" },
-          { id: "qwen3-32b", name: "Qwen 3 32B" }
+          { id: "qwen3-coder-flash", name: "Qwen 3 Coder Flash" }
         ]
       },
       "aisonar-responses": {
@@ -85,8 +85,8 @@ AI Sonar sağlayıcılarını `models.providers` altında ekleyin:
         baseUrl: "https://api.aisonar.dev",
         apiKey: "sk-your-api-key",
         models: [
-          { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash" },
-          { id: "gemini-3-flash-preview", name: "Gemini 3 Flash Preview" }
+          { id: "gemini-3.5-flash", name: "Gemini 3.5 Flash" },
+          { id: "gemini-3.5-flash", name: "Gemini 3.5 Flash" }
         ]
       },
       "aisonar-minimax": {
@@ -94,7 +94,7 @@ AI Sonar sağlayıcılarını `models.providers` altında ekleyin:
         baseUrl: "https://api.aisonar.dev",
         apiKey: "sk-your-api-key",
         models: [
-          { id: "minimax-m1", name: "MiniMax M1" }
+          { id: "minimax-m2.1", name: "MiniMax M2.1" }
         ]
       }
     }
@@ -119,7 +119,7 @@ OpenClaw hâlâ modelleri `provider/model` formatıyla referans gösterir:
   agents: {
     defaults: {
       model: {
-        primary: "aisonar-gemini/gemini-2.5-flash"
+        primary: "aisonar-gemini/gemini-3.5-flash"
       }
     }
   }
@@ -134,8 +134,8 @@ OpenClaw hâlâ modelleri `provider/model` formatıyla referans gösterir:
 | `aisonar` | `aisonar/deepseek-r1` | DeepSeek akıl yürütme modeli |
 | `aisonar-responses` | `aisonar-responses/gpt-4o` | Responses API rotası |
 | `aisonar-claude` | `aisonar-claude/claude-sonnet-4-6` | Claude Messages için yerel rota |
-| `aisonar-gemini` | `aisonar-gemini/gemini-2.5-flash` | Gemini için yerel rota |
-| `aisonar-minimax` | `aisonar-minimax/minimax-m1` | MiniMax için yerel rota |
+| `aisonar-gemini` | `aisonar-gemini/gemini-3.5-flash` | Gemini için yerel rota |
+| `aisonar-minimax` | `aisonar-minimax/minimax-m2.1` | MiniMax için yerel rota |
 
 Mevcut tüm modellere göz atın: [aisonar.dev/models](https://aisonar.dev/models).
 

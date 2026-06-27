@@ -11,21 +11,21 @@ Việc chọn đúng model có thể ảnh hưởng đáng kể đến chi phí 
 
 | Tác vụ | Model khuyến nghị | Lý do |
 |------|-------------------|-----------|
-| **Hỏi & đáp đơn giản** | `gpt-5-mini`, `gemini-2.5-flash` | Nhanh, rẻ, đủ tốt |
+| **Hỏi & đáp đơn giản** | `gpt-5-mini`, `gemini-3.5-flash` | Nhanh, rẻ, đủ tốt |
 | **Suy luận phức tạp** | `gpt-5.4`, `claude-opus-4-6`, `deepseek-r1` | Logic và lập kế hoạch tốt hơn |
-| **Lập trình** | `claude-sonnet-4-6`, `gpt-4o`, `deepseek-v3.2` | Được tối ưu cho code |
+| **Lập trình** | `claude-sonnet-4-6`, `gpt-4o`, `deepseek-v3-2` | Được tối ưu cho code |
 | **Viết sáng tạo** | `claude-sonnet-4-6`, `gpt-4o` | Chất lượng văn phong tốt hơn |
-| **Thị giác/Hình ảnh** | `gpt-4o`, `claude-sonnet-4-6`, `gemini-2.5-flash` | Hỗ trợ thị giác gốc |
+| **Thị giác/Hình ảnh** | `gpt-4o`, `claude-sonnet-4-6`, `gemini-3.5-flash` | Hỗ trợ thị giác gốc |
 | **Ngữ cảnh dài** | `gemini-2.5-pro`, `claude-sonnet-4-6` | Cửa sổ token 1M+ |
-| **Nhạy cảm về chi phí** | `gpt-5-mini`, `gemini-2.5-flash`, `deepseek-v3.2` | Giá trị tốt nhất |
+| **Nhạy cảm về chi phí** | `gpt-5-mini`, `gemini-3.5-flash`, `deepseek-v3-2` | Giá trị tốt nhất |
 
 ### Các mức chi phí
 
 ```
 $$$$ Premium: gpt-5.4, claude-opus-4-6
 $$$  Standard: claude-sonnet-4-6, gpt-4o
-$$   Budget:   gpt-5-mini, gemini-2.5-flash
-$    Economy:  deepseek-v3.2, deepseek-r1
+$$   Budget:   gpt-5-mini, gemini-3.5-flash
+$    Economy:  deepseek-v3-2, deepseek-r1
 ```
 
 ## Tối ưu chi phí
@@ -125,7 +125,7 @@ for chunk in stream:
 
 | Trường hợp sử dụng | Khuyến nghị | Độ trễ |
 |----------|-------------|---------|
-| Chat UI | `gpt-5-mini`, `gemini-2.5-flash` | ~200ms token đầu tiên |
+| Chat UI | `gpt-5-mini`, `gemini-3.5-flash` | ~200ms token đầu tiên |
 | Hoàn thành tab | `claude-haiku-4-5` | ~150ms token đầu tiên |
 | Xử lý nền | `gpt-4o`, `claude-sonnet-4-6` | ~500ms token đầu tiên |
 
@@ -189,7 +189,7 @@ except APIError as e:
 ### 10. Sử dụng model dự phòng
 
 ```python
-FALLBACK_CHAIN = ["gpt-4o", "claude-sonnet-4-6", "gemini-2.5-flash"]
+FALLBACK_CHAIN = ["gpt-4o", "claude-sonnet-4-6", "gemini-3.5-flash"]
 
 def chat_with_fallback(messages):
     for model in FALLBACK_CHAIN:

@@ -10,21 +10,21 @@ description: "为每种编码任务选择合适的模型——对比表格、推
 | `claude-opus-4-6` | 中等 | 优秀 | $$$$ | 200K | 架构设计、复杂重构 |
 | `gpt-5.4` | 中等 | 优秀 | $$$$ | 200K | 复杂推理、规划 |
 | `claude-sonnet-4-6` | 快 | 很好 | $$$ | 200K | 通用编码、审查 |
-| `gemini-3-pro-preview` | 快 | 很好 | $$$ | 1M | 大型代码库分析 |
+| `gemini-3.1-pro-preview` | 快 | 很好 | $$$ | 1M | 大型代码库分析 |
 | `gpt-5-mini` | 很快 | 好 | $$ | 128K | 快速编辑、补全 |
-| `gemini-3-flash-preview` | 很快 | 好 | $$ | 1M | 快速迭代、搜索 |
+| `gemini-3.5-flash` | 很快 | 好 | $$ | 1M | 快速迭代、搜索 |
 | `deepseek-r1` | 中等 | 很好 | $ | 64K | 推理密集型任务 |
-| `deepseek-v3.2` | 快 | 好 | $ | 128K | 批量生成、样板代码 |
+| `deepseek-v3-2` | 快 | 好 | $ | 128K | 批量生成、样板代码 |
 
 ## 按任务推荐
 
 <AccordionGroup>
   <Accordion title="代码生成 / 脚手架">
-    **推荐**：`claude-sonnet-4-6`、`gemini-3-pro-preview`
+    **推荐**：`claude-sonnet-4-6`、`gemini-3.1-pro-preview`
 
     这些模型生成的代码结构清晰、命名规范。复杂的多文件脚手架可考虑 `claude-opus-4-6`。
 
-    经济替代：`deepseek-v3.2` 处理样板代码效果好，成本仅为前者的零头。
+    经济替代：`deepseek-v3-2` 处理样板代码效果好，成本仅为前者的零头。
   </Accordion>
 
   <Accordion title="代码审查 / 重构">
@@ -48,7 +48,7 @@ description: "为每种编码任务选择合适的模型——对比表格、推
   </Accordion>
 
   <Accordion title="快速编辑 / Tab 补全">
-    **推荐**：`gpt-5-mini`、`gemini-3-flash-preview`
+    **推荐**：`gpt-5-mini`、`gemini-3.5-flash`
 
     交互式使用中速度至关重要。响应快的经济模型提供最佳体验。不要在自动补全上浪费高端 token。
   </Accordion>

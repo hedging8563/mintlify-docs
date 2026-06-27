@@ -34,8 +34,8 @@ xAI Grok Imagine görsel modelleri (`grok-imagine-image`, `grok-imagine-image-qu
 
 **Senkron istek zaman aşımı:** Bazı yönlendirilmiş görsel sağlayıcıları son görseli inline döndürür ve üretimin tamamlanmasını bekler. Yüksek çözünürlüklü veya yüksek kaliteli istekler bir dakikaya yakın ya da daha uzun sürebilir; bu yüzden HTTP istemcisi zaman aşımını en az `120s` olarak ayarlayın. Oluşturma yanıtı `status: "pending"`, `task_id` veya `poll_url` içeriyorsa, dönen `poll_url` ile polling yapın.
 
-<ParamField body="model" type="string" default="dall-e-3">
-  Kullanılacak model (ör. `gpt-image-2`, `dall-e-3`, `flux-pro`, `midjourney`).
+<ParamField body="model" type="string" required>
+  Kullanılacak model (ör. `gpt-image-2`, `flux-pro`, `qwen-image` veya `nano-banana-pro`). Güncel önerilen liste için `GET /v1/models?recommended_for=image` kullanın.
 </ParamField>
 
 <ParamField body="prompt" type="string" required>
@@ -83,7 +83,7 @@ xAI Grok Imagine görsel modelleri (`grok-imagine-image`, `grok-imagine-image-qu
 </ParamField>
 
 <ParamField body="quality" type="string" default="standard">
-  Görüntü kalitesi. DALL-E modelleri `standard` veya `hd` kullanır; `gpt-image-2` gibi GPT Image modelleri `auto`, `low`, `medium` veya `high` kullanır.
+  Görüntü kalitesi. `gpt-image-2` gibi GPT Image modelleri `auto`, `low`, `medium` veya `high` kullanır. Diğer görüntü aileleri sağlayıcıya özel değerler kullanabilir; varsayılan olmayan değerleri göndermeden önce seçilen model metadata bilgisini kontrol edin.
 </ParamField>
 
 <ParamField body="response_format" type="string" default="url">
@@ -96,8 +96,8 @@ xAI Grok Imagine görsel modelleri (`grok-imagine-image`, `grok-imagine-image-qu
   `gpt-image-2` veya resmi FLUX/BFL görüntü modelleriyle önce bir görev oluşturmak için `true` yapın. Tamamlanan asenkron görüntü görevleri, istenen `response_format` ne olursa olsun URL döndürür; `b64_json` gerekiyorsa senkron istek kullanın.
 </ParamField>
 
-<ParamField body="style" type="string" default="vivid">
-  DALL-E 3 için stil: `vivid` veya `natural`.
+<ParamField body="style" type="string">
+  İsteğe bağlı stil seçici. Yalnızca seçilen model bunu açıkça belgeliyorsa gönderin; model metadata bilgisi aksini söylemiyorsa `gpt-image-2` için göndermeyin.
 </ParamField>
 
 <ParamField body="user" type="string">
@@ -118,7 +118,7 @@ xAI Grok Imagine görsel modelleri (`grok-imagine-image`, `grok-imagine-image-qu
   Her object şunları içerir:
   - `url` (string): Üretilen görselin URL'si
   - `b64_json` (string): Base64 kodlanmış görsel (istenirse)
-  - `revised_prompt` (string): Kullanılan prompt (DALL-E 3)
+  - `revised_prompt` (string): Upstream model raporlarsa sağlayıcıdan gelen isteğe bağlı prompt revizyonu
 </ResponseField>
 
 ### Asenkron görev yanıtı
@@ -296,15 +296,16 @@ curl -X POST "https://api.aisonar.dev/v1/images/generations" \
 
 ## Kullanılabilir Modeller
 
+Bunlar güncel örnek modellerdir, sabit bir katalog değildir. En son kullanılabilirlik ve fiyat için `GET /v1/models?recommended_for=image` veya Models sayfasını kullanın.
+
 | Model | Tip | Özellikler |
 |-------|-----|------------|
-| `dall-e-3` | Genelde inline | En iyi kalite, prompt iyileştirme |
-| `dall-e-2` | Genelde inline | Daha hızlı, daha uygun maliyetli |
+| `gpt-image-2` | Inline veya task tabanlı | Token bazlı fiyatlanan GPT Image modeli, esnek boyutlar |
 | `flux-pro` | Sıklıkla task tabanlı | Fotogerçekçi, yüksek kalite |
-| `flux-schnell` | Genelde inline | Çok hızlı |
-| `midjourney` | Sıklıkla task tabanlı | Sanatsal stil |
-| `ideogram-v3` | Sıklıkla task tabanlı | En iyi metin oluşturma |
-| `stable-diffusion-3` | Genelde inline | Açık kaynak, özelleştirilebilir |
+| `qwen-image` | Sıklıkla task tabanlı | Güçlü metin oluşturma ve prompt takibi |
+| `nano-banana-pro` | Sıklıkla task tabanlı | Referans görüntü akışları ve yüksek çözünürlüklü çıktı |
+| `grok-imagine-image` | Sıklıkla task tabanlı | En-boy oranı ve çözünürlük seçimiyle xAI görüntü üretimi |
+| `ideogram-v3` | Sıklıkla task tabanlı | Güçlü metin oluşturma |
 
 Bir modeli her zaman senkron ya da her zaman asenkron olarak hard-code etmeyin. Create yanıtı `status: "pending"` döndürürse, `poll_url`'ı takip edin ve tamamlanana kadar polling yapın.
 

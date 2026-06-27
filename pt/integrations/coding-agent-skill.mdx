@@ -1,80 +1,85 @@
 ---
-title: "✨ Skill de Integração da API AI Sonar"
-description: "Instale o skill compartilhado de integração da API AI Sonar para qualquer agente de programação, com recuperação de erros Agent-First."
+title: "Skill de integração da API AI Sonar"
+description: "Instale o skill mantido de integração da API AI Sonar e ensine coding agents a descobrir modelos, ler contratos públicos e se recuperar de erros da API."
 ---
 
 <Note>
-Este skill ensina seu agente de programação a integrar as **centenas de APIs de IA** da AI Sonar apenas descrevendo o que você precisa. Ele é empacotado como um skill compartilhado agent-first e funciona com qualquer agente de programação que suporte arquivos de skill ou regras.
-
-A API é **[Agent-First](/guides/agent-first-api)** — mesmo que o agente adivinhe errado o nome de um modelo, a resposta de erro informa exatamente como corrigir isso.
+Esta página documenta o skill compartilhado mantido `aisonar-api-integration`. A distribuição canônica fica em [hedging8563/aisonar-skills](https://github.com/hedging8563/aisonar-skills), onde o repositório público mantém intencionalmente apenas este skill.
 </Note>
 
 <Note>
-Esta página documenta uma camada reutilizável de empacotamento de skill, e não uma superfície de compatibilidade de protocolo. Se você precisa de configuração de ponto de terminação, SDK ou cliente, use as páginas de integração dedicadas dessas ferramentas.
+Use esta página para instalação do skill e orientação de workflow do agent. Para configuração por endpoint, use a página dedicada de SDK, cliente ou referência da API.
 </Note>
 
-## Como Funciona
+## O que o skill faz
 
-1. **Você descreve o que precisa** — "Quero usar GPT-4 no meu projeto Python"
-2. **O agente chama a API** — ele pode adivinhar um nome de modelo ou ponto de terminação
-3. **Se algo der errado** — a API retorna dicas estruturadas (`did_you_mean`, `suggestions`, `retry_after`)
-4. **O agente se autocorrige** — lê as dicas e tenta novamente com os parâmetros corretos
-5. **Você recebe código funcional** — normalmente na primeira ou segunda tentativa
+- Gera exemplos mínimos executáveis para chat, imagem, áudio, vídeo, tradução e outras famílias de API da AI Sonar.
+- Usa `https://api.aisonar.dev/v1` para clientes compatíveis com OpenAI e explica quando mudar para rotas nativas Anthropic ou Gemini.
+- Descobre modelos com `/v1/models`, `/llms.txt` e listas `recommended_for`, em vez de adivinhar a partir de listas antigas.
+- Lê o contrato público de um modelo antes de tentar novamente solicitações não-chat, para não remover campos incompatíveis silenciosamente.
+- Trata dicas de erro Agent-First como `did_you_mean`, `suggestions`, `retry_after` e `recommended_request`.
 
 ## Instalação
 
 <Note>
-Use o comando de instalação canônico não interativo:
+Use o comando canônico de instalação não interativa:
 
 ```bash
 npx skills add https://github.com/hedging8563/aisonar-skills --skill aisonar-api-integration -y
 ```
 
-Isso instala o skill compartilhado `aisonar-api-integration` do repositório de skills da AI Sonar.
+Isso instala o skill compartilhado `aisonar-api-integration` a partir do repositório AI Sonar skills.
 
-Se sua ferramenta não suportar o instalador, copie a pasta `skills/aisonar-api-integration/` do repositório para o diretório compartilhado de skills ou regras da sua ferramenta.
+Se sua ferramenta não suporta o installer, copie `skills/aisonar-api-integration/` do repositório para o diretório compartilhado de skills ou rules da ferramenta.
 </Note>
 
-### Verificar Instalação
+### Atualizar instalações existentes
 
-Pergunte ao seu agente de programação:
+Se você instalou o skill antes da limpeza do repositório AI Sonar, execute o mesmo comando novamente. O pacote público atual é menor e não depende mais de scripts locais de busca gerados.
+
+### Verificar instalação
+
+Pergunte ao seu coding agent:
+
 ```
 Quais skills estão disponíveis?
 ```
 
-Se você vir `aisonar-api-integration`, a instalação foi bem-sucedida.
+Se `aisonar-api-integration` aparecer, a instalação foi concluída.
 
 ## Obtenha sua API Key
 
 <Steps>
-  <Step title="Visite a AI Sonar">
+  <Step title="Visite AI Sonar">
     Acesse [aisonar.dev](https://aisonar.dev)
   </Step>
-  <Step title="Faça login">
-    Crie uma conta ou entre
+  <Step title="Entre">
+    Crie uma conta ou faça login
   </Step>
   <Step title="Obtenha a API Key">
-    Navegue até [Dashboard → API Keys](https://console.aisonar.dev/api) e crie uma nova chave
+    Abra [Dashboard → API Keys](https://console.aisonar.dev/api) e crie uma nova key
   </Step>
-  <Step title="Copie a chave">
-    Sua chave começa com `sk-...` — salve-a com segurança
+  <Step title="Copie a key">
+    Sua key começa com `sk-...`. Guarde-a com segurança.
   </Step>
 </Steps>
 
 <Tip>
-Você não precisa colar uma API key em prompts ou arquivos-fonte. O skill deve perguntar qual variável de ambiente usar e gerar código que leia a key dessa variável.
+Não cole API keys em prompts ou arquivos-fonte. O skill deve perguntar qual variável de ambiente usar e gerar código que leia a key dessa variável.
 </Tip>
 
-## Exemplos
+## Fluxo recomendado para Agent
 
-### Conclusão de Chat
+1. Comece pelo menor exemplo funcional que corresponda à linguagem e à família de API solicitadas.
+2. Quando a escolha do modelo estiver em aberto, chame `/v1/models` ou `https://api.aisonar.dev/llms.txt` antes de fixar um modelo.
+3. Para trabalho não-chat, chame `/v1/models?recommended_for=<scene>` onde `<scene>` é `image`, `video`, `music`, `3d`, `tts`, `stt`, `embedding`, `rerank` ou `translation`.
+4. Antes de alterar uma solicitação não-chat com falha, leia `/v1/models/:model` e alinhe `supported_operations`, `supported_parameters`, `request_endpoint`, `request_shape_mode` e `recommended_request`.
+5. Se a API retornar um erro Agent-First, use os campos estruturados para corrigir a solicitação e tente novamente apenas se o erro for retryable.
 
-**Você diz:**
-```
-Quero usar GPT-4 no meu projeto Python
-```
+## Exemplo mínimo de chat
 
-**O agente gera:**
+Este exemplo usa o SDK Python da OpenAI com a base URL da AI Sonar:
+
 ```python
 import os
 from openai import OpenAI
@@ -85,7 +90,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="gpt-5.4",
+    model="gpt-4o-mini",
     messages=[{"role": "user", "content": "Hello!"}]
 )
 
@@ -95,135 +100,100 @@ print(response.choices[0].message.content)
 Execute com:
 
 ```bash
+pip install openai
 export TOKENLAB_API_KEY="sk-your-api-key"
 python app.py
 ```
 
-Se o agente adivinhar um nome de modelo errado (ex.: `gpt5`), a API retorna:
-```json
-{
-  "error": {
-    "code": "model_not_found",
-    "did_you_mean": "gpt-5.4",
-    "suggestions": [{"id": "gpt-5.4"}, {"id": "gpt-5-mini"}],
-    "hint": "Did you mean 'gpt-5.4'? Use GET https://api.aisonar.dev/v1/models to list all available models."
-  }
-}
-```
+## Descoberta de modelos e contratos
 
-O agente lê `did_you_mean`, corrige o nome do modelo e tenta novamente — tudo automaticamente.
-
-### Geração de Imagens
-
-**Você diz:**
-```
-Generate images with Flux in Node.js
-```
-
-O agente chama a API de imagem, lida com erros e gera código completo com lógica de download e salvamento.
-
-### Reconhecimento de Fala
-
-**Você diz:**
-```
-Integrate speech-to-text in my app
-```
-
-O agente gera código com o ponto de terminação correto `/v1/audio/transcriptions` e tratamento de arquivo de áudio.
-
-## Recuperação de Erros Agent-First
-
-Toda resposta de erro inclui dicas estruturadas que qualquer agente de programação pode interpretar. Veja a [referência completa da API Agent-First](/guides/agent-first-api) para mais detalhes.
-
-| Error | O que a API retorna | O que o agente faz |
-|-------|---------------------|---------------------|
-| Nome de modelo incorreto | `did_you_mean` + `suggestions` | Corrige automaticamente e tenta novamente |
-| Saldo insuficiente | `balance_usd` + `suggestions` mais baratas | Muda para um modelo acessível |
-| Modelo indisponível | `alternatives` + `retry_after` | Muda para um modelo disponível |
-| Rate limited | `retry_after` (segundos exatos) | Aguarda e tenta novamente |
-| Contexto muito longo | `suggestions` com modelos maiores | Muda para um modelo com contexto maior |
-| Incompatibilidade de contrato em solicitação não chat | `supported_operations`, `supported_parameters`, `request_endpoint`, `recommended_request` | Reconstrói a solicitação a partir do contrato público do modelo |
-
-### Otimização de Endpoint Nativo
-
-Quando você chama `/v1/chat/completions` com um modelo Claude ou Gemini, a API retorna cabeçalhos de otimização:
-
-
-
-Trate esses headers como dicas de roteamento, não como uma troca automática obrigatória. Chamadas nativas do Claude usam `/v1/messages`; chamadas nativas do Gemini devem seguir o endpoint indicado por the native endpoint hint header, geralmente `/v1beta/gemini`.
-
-### Descoberta de Modelos
-
-Não é necessário procurar na documentação:
+Prefira descoberta ao vivo em vez de listas antigas empacotadas:
 
 ```bash
 # Visão geral da API legível por máquina
 curl https://api.aisonar.dev/llms.txt
 
-# List models by category
-curl "https://api.aisonar.dev/v1/models?category=chat" -H "Authorization: Bearer sk-KEY"
+# Listar modelos
+curl "https://api.aisonar.dev/v1/models" -H "Authorization: Bearer sk-KEY"
 curl "https://api.aisonar.dev/v1/models?category=image" -H "Authorization: Bearer sk-KEY"
 
-# Lista recomendada para cenários não chat
+# Listas ranqueadas para não-chat
 curl "https://api.aisonar.dev/v1/models?recommended_for=image" -H "Authorization: Bearer sk-KEY"
+curl "https://api.aisonar.dev/v1/models?recommended_for=video" -H "Authorization: Bearer sk-KEY"
 curl "https://api.aisonar.dev/v1/models?recommended_for=translation" -H "Authorization: Bearer sk-KEY"
 
-# Leia o contrato público de um modelo antes de repetir uma solicitação não chat
+# Ler o contrato público de um modelo antes de tentar novamente solicitações não-chat
 curl "https://api.aisonar.dev/v1/models/gpt-image-2" -H "Authorization: Bearer sk-KEY"
 
-# Filtrar por capacidade
-curl "https://api.aisonar.dev/v1/models?tag=coding" -H "Authorization: Bearer sk-KEY"
+# Detalhe apenas de preços
+curl "https://api.aisonar.dev/v1/models/gpt-image-2/pricing" -H "Authorization: Bearer sk-KEY"
 ```
 
-## Capacidades Suportadas
+## Dicas de roteamento nativo
 
-| Tipo | Exemplos |
-|------|----------|
-| Chat | GPT-5.4, Claude, Gemini, DeepSeek |
-| Geração de Imagens | GPT Image, Flux, Stable Diffusion, modelos de imagem Gemini |
-| Geração de Música | Suno |
-| Modelos 3D | Tripo3D |
-| Áudio | Texto para fala, fala para texto |
-| Embeddings | text-embedding-3 |
-| Rerank | bce-reranker, qwen3-rerank |
+O caminho compatível com OpenAI `/v1` é o padrão para exemplos comuns de chat, Responses, imagem, embedding, áudio e rerank. Use rotas nativas Anthropic ou Gemini apenas quando a solicitação exigir comportamento específico do provedor ou quando a AI Sonar retornar the native endpoint hint header como dica de otimização.
 
-## Boas Práticas
+
+
+## Recuperação de erros Agent-First
+
+Os erros incluem campos que coding agents podem analisar sem raspar a documentação:
+
+| Erro | Campos úteis | Ação do agent |
+|---|---|---|
+| Nome de modelo incorreto | `did_you_mean`, `suggestions`, `hint` | Tente novamente com o modelo corrigido ou uma alternativa sugerida |
+| Saldo insuficiente | `balance_usd`, `estimated_cost_usd`, `suggestions` | Peça aprovação ou mude para um modelo acessível |
+| Limite de taxa ou indisponibilidade temporária | `retryable`, `retry_after`, `alternatives` | Aguarde, tente novamente ou escolha uma alternativa listada |
+| Contrato não-chat incompatível | `supported_operations`, `supported_parameters`, `request_endpoint`, `request_shape_mode`, `recommended_request` | Reconstrua a solicitação a partir do contrato público e aplique fail closed a campos que mudem a intenção |
+
+## Famílias de API compatíveis
+
+| Família | Caminho principal |
+|---|---|
+| Chat e Responses | `/v1/chat/completions`, `/v1/responses` |
+| Mensagens nativas Claude | `/v1/messages` |
+| Solicitações nativas Gemini | `/v1beta/models/{model}:generateContent` |
+| Imagens | `/v1/images/generations`, `/v1/images/edits` |
+| Vídeo | `/v1/videos/generations` |
+| Música | `/v1/music/generations` |
+| Worlds | `/v1/worlds/generations` mais endpoints de status world e media asset |
+| 3D | `/v1/3d/generations` |
+| Áudio | `/v1/audio/speech`, `/v1/audio/transcriptions`, `/v1/audio/translations` |
+| Realtime | `/v1/realtime?model={model}` |
+| Embeddings e rerank | `/v1/embeddings`, `/v1/rerank` |
+| Tradução de texto | `/v1/translations` |
+
+## Boas práticas
 
 <CardGroup cols={2}>
   <Card title="Segurança da API Key" icon="shield">
-    Use variáveis de ambiente. Nunca faça commit de chaves no git nem as exponha em código frontend.
+    Use variáveis de ambiente e chamadas server-side. Nunca exponha keys no código frontend.
   </Card>
-  <Card title="Gestão de Custos" icon="wallet">
-    Defina limites de uso no seu [dashboard](https://console.aisonar.dev). Verifique `error.balance_usd` para monitorar custos programaticamente.
+  <Card title="Contrato primeiro para não-chat" icon="file-code">
+    Leia `/v1/models?recommended_for=...` e `/v1/models/:model` antes de tentar novamente solicitações de imagem, vídeo, música, 3D, tradução, áudio, embedding ou rerank.
   </Card>
-  <Card title="Seja Direto" icon="bullseye">
-    Diga "Quero gerar imagens em Python" em vez de "A AI Sonar tem uma API de imagem?"
+  <Card title="Menor exemplo executável" icon="terminal">
+    Gere uma chamada funcional antes de adicionar abstrações, filas ou fluxos de UI.
   </Card>
-  <Card title="Descreva Seu Cenário" icon="message">
-    "Estou criando um chatbot com GPT-4" dá ao agente mais contexto do que "Use GPT-4".
+  <Card title="Use dicas estruturadas" icon="rotate-cw">
+    Analise `did_you_mean`, `retry_after`, `alternatives` e `recommended_request` antes de alterar o código.
   </Card>
 </CardGroup>
 
 ## FAQ
 
 <AccordionGroup>
-  <Accordion title="O skill não está sendo acionado automaticamente?">
-    Tente mencionar "AI Sonar" ou "AI Sonar API" na sua solicitação:
-    ```
-    Quero integrar GPT-4 ao meu projeto usando AI Sonar
-    ```
+  <Accordion title="O skill não dispara automaticamente?">
+    Mencione “AI Sonar” ou “AI Sonar API” na solicitação, por exemplo: `Use AI Sonar para adicionar geração de imagens ao meu app Node.js`.
   </Accordion>
 
-  <Accordion title="Como a API ajuda o agente a encontrar o modelo certo?">
-    A [API Agent-First](/guides/agent-first-api) da AI Sonar retorna dicas de erro estruturadas. Se o agente adivinhar um nome de modelo errado, o erro inclui `did_you_mean` com o nome correto e `suggestions` com alternativas. O agente lê isso e corrige automaticamente na próxima tentativa.
+  <Accordion title="Quais coding agents são suportados?">
+    Qualquer coding agent que suporte diretórios compartilhados de skill ou rules pode usar a pasta. O installer `skills` trata agents suportados automaticamente.
   </Accordion>
 
-  <Accordion title="Quais agentes de programação são suportados?">
-    Qualquer agente de programação que suporte diretórios compartilhados de skills ou regras. Quando o instalador é suportado, `npx skills add` coloca automaticamente o skill compartilhado `aisonar-api-integration` no local detectado.
-  </Accordion>
+  <Accordion title="Como atualizo o skill?">
+    Execute novamente o comando de instalação. Ele atualiza a cópia local a partir do repositório público canônico.
 
-  <Accordion title="Como atualizar o skill?">
-    Execute o instalador novamente:
     ```bash
     npx skills add https://github.com/hedging8563/aisonar-skills --skill aisonar-api-integration -y
     ```
@@ -233,20 +203,20 @@ curl "https://api.aisonar.dev/v1/models?tag=coding" -H "Authorization: Bearer sk
 ## Recursos
 
 <CardGroup cols={2}>
-  <Card title="API Agent-First" icon="robot" href="/pt/guides/agent-first-api">
-    Referência completa para dicas de erro estruturadas
+  <Card title="Agent-First API" icon="robot" href="/pt/guides/agent-first-api">
+    Dicas de erro estruturadas e comportamento de recuperação
   </Card>
   <Card title="Documentação da API" icon="book" href="https://docs.aisonar.dev">
-    Referência completa da API
+    Configuração por endpoint e API Reference
   </Card>
   <Card title="Modelos" icon="sparkles" href="https://aisonar.dev/models">
-    Navegue por centenas de modelos disponíveis
+    Veja modelos disponíveis
   </Card>
   <Card title="llms.txt" icon="file-lines" href="https://api.aisonar.dev/llms.txt">
-    Visão geral da API legível por máquina para agentes de IA
+    Visão geral da API legível por máquina para agents
   </Card>
 </CardGroup>
 
 <Info>
-**Tem dúvidas?** Consulte nossas [GitHub Issues](https://github.com/hedging8563/aisonar-skills/issues) ou entre em contato com [support@aisonar.dev](mailto:support@aisonar.dev)
+Dúvidas? Use [GitHub Issues](https://github.com/hedging8563/aisonar-skills/issues) ou contate [support@aisonar.dev](mailto:support@aisonar.dev).
 </Info>

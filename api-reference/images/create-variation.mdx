@@ -6,7 +6,7 @@ description: "Creates a variation of a given image"
 
 ## Overview
 
-Creates a variation of a given image. Requires `multipart/form-data` content type.
+This endpoint is retained for legacy OpenAI-compatible variation clients. It is not the recommended path for current image-to-image workflows; use `/v1/images/edits` with `gpt-image-2` or `/v1/images/generations` with an image-to-image model such as `nano-banana-pro` when possible. Requires `multipart/form-data` content type.
 
 ## Request Body
 
@@ -16,8 +16,8 @@ Creates a variation of a given image. Requires `multipart/form-data` content typ
   The image to use as the basis for the variation. Must be a valid PNG file, less than 50MB, and square.
 </ParamField>
 
-<ParamField body="model" type="string" default="dall-e-2">
-  The model to use for image variations. Currently only `dall-e-2` is supported.
+<ParamField body="model" type="string" required>
+  Required model identifier for legacy variation-compatible routes. There is no implicit default; for current image-to-image workflows, prefer `/v1/images/edits` or `/v1/images/generations` with a current model.
 </ParamField>
 
 <ParamField body="n" type="integer" default="1">
@@ -25,7 +25,7 @@ Creates a variation of a given image. Requires `multipart/form-data` content typ
 </ParamField>
 
 <ParamField body="size" type="string">
-  The size of the generated images. Must be one of `256x256`, `512x512`, or `1024x1024`.
+  The size of the generated images for legacy variation-compatible routes. Supported values depend on the selected model.
 </ParamField>
 
 <ParamField body="response_format" type="string" default="url">
@@ -54,6 +54,7 @@ Creates a variation of a given image. Requires `multipart/form-data` content typ
 ```bash cURL
 curl -X POST "https://api.aisonar.dev/v1/images/variations" \
   -H "Authorization: Bearer sk-your-api-key" \
+  -F "model=your-legacy-variation-model" \
   -F "image=@cat.png" \
   -F "n=2" \
   -F "size=1024x1024"
@@ -68,7 +69,7 @@ client = OpenAI(
 )
 
 response = client.images.create_variation(
-    model="dall-e-2",
+    model="your-legacy-variation-model",
     image=open("cat.png", "rb"),
     n=2,
     size="1024x1024"
@@ -88,7 +89,7 @@ const client = new OpenAI({
 });
 
 const response = await client.images.createVariation({
-  model: 'dall-e-2',
+  model: 'your-legacy-variation-model',
   image: fs.createReadStream('cat.png'),
   n: 2,
   size: '1024x1024'
@@ -112,6 +113,8 @@ import (
 func main() {
     body := &bytes.Buffer{}
     writer := multipart.NewWriter(body)
+
+    writer.WriteField("model", "your-legacy-variation-model")
 
     file, _ := os.Open("cat.png")
     defer file.Close()
@@ -148,6 +151,7 @@ curl_setopt_array($ch, [
         'Authorization: Bearer sk-your-api-key'
     ],
     CURLOPT_POSTFIELDS => [
+        'model' => 'your-legacy-variation-model',
         'image' => $image,
         'n' => 2,
         'size' => '1024x1024'
@@ -183,6 +187,5 @@ foreach ($data['data'] as $image) {
 ## Notes
 
 <Note>
-  Image variations are only available with DALL-E 2. The model will generate new images that are similar in style and content to the original image.
+  This is a legacy compatibility endpoint. It is not included in the current recommended image model catalog. For new integrations, use `/v1/images/edits` with `gpt-image-2`, or `/v1/images/generations` with `operation: "image-to-image"` and a current image-to-image model.
 </Note>
-

@@ -34,8 +34,8 @@ xAI-Grok-Imagine-Bildmodelle (`grok-imagine-image`, `grok-imagine-image-quality`
 
 **Timeout für synchrone Anfragen:** Einige geroutete Bildanbieter geben das endgültige Bild inline zurück und warten dafür, bis die Generierung abgeschlossen ist. Hochauflösende oder hochwertige Anfragen können fast eine Minute oder länger dauern; setzen Sie das Timeout Ihres HTTP-Clients daher auf mindestens `120s`. Wenn die Create-Antwort `status: "pending"`, `task_id` oder `poll_url` enthält, folgen Sie stattdessen der zurückgegebenen `poll_url`.
 
-<ParamField body="model" type="string" default="dall-e-3">
-  Zu verwendendes Modell (z. B. `gpt-image-2`, `dall-e-3`, `flux-pro`, `midjourney`).
+<ParamField body="model" type="string" required>
+  Zu verwendendes Modell (z. B. `gpt-image-2`, `flux-pro`, `qwen-image` oder `nano-banana-pro`). Die aktuelle Empfehlungsliste erhalten Sie mit `GET /v1/models?recommended_for=image`.
 </ParamField>
 
 <ParamField body="prompt" type="string" required>
@@ -83,7 +83,7 @@ xAI-Grok-Imagine-Bildmodelle (`grok-imagine-image`, `grok-imagine-image-quality`
 </ParamField>
 
 <ParamField body="quality" type="string" default="standard">
-  Bildqualität. DALL-E-Modelle verwenden `standard` oder `hd`; GPT-Image-Modelle wie `gpt-image-2` verwenden `auto`, `low`, `medium` oder `high`.
+  Bildqualität. GPT-Image-Modelle wie `gpt-image-2` verwenden `auto`, `low`, `medium` oder `high`. Andere Bildfamilien können anbieterspezifische Werte verwenden; prüfen Sie die Metadaten des ausgewählten Modells, bevor Sie Nicht-Standardwerte senden.
 </ParamField>
 
 <ParamField body="response_format" type="string" default="url">
@@ -96,8 +96,8 @@ xAI-Grok-Imagine-Bildmodelle (`grok-imagine-image`, `grok-imagine-image-quality`
   Auf `true` setzen, um mit `gpt-image-2` oder offiziellen FLUX/BFL-Bildmodellen zuerst eine Aufgabe zu erstellen. Abgeschlossene Async-Bildaufgaben liefern unabhängig vom angeforderten `response_format` URLs; verwenden Sie synchrone Anfragen, wenn Sie `b64_json` benötigen.
 </ParamField>
 
-<ParamField body="style" type="string" default="vivid">
-  Stil für DALL-E 3: `vivid` oder `natural`.
+<ParamField body="style" type="string">
+  Optionaler Stil-Selektor. Senden Sie ihn nur, wenn das ausgewählte Modell ihn ausdrücklich dokumentiert; lassen Sie ihn für `gpt-image-2` weg, sofern die Modellmetadaten nichts anderes sagen.
 </ParamField>
 
 <ParamField body="user" type="string">
@@ -118,7 +118,7 @@ xAI-Grok-Imagine-Bildmodelle (`grok-imagine-image`, `grok-imagine-image-quality`
   Jedes Objekt enthält:
   - `url` (string): URL des generierten Bildes
   - `b64_json` (string): Base64-kodiertes Bild (falls angefordert)
-  - `revised_prompt` (string): Der verwendete Prompt (DALL-E 3)
+  - `revised_prompt` (string): Optionale vom Anbieter zurückgegebene Prompt-Überarbeitung, wenn das Upstream-Modell sie meldet
 </ResponseField>
 
 ### Antwort für asynchrone Aufgaben
@@ -296,14 +296,56 @@ curl -X POST "https://api.aisonar.dev/v1/images/generations" \
 
 ## Verfügbare Modelle
 
+Dies sind aktuelle Beispielmodelle, kein fester Katalog. Nutzen Sie `GET /v1/models?recommended_for=image` oder die Models-Seite für aktuelle Verfügbarkeit und Preise.
+
 | Modell | Typ | Merkmale |
 |-------|-----|----------|
-| `dall-e-3` | Meist inline | Beste Qualität, Prompt-Verbesserung |
-| `dall-e-2` | Meist inline | Schneller, günstiger |
+| `gpt-image-2` | Inline oder task-basiert | GPT-Image-Modell mit Token-Preis und flexiblen Größen |
 | `flux-pro` | Oft task-basiert | Fotorealistisch, hohe Qualität |
-| `flux-schnell` | Meist inline | Sehr schnell |
-| `midjourney` | Oft task-basiert | Künstlerischer Stil |
-| `ideogram-v3` | Oft task-basiert | Beste Textdarstellung |
-| `stable-diffusion-3` | Meist inline | Open Source, anpassbar |
+| `qwen-image` | Oft task-basiert | Starke Textdarstellung und Prompt-Befolgung |
+| `nano-banana-pro` | Oft task-basiert | Referenzbild-Workflows und Ausgabe mit hoher Auflösung |
+| `grok-imagine-image` | Oft task-basiert | xAI-Bildgenerierung mit Seitenverhältnis- und Auflösungsauswahl |
+| `ideogram-v3` | Oft task-basiert | Starke Textdarstellung |
 
 Behandeln Sie ein Modell nicht statisch als immer synchron oder immer asynchron. Wenn die Create-Antwort `status: "pending"` zurückgibt, folgen Sie `poll_url` und pollen Sie bis zum Abschluss.
+
+## Task-basierte Antworten behandeln
+
+Prüfen Sie bei Bildmodellen immer, ob die Antwort `status: "pending"` enthält:
+
+```python
+import requests
+import time
+
+def generate_image(prompt, model="flux-pro"):
+    response = requests.post(
+        "https://api.aisonar.dev/v1/images/generations",
+        headers={"Authorization": "Bearer sk-your-api-key"},
+        json={"model": model, "prompt": prompt}
+    )
+    data = response.json()
+
+    if data.get("status") == "pending":
+        task_id = data["task_id"]
+        poll_url = data.get("poll_url")
+        print(f"Image task started: {task_id}")
+
+        while True:
+            status_resp = requests.get(
+                f"https://api.aisonar.dev{poll_url}" if poll_url else f"https://api.aisonar.dev/v1/tasks/{task_id}",
+                headers={"Authorization": "Bearer sk-your-api-key"}
+            )
+            status_data = status_resp.json()
+
+            if status_data["status"] == "completed":
+                return status_data["data"][0]["url"]
+            if status_data["status"] == "failed":
+                raise Exception(status_data.get("error", "Generation failed"))
+
+            time.sleep(3)
+
+    return data["data"][0]["url"]
+
+url = generate_image("a beautiful sunset over mountains", model="flux-pro")
+print(f"Generated image: {url}")
+```

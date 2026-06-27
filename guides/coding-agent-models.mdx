@@ -10,21 +10,21 @@ description: "Choose the right model for each coding task — comparison table, 
 | `claude-opus-4-6` | Moderate | Excellent | $$$$ | 200K | Architecture, complex refactoring |
 | `gpt-5.4` | Moderate | Excellent | $$$$ | 200K | Complex reasoning, planning |
 | `claude-sonnet-4-6` | Fast | Very Good | $$$ | 200K | General coding, reviews |
-| `gemini-3-pro-preview` | Fast | Very Good | $$$ | 1M | Large codebase analysis |
+| `gemini-3.1-pro-preview` | Fast | Very Good | $$$ | 1M | Large codebase analysis |
 | `gpt-5-mini` | Very Fast | Good | $$ | 128K | Quick edits, completions |
-| `gemini-3-flash-preview` | Very Fast | Good | $$ | 1M | Fast iteration, search |
+| `gemini-3.5-flash` | Very Fast | Good | $$ | 1M | Fast iteration, search |
 | `deepseek-r1` | Moderate | Very Good | $ | 64K | Reasoning-heavy tasks |
-| `deepseek-v3.2` | Fast | Good | $ | 128K | Bulk generation, boilerplate |
+| `deepseek-v3-2` | Fast | Good | $ | 128K | Bulk generation, boilerplate |
 
 ## Task-Specific Recommendations
 
 <AccordionGroup>
   <Accordion title="Code Generation / Scaffolding">
-    **Recommended**: `claude-sonnet-4-6`, `gemini-3-pro-preview`
+    **Recommended**: `claude-sonnet-4-6`, `gemini-3.1-pro-preview`
 
     These models produce clean, well-structured code with good naming conventions. For complex multi-file scaffolding, consider `claude-opus-4-6`.
 
-    Budget alternative: `deepseek-v3.2` handles boilerplate well at a fraction of the cost.
+    Budget alternative: `deepseek-v3-2` handles boilerplate well at a fraction of the cost.
   </Accordion>
 
   <Accordion title="Code Review / Refactoring">
@@ -48,7 +48,7 @@ description: "Choose the right model for each coding task — comparison table, 
   </Accordion>
 
   <Accordion title="Quick Edits / Tab Completion">
-    **Recommended**: `gpt-5-mini`, `gemini-3-flash-preview`
+    **Recommended**: `gpt-5-mini`, `gemini-3.5-flash`
 
     Speed is critical for interactive use. Budget models with fast response times provide the best experience. Don't waste premium tokens on autocomplete.
   </Accordion>
