@@ -43,3 +43,23 @@ curl -X POST "https://api.aisonar.dev/v1/management/api-keys" \
 ## リクエスト / レスポンス
 
 正確な schema とレスポンス項目は、上部のインタラクティブな OpenAPI パネルを参照してください。
+
+## レスポンス例
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "ak_abc123",
+  "object": "management.api_key",
+  "name": "Production app",
+  "status": "active",
+  "key": "sk-live-redacted",
+  "created_at": "2026-06-27T00:00:00.000Z"
+}
+```
+</ResponseExample>
+
+## 重要フィールド
+
+<ResponseField name="key" type="string">秘密値です。すぐ保存し、client には公開しないでください。</ResponseField>
+<ResponseField name="id" type="string">後続呼び出しとサポート調査に使う識別子です。</ResponseField>

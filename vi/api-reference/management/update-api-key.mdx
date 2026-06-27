@@ -43,3 +43,22 @@ curl -X PATCH "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456" 
 ## Yêu Cầu / Phản Hồi
 
 Sử dụng bảng OpenAPI tương tác ở trên để xem schema và các trường response chính xác.
+
+## Ví dụ phản hồi
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "ak_abc123",
+  "object": "management.api_key",
+  "name": "Production app",
+  "status": "disabled",
+  "updated_at": "2026-06-27T00:05:00.000Z"
+}
+```
+</ResponseExample>
+
+## Trường quan trọng
+
+<ResponseField name="status" type="string">Trạng thái vòng đời hiện tại của tài nguyên.</ResponseField>
+<ResponseField name="updated_at" type="string">Thời gian ISO hoặc Unix timestamp do API trả về.</ResponseField>

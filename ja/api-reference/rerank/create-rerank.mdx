@@ -23,7 +23,7 @@ description: "クエリに対する関連性に基づいてドキュメントを
 </ParamField>
 
 <ParamField body="top_n" type="integer">
-  Number of top results to return. Defaults to all documents. Must be at least `1` and no greater than `documents.length`. If a provider publishes a stricter public limit later, AI Sonar will document and enforce it here.
+  返す上位結果の数です。既定ではすべての documents を返します。`1` 以上、かつ `documents.length` 以下である必要があります。将来プロバイダーがより厳しい公開制限を示した場合、AI Sonar はここに記録して適用します。
 </ParamField>
 
 <ParamField body="return_documents" type="boolean" default="false">

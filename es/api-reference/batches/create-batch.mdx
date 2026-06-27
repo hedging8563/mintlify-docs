@@ -39,3 +39,27 @@ Utilice el panel interactivo de OpenAPI arriba para el esquema exacto.
 - Use `custom_id` para la reconciliación idempotente en downstream.
 - Espere `output_file_id` y `error_file_id` solo después de que el trabajador finalice el lote.
 - La fijación de precios por lotes puede diferir de la fijación de precios sincrónica porque se aplican las reglas de descuento `isBatchRequest=true`.
+
+## Ejemplo de respuesta
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "batch_abc123",
+  "object": "batch",
+  "endpoint": "/v1/chat/completions",
+  "input_file_id": "file_abc123",
+  "completion_window": "24h",
+  "status": "validating",
+  "output_file_id": null,
+  "error_file_id": null,
+  "created_at": 1706000000
+}
+```
+</ResponseExample>
+
+## Campos importantes
+
+<ResponseField name="id" type="string">Identificador para llamadas posteriores y soporte.</ResponseField>
+<ResponseField name="status" type="string">Estado actual del ciclo de vida de este recurso.</ResponseField>
+<ResponseField name="output_file_id" type="string|null">Identificador de archivo usado por APIs relacionadas.</ResponseField>

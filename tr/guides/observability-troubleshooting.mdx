@@ -1,0 +1,31 @@
+---
+title: "Gözlemlenebilirlik ve sorun giderme"
+description: "request_id, billing_transaction_id, task_id ve dashboard loglarıyla production sorunlarını debug edin."
+---
+
+## Genel bakış
+
+request_id, billing_transaction_id, task_id ve dashboard loglarıyla production sorunlarını debug edin.
+
+AI Sonar public API’leri ve model sözleşmeleri kullanın; provider execution detaylarına bağlı kalmayın.
+
+## Temel kurallar
+
+- Kullanıcıya başarı dönmeden önce `request_id`, `billing_transaction_id`, `task_id` bilgisini saklayın.
+- AI Sonar public API’leri ve model sözleşmeleri kullanın; provider execution detaylarına bağlı kalmayın.
+- Retry işlemlerini idempotent yapın ve çift generation veya çift billing önleyin.
+
+## Production kontrol listesi
+
+- Kullanıcıya başarı dönmeden önce `request_id`, `billing_transaction_id`, `task_id` bilgisini saklayın.
+- AI Sonar public API’leri ve model sözleşmeleri kullanın; provider execution detaylarına bağlı kalmayın.
+- Retry işlemlerini idempotent yapın ve çift generation veya çift billing önleyin.
+- Loglar support için yararlı olmalı, secret veya private payload saklamamalıdır.
+- Production trafiğini değiştirmeden önce staging ortamında doğrulayın.
+
+## İlgili sayfalar
+
+- [Asenkron işler ve polling](/tr/guides/async-jobs-polling)
+- [Gözlemlenebilirlik ve sorun giderme](/tr/guides/observability-troubleshooting)
+- [Güvenlik ve veri işleme](/tr/guides/security-data-handling)
+- [Models API](/tr/api-reference/models/list-models)

@@ -1,0 +1,31 @@
+---
+title: "Güvenlik ve veri işleme"
+description: "AI Sonar entegrasyonlarında API keys, kullanıcı medyası, loglar ve üretilen varlıkları güvenli yönetin."
+---
+
+## Genel bakış
+
+AI Sonar entegrasyonlarında API keys, kullanıcı medyası, loglar ve üretilen varlıkları güvenli yönetin.
+
+AI Sonar public API’leri ve model sözleşmeleri kullanın; provider execution detaylarına bağlı kalmayın.
+
+## Temel kurallar
+
+- Kullanıcıya başarı dönmeden önce API key scope, media URL lifetime, audit events bilgisini saklayın.
+- AI Sonar public API’leri ve model sözleşmeleri kullanın; provider execution detaylarına bağlı kalmayın.
+- Retry işlemlerini idempotent yapın ve çift generation veya çift billing önleyin.
+
+## Production kontrol listesi
+
+- Kullanıcıya başarı dönmeden önce API key scope, media URL lifetime, audit events bilgisini saklayın.
+- AI Sonar public API’leri ve model sözleşmeleri kullanın; provider execution detaylarına bağlı kalmayın.
+- Retry işlemlerini idempotent yapın ve çift generation veya çift billing önleyin.
+- Loglar support için yararlı olmalı, secret veya private payload saklamamalıdır.
+- Production trafiğini değiştirmeden önce staging ortamında doğrulayın.
+
+## İlgili sayfalar
+
+- [Asenkron işler ve polling](/tr/guides/async-jobs-polling)
+- [Gözlemlenebilirlik ve sorun giderme](/tr/guides/observability-troubleshooting)
+- [Güvenlik ve veri işleme](/tr/guides/security-data-handling)
+- [Models API](/tr/api-reference/models/list-models)

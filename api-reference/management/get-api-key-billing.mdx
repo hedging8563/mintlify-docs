@@ -26,3 +26,28 @@ curl -X GET "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/bil
 ## Request / Response
 
 Use the interactive OpenAPI panel above for the exact schema.
+
+## Response example
+
+<ResponseExample>
+```json 200 OK
+{
+  "object": "management.billing",
+  "api_key_id": "ak_abc123",
+  "currency": "USD",
+  "total_cost": "12.3400",
+  "data": [{
+    "billing_transaction_id": "billtxn_abc123",
+    "request_id": "req_abc123",
+    "amount": "0.0012",
+    "created_at": "2026-06-27T00:00:00.000Z"
+  }]
+}
+```
+</ResponseExample>
+
+## Important fields
+
+<ResponseField name="total_cost" type="string">USD decimal string for billing reconciliation.</ResponseField>
+<ResponseField name="data" type="array">Returned list or payload for this response.</ResponseField>
+<ResponseField name="billing_transaction_id" type="string">Billing settlement identifier when available.</ResponseField>

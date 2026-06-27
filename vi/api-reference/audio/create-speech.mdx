@@ -121,3 +121,16 @@ file_put_contents('speech.mp3', $audio);
 | `sage` | Uyên bác, sâu sắc |
 | `shimmer` | Mềm mại, dịu dàng |
 | `verse` | Năng động, linh hoạt |
+
+## Ví dụ phản hồi
+
+<ResponseExample>
+```binary 200 OK
+<binary audio data>
+```
+</ResponseExample>
+
+## Trường quan trọng
+
+<ResponseField name="Content-Type" type="string">Loại event hoặc message do API trả về.</ResponseField>
+<ResponseField name="body" type="binary">Nội dung phản hồi thô. Lưu trực tiếp, không parse như JSON.</ResponseField>

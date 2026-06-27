@@ -43,3 +43,22 @@ curl -X PATCH "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456" 
 ## 请求 / 响应
 
 精确 schema 和响应字段请使用上方的交互式 OpenAPI 面板。
+
+## 响应示例
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "ak_abc123",
+  "object": "management.api_key",
+  "name": "Production app",
+  "status": "disabled",
+  "updated_at": "2026-06-27T00:05:00.000Z"
+}
+```
+</ResponseExample>
+
+## 重要字段
+
+<ResponseField name="status" type="string">该资源当前的生命周期状态。</ResponseField>
+<ResponseField name="updated_at" type="string">API 返回的 ISO 时间或 Unix 时间戳。</ResponseField>

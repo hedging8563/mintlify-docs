@@ -52,3 +52,23 @@ AI Sonar 会在客户端和路由后的实时提供方之间转发 WebSocket 消
 实时会话使用同一 API Key 余额。AI Sonar 会在 socket 打开时预扣小额估算费用，并在会话关闭时结算或退款。
 
 会话完成后关闭客户端 socket。如果上游先关闭，AI Sonar 会尽可能把关闭码转发给客户端。
+
+## 响应示例
+
+<ResponseExample>
+```json Connected
+{
+  "type": "session.created",
+  "session": {
+    "id": "sess_abc123",
+    "model": "gpt-4o-realtime-preview",
+    "modalities": ["text", "audio"]
+  }
+}
+```
+</ResponseExample>
+
+## 重要字段
+
+<ResponseField name="type" type="string">API 返回的事件或消息类型。</ResponseField>
+<ResponseField name="session.id" type="string">用于后续调用和支持排障的标识符。</ResponseField>

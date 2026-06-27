@@ -36,3 +36,19 @@ Use the interactive OpenAPI panel above for the exact schema.
 - Use `custom_id` for idempotent downstream reconciliation.
 - Expect `output_file_id` and `error_file_id` only after the worker finalizes the batch.
 - Batch pricing may differ from synchronous pricing because `isBatchRequest=true` discount rules apply.
+
+## Response example
+
+<ResponseExample>
+```json 200 OK
+{
+  "object": "list",
+  "data": [{ "id": "file_abc123", "object": "file", "purpose": "batch" }]
+}
+```
+</ResponseExample>
+
+## Important fields
+
+<ResponseField name="object" type="string">Response object type.</ResponseField>
+<ResponseField name="data" type="array">Returned list or payload for this response.</ResponseField>

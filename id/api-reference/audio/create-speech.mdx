@@ -121,3 +121,16 @@ file_put_contents('speech.mp3', $audio);
 | `sage` | Bijaksana, penuh pertimbangan |
 | `shimmer` | Lembut, halus |
 | `verse` | Dinamis, serbaguna |
+
+## Contoh respons
+
+<ResponseExample>
+```binary 200 OK
+<binary audio data>
+```
+</ResponseExample>
+
+## Field penting
+
+<ResponseField name="Content-Type" type="string">Tipe event atau message yang dikembalikan API.</ResponseField>
+<ResponseField name="body" type="binary">Body respons mentah. Simpan langsung, jangan parse sebagai JSON.</ResponseField>

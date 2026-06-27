@@ -83,7 +83,7 @@ At least one PATCH field must be provided.
 - `accessChannel=platform` means the request was billed via AI Sonar’s platform channel.
 - `accessChannel=byok` means the request used your own upstream provider key.
 
-Responses expose public billing and reporting fields only. Internal routing details and physical provider metadata remain hidden.
+Responses expose public billing and reporting fields only. Provider execution details are not part of the public management contract.
 - `/usage` line items can include `billing_transaction_id` once the underlying request has reached settled billing state. Use `request_id` + `billing_transaction_id` for request-level reconciliation.
 
 ## Billing Pagination Note

@@ -43,3 +43,23 @@ curl -X POST "https://api.aisonar.dev/v1/management/api-keys" \
 ## Request / Respons
 
 Gunakan panel OpenAPI interaktif di atas untuk skema dan field respons yang tepat.
+
+## Contoh respons
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "ak_abc123",
+  "object": "management.api_key",
+  "name": "Production app",
+  "status": "active",
+  "key": "sk-live-redacted",
+  "created_at": "2026-06-27T00:00:00.000Z"
+}
+```
+</ResponseExample>
+
+## Field penting
+
+<ResponseField name="key" type="string">Nilai rahasia. Simpan segera dan jangan expose ke client.</ResponseField>
+<ResponseField name="id" type="string">Identifier untuk panggilan lanjutan dan support.</ResponseField>

@@ -43,3 +43,22 @@ curl -X PATCH "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456" 
 ## الطلب / الاستجابة
 
 استخدم لوحة OpenAPI التفاعلية أعلاه للاطلاع على المخطط الدقيق وحقول الاستجابة.
+
+## مثال الاستجابة
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "ak_abc123",
+  "object": "management.api_key",
+  "name": "Production app",
+  "status": "disabled",
+  "updated_at": "2026-06-27T00:05:00.000Z"
+}
+```
+</ResponseExample>
+
+## حقول مهمة
+
+<ResponseField name="status" type="string">حالة دورة الحياة الحالية لهذا المورد.</ResponseField>
+<ResponseField name="updated_at" type="string">وقت ISO أو Unix timestamp تعيده API.</ResponseField>

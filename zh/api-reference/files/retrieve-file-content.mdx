@@ -37,3 +37,17 @@ curl -X GET "https://api.aisonar.dev/v1/files/file_abc123/content" \
 - 使用 `custom_id` 进行幂等的下游对账。
 - 仅在工作者完成批处理后，期待 `output_file_id` 和 `error_file_id`。
 - 批处理定价可能与同步定价不同，因为适用 `isBatchRequest=true` 的折扣规则。
+
+## 响应示例
+
+<ResponseExample>
+```jsonl 200 OK
+{"custom_id":"request-1","response":{"status_code":200,"body":{"id":"chatcmpl_abc123"}}}
+{"custom_id":"request-2","error":{"code":"invalid_request_error","message":"Invalid model"}}
+```
+</ResponseExample>
+
+## 重要字段
+
+<ResponseField name="body" type="binary|string">原始响应体。应直接保存，不要按 JSON 解析。</ResponseField>
+<ResponseField name="custom_id" type="string">用于后续调用和支持排障的标识符。</ResponseField>

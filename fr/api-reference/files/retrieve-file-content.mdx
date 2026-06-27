@@ -37,3 +37,17 @@ Utilisez le panneau OpenAPI interactif ci-dessus pour le schéma exact.
 - Utilisez `custom_id` pour la réconciliation idempotente en aval.
 - Attendez-vous à recevoir `output_file_id` et `error_file_id` uniquement après que le travailleur finalise le lot.
 - La tarification des lots peut différer de la tarification synchrone car les règles de remise `isBatchRequest=true` s'appliquent.
+
+## Exemple de réponse
+
+<ResponseExample>
+```jsonl 200 OK
+{"custom_id":"request-1","response":{"status_code":200,"body":{"id":"chatcmpl_abc123"}}}
+{"custom_id":"request-2","error":{"code":"invalid_request_error","message":"Invalid model"}}
+```
+</ResponseExample>
+
+## Champs importants
+
+<ResponseField name="body" type="binary|string">Corps brut de la réponse. Enregistrez-le directement sans le parser en JSON.</ResponseField>
+<ResponseField name="custom_id" type="string">Identifiant pour les appels suivants et le support.</ResponseField>

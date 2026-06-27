@@ -24,3 +24,28 @@ curl -X GET "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/bil
 ## Permintaan / Respons
 
 Gunakan panel OpenAPI interaktif di atas untuk skema yang tepat.
+
+## Contoh respons
+
+<ResponseExample>
+```json 200 OK
+{
+  "object": "management.billing",
+  "api_key_id": "ak_abc123",
+  "currency": "USD",
+  "total_cost": "12.3400",
+  "data": [{
+    "billing_transaction_id": "billtxn_abc123",
+    "request_id": "req_abc123",
+    "amount": "0.0012",
+    "created_at": "2026-06-27T00:00:00.000Z"
+  }]
+}
+```
+</ResponseExample>
+
+## Field penting
+
+<ResponseField name="total_cost" type="string">String desimal USD untuk rekonsiliasi billing.</ResponseField>
+<ResponseField name="data" type="array">Daftar atau payload yang dikembalikan respons ini.</ResponseField>
+<ResponseField name="billing_transaction_id" type="string">Identifier settlement billing jika tersedia.</ResponseField>

@@ -43,3 +43,23 @@ curl -X POST "https://api.aisonar.dev/v1/management/api-keys" \
 ## 请求 / 响应
 
 精确 schema 和响应字段请使用上方的交互式 OpenAPI 面板。
+
+## 响应示例
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "ak_abc123",
+  "object": "management.api_key",
+  "name": "Production app",
+  "status": "active",
+  "key": "sk-live-redacted",
+  "created_at": "2026-06-27T00:00:00.000Z"
+}
+```
+</ResponseExample>
+
+## 重要字段
+
+<ResponseField name="key" type="string">密钥值。请立即保存，且不要暴露给客户端。</ResponseField>
+<ResponseField name="id" type="string">用于后续调用和支持排障的标识符。</ResponseField>

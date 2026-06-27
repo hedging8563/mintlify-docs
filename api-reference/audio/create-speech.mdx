@@ -125,3 +125,16 @@ file_put_contents('speech.mp3', $audio);
 | `sage` | Wise, thoughtful |
 | `shimmer` | Soft, gentle |
 | `verse` | Dynamic, versatile |
+
+## Response example
+
+<ResponseExample>
+```binary 200 OK
+<binary audio data>
+```
+</ResponseExample>
+
+## Important fields
+
+<ResponseField name="Content-Type" type="string">Event or message type returned by the API.</ResponseField>
+<ResponseField name="body" type="binary">Raw response body. Save it directly instead of parsing it as JSON.</ResponseField>

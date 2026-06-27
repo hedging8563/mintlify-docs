@@ -1,0 +1,31 @@
+---
+title: "Observability & Troubleshooting"
+description: "Use request IDs, billing transaction IDs, task IDs, and dashboard logs to debug production integrations."
+---
+
+## Overview
+
+Use request IDs, billing transaction IDs, task IDs, and dashboard logs to debug production integrations.
+
+Use public AI Sonar APIs and model contracts; do not depend on provider execution details.
+
+## Key rules
+
+- Persist `request_id`, `billing_transaction_id`, `task_id` before returning success to users.
+- Use public AI Sonar APIs and model contracts; do not depend on provider execution details.
+- Make retries idempotent and avoid duplicate billable work.
+
+## Production checklist
+
+- Persist `request_id`, `billing_transaction_id`, `task_id` before returning success to users.
+- Use public AI Sonar APIs and model contracts; do not depend on provider execution details.
+- Make retries idempotent and avoid duplicate billable work.
+- Keep logs useful for support without storing secrets or private payloads.
+- Verify behavior in staging before changing production traffic.
+
+## Related pages
+
+- [Async Jobs & Polling](/guides/async-jobs-polling)
+- [Observability & Troubleshooting](/guides/observability-troubleshooting)
+- [Security & Data Handling](/guides/security-data-handling)
+- [Models API](/api-reference/models/list-models)

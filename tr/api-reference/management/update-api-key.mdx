@@ -43,3 +43,22 @@ curl -X PATCH "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456" 
 ## İstek / Yanıt
 
 Doğru şema ve yanıt alanları için yukarıdaki etkileşimli OpenAPI panelini kullanın.
+
+## Yanıt örneği
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "ak_abc123",
+  "object": "management.api_key",
+  "name": "Production app",
+  "status": "disabled",
+  "updated_at": "2026-06-27T00:05:00.000Z"
+}
+```
+</ResponseExample>
+
+## Önemli alanlar
+
+<ResponseField name="status" type="string">Bu kaynağın güncel lifecycle durumu.</ResponseField>
+<ResponseField name="updated_at" type="string">API tarafından dönen ISO zamanı veya Unix timestamp.</ResponseField>

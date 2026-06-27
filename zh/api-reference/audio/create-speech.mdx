@@ -121,3 +121,16 @@ file_put_contents('speech.mp3', $audio);
 | `sage` | 睿智、深思熟虑 |
 | `shimmer` | 柔和、轻柔 |
 | `verse` | 富有动态感、适应性强 |
+
+## 响应示例
+
+<ResponseExample>
+```binary 200 OK
+<binary audio data>
+```
+</ResponseExample>
+
+## 重要字段
+
+<ResponseField name="Content-Type" type="string">API 返回的事件或消息类型。</ResponseField>
+<ResponseField name="body" type="binary">原始响应体。应直接保存，不要按 JSON 解析。</ResponseField>

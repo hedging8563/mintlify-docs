@@ -37,3 +37,17 @@ curl -X GET "https://api.aisonar.dev/v1/files/file_abc123/content" \
 - 冪等性のある下流の調整には`custom_id`を使用してください。
 - ワーカーがバッチを最終化した後にのみ`output_file_id`と`error_file_id`を期待してください。
 - バッチの価格は、`isBatchRequest=true`の割引ルールが適用されるため、同期価格とは異なる場合があります。
+
+## レスポンス例
+
+<ResponseExample>
+```jsonl 200 OK
+{"custom_id":"request-1","response":{"status_code":200,"body":{"id":"chatcmpl_abc123"}}}
+{"custom_id":"request-2","error":{"code":"invalid_request_error","message":"Invalid model"}}
+```
+</ResponseExample>
+
+## 重要フィールド
+
+<ResponseField name="body" type="binary|string">生のレスポンス body です。JSON として解析せず直接保存してください。</ResponseField>
+<ResponseField name="custom_id" type="string">後続呼び出しとサポート調査に使う識別子です。</ResponseField>

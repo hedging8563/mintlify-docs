@@ -25,3 +25,23 @@ curl -X GET "https://api.aisonar.dev/v1/management/balance" \
 ## リクエスト / レスポンス
 
 正確なスキーマについては、上記のインタラクティブな OpenAPI パネルを使用してください。
+
+## レスポンス例
+
+<ResponseExample>
+```json 200 OK
+{
+  "object": "management.balance",
+  "currency": "USD",
+  "available_balance": "42.50",
+  "pending_usage": "1.25",
+  "updated_at": "2026-06-27T00:00:00.000Z"
+}
+```
+</ResponseExample>
+
+## 重要フィールド
+
+<ResponseField name="available_balance" type="string">請求照合に使う USD decimal string です。</ResponseField>
+<ResponseField name="pending_usage" type="string">請求照合に使う USD decimal string です。</ResponseField>
+<ResponseField name="updated_at" type="string">API が返す ISO 時刻または Unix timestamp です。</ResponseField>

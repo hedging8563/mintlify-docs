@@ -36,3 +36,17 @@ curl -X GET "https://api.aisonar.dev/v1/files/file_abc123/content" \
 - استخدم `custom_id` للتسوية اللاحقة غير القابلة للتكرار.
 - توقع `output_file_id` و `error_file_id` فقط بعد أن ينهي العامل الدفعة.
 - قد تختلف أسعار الدفعة عن الأسعار المتزامنة لأن قواعد خصم `isBatchRequest=true` تنطبق.
+
+## مثال الاستجابة
+
+<ResponseExample>
+```jsonl 200 OK
+{"custom_id":"request-1","response":{"status_code":200,"body":{"id":"chatcmpl_abc123"}}}
+{"custom_id":"request-2","error":{"code":"invalid_request_error","message":"Invalid model"}}
+```
+</ResponseExample>
+
+## حقول مهمة
+
+<ResponseField name="body" type="binary|string">جسم الاستجابة الخام. احفظه مباشرة ولا تحلله كـ JSON.</ResponseField>
+<ResponseField name="custom_id" type="string">معرّف لاستخدامه في الطلبات اللاحقة والدعم.</ResponseField>

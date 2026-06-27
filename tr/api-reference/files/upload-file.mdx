@@ -51,3 +51,24 @@ Bu aynı `/v1/files` rotası, Anthropic Files API yolunu da destekler.
 - Anthropic modunda orijinal dosyayı doğrudan yükleyin ve `purpose=batch` göndermeyin.
 - Dönen `file_id`, aynı resmi Anthropic kanalına/çalışma alanına bağlanır ve sonraki `/v1/messages` isteklerinde yeniden kullanılmalıdır.
 - Bu dosyaya Anthropic mesaj içeriğinde referans verecekseniz Anthropic yerel başlıklarını (`x-api-key`, `anthropic-version` ve gerektiğinde beta header) kullanmaya devam edin.
+
+## Yanıt örneği
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "file_abc123",
+  "object": "file",
+  "bytes": 32768,
+  "created_at": 1706000000,
+  "filename": "batch-input.jsonl",
+  "purpose": "batch"
+}
+```
+</ResponseExample>
+
+## Önemli alanlar
+
+<ResponseField name="id" type="string">İlgili API’lerde kullanılan file identifier.</ResponseField>
+<ResponseField name="purpose" type="string">API tarafından dönen event veya message type.</ResponseField>
+<ResponseField name="bytes" type="integer">Billing mutabakatı için USD decimal string.</ResponseField>

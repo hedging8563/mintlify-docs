@@ -35,3 +35,24 @@ Gunakan panel OpenAPI interaktif di atas untuk skema yang tepat.
 - Gunakan `custom_id` untuk rekonsiliasi downstream yang idempotent.
 - Harapkan `output_file_id` dan `error_file_id` hanya setelah worker menyelesaikan batch.
 - Harga batch bisa berbeda dari harga sinkron karena aturan diskon `isBatchRequest=true` diterapkan.
+
+## Contoh respons
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "file_abc123",
+  "object": "file",
+  "bytes": 32768,
+  "created_at": 1706000000,
+  "filename": "batch-input.jsonl",
+  "purpose": "batch"
+}
+```
+</ResponseExample>
+
+## Field penting
+
+<ResponseField name="id" type="string">Identifier file yang dipakai API terkait.</ResponseField>
+<ResponseField name="filename" type="string">Identifier untuk panggilan lanjutan dan support.</ResponseField>
+<ResponseField name="purpose" type="string">Tipe event atau message yang dikembalikan API.</ResponseField>

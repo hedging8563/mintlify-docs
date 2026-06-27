@@ -36,3 +36,19 @@ Sử dụng bảng OpenAPI tương tác ở trên để xem schema chính xác.
 - Dùng `custom_id` cho việc đối soát downstream mang tính idempotent.
 - Chỉ kỳ vọng `output_file_id` và `error_file_id` sau khi worker hoàn tất batch.
 - Giá batch có thể khác với giá đồng bộ vì các quy tắc giảm giá `isBatchRequest=true` được áp dụng.
+
+## Ví dụ phản hồi
+
+<ResponseExample>
+```json 200 OK
+{
+  "object": "list",
+  "data": [{ "id": "file_abc123", "object": "file", "purpose": "batch" }]
+}
+```
+</ResponseExample>
+
+## Trường quan trọng
+
+<ResponseField name="object" type="string">Loại object của phản hồi.</ResponseField>
+<ResponseField name="data" type="array">Danh sách hoặc payload được trả về trong phản hồi.</ResponseField>

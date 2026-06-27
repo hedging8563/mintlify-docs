@@ -1,0 +1,31 @@
+---
+title: "Routing provider và độ tin cậy"
+description: "Hiểu cam kết routing công khai, failover và chi tiết được AI Sonar cố ý trừu tượng hóa."
+---
+
+## Tổng quan
+
+Hiểu cam kết routing công khai, failover và chi tiết được AI Sonar cố ý trừu tượng hóa.
+
+Dùng API công khai và hợp đồng mô hình của AI Sonar; không phụ thuộc chi tiết thực thi của provider.
+
+## Quy tắc chính
+
+- Lưu model ID, endpoint, retry decision trước khi trả thành công cho người dùng.
+- Dùng API công khai và hợp đồng mô hình của AI Sonar; không phụ thuộc chi tiết thực thi của provider.
+- Làm retry có tính idempotent và tránh tạo hoặc tính phí trùng lặp.
+
+## Checklist production
+
+- Lưu model ID, endpoint, retry decision trước khi trả thành công cho người dùng.
+- Dùng API công khai và hợp đồng mô hình của AI Sonar; không phụ thuộc chi tiết thực thi của provider.
+- Làm retry có tính idempotent và tránh tạo hoặc tính phí trùng lặp.
+- Log cần hữu ích cho support nhưng không lưu secret hoặc payload riêng tư.
+- Xác minh hành vi ở staging trước khi đổi traffic production.
+
+## Trang liên quan
+
+- [Tác vụ bất đồng bộ và polling](/vi/guides/async-jobs-polling)
+- [Quan sát và xử lý sự cố](/vi/guides/observability-troubleshooting)
+- [Bảo mật và xử lý dữ liệu](/vi/guides/security-data-handling)
+- [Models API](/vi/api-reference/models/list-models)

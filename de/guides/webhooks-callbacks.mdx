@@ -1,0 +1,31 @@
+---
+title: "Webhooks & Callback-Richtlinie"
+description: "Verstehen Sie AI Sonar-Callback-Grenzen, Polling-Fallbacks und künftige Webhook-Zustellung."
+---
+
+## Übersicht
+
+Verstehen Sie AI Sonar-Callback-Grenzen, Polling-Fallbacks und künftige Webhook-Zustellung.
+
+Nutzen Sie öffentliche AI Sonar-APIs und Modellverträge; verlassen Sie sich nicht auf Provider-Ausführungsdetails.
+
+## Wichtige Regeln
+
+- Persistieren Sie `task_id`, `poll_url`, callback payload id, bevor Sie Nutzern Erfolg melden.
+- Nutzen Sie öffentliche AI Sonar-APIs und Modellverträge; verlassen Sie sich nicht auf Provider-Ausführungsdetails.
+- Machen Sie Wiederholungen idempotent und vermeiden Sie doppelte Generierung oder doppelte Abrechnung.
+
+## Produktions-Checkliste
+
+- Persistieren Sie `task_id`, `poll_url`, callback payload id, bevor Sie Nutzern Erfolg melden.
+- Nutzen Sie öffentliche AI Sonar-APIs und Modellverträge; verlassen Sie sich nicht auf Provider-Ausführungsdetails.
+- Machen Sie Wiederholungen idempotent und vermeiden Sie doppelte Generierung oder doppelte Abrechnung.
+- Logs sollen dem Support helfen, aber keine Secrets oder privaten Payloads speichern.
+- Prüfen Sie das Verhalten in Staging, bevor Produktionsverkehr geändert wird.
+
+## Verwandte Seiten
+
+- [Asynchrone Jobs & Polling](/de/guides/async-jobs-polling)
+- [Observability & Fehlersuche](/de/guides/observability-troubleshooting)
+- [Sicherheit & Datenverarbeitung](/de/guides/security-data-handling)
+- [Models API](/de/api-reference/models/list-models)

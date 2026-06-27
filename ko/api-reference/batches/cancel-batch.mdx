@@ -33,3 +33,21 @@ curl -X POST "https://api.aisonar.dev/v1/batches/batch_abc123/cancel" \
 - 멱등성 있는 다운스트림 조정을 위해 `custom_id`를 사용하세요.
 - 작업자가 배치를 완료한 후에만 `output_file_id` 및 `error_file_id`를 기대하세요.
 - 배치 가격은 `isBatchRequest=true` 할인 규칙이 적용되기 때문에 동기 가격과 다를 수 있습니다.
+
+## 응답 예시
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "batch_abc123",
+  "object": "batch",
+  "status": "cancelling",
+  "input_file_id": "file_abc123"
+}
+```
+</ResponseExample>
+
+## 중요 필드
+
+<ResponseField name="id" type="string">후속 호출과 지원 조사에 사용하는 식별자입니다.</ResponseField>
+<ResponseField name="status" type="string">이 리소스의 현재 lifecycle 상태입니다.</ResponseField>

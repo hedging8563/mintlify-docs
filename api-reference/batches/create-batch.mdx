@@ -39,3 +39,27 @@ Use the interactive OpenAPI panel above for the exact schema.
 - Use `custom_id` for idempotent downstream reconciliation.
 - Expect `output_file_id` and `error_file_id` only after the worker finalizes the batch.
 - Batch pricing may differ from synchronous pricing because `isBatchRequest=true` discount rules apply.
+
+## Response example
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "batch_abc123",
+  "object": "batch",
+  "endpoint": "/v1/chat/completions",
+  "input_file_id": "file_abc123",
+  "completion_window": "24h",
+  "status": "validating",
+  "output_file_id": null,
+  "error_file_id": null,
+  "created_at": 1706000000
+}
+```
+</ResponseExample>
+
+## Important fields
+
+<ResponseField name="id" type="string">Identifier used for follow-up calls and support.</ResponseField>
+<ResponseField name="status" type="string">Current lifecycle state for this resource.</ResponseField>
+<ResponseField name="output_file_id" type="string|null">File identifier used by related APIs.</ResponseField>

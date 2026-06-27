@@ -25,3 +25,23 @@ curl -X GET "https://api.aisonar.dev/v1/management/balance" \
 ## Demande / Réponse
 
 Utilisez le panneau OpenAPI interactif ci-dessus pour le schéma exact.
+
+## Exemple de réponse
+
+<ResponseExample>
+```json 200 OK
+{
+  "object": "management.balance",
+  "currency": "USD",
+  "available_balance": "42.50",
+  "pending_usage": "1.25",
+  "updated_at": "2026-06-27T00:00:00.000Z"
+}
+```
+</ResponseExample>
+
+## Champs importants
+
+<ResponseField name="available_balance" type="string">Chaîne décimale USD pour le rapprochement de facturation.</ResponseField>
+<ResponseField name="pending_usage" type="string">Chaîne décimale USD pour le rapprochement de facturation.</ResponseField>
+<ResponseField name="updated_at" type="string">Horodatage ISO ou Unix retourné par l’API.</ResponseField>

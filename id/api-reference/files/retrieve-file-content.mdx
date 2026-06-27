@@ -36,3 +36,17 @@ Gunakan panel OpenAPI interaktif di atas untuk skema yang tepat.
 - Gunakan `custom_id` untuk rekonsiliasi downstream yang idempotent.
 - Harapkan `output_file_id` dan `error_file_id` hanya setelah worker menyelesaikan batch.
 - Harga batch bisa berbeda dari harga sinkron karena aturan diskon `isBatchRequest=true` diterapkan.
+
+## Contoh respons
+
+<ResponseExample>
+```jsonl 200 OK
+{"custom_id":"request-1","response":{"status_code":200,"body":{"id":"chatcmpl_abc123"}}}
+{"custom_id":"request-2","error":{"code":"invalid_request_error","message":"Invalid model"}}
+```
+</ResponseExample>
+
+## Field penting
+
+<ResponseField name="body" type="binary|string">Body respons mentah. Simpan langsung, jangan parse sebagai JSON.</ResponseField>
+<ResponseField name="custom_id" type="string">Identifier untuk panggilan lanjutan dan support.</ResponseField>

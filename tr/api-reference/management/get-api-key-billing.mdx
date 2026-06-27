@@ -24,3 +24,28 @@ curl -X GET "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/bil
 ## İstek / Yanıt
 
 Kesin şema için yukarıdaki etkileşimli OpenAPI panelini kullanın.
+
+## Yanıt örneği
+
+<ResponseExample>
+```json 200 OK
+{
+  "object": "management.billing",
+  "api_key_id": "ak_abc123",
+  "currency": "USD",
+  "total_cost": "12.3400",
+  "data": [{
+    "billing_transaction_id": "billtxn_abc123",
+    "request_id": "req_abc123",
+    "amount": "0.0012",
+    "created_at": "2026-06-27T00:00:00.000Z"
+  }]
+}
+```
+</ResponseExample>
+
+## Önemli alanlar
+
+<ResponseField name="total_cost" type="string">Billing mutabakatı için USD decimal string.</ResponseField>
+<ResponseField name="data" type="array">Bu yanıtta dönen liste veya payload.</ResponseField>
+<ResponseField name="billing_transaction_id" type="string">Varsa billing settlement identifier.</ResponseField>

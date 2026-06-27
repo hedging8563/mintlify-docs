@@ -33,3 +33,25 @@ curl -X GET "https://api.aisonar.dev/v1/batches/batch_abc123" \
 - 冪等性のある下流の調整には`custom_id`を使用してください。
 - ワーカーがバッチを最終化した後にのみ`output_file_id`と`error_file_id`を期待してください。
 - バッチの価格は、`isBatchRequest=true`の割引ルールが適用されるため、同期価格とは異なる場合があります。
+
+## レスポンス例
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "batch_abc123",
+  "object": "batch",
+  "status": "completed",
+  "input_file_id": "file_abc123",
+  "output_file_id": "file_out123",
+  "error_file_id": null,
+  "request_counts": { "total": 100, "completed": 98, "failed": 2 }
+}
+```
+</ResponseExample>
+
+## 重要フィールド
+
+<ResponseField name="request_counts" type="object">このレスポンスで返されるリストまたは payload です。</ResponseField>
+<ResponseField name="output_file_id" type="string|null">関連 API で使う file identifier です。</ResponseField>
+<ResponseField name="error_file_id" type="string|null">関連 API で使う file identifier です。</ResponseField>

@@ -121,3 +121,16 @@ file_put_contents('speech.mp3', $audio);
 | `sage` | 賢明で、思慮深い音声 |
 | `shimmer` | 柔らかく、穏やかな音声 |
 | `verse` | ダイナミックで汎用性の高い音声 |
+
+## レスポンス例
+
+<ResponseExample>
+```binary 200 OK
+<binary audio data>
+```
+</ResponseExample>
+
+## 重要フィールド
+
+<ResponseField name="Content-Type" type="string">API が返す event または message type です。</ResponseField>
+<ResponseField name="body" type="binary">生のレスポンス body です。JSON として解析せず直接保存してください。</ResponseField>

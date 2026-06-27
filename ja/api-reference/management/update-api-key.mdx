@@ -43,3 +43,22 @@ curl -X PATCH "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456" 
 ## リクエスト / レスポンス
 
 正確な schema とレスポンス項目は、上部のインタラクティブな OpenAPI パネルを参照してください。
+
+## レスポンス例
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "ak_abc123",
+  "object": "management.api_key",
+  "name": "Production app",
+  "status": "disabled",
+  "updated_at": "2026-06-27T00:05:00.000Z"
+}
+```
+</ResponseExample>
+
+## 重要フィールド
+
+<ResponseField name="status" type="string">このリソースの現在のライフサイクル状態です。</ResponseField>
+<ResponseField name="updated_at" type="string">API が返す ISO 時刻または Unix timestamp です。</ResponseField>

@@ -51,3 +51,24 @@ Chính route `/v1/files` này cũng hỗ trợ đường dẫn Anthropic Files A
 - Ở chế độ Anthropic, hãy tải trực tiếp file gốc lên và không gửi `purpose=batch`.
 - `file_id` trả về sẽ được gắn với cùng kênh/workspace Anthropic chính thức và nên được tái sử dụng trong các request `/v1/messages`.
 - Nếu bạn định tham chiếu file này trong nội dung message Anthropic, hãy tiếp tục dùng các header Anthropic gốc (`x-api-key`, `anthropic-version` và beta header khi cần).
+
+## Ví dụ phản hồi
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "file_abc123",
+  "object": "file",
+  "bytes": 32768,
+  "created_at": 1706000000,
+  "filename": "batch-input.jsonl",
+  "purpose": "batch"
+}
+```
+</ResponseExample>
+
+## Trường quan trọng
+
+<ResponseField name="id" type="string">Định danh tệp dùng bởi API liên quan.</ResponseField>
+<ResponseField name="purpose" type="string">Loại event hoặc message do API trả về.</ResponseField>
+<ResponseField name="bytes" type="integer">Chuỗi thập phân USD để đối soát billing.</ResponseField>

@@ -1,0 +1,31 @@
+---
+title: "Output terstruktur dan pemanggilan tool"
+description: "Gunakan JSON Schema, tool calls, dan fitur native di route kompatibel OpenAI, Anthropic, Gemini."
+---
+
+## Ikhtisar
+
+Gunakan JSON Schema, tool calls, dan fitur native di route kompatibel OpenAI, Anthropic, Gemini.
+
+Gunakan API publik AI Sonar dan kontrak model; jangan bergantung pada detail eksekusi provider.
+
+## Aturan utama
+
+- Simpan schema version, tool name, validated arguments sebelum mengembalikan sukses ke pengguna.
+- Gunakan API publik AI Sonar dan kontrak model; jangan bergantung pada detail eksekusi provider.
+- Buat retry idempotent dan hindari generasi atau tagihan ganda.
+
+## Checklist produksi
+
+- Simpan schema version, tool name, validated arguments sebelum mengembalikan sukses ke pengguna.
+- Gunakan API publik AI Sonar dan kontrak model; jangan bergantung pada detail eksekusi provider.
+- Buat retry idempotent dan hindari generasi atau tagihan ganda.
+- Log harus membantu support tanpa menyimpan secret atau payload privat.
+- Verifikasi perilaku di staging sebelum mengubah traffic produksi.
+
+## Halaman terkait
+
+- [Pekerjaan asinkron dan polling](/id/guides/async-jobs-polling)
+- [Observability dan pemecahan masalah](/id/guides/observability-troubleshooting)
+- [Keamanan dan penanganan data](/id/guides/security-data-handling)
+- [Models API](/id/api-reference/models/list-models)

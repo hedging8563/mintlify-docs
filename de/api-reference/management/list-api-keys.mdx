@@ -10,7 +10,7 @@ Gibt die Benutzer-API-Schlüssel der Organisation zurück, die dem aktuellen Man
 
 ## Hinweise
 
-- System-managed keys are excluded.
+- Systemverwaltete Schlüssel werden ausgeschlossen.
 
 ## Beispiel
 
@@ -24,3 +24,25 @@ curl -X GET "https://api.aisonar.dev/v1/management/api-keys" \
 ## Anfrage / Antwort
 
 Verwenden Sie das interaktive OpenAPI-Panel oben für das genaue Schema.
+
+## Antwortbeispiel
+
+<ResponseExample>
+```json 200 OK
+{
+  "object": "list",
+  "data": [{
+    "id": "ak_abc123",
+    "name": "Production app",
+    "status": "active",
+    "created_at": "2026-06-27T00:00:00.000Z",
+    "last_used_at": "2026-06-27T01:00:00.000Z"
+  }]
+}
+```
+</ResponseExample>
+
+## Wichtige Felder
+
+<ResponseField name="data" type="array">Zurückgegebene Liste oder Payload dieser Antwort.</ResponseField>
+<ResponseField name="status" type="string">Aktueller Lifecycle-Status dieser Ressource.</ResponseField>

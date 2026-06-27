@@ -24,3 +24,28 @@ curl -X GET "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/bil
 ## Yêu Cầu / Phản Hồi
 
 Sử dụng bảng điều khiển OpenAPI tương tác ở trên để xem schema chính xác.
+
+## Ví dụ phản hồi
+
+<ResponseExample>
+```json 200 OK
+{
+  "object": "management.billing",
+  "api_key_id": "ak_abc123",
+  "currency": "USD",
+  "total_cost": "12.3400",
+  "data": [{
+    "billing_transaction_id": "billtxn_abc123",
+    "request_id": "req_abc123",
+    "amount": "0.0012",
+    "created_at": "2026-06-27T00:00:00.000Z"
+  }]
+}
+```
+</ResponseExample>
+
+## Trường quan trọng
+
+<ResponseField name="total_cost" type="string">Chuỗi thập phân USD để đối soát billing.</ResponseField>
+<ResponseField name="data" type="array">Danh sách hoặc payload được trả về trong phản hồi.</ResponseField>
+<ResponseField name="billing_transaction_id" type="string">Định danh settlement billing khi có.</ResponseField>

@@ -45,3 +45,23 @@ curl -X POST "https://api.aisonar.dev/v1/management/api-keys" \
 ## Request / Response
 
 Use the interactive OpenAPI panel above for the exact schema and response fields.
+
+## Response example
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "ak_abc123",
+  "object": "management.api_key",
+  "name": "Production app",
+  "status": "active",
+  "key": "sk-live-redacted",
+  "created_at": "2026-06-27T00:00:00.000Z"
+}
+```
+</ResponseExample>
+
+## Important fields
+
+<ResponseField name="key" type="string">Secret value. Store it immediately and never expose it to clients.</ResponseField>
+<ResponseField name="id" type="string">Identifier used for follow-up calls and support.</ResponseField>

@@ -42,3 +42,29 @@ curl "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/usage?page
 ## Anfrage / Antwort
 
 Verwenden Sie das interaktive OpenAPI-Panel oben für das genaue Schema und die Response-Felder.
+
+## Antwortbeispiel
+
+<ResponseExample>
+```json 200 OK
+{
+  "object": "management.usage",
+  "data": [{
+    "request_id": "req_abc123",
+    "api_key_id": "ak_abc123",
+    "model": "gpt-5-mini",
+    "endpoint": "/v1/chat/completions",
+    "total_cost": "0.0012",
+    "currency": "USD",
+    "billing_transaction_id": "billtxn_abc123",
+    "created_at": "2026-06-27T00:00:00.000Z"
+  }]
+}
+```
+</ResponseExample>
+
+## Wichtige Felder
+
+<ResponseField name="request_id" type="string">Öffentliche Request-Kennung für Support und Abgleich.</ResponseField>
+<ResponseField name="billing_transaction_id" type="string">Abrechnungskennung, wenn verfügbar.</ResponseField>
+<ResponseField name="total_cost" type="string">USD-Dezimalzeichenfolge für die Abrechnung.</ResponseField>

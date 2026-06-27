@@ -51,3 +51,24 @@ Rute `/v1/files` yang sama ini juga mendukung jalur Anthropic Files API.
 - Dalam mode Anthropic, unggah file asli secara langsung dan jangan kirim `purpose=batch`.
 - `file_id` yang dikembalikan akan terikat ke channel/workspace Anthropic resmi yang sama dan harus digunakan kembali dalam permintaan `/v1/messages`.
 - Jika Anda berencana merujuk file yang diunggah ini dalam konten pesan Anthropic, tetap gunakan header native Anthropic (`x-api-key`, `anthropic-version`, dan beta header bila diperlukan).
+
+## Contoh respons
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "file_abc123",
+  "object": "file",
+  "bytes": 32768,
+  "created_at": 1706000000,
+  "filename": "batch-input.jsonl",
+  "purpose": "batch"
+}
+```
+</ResponseExample>
+
+## Field penting
+
+<ResponseField name="id" type="string">Identifier file yang dipakai API terkait.</ResponseField>
+<ResponseField name="purpose" type="string">Tipe event atau message yang dikembalikan API.</ResponseField>
+<ResponseField name="bytes" type="integer">String desimal USD untuk rekonsiliasi billing.</ResponseField>

@@ -33,3 +33,21 @@ Utilisez le panneau OpenAPI interactif ci-dessus pour le schéma exact.
 - Utilisez `custom_id` pour la réconciliation idempotente en aval.
 - Attendez-vous à ce que `output_file_id` et `error_file_id` ne soient disponibles qu'après que le travailleur finalise le lot.
 - La tarification des lots peut différer de la tarification synchrone car les règles de réduction `isBatchRequest=true` s'appliquent.
+
+## Exemple de réponse
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "batch_abc123",
+  "object": "batch",
+  "status": "cancelling",
+  "input_file_id": "file_abc123"
+}
+```
+</ResponseExample>
+
+## Champs importants
+
+<ResponseField name="id" type="string">Identifiant pour les appels suivants et le support.</ResponseField>
+<ResponseField name="status" type="string">État de cycle de vie actuel de cette ressource.</ResponseField>

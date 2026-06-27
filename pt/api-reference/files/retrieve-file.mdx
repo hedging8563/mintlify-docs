@@ -35,3 +35,24 @@ Use o painel OpenAPI interativo acima para ver o esquema exato.
 - Use `custom_id` para reconciliação downstream idempotente.
 - Espere `output_file_id` e `error_file_id` apenas depois que o worker finalizar o lote.
 - A precificação do lote pode ser diferente da precificação síncrona porque as regras de desconto `isBatchRequest=true` se aplicam.
+
+## Exemplo de resposta
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "file_abc123",
+  "object": "file",
+  "bytes": 32768,
+  "created_at": 1706000000,
+  "filename": "batch-input.jsonl",
+  "purpose": "batch"
+}
+```
+</ResponseExample>
+
+## Campos importantes
+
+<ResponseField name="id" type="string">Identificador de arquivo usado por APIs relacionadas.</ResponseField>
+<ResponseField name="filename" type="string">Identificador para chamadas seguintes e suporte.</ResponseField>
+<ResponseField name="purpose" type="string">Tipo de evento ou mensagem retornado pela API.</ResponseField>

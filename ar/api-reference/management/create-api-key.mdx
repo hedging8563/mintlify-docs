@@ -43,3 +43,23 @@ curl -X POST "https://api.aisonar.dev/v1/management/api-keys" \
 ## الطلب / الاستجابة
 
 استخدم لوحة OpenAPI التفاعلية أعلاه للاطلاع على المخطط الدقيق وحقول الاستجابة.
+
+## مثال الاستجابة
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "ak_abc123",
+  "object": "management.api_key",
+  "name": "Production app",
+  "status": "active",
+  "key": "sk-live-redacted",
+  "created_at": "2026-06-27T00:00:00.000Z"
+}
+```
+</ResponseExample>
+
+## حقول مهمة
+
+<ResponseField name="key" type="string">قيمة سرية. احفظها فوراً ولا تعرضها للعميل.</ResponseField>
+<ResponseField name="id" type="string">معرّف لاستخدامه في الطلبات اللاحقة والدعم.</ResponseField>

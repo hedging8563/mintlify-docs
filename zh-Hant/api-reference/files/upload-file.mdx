@@ -51,3 +51,24 @@ curl -X POST "https://api.aisonar.dev/v1/files" \
 - 在 Anthropic 模式下，直接上傳原始檔案，不要傳 `purpose=batch`。
 - 回傳的 `file_id` 會綁定到同一個官方 Anthropic 渠道/工作區，後續應在 `/v1/messages` 請求中重用。
 - 如果你要在 Anthropic 訊息內容中引用這個檔案，請持續使用 Anthropic 原生請求標頭（`x-api-key`、`anthropic-version`，以及需要時的 beta header）。
+
+## 回應範例
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "file_abc123",
+  "object": "file",
+  "bytes": 32768,
+  "created_at": 1706000000,
+  "filename": "batch-input.jsonl",
+  "purpose": "batch"
+}
+```
+</ResponseExample>
+
+## 重要欄位
+
+<ResponseField name="id" type="string">供相關 API 使用的檔案識別符。</ResponseField>
+<ResponseField name="purpose" type="string">API 返回的事件或訊息類型。</ResponseField>
+<ResponseField name="bytes" type="integer">用於計費對帳的 USD 十進位字串。</ResponseField>

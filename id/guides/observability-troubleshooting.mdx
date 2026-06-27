@@ -1,0 +1,31 @@
+---
+title: "Observability dan pemecahan masalah"
+description: "Gunakan request_id, billing_transaction_id, task_id, dan log dashboard untuk debug produksi."
+---
+
+## Ikhtisar
+
+Gunakan request_id, billing_transaction_id, task_id, dan log dashboard untuk debug produksi.
+
+Gunakan API publik AI Sonar dan kontrak model; jangan bergantung pada detail eksekusi provider.
+
+## Aturan utama
+
+- Simpan `request_id`, `billing_transaction_id`, `task_id` sebelum mengembalikan sukses ke pengguna.
+- Gunakan API publik AI Sonar dan kontrak model; jangan bergantung pada detail eksekusi provider.
+- Buat retry idempotent dan hindari generasi atau tagihan ganda.
+
+## Checklist produksi
+
+- Simpan `request_id`, `billing_transaction_id`, `task_id` sebelum mengembalikan sukses ke pengguna.
+- Gunakan API publik AI Sonar dan kontrak model; jangan bergantung pada detail eksekusi provider.
+- Buat retry idempotent dan hindari generasi atau tagihan ganda.
+- Log harus membantu support tanpa menyimpan secret atau payload privat.
+- Verifikasi perilaku di staging sebelum mengubah traffic produksi.
+
+## Halaman terkait
+
+- [Pekerjaan asinkron dan polling](/id/guides/async-jobs-polling)
+- [Observability dan pemecahan masalah](/id/guides/observability-troubleshooting)
+- [Keamanan dan penanganan data](/id/guides/security-data-handling)
+- [Models API](/id/api-reference/models/list-models)

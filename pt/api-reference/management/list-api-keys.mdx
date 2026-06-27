@@ -10,7 +10,7 @@ Retorna as chaves API de usuário da organização associada ao token de gerenci
 
 ## Notas
 
-- System-managed keys are excluded.
+- As chaves gerenciadas pelo sistema são excluídas.
 
 ## Exemplo
 
@@ -24,3 +24,25 @@ curl -X GET "https://api.aisonar.dev/v1/management/api-keys" \
 ## Solicitação / Resposta
 
 Use o painel interativo OpenAPI acima para o esquema exato.
+
+## Exemplo de resposta
+
+<ResponseExample>
+```json 200 OK
+{
+  "object": "list",
+  "data": [{
+    "id": "ak_abc123",
+    "name": "Production app",
+    "status": "active",
+    "created_at": "2026-06-27T00:00:00.000Z",
+    "last_used_at": "2026-06-27T01:00:00.000Z"
+  }]
+}
+```
+</ResponseExample>
+
+## Campos importantes
+
+<ResponseField name="data" type="array">Lista ou payload retornado por esta resposta.</ResponseField>
+<ResponseField name="status" type="string">Estado atual do ciclo de vida deste recurso.</ResponseField>

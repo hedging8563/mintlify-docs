@@ -25,3 +25,23 @@ curl -X GET "https://api.aisonar.dev/v1/management/balance" \
 ## 請求 / 回應
 
 使用上方的互動式 OpenAPI 面板以取得確切的架構。
+
+## 回應範例
+
+<ResponseExample>
+```json 200 OK
+{
+  "object": "management.balance",
+  "currency": "USD",
+  "available_balance": "42.50",
+  "pending_usage": "1.25",
+  "updated_at": "2026-06-27T00:00:00.000Z"
+}
+```
+</ResponseExample>
+
+## 重要欄位
+
+<ResponseField name="available_balance" type="string">用於計費對帳的 USD 十進位字串。</ResponseField>
+<ResponseField name="pending_usage" type="string">用於計費對帳的 USD 十進位字串。</ResponseField>
+<ResponseField name="updated_at" type="string">API 返回的 ISO 時間或 Unix 時間戳。</ResponseField>

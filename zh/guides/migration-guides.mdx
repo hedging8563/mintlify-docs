@@ -1,0 +1,31 @@
+---
+title: "迁移指南"
+description: "以最小行为漂移从 OpenAI、Anthropic、Gemini、OpenRouter、LiteLLM 和媒体工作流迁移到 AI Sonar。"
+---
+
+## 概述
+
+以最小行为漂移从 OpenAI、Anthropic、Gemini、OpenRouter、LiteLLM 和媒体工作流迁移到 AI Sonar。
+
+使用 AI Sonar 公开 API 和模型契约；不要依赖供应商执行细节。
+
+## 关键规则
+
+- 在向用户返回成功前持久化 old model ID, new model ID, rollout owner。
+- 使用 AI Sonar 公开 API 和模型契约；不要依赖供应商执行细节。
+- 让重试保持幂等，避免重复生成或重复计费。
+
+## 生产检查清单
+
+- 在向用户返回成功前持久化 old model ID, new model ID, rollout owner。
+- 使用 AI Sonar 公开 API 和模型契约；不要依赖供应商执行细节。
+- 让重试保持幂等，避免重复生成或重复计费。
+- 日志要便于支持排障，但不要存储密钥或私有 payload。
+- 生产流量变更前先在预发环境验证行为。
+
+## 相关页面
+
+- [异步任务与轮询](/zh/guides/async-jobs-polling)
+- [可观测性与故障排查](/zh/guides/observability-troubleshooting)
+- [安全与数据处理](/zh/guides/security-data-handling)
+- [Models API](/zh/api-reference/models/list-models)

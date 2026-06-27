@@ -52,3 +52,23 @@ curl "https://api.aisonar.dev/v1/realtime" \
 تستخدم جلسات realtime رصيد مفتاح API نفسه. يخصم AI Sonar تقديراً صغيراً عند فتح socket، ثم يسوي المبلغ أو يرده عند الإغلاق.
 
 أغلق socket العميل عند اكتمال الجلسة. إذا أغلق المزود أولاً، يحاول AI Sonar تمرير رمز الإغلاق إلى العميل.
+
+## مثال الاستجابة
+
+<ResponseExample>
+```json Connected
+{
+  "type": "session.created",
+  "session": {
+    "id": "sess_abc123",
+    "model": "gpt-4o-realtime-preview",
+    "modalities": ["text", "audio"]
+  }
+}
+```
+</ResponseExample>
+
+## حقول مهمة
+
+<ResponseField name="type" type="string">نوع الحدث أو الرسالة الذي تعيده API.</ResponseField>
+<ResponseField name="session.id" type="string">معرّف لاستخدامه في الطلبات اللاحقة والدعم.</ResponseField>

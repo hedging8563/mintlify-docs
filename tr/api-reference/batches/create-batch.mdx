@@ -39,3 +39,27 @@ Tam şema için yukarıdaki etkileşimli OpenAPI panelini kullanın.
 - İdempotent aşağı akış uzlaştırması için `custom_id` kullanın.
 - `output_file_id` ve `error_file_id`'yi yalnızca işçi toplu işi tamamladıktan sonra bekleyin.
 - Toplu fiyatlandırma, `isBatchRequest=true` indirim kuralları uygulandığı için senkron fiyatlandırmadan farklı olabilir.
+
+## Yanıt örneği
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "batch_abc123",
+  "object": "batch",
+  "endpoint": "/v1/chat/completions",
+  "input_file_id": "file_abc123",
+  "completion_window": "24h",
+  "status": "validating",
+  "output_file_id": null,
+  "error_file_id": null,
+  "created_at": 1706000000
+}
+```
+</ResponseExample>
+
+## Önemli alanlar
+
+<ResponseField name="id" type="string">Sonraki çağrılar ve support için kullanılan identifier.</ResponseField>
+<ResponseField name="status" type="string">Bu kaynağın güncel lifecycle durumu.</ResponseField>
+<ResponseField name="output_file_id" type="string|null">İlgili API’lerde kullanılan file identifier.</ResponseField>

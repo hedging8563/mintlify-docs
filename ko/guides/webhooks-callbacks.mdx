@@ -1,0 +1,31 @@
+---
+title: "Webhooks 및 콜백 정책"
+description: "AI Sonar callback 지원 범위, polling fallback, 향후 webhook 전달 설계를 이해합니다."
+---
+
+## 개요
+
+AI Sonar callback 지원 범위, polling fallback, 향후 webhook 전달 설계를 이해합니다.
+
+AI Sonar 공개 API와 모델 계약을 사용하고 provider 실행 세부 정보에 의존하지 마세요.
+
+## 핵심 규칙
+
+- 사용자에게 성공을 반환하기 전에 `task_id`, `poll_url`, callback payload id를 저장하세요.
+- AI Sonar 공개 API와 모델 계약을 사용하고 provider 실행 세부 정보에 의존하지 마세요.
+- 재시도는 멱등하게 만들고 중복 생성이나 중복 과금을 피하세요.
+
+## 프로덕션 체크리스트
+
+- 사용자에게 성공을 반환하기 전에 `task_id`, `poll_url`, callback payload id를 저장하세요.
+- AI Sonar 공개 API와 모델 계약을 사용하고 provider 실행 세부 정보에 의존하지 마세요.
+- 재시도는 멱등하게 만들고 중복 생성이나 중복 과금을 피하세요.
+- 지원에 유용한 로그를 남기되 secret이나 private payload는 저장하지 마세요.
+- 프로덕션 트래픽을 변경하기 전에 staging에서 동작을 확인하세요.
+
+## 관련 페이지
+
+- [비동기 작업 및 폴링](/ko/guides/async-jobs-polling)
+- [관측성 및 문제 해결](/ko/guides/observability-troubleshooting)
+- [보안 및 데이터 처리](/ko/guides/security-data-handling)
+- [Models API](/ko/api-reference/models/list-models)

@@ -33,3 +33,21 @@ curl -X POST "https://api.aisonar.dev/v1/batches/batch_abc123/cancel" \
 - استخدم `custom_id` للتسوية غير المتغيرة في الأسفل.
 - توقع `output_file_id` و `error_file_id` فقط بعد أن ينهي العامل الدفعة.
 - قد تختلف أسعار الدفعة عن الأسعار المتزامنة لأن قواعد الخصم لـ `isBatchRequest=true` تنطبق.
+
+## مثال الاستجابة
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "batch_abc123",
+  "object": "batch",
+  "status": "cancelling",
+  "input_file_id": "file_abc123"
+}
+```
+</ResponseExample>
+
+## حقول مهمة
+
+<ResponseField name="id" type="string">معرّف لاستخدامه في الطلبات اللاحقة والدعم.</ResponseField>
+<ResponseField name="status" type="string">حالة دورة الحياة الحالية لهذا المورد.</ResponseField>

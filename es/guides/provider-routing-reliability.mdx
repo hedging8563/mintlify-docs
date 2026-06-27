@@ -1,0 +1,31 @@
+---
+title: "Enrutamiento de proveedores y fiabilidad"
+description: "Comprende las garantías públicas de enrutamiento de AI Sonar, failover y detalles abstraídos."
+---
+
+## Descripción general
+
+Comprende las garantías públicas de enrutamiento de AI Sonar, failover y detalles abstraídos.
+
+Usa las API públicas de AI Sonar y contratos de modelo; no dependas de detalles de ejecución del proveedor.
+
+## Reglas clave
+
+- Persiste los model ID, endpoint, retry decision antes de devolver éxito al usuario.
+- Usa las API públicas de AI Sonar y contratos de modelo; no dependas de detalles de ejecución del proveedor.
+- Haz que los reintentos sean idempotentes y evita generación o cobro duplicado.
+
+## Checklist de producción
+
+- Persiste los model ID, endpoint, retry decision antes de devolver éxito al usuario.
+- Usa las API públicas de AI Sonar y contratos de modelo; no dependas de detalles de ejecución del proveedor.
+- Haz que los reintentos sean idempotentes y evita generación o cobro duplicado.
+- Los logs deben ayudar al soporte sin guardar secretos ni payloads privados.
+- Valida el comportamiento en staging antes de cambiar tráfico de producción.
+
+## Páginas relacionadas
+
+- [Trabajos asíncronos y sondeo](/es/guides/async-jobs-polling)
+- [Observabilidad y solución de problemas](/es/guides/observability-troubleshooting)
+- [Seguridad y manejo de datos](/es/guides/security-data-handling)
+- [Models API](/es/api-reference/models/list-models)

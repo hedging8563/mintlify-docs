@@ -52,3 +52,23 @@ AI Sonar leitet WebSocket-Nachrichten zwischen Client und geroutetem Realtime-An
 Realtime-Sitzungen nutzen dasselbe API-Key-Guthaben. AI Sonar zieht beim Öffnen eine kleine Schätzung vorab ab und rechnet beim Schließen ab oder erstattet.
 
 Schließen Sie den Client-Socket, wenn die Sitzung beendet ist. Schließt der Upstream zuerst, leitet AI Sonar den Close-Code nach Möglichkeit weiter.
+
+## Antwortbeispiel
+
+<ResponseExample>
+```json Connected
+{
+  "type": "session.created",
+  "session": {
+    "id": "sess_abc123",
+    "model": "gpt-4o-realtime-preview",
+    "modalities": ["text", "audio"]
+  }
+}
+```
+</ResponseExample>
+
+## Wichtige Felder
+
+<ResponseField name="type" type="string">Von der API zurückgegebener Event- oder Nachrichtentyp.</ResponseField>
+<ResponseField name="session.id" type="string">Kennung für Folgeaufrufe und Support.</ResponseField>

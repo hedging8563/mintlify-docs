@@ -39,3 +39,27 @@ Sử dụng bảng điều khiển OpenAPI tương tác ở trên để có sơ 
 - Sử dụng `custom_id` cho việc đối chiếu không thay đổi ở phía hạ nguồn.
 - Mong đợi `output_file_id` và `error_file_id` chỉ sau khi công nhân hoàn tất lô.
 - Giá lô có thể khác với giá đồng bộ vì các quy tắc giảm giá `isBatchRequest=true` áp dụng.
+
+## Ví dụ phản hồi
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "batch_abc123",
+  "object": "batch",
+  "endpoint": "/v1/chat/completions",
+  "input_file_id": "file_abc123",
+  "completion_window": "24h",
+  "status": "validating",
+  "output_file_id": null,
+  "error_file_id": null,
+  "created_at": 1706000000
+}
+```
+</ResponseExample>
+
+## Trường quan trọng
+
+<ResponseField name="id" type="string">Định danh dùng cho lần gọi tiếp theo và hỗ trợ.</ResponseField>
+<ResponseField name="status" type="string">Trạng thái vòng đời hiện tại của tài nguyên.</ResponseField>
+<ResponseField name="output_file_id" type="string|null">Định danh tệp dùng bởi API liên quan.</ResponseField>

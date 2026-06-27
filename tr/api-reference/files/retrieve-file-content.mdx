@@ -36,3 +36,17 @@ Kesin şema için yukarıdaki etkileşimli OpenAPI panelini kullanın.
 - Downstream mutabakatı idempotent yapmak için `custom_id` kullanın.
 - `output_file_id` ve `error_file_id` yalnızca worker batch'i tamamladıktan sonra beklenmelidir.
 - `isBatchRequest=true` indirim kuralları uygulandığı için batch fiyatlandırması senkron fiyatlandırmadan farklı olabilir.
+
+## Yanıt örneği
+
+<ResponseExample>
+```jsonl 200 OK
+{"custom_id":"request-1","response":{"status_code":200,"body":{"id":"chatcmpl_abc123"}}}
+{"custom_id":"request-2","error":{"code":"invalid_request_error","message":"Invalid model"}}
+```
+</ResponseExample>
+
+## Önemli alanlar
+
+<ResponseField name="body" type="binary|string">Ham yanıt gövdesi. JSON olarak parse etmeden doğrudan kaydedin.</ResponseField>
+<ResponseField name="custom_id" type="string">Sonraki çağrılar ve support için kullanılan identifier.</ResponseField>

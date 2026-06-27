@@ -37,3 +37,17 @@ Verwenden Sie das interaktive OpenAPI-Panel oben für das genaue Schema.
 - Verwenden Sie `custom_id` für idempotente nachgelagerte Abstimmungen.
 - Erwarten Sie `output_file_id` und `error_file_id` erst, nachdem der Worker den Batch abgeschlossen hat.
 - Die Preise für Batches können von den Preisen für synchrone Anfragen abweichen, da die Rabattregeln für `isBatchRequest=true` gelten.
+
+## Antwortbeispiel
+
+<ResponseExample>
+```jsonl 200 OK
+{"custom_id":"request-1","response":{"status_code":200,"body":{"id":"chatcmpl_abc123"}}}
+{"custom_id":"request-2","error":{"code":"invalid_request_error","message":"Invalid model"}}
+```
+</ResponseExample>
+
+## Wichtige Felder
+
+<ResponseField name="body" type="binary|string">Roher Antwortkörper. Direkt speichern, nicht als JSON parsen.</ResponseField>
+<ResponseField name="custom_id" type="string">Kennung für Folgeaufrufe und Support.</ResponseField>

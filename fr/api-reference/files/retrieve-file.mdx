@@ -36,3 +36,24 @@ Utilisez le panneau OpenAPI interactif ci-dessus pour le schéma exact.
 - Utilisez `custom_id` pour la réconciliation idempotente en aval.
 - Attendez-vous à ce que `output_file_id` et `error_file_id` ne soient disponibles qu'après que le travailleur finalise le lot.
 - La tarification des lots peut différer de la tarification synchrone car les règles de remise `isBatchRequest=true` s'appliquent.
+
+## Exemple de réponse
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "file_abc123",
+  "object": "file",
+  "bytes": 32768,
+  "created_at": 1706000000,
+  "filename": "batch-input.jsonl",
+  "purpose": "batch"
+}
+```
+</ResponseExample>
+
+## Champs importants
+
+<ResponseField name="id" type="string">Identifiant de fichier utilisé par les API liées.</ResponseField>
+<ResponseField name="filename" type="string">Identifiant pour les appels suivants et le support.</ResponseField>
+<ResponseField name="purpose" type="string">Type d’événement ou de message retourné par l’API.</ResponseField>

@@ -1,0 +1,31 @@
+---
+title: "Webhooks 与回调策略"
+description: "了解 AI Sonar 的回调支持边界、轮询兜底和未来 webhook 接入方式。"
+---
+
+## 概述
+
+了解 AI Sonar 的回调支持边界、轮询兜底和未来 webhook 接入方式。
+
+使用 AI Sonar 公开 API 和模型契约；不要依赖供应商执行细节。
+
+## 关键规则
+
+- 在向用户返回成功前持久化 `task_id`, `poll_url`, callback payload id。
+- 使用 AI Sonar 公开 API 和模型契约；不要依赖供应商执行细节。
+- 让重试保持幂等，避免重复生成或重复计费。
+
+## 生产检查清单
+
+- 在向用户返回成功前持久化 `task_id`, `poll_url`, callback payload id。
+- 使用 AI Sonar 公开 API 和模型契约；不要依赖供应商执行细节。
+- 让重试保持幂等，避免重复生成或重复计费。
+- 日志要便于支持排障，但不要存储密钥或私有 payload。
+- 生产流量变更前先在预发环境验证行为。
+
+## 相关页面
+
+- [异步任务与轮询](/zh/guides/async-jobs-polling)
+- [可观测性与故障排查](/zh/guides/observability-troubleshooting)
+- [安全与数据处理](/zh/guides/security-data-handling)
+- [Models API](/zh/api-reference/models/list-models)

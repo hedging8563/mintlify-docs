@@ -1,0 +1,31 @@
+---
+title: "Sicherheit & Datenverarbeitung"
+description: "Verwalten Sie API keys, Nutzermedien, Logs und generierte Assets sicher in AI Sonar-Integrationen."
+---
+
+## Übersicht
+
+Verwalten Sie API keys, Nutzermedien, Logs und generierte Assets sicher in AI Sonar-Integrationen.
+
+Nutzen Sie öffentliche AI Sonar-APIs und Modellverträge; verlassen Sie sich nicht auf Provider-Ausführungsdetails.
+
+## Wichtige Regeln
+
+- Persistieren Sie API key scope, media URL lifetime, audit events, bevor Sie Nutzern Erfolg melden.
+- Nutzen Sie öffentliche AI Sonar-APIs und Modellverträge; verlassen Sie sich nicht auf Provider-Ausführungsdetails.
+- Machen Sie Wiederholungen idempotent und vermeiden Sie doppelte Generierung oder doppelte Abrechnung.
+
+## Produktions-Checkliste
+
+- Persistieren Sie API key scope, media URL lifetime, audit events, bevor Sie Nutzern Erfolg melden.
+- Nutzen Sie öffentliche AI Sonar-APIs und Modellverträge; verlassen Sie sich nicht auf Provider-Ausführungsdetails.
+- Machen Sie Wiederholungen idempotent und vermeiden Sie doppelte Generierung oder doppelte Abrechnung.
+- Logs sollen dem Support helfen, aber keine Secrets oder privaten Payloads speichern.
+- Prüfen Sie das Verhalten in Staging, bevor Produktionsverkehr geändert wird.
+
+## Verwandte Seiten
+
+- [Asynchrone Jobs & Polling](/de/guides/async-jobs-polling)
+- [Observability & Fehlersuche](/de/guides/observability-troubleshooting)
+- [Sicherheit & Datenverarbeitung](/de/guides/security-data-handling)
+- [Models API](/de/api-reference/models/list-models)

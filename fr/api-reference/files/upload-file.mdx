@@ -51,3 +51,24 @@ Cette même route `/v1/files` prend aussi en charge le chemin Anthropic Files AP
 - En mode Anthropic, chargez directement le fichier d’origine et n’envoyez pas `purpose=batch`.
 - Le `file_id` renvoyé est lié au même canal/workspace Anthropic officiel et doit être réutilisé dans les requêtes `/v1/messages`.
 - Si vous comptez référencer ce fichier dans le contenu d’un message Anthropic, continuez à utiliser les en-têtes natifs Anthropic (`x-api-key`, `anthropic-version` et, si nécessaire, le beta header).
+
+## Exemple de réponse
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "file_abc123",
+  "object": "file",
+  "bytes": 32768,
+  "created_at": 1706000000,
+  "filename": "batch-input.jsonl",
+  "purpose": "batch"
+}
+```
+</ResponseExample>
+
+## Champs importants
+
+<ResponseField name="id" type="string">Identifiant de fichier utilisé par les API liées.</ResponseField>
+<ResponseField name="purpose" type="string">Type d’événement ou de message retourné par l’API.</ResponseField>
+<ResponseField name="bytes" type="integer">Chaîne décimale USD pour le rapprochement de facturation.</ResponseField>

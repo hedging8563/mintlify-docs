@@ -35,3 +35,24 @@ Kesin şema için yukarıdaki etkileşimli OpenAPI panelini kullanın.
 - Downstream mutabakatı idempotent yapmak için `custom_id` kullanın.
 - `output_file_id` ve `error_file_id` yalnızca worker batch'i tamamladıktan sonra beklenmelidir.
 - `isBatchRequest=true` indirim kuralları uygulandığı için batch fiyatlandırması senkron fiyatlandırmadan farklı olabilir.
+
+## Yanıt örneği
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "file_abc123",
+  "object": "file",
+  "bytes": 32768,
+  "created_at": 1706000000,
+  "filename": "batch-input.jsonl",
+  "purpose": "batch"
+}
+```
+</ResponseExample>
+
+## Önemli alanlar
+
+<ResponseField name="id" type="string">İlgili API’lerde kullanılan file identifier.</ResponseField>
+<ResponseField name="filename" type="string">Sonraki çağrılar ve support için kullanılan identifier.</ResponseField>
+<ResponseField name="purpose" type="string">API tarafından dönen event veya message type.</ResponseField>

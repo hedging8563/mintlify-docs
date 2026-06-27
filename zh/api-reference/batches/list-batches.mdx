@@ -33,3 +33,20 @@ curl -X GET "https://api.aisonar.dev/v1/batches?limit=20" \
 - 使用 `custom_id` 进行幂等的下游对账。
 - 仅在工作者完成批处理后，期待 `output_file_id` 和 `error_file_id`。
 - 批处理定价可能与同步定价不同，因为适用 `isBatchRequest=true` 的折扣规则。
+
+## 响应示例
+
+<ResponseExample>
+```json 200 OK
+{
+  "object": "list",
+  "data": [{ "id": "batch_abc123", "object": "batch", "status": "completed" }]
+}
+```
+</ResponseExample>
+
+## 重要字段
+
+<ResponseField name="object" type="string">响应对象类型。</ResponseField>
+<ResponseField name="data" type="array">本次响应返回的列表或载荷。</ResponseField>
+<ResponseField name="status" type="string">该资源当前的生命周期状态。</ResponseField>

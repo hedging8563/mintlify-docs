@@ -43,3 +43,23 @@ curl -X POST "https://api.aisonar.dev/v1/management/api-keys" \
 ## İstek / Yanıt
 
 Doğru şema ve yanıt alanları için yukarıdaki etkileşimli OpenAPI panelini kullanın.
+
+## Yanıt örneği
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "ak_abc123",
+  "object": "management.api_key",
+  "name": "Production app",
+  "status": "active",
+  "key": "sk-live-redacted",
+  "created_at": "2026-06-27T00:00:00.000Z"
+}
+```
+</ResponseExample>
+
+## Önemli alanlar
+
+<ResponseField name="key" type="string">Gizli değer. Hemen saklayın ve client tarafında göstermeyin.</ResponseField>
+<ResponseField name="id" type="string">Sonraki çağrılar ve support için kullanılan identifier.</ResponseField>

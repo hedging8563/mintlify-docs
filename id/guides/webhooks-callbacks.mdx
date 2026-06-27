@@ -1,0 +1,31 @@
+---
+title: "Webhooks dan kebijakan callback"
+description: "Pahami batas callback AI Sonar, fallback polling, dan desain webhook masa depan."
+---
+
+## Ikhtisar
+
+Pahami batas callback AI Sonar, fallback polling, dan desain webhook masa depan.
+
+Gunakan API publik AI Sonar dan kontrak model; jangan bergantung pada detail eksekusi provider.
+
+## Aturan utama
+
+- Simpan `task_id`, `poll_url`, callback payload id sebelum mengembalikan sukses ke pengguna.
+- Gunakan API publik AI Sonar dan kontrak model; jangan bergantung pada detail eksekusi provider.
+- Buat retry idempotent dan hindari generasi atau tagihan ganda.
+
+## Checklist produksi
+
+- Simpan `task_id`, `poll_url`, callback payload id sebelum mengembalikan sukses ke pengguna.
+- Gunakan API publik AI Sonar dan kontrak model; jangan bergantung pada detail eksekusi provider.
+- Buat retry idempotent dan hindari generasi atau tagihan ganda.
+- Log harus membantu support tanpa menyimpan secret atau payload privat.
+- Verifikasi perilaku di staging sebelum mengubah traffic produksi.
+
+## Halaman terkait
+
+- [Pekerjaan asinkron dan polling](/id/guides/async-jobs-polling)
+- [Observability dan pemecahan masalah](/id/guides/observability-troubleshooting)
+- [Keamanan dan penanganan data](/id/guides/security-data-handling)
+- [Models API](/id/api-reference/models/list-models)

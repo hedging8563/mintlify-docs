@@ -1,0 +1,31 @@
+---
+title: "المراقبة واستكشاف الأخطاء"
+description: "استخدم request_id و billing_transaction_id و task_id وسجلات لوحة التحكم لتشخيص الإنتاج."
+---
+
+## نظرة عامة
+
+استخدم request_id و billing_transaction_id و task_id وسجلات لوحة التحكم لتشخيص الإنتاج.
+
+استخدم واجهات AI Sonar العامة وعقود النماذج؛ ولا تعتمد على تفاصيل تنفيذ المزوّد.
+
+## قواعد أساسية
+
+- احفظ `request_id`, `billing_transaction_id`, `task_id` قبل إرجاع النجاح للمستخدم.
+- استخدم واجهات AI Sonar العامة وعقود النماذج؛ ولا تعتمد على تفاصيل تنفيذ المزوّد.
+- اجعل retries آمنة للتكرار وتجنب التوليد أو الفوترة المزدوجة.
+
+## قائمة فحص الإنتاج
+
+- احفظ `request_id`, `billing_transaction_id`, `task_id` قبل إرجاع النجاح للمستخدم.
+- استخدم واجهات AI Sonar العامة وعقود النماذج؛ ولا تعتمد على تفاصيل تنفيذ المزوّد.
+- اجعل retries آمنة للتكرار وتجنب التوليد أو الفوترة المزدوجة.
+- يجب أن تساعد logs الدعم دون تخزين أسرار أو payloads خاصة.
+- تحقق من السلوك في staging قبل تغيير حركة الإنتاج.
+
+## صفحات ذات صلة
+
+- [المهام غير المتزامنة والاستعلام الدوري](/ar/guides/async-jobs-polling)
+- [المراقبة واستكشاف الأخطاء](/ar/guides/observability-troubleshooting)
+- [الأمان ومعالجة البيانات](/ar/guides/security-data-handling)
+- [Models API](/ar/api-reference/models/list-models)

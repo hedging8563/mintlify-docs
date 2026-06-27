@@ -39,3 +39,27 @@ Verwenden Sie das interaktive OpenAPI-Panel oben für das genaue Schema.
 - Verwenden Sie `custom_id` für idempotente nachgelagerte Abgleiche.
 - Erwarten Sie `output_file_id` und `error_file_id` erst, nachdem der Worker den Batch abgeschlossen hat.
 - Die Preisgestaltung für Batches kann von der synchronen Preisgestaltung abweichen, da die Rabattregeln für `isBatchRequest=true` gelten.
+
+## Antwortbeispiel
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "batch_abc123",
+  "object": "batch",
+  "endpoint": "/v1/chat/completions",
+  "input_file_id": "file_abc123",
+  "completion_window": "24h",
+  "status": "validating",
+  "output_file_id": null,
+  "error_file_id": null,
+  "created_at": 1706000000
+}
+```
+</ResponseExample>
+
+## Wichtige Felder
+
+<ResponseField name="id" type="string">Kennung für Folgeaufrufe und Support.</ResponseField>
+<ResponseField name="status" type="string">Aktueller Lifecycle-Status dieser Ressource.</ResponseField>
+<ResponseField name="output_file_id" type="string|null">Dateikennung für verwandte APIs.</ResponseField>

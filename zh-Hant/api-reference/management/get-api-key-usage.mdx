@@ -42,3 +42,29 @@ curl "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/usage?page
 ## 請求 / 回應
 
 精確 schema 與回應欄位，請使用上方的互動式 OpenAPI 面板。
+
+## 回應範例
+
+<ResponseExample>
+```json 200 OK
+{
+  "object": "management.usage",
+  "data": [{
+    "request_id": "req_abc123",
+    "api_key_id": "ak_abc123",
+    "model": "gpt-5-mini",
+    "endpoint": "/v1/chat/completions",
+    "total_cost": "0.0012",
+    "currency": "USD",
+    "billing_transaction_id": "billtxn_abc123",
+    "created_at": "2026-06-27T00:00:00.000Z"
+  }]
+}
+```
+</ResponseExample>
+
+## 重要欄位
+
+<ResponseField name="request_id" type="string">用於支援排障和對帳的公開請求識別符。</ResponseField>
+<ResponseField name="billing_transaction_id" type="string">可用時返回的計費結算識別符。</ResponseField>
+<ResponseField name="total_cost" type="string">用於計費對帳的 USD 十進位字串。</ResponseField>

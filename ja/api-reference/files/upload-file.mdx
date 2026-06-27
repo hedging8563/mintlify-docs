@@ -51,3 +51,24 @@ curl -X POST "https://api.aisonar.dev/v1/files" \
 - Anthropic モードでは、元のファイルをそのままアップロードし、`purpose=batch` は送らないでください。
 - 返される `file_id` は同じ公式 Anthropic チャンネル/ワークスペースにひも付けられ、以後の `/v1/messages` リクエストで再利用する必要があります。
 - Anthropic メッセージ内容からそのファイルを参照する場合は、Anthropic ネイティブのヘッダー（`x-api-key`、`anthropic-version`、必要に応じた beta header）をそのまま使ってください。
+
+## レスポンス例
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "file_abc123",
+  "object": "file",
+  "bytes": 32768,
+  "created_at": 1706000000,
+  "filename": "batch-input.jsonl",
+  "purpose": "batch"
+}
+```
+</ResponseExample>
+
+## 重要フィールド
+
+<ResponseField name="id" type="string">関連 API で使う file identifier です。</ResponseField>
+<ResponseField name="purpose" type="string">API が返す event または message type です。</ResponseField>
+<ResponseField name="bytes" type="integer">請求照合に使う USD decimal string です。</ResponseField>

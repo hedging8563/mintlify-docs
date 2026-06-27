@@ -36,3 +36,17 @@ Usa el panel OpenAPI interactivo de arriba para ver el esquema exacto.
 - Usa `custom_id` para reconciliación descendente idempotente.
 - Espera `output_file_id` y `error_file_id` solo después de que el worker finalice el lote.
 - El precio del lote puede diferir del síncrono porque se aplican las reglas de descuento `isBatchRequest=true`.
+
+## Ejemplo de respuesta
+
+<ResponseExample>
+```jsonl 200 OK
+{"custom_id":"request-1","response":{"status_code":200,"body":{"id":"chatcmpl_abc123"}}}
+{"custom_id":"request-2","error":{"code":"invalid_request_error","message":"Invalid model"}}
+```
+</ResponseExample>
+
+## Campos importantes
+
+<ResponseField name="body" type="binary|string">Cuerpo bruto de la respuesta. Guárdalo directamente sin parsearlo como JSON.</ResponseField>
+<ResponseField name="custom_id" type="string">Identificador para llamadas posteriores y soporte.</ResponseField>

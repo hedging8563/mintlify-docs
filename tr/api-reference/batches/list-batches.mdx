@@ -33,3 +33,20 @@ Kesin şemayı almak için yukarıdaki etkileşimli OpenAPI panelini kullanın.
 - İdempotent aşağı akış uzlaşması için `custom_id` kullanın.
 - Çalışan partiyi tamamladıktan sonra yalnızca `output_file_id` ve `error_file_id` bekleyin.
 - Parti fiyatlandırması, `isBatchRequest=true` indirim kuralları uygulandığı için senkron fiyatlandırmadan farklı olabilir.
+
+## Yanıt örneği
+
+<ResponseExample>
+```json 200 OK
+{
+  "object": "list",
+  "data": [{ "id": "batch_abc123", "object": "batch", "status": "completed" }]
+}
+```
+</ResponseExample>
+
+## Önemli alanlar
+
+<ResponseField name="object" type="string">Yanıtın object type değeri.</ResponseField>
+<ResponseField name="data" type="array">Bu yanıtta dönen liste veya payload.</ResponseField>
+<ResponseField name="status" type="string">Bu kaynağın güncel lifecycle durumu.</ResponseField>

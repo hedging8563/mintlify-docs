@@ -10,7 +10,7 @@ Trả về danh sách API key của người dùng trong tổ chức gắn với
 
 ## Ghi Chú
 
-- System-managed keys are excluded.
+- Các key do hệ thống quản lý sẽ bị loại trừ.
 
 ## Ví Dụ
 
@@ -24,3 +24,25 @@ curl -X GET "https://api.aisonar.dev/v1/management/api-keys" \
 ## Yêu Cầu / Phản Hồi
 
 Sử dụng bảng điều khiển OpenAPI tương tác ở trên để xem schema chính xác.
+
+## Ví dụ phản hồi
+
+<ResponseExample>
+```json 200 OK
+{
+  "object": "list",
+  "data": [{
+    "id": "ak_abc123",
+    "name": "Production app",
+    "status": "active",
+    "created_at": "2026-06-27T00:00:00.000Z",
+    "last_used_at": "2026-06-27T01:00:00.000Z"
+  }]
+}
+```
+</ResponseExample>
+
+## Trường quan trọng
+
+<ResponseField name="data" type="array">Danh sách hoặc payload được trả về trong phản hồi.</ResponseField>
+<ResponseField name="status" type="string">Trạng thái vòng đời hiện tại của tài nguyên.</ResponseField>

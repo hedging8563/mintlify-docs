@@ -1,0 +1,31 @@
+---
+title: "プロバイダールーティングと信頼性"
+description: "AI Sonar の公開 routing 保証、failover、抽象化された詳細を理解します。"
+---
+
+## 概要
+
+AI Sonar の公開 routing 保証、failover、抽象化された詳細を理解します。
+
+AI Sonar の公開 API とモデル契約 を使用し、プロバイダー実行詳細には依存しないでください。
+
+## 重要なルール
+
+- ユーザーへ成功を返す前に model ID, endpoint, retry decision を保存してください。
+- AI Sonar の公開 API とモデル契約 を使用し、プロバイダー実行詳細には依存しないでください。
+- リトライは冪等にし、重複生成や重複課金を避けてください。
+
+## 本番チェックリスト
+
+- ユーザーへ成功を返す前に model ID, endpoint, retry decision を保存してください。
+- AI Sonar の公開 API とモデル契約 を使用し、プロバイダー実行詳細には依存しないでください。
+- リトライは冪等にし、重複生成や重複課金を避けてください。
+- サポートに役立つログを残しつつ、秘密情報や private payload は保存しないでください。
+- 本番トラフィックを切り替える前にステージングで動作を検証してください。
+
+## 関連ページ
+
+- [非同期ジョブとポーリング](/ja/guides/async-jobs-polling)
+- [可観測性とトラブルシューティング](/ja/guides/observability-troubleshooting)
+- [セキュリティとデータ処理](/ja/guides/security-data-handling)
+- [Models API](/ja/api-reference/models/list-models)

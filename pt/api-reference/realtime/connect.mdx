@@ -52,3 +52,23 @@ AI Sonar encaminha mensagens WebSocket entre o cliente e o provedor realtime rot
 Sessões realtime usam o mesmo saldo da chave API. AI Sonar pré-deduz uma pequena estimativa ao abrir e liquida ou reembolsa ao fechar.
 
 Feche o socket do cliente quando a sessão terminar. Se o upstream fechar primeiro, AI Sonar repassa o código de fechamento quando possível.
+
+## Exemplo de resposta
+
+<ResponseExample>
+```json Connected
+{
+  "type": "session.created",
+  "session": {
+    "id": "sess_abc123",
+    "model": "gpt-4o-realtime-preview",
+    "modalities": ["text", "audio"]
+  }
+}
+```
+</ResponseExample>
+
+## Campos importantes
+
+<ResponseField name="type" type="string">Tipo de evento ou mensagem retornado pela API.</ResponseField>
+<ResponseField name="session.id" type="string">Identificador para chamadas seguintes e suporte.</ResponseField>

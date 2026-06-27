@@ -52,3 +52,23 @@ AI Sonar meneruskan pesan WebSocket antara client dan penyedia realtime yang dir
 Sesi realtime memakai saldo API key yang sama. AI Sonar melakukan pre-deduct kecil saat socket dibuka, lalu melakukan settlement atau refund saat sesi ditutup.
 
 Tutup socket client saat sesi selesai. Jika upstream menutup lebih dulu, AI Sonar meneruskan close code bila memungkinkan.
+
+## Contoh respons
+
+<ResponseExample>
+```json Connected
+{
+  "type": "session.created",
+  "session": {
+    "id": "sess_abc123",
+    "model": "gpt-4o-realtime-preview",
+    "modalities": ["text", "audio"]
+  }
+}
+```
+</ResponseExample>
+
+## Field penting
+
+<ResponseField name="type" type="string">Tipe event atau message yang dikembalikan API.</ResponseField>
+<ResponseField name="session.id" type="string">Identifier untuk panggilan lanjutan dan support.</ResponseField>

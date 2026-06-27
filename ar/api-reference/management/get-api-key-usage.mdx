@@ -42,3 +42,29 @@ curl "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/usage?page
 ## الطلب / الاستجابة
 
 استخدم لوحة OpenAPI التفاعلية أعلاه للاطلاع على المخطط الدقيق وحقول الاستجابة.
+
+## مثال الاستجابة
+
+<ResponseExample>
+```json 200 OK
+{
+  "object": "management.usage",
+  "data": [{
+    "request_id": "req_abc123",
+    "api_key_id": "ak_abc123",
+    "model": "gpt-5-mini",
+    "endpoint": "/v1/chat/completions",
+    "total_cost": "0.0012",
+    "currency": "USD",
+    "billing_transaction_id": "billtxn_abc123",
+    "created_at": "2026-06-27T00:00:00.000Z"
+  }]
+}
+```
+</ResponseExample>
+
+## حقول مهمة
+
+<ResponseField name="request_id" type="string">معرّف طلب عام للدعم والمطابقة.</ResponseField>
+<ResponseField name="billing_transaction_id" type="string">معرّف تسوية الفوترة عند توفره.</ResponseField>
+<ResponseField name="total_cost" type="string">قيمة USD عشرية لمطابقة الفوترة.</ResponseField>

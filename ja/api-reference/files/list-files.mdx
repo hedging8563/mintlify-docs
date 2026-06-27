@@ -36,3 +36,19 @@ curl -X GET "https://api.aisonar.dev/v1/files?purpose=batch&limit=20" \
 - 冪等性のある下流の調整には `custom_id` を使用してください。
 - ワーカーがバッチを最終化した後にのみ `output_file_id` と `error_file_id` を期待してください。
 - バッチの価格は、`isBatchRequest=true` の割引ルールが適用されるため、同期価格とは異なる場合があります。
+
+## レスポンス例
+
+<ResponseExample>
+```json 200 OK
+{
+  "object": "list",
+  "data": [{ "id": "file_abc123", "object": "file", "purpose": "batch" }]
+}
+```
+</ResponseExample>
+
+## 重要フィールド
+
+<ResponseField name="object" type="string">レスポンスの object type です。</ResponseField>
+<ResponseField name="data" type="array">このレスポンスで返されるリストまたは payload です。</ResponseField>

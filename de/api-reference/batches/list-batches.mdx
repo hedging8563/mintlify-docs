@@ -33,3 +33,20 @@ Verwenden Sie das interaktive OpenAPI-Panel oben für das genaue Schema.
 - Verwenden Sie `custom_id` für idempotente nachgelagerte Abstimmungen.
 - Erwarten Sie `output_file_id` und `error_file_id` erst, nachdem der Worker den Batch abgeschlossen hat.
 - Die Preisgestaltung für Batches kann von der synchronen Preisgestaltung abweichen, da die Rabattregeln für `isBatchRequest=true` gelten.
+
+## Antwortbeispiel
+
+<ResponseExample>
+```json 200 OK
+{
+  "object": "list",
+  "data": [{ "id": "batch_abc123", "object": "batch", "status": "completed" }]
+}
+```
+</ResponseExample>
+
+## Wichtige Felder
+
+<ResponseField name="object" type="string">Objekttyp der Antwort.</ResponseField>
+<ResponseField name="data" type="array">Zurückgegebene Liste oder Payload dieser Antwort.</ResponseField>
+<ResponseField name="status" type="string">Aktueller Lifecycle-Status dieser Ressource.</ResponseField>

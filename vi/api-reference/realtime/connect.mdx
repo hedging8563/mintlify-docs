@@ -52,3 +52,23 @@ AI Sonar chuyển tiếp tin nhắn WebSocket giữa client và nhà cung cấp 
 Phiên realtime dùng cùng số dư API key. AI Sonar trừ trước một ước tính nhỏ khi socket mở, rồi quyết toán hoặc hoàn tiền khi phiên đóng.
 
 Đóng socket client khi phiên hoàn tất. Nếu upstream đóng trước, AI Sonar sẽ chuyển tiếp close code khi có thể.
+
+## Ví dụ phản hồi
+
+<ResponseExample>
+```json Connected
+{
+  "type": "session.created",
+  "session": {
+    "id": "sess_abc123",
+    "model": "gpt-4o-realtime-preview",
+    "modalities": ["text", "audio"]
+  }
+}
+```
+</ResponseExample>
+
+## Trường quan trọng
+
+<ResponseField name="type" type="string">Loại event hoặc message do API trả về.</ResponseField>
+<ResponseField name="session.id" type="string">Định danh dùng cho lần gọi tiếp theo và hỗ trợ.</ResponseField>

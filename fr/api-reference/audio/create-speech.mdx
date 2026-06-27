@@ -121,3 +121,16 @@ file_put_contents('speech.mp3', $audio);
 | `sage` | Sage, réfléchie |
 | `shimmer` | Douce, délicate |
 | `verse` | Dynamique, polyvalente |
+
+## Exemple de réponse
+
+<ResponseExample>
+```binary 200 OK
+<binary audio data>
+```
+</ResponseExample>
+
+## Champs importants
+
+<ResponseField name="Content-Type" type="string">Type d’événement ou de message retourné par l’API.</ResponseField>
+<ResponseField name="body" type="binary">Corps brut de la réponse. Enregistrez-le directement sans le parser en JSON.</ResponseField>

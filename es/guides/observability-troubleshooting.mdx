@@ -1,0 +1,31 @@
+---
+title: "Observabilidad y solución de problemas"
+description: "Usa request_id, billing_transaction_id, task_id y logs del panel para depurar producción."
+---
+
+## Descripción general
+
+Usa request_id, billing_transaction_id, task_id y logs del panel para depurar producción.
+
+Usa las API públicas de AI Sonar y contratos de modelo; no dependas de detalles de ejecución del proveedor.
+
+## Reglas clave
+
+- Persiste los `request_id`, `billing_transaction_id`, `task_id` antes de devolver éxito al usuario.
+- Usa las API públicas de AI Sonar y contratos de modelo; no dependas de detalles de ejecución del proveedor.
+- Haz que los reintentos sean idempotentes y evita generación o cobro duplicado.
+
+## Checklist de producción
+
+- Persiste los `request_id`, `billing_transaction_id`, `task_id` antes de devolver éxito al usuario.
+- Usa las API públicas de AI Sonar y contratos de modelo; no dependas de detalles de ejecución del proveedor.
+- Haz que los reintentos sean idempotentes y evita generación o cobro duplicado.
+- Los logs deben ayudar al soporte sin guardar secretos ni payloads privados.
+- Valida el comportamiento en staging antes de cambiar tráfico de producción.
+
+## Páginas relacionadas
+
+- [Trabajos asíncronos y sondeo](/es/guides/async-jobs-polling)
+- [Observabilidad y solución de problemas](/es/guides/observability-troubleshooting)
+- [Seguridad y manejo de datos](/es/guides/security-data-handling)
+- [Models API](/es/api-reference/models/list-models)

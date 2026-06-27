@@ -33,3 +33,21 @@ curl -X POST "https://api.aisonar.dev/v1/batches/batch_abc123/cancel" \
 - 冪等性のある下流の調整には`custom_id`を使用してください。
 - ワーカーがバッチを最終化した後にのみ`output_file_id`と`error_file_id`を期待してください。
 - バッチの価格は、`isBatchRequest=true`の割引ルールが適用されるため、同期価格とは異なる場合があります。
+
+## レスポンス例
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "batch_abc123",
+  "object": "batch",
+  "status": "cancelling",
+  "input_file_id": "file_abc123"
+}
+```
+</ResponseExample>
+
+## 重要フィールド
+
+<ResponseField name="id" type="string">後続呼び出しとサポート調査に使う識別子です。</ResponseField>
+<ResponseField name="status" type="string">このリソースの現在のライフサイクル状態です。</ResponseField>

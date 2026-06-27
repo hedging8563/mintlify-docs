@@ -10,7 +10,7 @@ Retourne les clés API utilisateur de l'organisation associée au jeton de gesti
 
 ## Remarques
 
-- System-managed keys are excluded.
+- Les clés gérées par le système sont exclues.
 
 ## Exemple
 
@@ -24,3 +24,25 @@ curl -X GET "https://api.aisonar.dev/v1/management/api-keys" \
 ## Demande / Réponse
 
 Utilisez le panneau OpenAPI interactif ci-dessus pour le schéma exact.
+
+## Exemple de réponse
+
+<ResponseExample>
+```json 200 OK
+{
+  "object": "list",
+  "data": [{
+    "id": "ak_abc123",
+    "name": "Production app",
+    "status": "active",
+    "created_at": "2026-06-27T00:00:00.000Z",
+    "last_used_at": "2026-06-27T01:00:00.000Z"
+  }]
+}
+```
+</ResponseExample>
+
+## Champs importants
+
+<ResponseField name="data" type="array">Liste ou payload retourné par cette réponse.</ResponseField>
+<ResponseField name="status" type="string">État de cycle de vie actuel de cette ressource.</ResponseField>

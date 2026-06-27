@@ -33,3 +33,20 @@ curl -X GET "https://api.aisonar.dev/v1/batches?limit=20" \
 - استخدم `custom_id` للتسوية غير القابلة للتغيير في الأسفل.
 - توقع `output_file_id` و `error_file_id` فقط بعد أن ينهي العامل الدفعة.
 - قد تختلف أسعار الدفعات عن الأسعار المتزامنة لأن قواعد الخصم لـ `isBatchRequest=true` تنطبق.
+
+## مثال الاستجابة
+
+<ResponseExample>
+```json 200 OK
+{
+  "object": "list",
+  "data": [{ "id": "batch_abc123", "object": "batch", "status": "completed" }]
+}
+```
+</ResponseExample>
+
+## حقول مهمة
+
+<ResponseField name="object" type="string">نوع كائن الاستجابة.</ResponseField>
+<ResponseField name="data" type="array">القائمة أو payload المعاد في هذه الاستجابة.</ResponseField>
+<ResponseField name="status" type="string">حالة دورة الحياة الحالية لهذا المورد.</ResponseField>

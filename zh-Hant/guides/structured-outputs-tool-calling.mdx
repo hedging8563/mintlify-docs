@@ -1,0 +1,31 @@
+---
+title: "結構化輸出與工具呼叫"
+description: "在 OpenAI、Anthropic、Gemini 相容路由中使用 JSON schema、工具呼叫與原生格式能力。"
+---
+
+## 概述
+
+在 OpenAI、Anthropic、Gemini 相容路由中使用 JSON schema、工具呼叫與原生格式能力。
+
+使用 AI Sonar 公開 API 與模型契約；不要依賴供應商執行細節。
+
+## 關鍵規則
+
+- 在向使用者返回成功前持久化 schema version, tool name, validated arguments。
+- 使用 AI Sonar 公開 API 與模型契約；不要依賴供應商執行細節。
+- 讓重試保持冪等，避免重複生成或重複計費。
+
+## 生產檢查清單
+
+- 在向使用者返回成功前持久化 schema version, tool name, validated arguments。
+- 使用 AI Sonar 公開 API 與模型契約；不要依賴供應商執行細節。
+- 讓重試保持冪等，避免重複生成或重複計費。
+- 日誌要便於支援排障，但不要儲存密鑰或私有 payload。
+- 生產流量變更前先在預發環境驗證行為。
+
+## 相關頁面
+
+- [非同步任務與輪詢](/zh-Hant/guides/async-jobs-polling)
+- [可觀測性與疑難排解](/zh-Hant/guides/observability-troubleshooting)
+- [安全與資料處理](/zh-Hant/guides/security-data-handling)
+- [Models API](/zh-Hant/api-reference/models/list-models)

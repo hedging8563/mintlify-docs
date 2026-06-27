@@ -39,3 +39,27 @@ Gunakan panel OpenAPI interaktif di atas untuk skema yang tepat.
 - Gunakan `custom_id` untuk rekonsiliasi downstream yang idempotent.
 - Harapkan `output_file_id` dan `error_file_id` hanya setelah pekerja menyelesaikan batch.
 - Harga batch mungkin berbeda dari harga sinkron karena aturan diskon `isBatchRequest=true` berlaku.
+
+## Contoh respons
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "batch_abc123",
+  "object": "batch",
+  "endpoint": "/v1/chat/completions",
+  "input_file_id": "file_abc123",
+  "completion_window": "24h",
+  "status": "validating",
+  "output_file_id": null,
+  "error_file_id": null,
+  "created_at": 1706000000
+}
+```
+</ResponseExample>
+
+## Field penting
+
+<ResponseField name="id" type="string">Identifier untuk panggilan lanjutan dan support.</ResponseField>
+<ResponseField name="status" type="string">Status lifecycle saat ini untuk resource ini.</ResponseField>
+<ResponseField name="output_file_id" type="string|null">Identifier file yang dipakai API terkait.</ResponseField>

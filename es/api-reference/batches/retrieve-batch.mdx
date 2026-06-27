@@ -33,3 +33,25 @@ Utilice el panel interactivo de OpenAPI arriba para el esquema exacto.
 - Use `custom_id` para la reconciliación idempotente en downstream.
 - Espere `output_file_id` y `error_file_id` solo después de que el trabajador finalice el lote.
 - La tarificación por lotes puede diferir de la tarificación sincrónica porque se aplican las reglas de descuento de `isBatchRequest=true`.
+
+## Ejemplo de respuesta
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "batch_abc123",
+  "object": "batch",
+  "status": "completed",
+  "input_file_id": "file_abc123",
+  "output_file_id": "file_out123",
+  "error_file_id": null,
+  "request_counts": { "total": 100, "completed": 98, "failed": 2 }
+}
+```
+</ResponseExample>
+
+## Campos importantes
+
+<ResponseField name="request_counts" type="object">Lista o payload devuelto por esta respuesta.</ResponseField>
+<ResponseField name="output_file_id" type="string|null">Identificador de archivo usado por APIs relacionadas.</ResponseField>
+<ResponseField name="error_file_id" type="string|null">Identificador de archivo usado por APIs relacionadas.</ResponseField>

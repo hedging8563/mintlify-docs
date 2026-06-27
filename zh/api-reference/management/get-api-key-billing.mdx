@@ -24,3 +24,28 @@ curl -X GET "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/bil
 ## 请求 / 响应
 
 使用上面的交互式 OpenAPI 面板获取确切的模式。
+
+## 响应示例
+
+<ResponseExample>
+```json 200 OK
+{
+  "object": "management.billing",
+  "api_key_id": "ak_abc123",
+  "currency": "USD",
+  "total_cost": "12.3400",
+  "data": [{
+    "billing_transaction_id": "billtxn_abc123",
+    "request_id": "req_abc123",
+    "amount": "0.0012",
+    "created_at": "2026-06-27T00:00:00.000Z"
+  }]
+}
+```
+</ResponseExample>
+
+## 重要字段
+
+<ResponseField name="total_cost" type="string">用于计费对账的 USD 十进制字符串。</ResponseField>
+<ResponseField name="data" type="array">本次响应返回的列表或载荷。</ResponseField>
+<ResponseField name="billing_transaction_id" type="string">可用时返回的计费结算标识符。</ResponseField>

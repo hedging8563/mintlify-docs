@@ -1,0 +1,31 @@
+---
+title: "Sorties structurées et appels d’outils"
+description: "Utilisez JSON Schema, tool calls et fonctions natives via les routes compatibles OpenAI, Anthropic et Gemini."
+---
+
+## Aperçu
+
+Utilisez JSON Schema, tool calls et fonctions natives via les routes compatibles OpenAI, Anthropic et Gemini.
+
+Utilisez les API publiques AI Sonar et contrats de modèles; ne dépendez pas des détails d’exécution fournisseur.
+
+## Règles clés
+
+- Persistez les schema version, tool name, validated arguments avant de signaler le succès à l’utilisateur.
+- Utilisez les API publiques AI Sonar et contrats de modèles; ne dépendez pas des détails d’exécution fournisseur.
+- Rendez les retries idempotents et évitez les générations ou facturations en double.
+
+## Checklist de production
+
+- Persistez les schema version, tool name, validated arguments avant de signaler le succès à l’utilisateur.
+- Utilisez les API publiques AI Sonar et contrats de modèles; ne dépendez pas des détails d’exécution fournisseur.
+- Rendez les retries idempotents et évitez les générations ou facturations en double.
+- Les logs doivent aider le support sans stocker de secrets ni de payloads privés.
+- Vérifiez le comportement en staging avant de modifier le trafic de production.
+
+## Pages liées
+
+- [Tâches asynchrones et polling](/fr/guides/async-jobs-polling)
+- [Observabilité et dépannage](/fr/guides/observability-troubleshooting)
+- [Sécurité et traitement des données](/fr/guides/security-data-handling)
+- [Models API](/fr/api-reference/models/list-models)

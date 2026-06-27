@@ -35,3 +35,24 @@ Use the interactive OpenAPI panel above for the exact schema.
 - Use `custom_id` for idempotent downstream reconciliation.
 - Expect `output_file_id` and `error_file_id` only after the worker finalizes the batch.
 - Batch pricing may differ from synchronous pricing because `isBatchRequest=true` discount rules apply.
+
+## Response example
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "file_abc123",
+  "object": "file",
+  "bytes": 32768,
+  "created_at": 1706000000,
+  "filename": "batch-input.jsonl",
+  "purpose": "batch"
+}
+```
+</ResponseExample>
+
+## Important fields
+
+<ResponseField name="id" type="string">File identifier used by related APIs.</ResponseField>
+<ResponseField name="filename" type="string">Identifier used for follow-up calls and support.</ResponseField>
+<ResponseField name="purpose" type="string">Event or message type returned by the API.</ResponseField>

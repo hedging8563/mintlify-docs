@@ -26,3 +26,25 @@ curl -X GET "https://api.aisonar.dev/v1/management/api-keys" \
 ## Request / Response
 
 Use the interactive OpenAPI panel above for the exact schema.
+
+## Response example
+
+<ResponseExample>
+```json 200 OK
+{
+  "object": "list",
+  "data": [{
+    "id": "ak_abc123",
+    "name": "Production app",
+    "status": "active",
+    "created_at": "2026-06-27T00:00:00.000Z",
+    "last_used_at": "2026-06-27T01:00:00.000Z"
+  }]
+}
+```
+</ResponseExample>
+
+## Important fields
+
+<ResponseField name="data" type="array">Returned list or payload for this response.</ResponseField>
+<ResponseField name="status" type="string">Current lifecycle state for this resource.</ResponseField>

@@ -25,3 +25,23 @@ curl -X GET "https://api.aisonar.dev/v1/management/balance" \
 ## 요청 / 응답
 
 정확한 스키마를 위해 위의 대화형 OpenAPI 패널을 사용하세요.
+
+## 응답 예시
+
+<ResponseExample>
+```json 200 OK
+{
+  "object": "management.balance",
+  "currency": "USD",
+  "available_balance": "42.50",
+  "pending_usage": "1.25",
+  "updated_at": "2026-06-27T00:00:00.000Z"
+}
+```
+</ResponseExample>
+
+## 중요 필드
+
+<ResponseField name="available_balance" type="string">과금 대조에 사용하는 USD decimal string입니다.</ResponseField>
+<ResponseField name="pending_usage" type="string">과금 대조에 사용하는 USD decimal string입니다.</ResponseField>
+<ResponseField name="updated_at" type="string">API가 반환하는 ISO 시간 또는 Unix timestamp입니다.</ResponseField>

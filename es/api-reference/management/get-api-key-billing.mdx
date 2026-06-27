@@ -24,3 +24,28 @@ curl -X GET "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/bil
 ## Solicitud / Respuesta
 
 Utiliza el panel interactivo de OpenAPI arriba para el esquema exacto.
+
+## Ejemplo de respuesta
+
+<ResponseExample>
+```json 200 OK
+{
+  "object": "management.billing",
+  "api_key_id": "ak_abc123",
+  "currency": "USD",
+  "total_cost": "12.3400",
+  "data": [{
+    "billing_transaction_id": "billtxn_abc123",
+    "request_id": "req_abc123",
+    "amount": "0.0012",
+    "created_at": "2026-06-27T00:00:00.000Z"
+  }]
+}
+```
+</ResponseExample>
+
+## Campos importantes
+
+<ResponseField name="total_cost" type="string">Cadena decimal en USD para conciliación de facturación.</ResponseField>
+<ResponseField name="data" type="array">Lista o payload devuelto por esta respuesta.</ResponseField>
+<ResponseField name="billing_transaction_id" type="string">Identificador de liquidación de facturación cuando está disponible.</ResponseField>

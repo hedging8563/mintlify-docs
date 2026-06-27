@@ -36,3 +36,24 @@ curl -X GET "https://api.aisonar.dev/v1/files/file_abc123" \
 - 使用 `custom_id` 進行冪等的下游對帳。
 - 只有在工作者完成批次後，才會期望 `output_file_id` 和 `error_file_id`。
 - 批次定價可能與同步定價不同，因為適用 `isBatchRequest=true` 的折扣規則。
+
+## 回應範例
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "file_abc123",
+  "object": "file",
+  "bytes": 32768,
+  "created_at": 1706000000,
+  "filename": "batch-input.jsonl",
+  "purpose": "batch"
+}
+```
+</ResponseExample>
+
+## 重要欄位
+
+<ResponseField name="id" type="string">供相關 API 使用的檔案識別符。</ResponseField>
+<ResponseField name="filename" type="string">用於後續呼叫和支援排障的識別符。</ResponseField>
+<ResponseField name="purpose" type="string">API 返回的事件或訊息類型。</ResponseField>

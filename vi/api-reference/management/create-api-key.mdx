@@ -43,3 +43,23 @@ curl -X POST "https://api.aisonar.dev/v1/management/api-keys" \
 ## Yêu Cầu / Phản Hồi
 
 Sử dụng bảng OpenAPI tương tác ở trên để xem schema và các trường response chính xác.
+
+## Ví dụ phản hồi
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "ak_abc123",
+  "object": "management.api_key",
+  "name": "Production app",
+  "status": "active",
+  "key": "sk-live-redacted",
+  "created_at": "2026-06-27T00:00:00.000Z"
+}
+```
+</ResponseExample>
+
+## Trường quan trọng
+
+<ResponseField name="key" type="string">Giá trị bí mật. Hãy lưu ngay và không expose cho client.</ResponseField>
+<ResponseField name="id" type="string">Định danh dùng cho lần gọi tiếp theo và hỗ trợ.</ResponseField>

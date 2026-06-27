@@ -52,3 +52,24 @@ This same `/v1/files` route also supports the Anthropic Files API path.
 - In Anthropic mode, upload the original file directly and do not send `purpose=batch`.
 - The returned `file_id` is bound to the same official Anthropic channel/workspace and should be reused from `/v1/messages` requests.
 - If you plan to reference the uploaded file from Anthropic message content, keep using Anthropic-native headers (`x-api-key`, `anthropic-version`, and the beta header when required).
+
+## Response example
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "file_abc123",
+  "object": "file",
+  "bytes": 32768,
+  "created_at": 1706000000,
+  "filename": "batch-input.jsonl",
+  "purpose": "batch"
+}
+```
+</ResponseExample>
+
+## Important fields
+
+<ResponseField name="id" type="string">File identifier used by related APIs.</ResponseField>
+<ResponseField name="purpose" type="string">Event or message type returned by the API.</ResponseField>
+<ResponseField name="bytes" type="integer">USD decimal string for billing reconciliation.</ResponseField>

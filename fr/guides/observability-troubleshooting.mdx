@@ -1,0 +1,31 @@
+---
+title: "Observabilité et dépannage"
+description: "Utilisez request_id, billing_transaction_id, task_id et les logs du tableau de bord pour déboguer la production."
+---
+
+## Aperçu
+
+Utilisez request_id, billing_transaction_id, task_id et les logs du tableau de bord pour déboguer la production.
+
+Utilisez les API publiques AI Sonar et contrats de modèles; ne dépendez pas des détails d’exécution fournisseur.
+
+## Règles clés
+
+- Persistez les `request_id`, `billing_transaction_id`, `task_id` avant de signaler le succès à l’utilisateur.
+- Utilisez les API publiques AI Sonar et contrats de modèles; ne dépendez pas des détails d’exécution fournisseur.
+- Rendez les retries idempotents et évitez les générations ou facturations en double.
+
+## Checklist de production
+
+- Persistez les `request_id`, `billing_transaction_id`, `task_id` avant de signaler le succès à l’utilisateur.
+- Utilisez les API publiques AI Sonar et contrats de modèles; ne dépendez pas des détails d’exécution fournisseur.
+- Rendez les retries idempotents et évitez les générations ou facturations en double.
+- Les logs doivent aider le support sans stocker de secrets ni de payloads privés.
+- Vérifiez le comportement en staging avant de modifier le trafic de production.
+
+## Pages liées
+
+- [Tâches asynchrones et polling](/fr/guides/async-jobs-polling)
+- [Observabilité et dépannage](/fr/guides/observability-troubleshooting)
+- [Sécurité et traitement des données](/fr/guides/security-data-handling)
+- [Models API](/fr/api-reference/models/list-models)

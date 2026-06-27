@@ -10,7 +10,7 @@ Devuelve las claves API de usuario de la organización asociada al token de admi
 
 ## Notas
 
-- System-managed keys are excluded.
+- Las claves gestionadas por el sistema se excluyen.
 
 ## Ejemplo
 
@@ -24,3 +24,25 @@ curl -X GET "https://api.aisonar.dev/v1/management/api-keys" \
 ## Solicitud / Respuesta
 
 Utiliza el panel interactivo de OpenAPI arriba para el esquema exacto.
+
+## Ejemplo de respuesta
+
+<ResponseExample>
+```json 200 OK
+{
+  "object": "list",
+  "data": [{
+    "id": "ak_abc123",
+    "name": "Production app",
+    "status": "active",
+    "created_at": "2026-06-27T00:00:00.000Z",
+    "last_used_at": "2026-06-27T01:00:00.000Z"
+  }]
+}
+```
+</ResponseExample>
+
+## Campos importantes
+
+<ResponseField name="data" type="array">Lista o payload devuelto por esta respuesta.</ResponseField>
+<ResponseField name="status" type="string">Estado actual del ciclo de vida de este recurso.</ResponseField>

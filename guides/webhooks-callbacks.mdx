@@ -1,0 +1,31 @@
+---
+title: "Webhooks & Callback Policy"
+description: "Understand AI Sonar callback support, polling fallbacks, and how to design for future webhook delivery."
+---
+
+## Overview
+
+Understand AI Sonar callback support, polling fallbacks, and how to design for future webhook delivery.
+
+Use public AI Sonar APIs and model contracts; do not depend on provider execution details.
+
+## Key rules
+
+- Persist `task_id`, `poll_url`, callback payload id before returning success to users.
+- Use public AI Sonar APIs and model contracts; do not depend on provider execution details.
+- Make retries idempotent and avoid duplicate billable work.
+
+## Production checklist
+
+- Persist `task_id`, `poll_url`, callback payload id before returning success to users.
+- Use public AI Sonar APIs and model contracts; do not depend on provider execution details.
+- Make retries idempotent and avoid duplicate billable work.
+- Keep logs useful for support without storing secrets or private payloads.
+- Verify behavior in staging before changing production traffic.
+
+## Related pages
+
+- [Async Jobs & Polling](/guides/async-jobs-polling)
+- [Observability & Troubleshooting](/guides/observability-troubleshooting)
+- [Security & Data Handling](/guides/security-data-handling)
+- [Models API](/api-reference/models/list-models)

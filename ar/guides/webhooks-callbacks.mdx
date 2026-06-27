@@ -1,0 +1,31 @@
+---
+title: "Webhooks وسياسة callbacks"
+description: "افهم حدود callbacks في AI Sonar وبديل polling وتصميم webhooks المستقبلي."
+---
+
+## نظرة عامة
+
+افهم حدود callbacks في AI Sonar وبديل polling وتصميم webhooks المستقبلي.
+
+استخدم واجهات AI Sonar العامة وعقود النماذج؛ ولا تعتمد على تفاصيل تنفيذ المزوّد.
+
+## قواعد أساسية
+
+- احفظ `task_id`, `poll_url`, callback payload id قبل إرجاع النجاح للمستخدم.
+- استخدم واجهات AI Sonar العامة وعقود النماذج؛ ولا تعتمد على تفاصيل تنفيذ المزوّد.
+- اجعل retries آمنة للتكرار وتجنب التوليد أو الفوترة المزدوجة.
+
+## قائمة فحص الإنتاج
+
+- احفظ `task_id`, `poll_url`, callback payload id قبل إرجاع النجاح للمستخدم.
+- استخدم واجهات AI Sonar العامة وعقود النماذج؛ ولا تعتمد على تفاصيل تنفيذ المزوّد.
+- اجعل retries آمنة للتكرار وتجنب التوليد أو الفوترة المزدوجة.
+- يجب أن تساعد logs الدعم دون تخزين أسرار أو payloads خاصة.
+- تحقق من السلوك في staging قبل تغيير حركة الإنتاج.
+
+## صفحات ذات صلة
+
+- [المهام غير المتزامنة والاستعلام الدوري](/ar/guides/async-jobs-polling)
+- [المراقبة واستكشاف الأخطاء](/ar/guides/observability-troubleshooting)
+- [الأمان ومعالجة البيانات](/ar/guides/security-data-handling)
+- [Models API](/ar/api-reference/models/list-models)

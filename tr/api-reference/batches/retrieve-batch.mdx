@@ -33,3 +33,25 @@ Kesin şemayı almak için yukarıdaki etkileşimli OpenAPI panelini kullanın.
 - İdempotent aşağı akış uzlaştırması için `custom_id` kullanın.
 - Çalışan batch'i tamamladıktan sonra yalnızca `output_file_id` ve `error_file_id` bekleyin.
 - Batch fiyatlandırması, `isBatchRequest=true` indirim kuralları uygulandığı için senkron fiyatlandırmadan farklı olabilir.
+
+## Yanıt örneği
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "batch_abc123",
+  "object": "batch",
+  "status": "completed",
+  "input_file_id": "file_abc123",
+  "output_file_id": "file_out123",
+  "error_file_id": null,
+  "request_counts": { "total": 100, "completed": 98, "failed": 2 }
+}
+```
+</ResponseExample>
+
+## Önemli alanlar
+
+<ResponseField name="request_counts" type="object">Bu yanıtta dönen liste veya payload.</ResponseField>
+<ResponseField name="output_file_id" type="string|null">İlgili API’lerde kullanılan file identifier.</ResponseField>
+<ResponseField name="error_file_id" type="string|null">İlgili API’lerde kullanılan file identifier.</ResponseField>

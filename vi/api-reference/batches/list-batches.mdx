@@ -33,3 +33,20 @@ Sử dụng bảng điều khiển OpenAPI tương tác ở trên để có sơ 
 - Sử dụng `custom_id` cho việc đối chiếu không thay đổi ở phía hạ nguồn.
 - Mong đợi `output_file_id` và `error_file_id` chỉ sau khi công nhân hoàn tất lô.
 - Giá lô có thể khác với giá đồng bộ vì các quy tắc giảm giá `isBatchRequest=true` áp dụng.
+
+## Ví dụ phản hồi
+
+<ResponseExample>
+```json 200 OK
+{
+  "object": "list",
+  "data": [{ "id": "batch_abc123", "object": "batch", "status": "completed" }]
+}
+```
+</ResponseExample>
+
+## Trường quan trọng
+
+<ResponseField name="object" type="string">Loại object của phản hồi.</ResponseField>
+<ResponseField name="data" type="array">Danh sách hoặc payload được trả về trong phản hồi.</ResponseField>
+<ResponseField name="status" type="string">Trạng thái vòng đời hiện tại của tài nguyên.</ResponseField>

@@ -36,3 +36,17 @@ Use o painel OpenAPI interativo acima para ver o esquema exato.
 - Use `custom_id` para reconciliação downstream idempotente.
 - Espere `output_file_id` e `error_file_id` apenas depois que o worker finalizar o lote.
 - A precificação do lote pode ser diferente da precificação síncrona porque as regras de desconto `isBatchRequest=true` se aplicam.
+
+## Exemplo de resposta
+
+<ResponseExample>
+```jsonl 200 OK
+{"custom_id":"request-1","response":{"status_code":200,"body":{"id":"chatcmpl_abc123"}}}
+{"custom_id":"request-2","error":{"code":"invalid_request_error","message":"Invalid model"}}
+```
+</ResponseExample>
+
+## Campos importantes
+
+<ResponseField name="body" type="binary|string">Corpo bruto da resposta. Salve diretamente sem interpretar como JSON.</ResponseField>
+<ResponseField name="custom_id" type="string">Identificador para chamadas seguintes e suporte.</ResponseField>

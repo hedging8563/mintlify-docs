@@ -6,7 +6,7 @@ description: "Trả về chi tiết mức sử dụng có phân trang cho một 
 
 ## Tổng quan
 
-Endpoint này trả về chi tiết mức sử dụng theo API key mà không làm lộ metadata routing vật lý.
+Endpoint này trả về chi tiết mức sử dụng theo API key mà không làm lộ chi tiết thực thi của provider.
 
 ## Tham số query
 
@@ -42,3 +42,29 @@ curl "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/usage?page
 ## Yêu cầu / Phản hồi
 
 Hãy dùng bảng OpenAPI tương tác phía trên để xem schema chính xác và các trường phản hồi.
+
+## Ví dụ phản hồi
+
+<ResponseExample>
+```json 200 OK
+{
+  "object": "management.usage",
+  "data": [{
+    "request_id": "req_abc123",
+    "api_key_id": "ak_abc123",
+    "model": "gpt-5-mini",
+    "endpoint": "/v1/chat/completions",
+    "total_cost": "0.0012",
+    "currency": "USD",
+    "billing_transaction_id": "billtxn_abc123",
+    "created_at": "2026-06-27T00:00:00.000Z"
+  }]
+}
+```
+</ResponseExample>
+
+## Trường quan trọng
+
+<ResponseField name="request_id" type="string">Định danh request công khai cho hỗ trợ và đối soát.</ResponseField>
+<ResponseField name="billing_transaction_id" type="string">Định danh settlement billing khi có.</ResponseField>
+<ResponseField name="total_cost" type="string">Chuỗi thập phân USD để đối soát billing.</ResponseField>

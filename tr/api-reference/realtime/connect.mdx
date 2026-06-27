@@ -52,3 +52,23 @@ AI Sonar, istemciniz ile yönlendirilen realtime sağlayıcı arasında WebSocke
 Realtime oturumlar aynı API key bakiyesini kullanır. AI Sonar socket açıldığında küçük bir tahmini tutarı önceden düşer, oturum kapanınca kesinleştirir veya iade eder.
 
 Oturum tamamlandığında client socket’i kapatın. Upstream önce kapatırsa AI Sonar mümkün olduğunda close code’u iletir.
+
+## Yanıt örneği
+
+<ResponseExample>
+```json Connected
+{
+  "type": "session.created",
+  "session": {
+    "id": "sess_abc123",
+    "model": "gpt-4o-realtime-preview",
+    "modalities": ["text", "audio"]
+  }
+}
+```
+</ResponseExample>
+
+## Önemli alanlar
+
+<ResponseField name="type" type="string">API tarafından dönen event veya message type.</ResponseField>
+<ResponseField name="session.id" type="string">Sonraki çağrılar ve support için kullanılan identifier.</ResponseField>

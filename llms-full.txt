@@ -2055,6 +2055,289 @@ Configure low balance alerts in your dashboard to avoid service interruption.
 ---
 
 
+## Platform Guides
+
+### Async Jobs & Polling
+
+> Track long-running media, batch, and task workflows without relying on provider-specific status endpoints.
+
+URL: https://docs.aisonar.dev/guides/async-jobs-polling
+
+## Overview
+
+Track long-running media, batch, and task workflows without relying on provider-specific status endpoints.
+
+Use public AI Sonar APIs and model contracts; do not depend on provider execution details.
+
+## Key rules
+
+- Persist `task_id`, `poll_url`, terminal status before returning success to users.
+- Use public AI Sonar APIs and model contracts; do not depend on provider execution details.
+- Make retries idempotent and avoid duplicate billable work.
+
+## Production checklist
+
+- Persist `task_id`, `poll_url`, terminal status before returning success to users.
+- Use public AI Sonar APIs and model contracts; do not depend on provider execution details.
+- Make retries idempotent and avoid duplicate billable work.
+- Keep logs useful for support without storing secrets or private payloads.
+- Verify behavior in staging before changing production traffic.
+
+## Related pages
+
+- [Async Jobs & Polling](/guides/async-jobs-polling)
+- [Observability & Troubleshooting](/guides/observability-troubleshooting)
+- [Security & Data Handling](/guides/security-data-handling)
+- [Models API](/api-reference/models/list-models)
+
+---
+
+### Webhooks & Callback Policy
+
+> Understand AI Sonar callback support, polling fallbacks, and how to design for future webhook delivery.
+
+URL: https://docs.aisonar.dev/guides/webhooks-callbacks
+
+## Overview
+
+Understand AI Sonar callback support, polling fallbacks, and how to design for future webhook delivery.
+
+Use public AI Sonar APIs and model contracts; do not depend on provider execution details.
+
+## Key rules
+
+- Persist `task_id`, `poll_url`, callback payload id before returning success to users.
+- Use public AI Sonar APIs and model contracts; do not depend on provider execution details.
+- Make retries idempotent and avoid duplicate billable work.
+
+## Production checklist
+
+- Persist `task_id`, `poll_url`, callback payload id before returning success to users.
+- Use public AI Sonar APIs and model contracts; do not depend on provider execution details.
+- Make retries idempotent and avoid duplicate billable work.
+- Keep logs useful for support without storing secrets or private payloads.
+- Verify behavior in staging before changing production traffic.
+
+## Related pages
+
+- [Async Jobs & Polling](/guides/async-jobs-polling)
+- [Observability & Troubleshooting](/guides/observability-troubleshooting)
+- [Security & Data Handling](/guides/security-data-handling)
+- [Models API](/api-reference/models/list-models)
+
+---
+
+### Observability & Troubleshooting
+
+> Use request IDs, billing transaction IDs, task IDs, and dashboard logs to debug production integrations.
+
+URL: https://docs.aisonar.dev/guides/observability-troubleshooting
+
+## Overview
+
+Use request IDs, billing transaction IDs, task IDs, and dashboard logs to debug production integrations.
+
+Use public AI Sonar APIs and model contracts; do not depend on provider execution details.
+
+## Key rules
+
+- Persist `request_id`, `billing_transaction_id`, `task_id` before returning success to users.
+- Use public AI Sonar APIs and model contracts; do not depend on provider execution details.
+- Make retries idempotent and avoid duplicate billable work.
+
+## Production checklist
+
+- Persist `request_id`, `billing_transaction_id`, `task_id` before returning success to users.
+- Use public AI Sonar APIs and model contracts; do not depend on provider execution details.
+- Make retries idempotent and avoid duplicate billable work.
+- Keep logs useful for support without storing secrets or private payloads.
+- Verify behavior in staging before changing production traffic.
+
+## Related pages
+
+- [Async Jobs & Polling](/guides/async-jobs-polling)
+- [Observability & Troubleshooting](/guides/observability-troubleshooting)
+- [Security & Data Handling](/guides/security-data-handling)
+- [Models API](/api-reference/models/list-models)
+
+---
+
+### Security & Data Handling
+
+> Handle API keys, user media, logs, and generated assets safely in AI Sonar integrations.
+
+URL: https://docs.aisonar.dev/guides/security-data-handling
+
+## Overview
+
+Handle API keys, user media, logs, and generated assets safely in AI Sonar integrations.
+
+Use public AI Sonar APIs and model contracts; do not depend on provider execution details.
+
+## Key rules
+
+- Persist API key scope, media URL lifetime, audit events before returning success to users.
+- Use public AI Sonar APIs and model contracts; do not depend on provider execution details.
+- Make retries idempotent and avoid duplicate billable work.
+
+## Production checklist
+
+- Persist API key scope, media URL lifetime, audit events before returning success to users.
+- Use public AI Sonar APIs and model contracts; do not depend on provider execution details.
+- Make retries idempotent and avoid duplicate billable work.
+- Keep logs useful for support without storing secrets or private payloads.
+- Verify behavior in staging before changing production traffic.
+
+## Related pages
+
+- [Async Jobs & Polling](/guides/async-jobs-polling)
+- [Observability & Troubleshooting](/guides/observability-troubleshooting)
+- [Security & Data Handling](/guides/security-data-handling)
+- [Models API](/api-reference/models/list-models)
+
+---
+
+### Migration Guides
+
+> Move OpenAI, Anthropic, Gemini, OpenRouter, LiteLLM, and media workloads to AI Sonar with minimal behavior drift.
+
+URL: https://docs.aisonar.dev/guides/migration-guides
+
+## Overview
+
+Move OpenAI, Anthropic, Gemini, OpenRouter, LiteLLM, and media workloads to AI Sonar with minimal behavior drift.
+
+Use public AI Sonar APIs and model contracts; do not depend on provider execution details.
+
+## Key rules
+
+- Persist old model ID, new model ID, rollout owner before returning success to users.
+- Use public AI Sonar APIs and model contracts; do not depend on provider execution details.
+- Make retries idempotent and avoid duplicate billable work.
+
+## Production checklist
+
+- Persist old model ID, new model ID, rollout owner before returning success to users.
+- Use public AI Sonar APIs and model contracts; do not depend on provider execution details.
+- Make retries idempotent and avoid duplicate billable work.
+- Keep logs useful for support without storing secrets or private payloads.
+- Verify behavior in staging before changing production traffic.
+
+## Related pages
+
+- [Async Jobs & Polling](/guides/async-jobs-polling)
+- [Observability & Troubleshooting](/guides/observability-troubleshooting)
+- [Security & Data Handling](/guides/security-data-handling)
+- [Models API](/api-reference/models/list-models)
+
+---
+
+### Provider Routing & Reliability
+
+> Understand AI Sonar public routing guarantees, failover behavior, and what is intentionally abstracted away.
+
+URL: https://docs.aisonar.dev/guides/provider-routing-reliability
+
+## Overview
+
+Understand AI Sonar public routing guarantees, failover behavior, and what is intentionally abstracted away.
+
+Use public AI Sonar APIs and model contracts; do not depend on provider execution details.
+
+## Key rules
+
+- Persist model ID, endpoint, retry decision before returning success to users.
+- Use public AI Sonar APIs and model contracts; do not depend on provider execution details.
+- Make retries idempotent and avoid duplicate billable work.
+
+## Production checklist
+
+- Persist model ID, endpoint, retry decision before returning success to users.
+- Use public AI Sonar APIs and model contracts; do not depend on provider execution details.
+- Make retries idempotent and avoid duplicate billable work.
+- Keep logs useful for support without storing secrets or private payloads.
+- Verify behavior in staging before changing production traffic.
+
+## Related pages
+
+- [Async Jobs & Polling](/guides/async-jobs-polling)
+- [Observability & Troubleshooting](/guides/observability-troubleshooting)
+- [Security & Data Handling](/guides/security-data-handling)
+- [Models API](/api-reference/models/list-models)
+
+---
+
+### Model Lifecycle & Deprecations
+
+> Plan around model availability, pricing changes, aliases, and provider capability drift.
+
+URL: https://docs.aisonar.dev/guides/model-lifecycle-deprecations
+
+## Overview
+
+Plan around model availability, pricing changes, aliases, and provider capability drift.
+
+Use public AI Sonar APIs and model contracts; do not depend on provider execution details.
+
+## Key rules
+
+- Persist model ID, price snapshot, replacement model before returning success to users.
+- Use public AI Sonar APIs and model contracts; do not depend on provider execution details.
+- Make retries idempotent and avoid duplicate billable work.
+
+## Production checklist
+
+- Persist model ID, price snapshot, replacement model before returning success to users.
+- Use public AI Sonar APIs and model contracts; do not depend on provider execution details.
+- Make retries idempotent and avoid duplicate billable work.
+- Keep logs useful for support without storing secrets or private payloads.
+- Verify behavior in staging before changing production traffic.
+
+## Related pages
+
+- [Async Jobs & Polling](/guides/async-jobs-polling)
+- [Observability & Troubleshooting](/guides/observability-troubleshooting)
+- [Security & Data Handling](/guides/security-data-handling)
+- [Models API](/api-reference/models/list-models)
+
+---
+
+### Structured Outputs & Tool Calling
+
+> Use JSON schemas, tool calls, and native format features across OpenAI, Anthropic, and Gemini-compatible routes.
+
+URL: https://docs.aisonar.dev/guides/structured-outputs-tool-calling
+
+## Overview
+
+Use JSON schemas, tool calls, and native format features across OpenAI, Anthropic, and Gemini-compatible routes.
+
+Use public AI Sonar APIs and model contracts; do not depend on provider execution details.
+
+## Key rules
+
+- Persist schema version, tool name, validated arguments before returning success to users.
+- Use public AI Sonar APIs and model contracts; do not depend on provider execution details.
+- Make retries idempotent and avoid duplicate billable work.
+
+## Production checklist
+
+- Persist schema version, tool name, validated arguments before returning success to users.
+- Use public AI Sonar APIs and model contracts; do not depend on provider execution details.
+- Make retries idempotent and avoid duplicate billable work.
+- Keep logs useful for support without storing secrets or private payloads.
+- Verify behavior in staging before changing production traffic.
+
+## Related pages
+
+- [Async Jobs & Polling](/guides/async-jobs-polling)
+- [Observability & Troubleshooting](/guides/observability-troubleshooting)
+- [Security & Data Handling](/guides/security-data-handling)
+- [Models API](/api-reference/models/list-models)
+
+---
+
+
 ## Media Guides
 
 ### Image Generation
@@ -3152,6 +3435,10 @@ This same `/v1/files` route also supports the Anthropic Files API path.
 - The returned `file_id` is bound to the same official Anthropic channel/workspace and should be reused from `/v1/messages` requests.
 - If you plan to reference the uploaded file from Anthropic message content, keep using Anthropic-native headers (`x-api-key`, `anthropic-version`, and the beta header when required).
 
+## Response example
+
+## Important fields
+
 ---
 
 ### List Files
@@ -3186,6 +3473,10 @@ Use the interactive OpenAPI panel above for the exact schema.
 - Expect `output_file_id` and `error_file_id` only after the worker finalizes the batch.
 - Batch pricing may differ from synchronous pricing because `isBatchRequest=true` discount rules apply.
 
+## Response example
+
+## Important fields
+
 ---
 
 ### Retrieve File
@@ -3218,6 +3509,10 @@ Use the interactive OpenAPI panel above for the exact schema.
 - Use `custom_id` for idempotent downstream reconciliation.
 - Expect `output_file_id` and `error_file_id` only after the worker finalizes the batch.
 - Batch pricing may differ from synchronous pricing because `isBatchRequest=true` discount rules apply.
+
+## Response example
+
+## Important fields
 
 ---
 
@@ -3252,6 +3547,10 @@ Use the interactive OpenAPI panel above for the exact schema.
 - Expect `output_file_id` and `error_file_id` only after the worker finalizes the batch.
 - Batch pricing may differ from synchronous pricing because `isBatchRequest=true` discount rules apply.
 
+## Response example
+
+## Important fields
+
 ---
 
 ### Create Batch
@@ -3282,6 +3581,10 @@ Use the interactive OpenAPI panel above for the exact schema.
 - Use `custom_id` for idempotent downstream reconciliation.
 - Expect `output_file_id` and `error_file_id` only after the worker finalizes the batch.
 - Batch pricing may differ from synchronous pricing because `isBatchRequest=true` discount rules apply.
+
+## Response example
+
+## Important fields
 
 ---
 
@@ -3314,6 +3617,10 @@ Use the interactive OpenAPI panel above for the exact schema.
 - Expect `output_file_id` and `error_file_id` only after the worker finalizes the batch.
 - Batch pricing may differ from synchronous pricing because `isBatchRequest=true` discount rules apply.
 
+## Response example
+
+## Important fields
+
 ---
 
 ### Retrieve Batch
@@ -3345,6 +3652,10 @@ Use the interactive OpenAPI panel above for the exact schema.
 - Expect `output_file_id` and `error_file_id` only after the worker finalizes the batch.
 - Batch pricing may differ from synchronous pricing because `isBatchRequest=true` discount rules apply.
 
+## Response example
+
+## Important fields
+
 ---
 
 ### Cancel Batch
@@ -3375,6 +3686,10 @@ Use the interactive OpenAPI panel above for the exact schema.
 - Use `custom_id` for idempotent downstream reconciliation.
 - Expect `output_file_id` and `error_file_id` only after the worker finalizes the batch.
 - Batch pricing may differ from synchronous pricing because `isBatchRequest=true` discount rules apply.
+
+## Response example
+
+## Important fields
 
 ---
 
@@ -3645,6 +3960,10 @@ Returns the audio file in the requested format.
 | `shimmer` | Soft, gentle |
 | `verse` | Dynamic, versatile |
 
+## Response example
+
+## Important fields
+
 ---
 
 ### Create Transcription
@@ -3733,6 +4052,10 @@ AI Sonar forwards WebSocket messages between your client and the routed realtime
 Realtime sessions use the same API key balance as other endpoints. AI Sonar pre-deducts a small estimate when the socket opens, then settles or refunds when the session closes.
 
 Close the client socket when the session is complete. If the upstream closes first, AI Sonar relays that close code to your client when possible.
+
+## Response example
+
+## Important fields
 
 ---
 
@@ -4578,7 +4901,7 @@ At least one PATCH field must be provided.
 - `accessChannel=platform` means the request was billed via AI Sonar’s platform channel.
 - `accessChannel=byok` means the request used your own upstream provider key.
 
-Responses expose public billing and reporting fields only. Internal routing details and physical provider metadata remain hidden.
+Responses expose public billing and reporting fields only. Provider execution details are not part of the public management contract.
 - `/usage` line items can include `billing_transaction_id` once the underlying request has reached settled billing state. Use `request_id` + `billing_transaction_id` for request-level reconciliation.
 
 ## Billing Pagination Note
@@ -4625,6 +4948,10 @@ This endpoint returns the current balance totals for the organization associated
 
 Use the interactive OpenAPI panel above for the exact schema.
 
+## Response example
+
+## Important fields
+
 ---
 
 ### List API Keys
@@ -4648,6 +4975,10 @@ Returns user API keys in the organization associated with the current management
 ## Request / Response
 
 Use the interactive OpenAPI panel above for the exact schema.
+
+## Response example
+
+## Important fields
 
 ---
 
@@ -4684,6 +5015,10 @@ Creates a new `type=user` API key in the organization associated with the curren
 ## Request / Response
 
 Use the interactive OpenAPI panel above for the exact schema and response fields.
+
+## Response example
+
+## Important fields
 
 ---
 
@@ -4723,6 +5058,10 @@ At least one field must be provided.
 
 Use the interactive OpenAPI panel above for the exact schema and response fields.
 
+## Response example
+
+## Important fields
+
 ---
 
 ### Get API Key Usage
@@ -4733,7 +5072,7 @@ URL: https://docs.aisonar.dev/api-reference/management/get-api-key-usage
 
 ## Overview
 
-This endpoint returns key-level usage details without exposing physical routing metadata.
+This endpoint returns key-level usage details without exposing provider execution details.
 
 ## Query Parameters
 
@@ -4757,13 +5096,17 @@ If both `startDate` and `endDate` are present, `startDate` must be earlier than 
 - The response is paginated.
 - The response includes public billing and reporting fields only.
 - Each usage item can include `billing_transaction_id` after the underlying request reaches settled billing state. Use it together with `request_id` for request-level reconciliation.
-- Internal routing and physical channel metadata are intentionally hidden.
+- Provider execution details are intentionally hidden from public management responses.
 
 ## Example
 
 ## Request / Response
 
 Use the interactive OpenAPI panel above for the exact schema and response fields.
+
+## Response example
+
+## Important fields
 
 ---
 
@@ -4788,6 +5131,10 @@ This endpoint returns consumption-only billing aggregates for the selected API k
 ## Request / Response
 
 Use the interactive OpenAPI panel above for the exact schema.
+
+## Response example
+
+## Important fields
 
 ---
 

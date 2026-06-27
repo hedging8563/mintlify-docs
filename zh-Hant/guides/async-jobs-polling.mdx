@@ -1,0 +1,31 @@
+---
+title: "非同步任務與輪詢"
+description: "追蹤媒體、批次與任務工作流，不依賴供應商專有狀態端點。"
+---
+
+## 概述
+
+追蹤媒體、批次與任務工作流，不依賴供應商專有狀態端點。
+
+使用 AI Sonar 公開 API 與模型契約；不要依賴供應商執行細節。
+
+## 關鍵規則
+
+- 在向使用者返回成功前持久化 `task_id`, `poll_url`, terminal status。
+- 使用 AI Sonar 公開 API 與模型契約；不要依賴供應商執行細節。
+- 讓重試保持冪等，避免重複生成或重複計費。
+
+## 生產檢查清單
+
+- 在向使用者返回成功前持久化 `task_id`, `poll_url`, terminal status。
+- 使用 AI Sonar 公開 API 與模型契約；不要依賴供應商執行細節。
+- 讓重試保持冪等，避免重複生成或重複計費。
+- 日誌要便於支援排障，但不要儲存密鑰或私有 payload。
+- 生產流量變更前先在預發環境驗證行為。
+
+## 相關頁面
+
+- [非同步任務與輪詢](/zh-Hant/guides/async-jobs-polling)
+- [可觀測性與疑難排解](/zh-Hant/guides/observability-troubleshooting)
+- [安全與資料處理](/zh-Hant/guides/security-data-handling)
+- [Models API](/zh-Hant/api-reference/models/list-models)

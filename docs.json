@@ -72,6 +72,19 @@
                 ]
               },
               {
+                "group": "Platform Guides",
+                "pages": [
+                  "guides/async-jobs-polling",
+                  "guides/webhooks-callbacks",
+                  "guides/observability-troubleshooting",
+                  "guides/security-data-handling",
+                  "guides/migration-guides",
+                  "guides/provider-routing-reliability",
+                  "guides/model-lifecycle-deprecations",
+                  "guides/structured-outputs-tool-calling"
+                ]
+              },
+              {
                 "group": "Media Guides",
                 "pages": [
                   "guides/image-generation",
@@ -250,6 +263,19 @@
                   "zh/guides/rate-limits",
                   "zh/guides/billing",
                   "zh/guides/best-practices"
+                ]
+              },
+              {
+                "group": "平台指南",
+                "pages": [
+                  "zh/guides/async-jobs-polling",
+                  "zh/guides/webhooks-callbacks",
+                  "zh/guides/observability-troubleshooting",
+                  "zh/guides/security-data-handling",
+                  "zh/guides/migration-guides",
+                  "zh/guides/provider-routing-reliability",
+                  "zh/guides/model-lifecycle-deprecations",
+                  "zh/guides/structured-outputs-tool-calling"
                 ]
               },
               {
@@ -434,6 +460,19 @@
                 ]
               },
               {
+                "group": "平台指南",
+                "pages": [
+                  "zh-Hant/guides/async-jobs-polling",
+                  "zh-Hant/guides/webhooks-callbacks",
+                  "zh-Hant/guides/observability-troubleshooting",
+                  "zh-Hant/guides/security-data-handling",
+                  "zh-Hant/guides/migration-guides",
+                  "zh-Hant/guides/provider-routing-reliability",
+                  "zh-Hant/guides/model-lifecycle-deprecations",
+                  "zh-Hant/guides/structured-outputs-tool-calling"
+                ]
+              },
+              {
                 "group": "媒體指南",
                 "pages": [
                   "zh-Hant/guides/image-generation",
@@ -612,6 +651,19 @@
                   "ja/guides/rate-limits",
                   "ja/guides/billing",
                   "ja/guides/best-practices"
+                ]
+              },
+              {
+                "group": "プラットフォームガイド",
+                "pages": [
+                  "ja/guides/async-jobs-polling",
+                  "ja/guides/webhooks-callbacks",
+                  "ja/guides/observability-troubleshooting",
+                  "ja/guides/security-data-handling",
+                  "ja/guides/migration-guides",
+                  "ja/guides/provider-routing-reliability",
+                  "ja/guides/model-lifecycle-deprecations",
+                  "ja/guides/structured-outputs-tool-calling"
                 ]
               },
               {
@@ -796,6 +848,19 @@
                 ]
               },
               {
+                "group": "플랫폼 가이드",
+                "pages": [
+                  "ko/guides/async-jobs-polling",
+                  "ko/guides/webhooks-callbacks",
+                  "ko/guides/observability-troubleshooting",
+                  "ko/guides/security-data-handling",
+                  "ko/guides/migration-guides",
+                  "ko/guides/provider-routing-reliability",
+                  "ko/guides/model-lifecycle-deprecations",
+                  "ko/guides/structured-outputs-tool-calling"
+                ]
+              },
+              {
                 "group": "미디어 가이드",
                 "pages": [
                   "ko/guides/image-generation",
@@ -974,6 +1039,19 @@
                   "de/guides/rate-limits",
                   "de/guides/billing",
                   "de/guides/best-practices"
+                ]
+              },
+              {
+                "group": "Plattformleitfäden",
+                "pages": [
+                  "de/guides/async-jobs-polling",
+                  "de/guides/webhooks-callbacks",
+                  "de/guides/observability-troubleshooting",
+                  "de/guides/security-data-handling",
+                  "de/guides/migration-guides",
+                  "de/guides/provider-routing-reliability",
+                  "de/guides/model-lifecycle-deprecations",
+                  "de/guides/structured-outputs-tool-calling"
                 ]
               },
               {
@@ -1158,6 +1236,19 @@
                 ]
               },
               {
+                "group": "Guides plateforme",
+                "pages": [
+                  "fr/guides/async-jobs-polling",
+                  "fr/guides/webhooks-callbacks",
+                  "fr/guides/observability-troubleshooting",
+                  "fr/guides/security-data-handling",
+                  "fr/guides/migration-guides",
+                  "fr/guides/provider-routing-reliability",
+                  "fr/guides/model-lifecycle-deprecations",
+                  "fr/guides/structured-outputs-tool-calling"
+                ]
+              },
+              {
                 "group": "Guides médias",
                 "pages": [
                   "fr/guides/image-generation",
@@ -1336,6 +1427,19 @@
                   "es/guides/rate-limits",
                   "es/guides/billing",
                   "es/guides/best-practices"
+                ]
+              },
+              {
+                "group": "Guías de plataforma",
+                "pages": [
+                  "es/guides/async-jobs-polling",
+                  "es/guides/webhooks-callbacks",
+                  "es/guides/observability-troubleshooting",
+                  "es/guides/security-data-handling",
+                  "es/guides/migration-guides",
+                  "es/guides/provider-routing-reliability",
+                  "es/guides/model-lifecycle-deprecations",
+                  "es/guides/structured-outputs-tool-calling"
                 ]
               },
               {
@@ -1520,6 +1624,19 @@
                 ]
               },
               {
+                "group": "Guias da plataforma",
+                "pages": [
+                  "pt/guides/async-jobs-polling",
+                  "pt/guides/webhooks-callbacks",
+                  "pt/guides/observability-troubleshooting",
+                  "pt/guides/security-data-handling",
+                  "pt/guides/migration-guides",
+                  "pt/guides/provider-routing-reliability",
+                  "pt/guides/model-lifecycle-deprecations",
+                  "pt/guides/structured-outputs-tool-calling"
+                ]
+              },
+              {
                 "group": "Guias de mídia",
                 "pages": [
                   "pt/guides/image-generation",
@@ -1698,6 +1815,19 @@
                   "ar/guides/rate-limits",
                   "ar/guides/billing",
                   "ar/guides/best-practices"
+                ]
+              },
+              {
+                "group": "أدلة المنصة",
+                "pages": [
+                  "ar/guides/async-jobs-polling",
+                  "ar/guides/webhooks-callbacks",
+                  "ar/guides/observability-troubleshooting",
+                  "ar/guides/security-data-handling",
+                  "ar/guides/migration-guides",
+                  "ar/guides/provider-routing-reliability",
+                  "ar/guides/model-lifecycle-deprecations",
+                  "ar/guides/structured-outputs-tool-calling"
                 ]
               },
               {
@@ -1882,6 +2012,19 @@
                 ]
               },
               {
+                "group": "Hướng dẫn nền tảng",
+                "pages": [
+                  "vi/guides/async-jobs-polling",
+                  "vi/guides/webhooks-callbacks",
+                  "vi/guides/observability-troubleshooting",
+                  "vi/guides/security-data-handling",
+                  "vi/guides/migration-guides",
+                  "vi/guides/provider-routing-reliability",
+                  "vi/guides/model-lifecycle-deprecations",
+                  "vi/guides/structured-outputs-tool-calling"
+                ]
+              },
+              {
                 "group": "Hướng dẫn media",
                 "pages": [
                   "vi/guides/image-generation",
@@ -2063,6 +2206,19 @@
                 ]
               },
               {
+                "group": "Panduan platform",
+                "pages": [
+                  "id/guides/async-jobs-polling",
+                  "id/guides/webhooks-callbacks",
+                  "id/guides/observability-troubleshooting",
+                  "id/guides/security-data-handling",
+                  "id/guides/migration-guides",
+                  "id/guides/provider-routing-reliability",
+                  "id/guides/model-lifecycle-deprecations",
+                  "id/guides/structured-outputs-tool-calling"
+                ]
+              },
+              {
                 "group": "Panduan media",
                 "pages": [
                   "id/guides/image-generation",
@@ -2241,6 +2397,19 @@
                   "tr/guides/rate-limits",
                   "tr/guides/billing",
                   "tr/guides/best-practices"
+                ]
+              },
+              {
+                "group": "Platform kılavuzları",
+                "pages": [
+                  "tr/guides/async-jobs-polling",
+                  "tr/guides/webhooks-callbacks",
+                  "tr/guides/observability-troubleshooting",
+                  "tr/guides/security-data-handling",
+                  "tr/guides/migration-guides",
+                  "tr/guides/provider-routing-reliability",
+                  "tr/guides/model-lifecycle-deprecations",
+                  "tr/guides/structured-outputs-tool-calling"
                 ]
               },
               {

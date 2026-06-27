@@ -25,3 +25,23 @@ curl -X GET "https://api.aisonar.dev/v1/management/balance" \
 ## الطلب / الاستجابة
 
 استخدم لوحة OpenAPI التفاعلية أعلاه للحصول على المخطط الدقيق.
+
+## مثال الاستجابة
+
+<ResponseExample>
+```json 200 OK
+{
+  "object": "management.balance",
+  "currency": "USD",
+  "available_balance": "42.50",
+  "pending_usage": "1.25",
+  "updated_at": "2026-06-27T00:00:00.000Z"
+}
+```
+</ResponseExample>
+
+## حقول مهمة
+
+<ResponseField name="available_balance" type="string">قيمة USD عشرية لمطابقة الفوترة.</ResponseField>
+<ResponseField name="pending_usage" type="string">قيمة USD عشرية لمطابقة الفوترة.</ResponseField>
+<ResponseField name="updated_at" type="string">وقت ISO أو Unix timestamp تعيده API.</ResponseField>

@@ -36,3 +36,17 @@ Sử dụng bảng OpenAPI tương tác ở trên để xem schema chính xác.
 - Dùng `custom_id` cho việc đối soát downstream mang tính idempotent.
 - Chỉ kỳ vọng `output_file_id` và `error_file_id` sau khi worker hoàn tất batch.
 - Giá batch có thể khác với giá đồng bộ vì các quy tắc giảm giá `isBatchRequest=true` được áp dụng.
+
+## Ví dụ phản hồi
+
+<ResponseExample>
+```jsonl 200 OK
+{"custom_id":"request-1","response":{"status_code":200,"body":{"id":"chatcmpl_abc123"}}}
+{"custom_id":"request-2","error":{"code":"invalid_request_error","message":"Invalid model"}}
+```
+</ResponseExample>
+
+## Trường quan trọng
+
+<ResponseField name="body" type="binary|string">Nội dung phản hồi thô. Lưu trực tiếp, không parse như JSON.</ResponseField>
+<ResponseField name="custom_id" type="string">Định danh dùng cho lần gọi tiếp theo và hỗ trợ.</ResponseField>

@@ -33,3 +33,21 @@ Use o painel interativo do OpenAPI acima para o esquema exato.
 - Use `custom_id` para reconciliação idempotente a montante.
 - Espere `output_file_id` e `error_file_id` apenas após o trabalhador finalizar o lote.
 - A precificação de lote pode diferir da precificação síncrona porque as regras de desconto `isBatchRequest=true` se aplicam.
+
+## Exemplo de resposta
+
+<ResponseExample>
+```json 200 OK
+{
+  "id": "batch_abc123",
+  "object": "batch",
+  "status": "cancelling",
+  "input_file_id": "file_abc123"
+}
+```
+</ResponseExample>
+
+## Campos importantes
+
+<ResponseField name="id" type="string">Identificador para chamadas seguintes e suporte.</ResponseField>
+<ResponseField name="status" type="string">Estado atual do ciclo de vida deste recurso.</ResponseField>

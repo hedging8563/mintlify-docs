@@ -1,0 +1,31 @@
+---
+title: "Guides de migration"
+description: "Migrez OpenAI, Anthropic, Gemini, OpenRouter, LiteLLM et les workflows média vers AI Sonar."
+---
+
+## Aperçu
+
+Migrez OpenAI, Anthropic, Gemini, OpenRouter, LiteLLM et les workflows média vers AI Sonar.
+
+Utilisez les API publiques AI Sonar et contrats de modèles; ne dépendez pas des détails d’exécution fournisseur.
+
+## Règles clés
+
+- Persistez les old model ID, new model ID, rollout owner avant de signaler le succès à l’utilisateur.
+- Utilisez les API publiques AI Sonar et contrats de modèles; ne dépendez pas des détails d’exécution fournisseur.
+- Rendez les retries idempotents et évitez les générations ou facturations en double.
+
+## Checklist de production
+
+- Persistez les old model ID, new model ID, rollout owner avant de signaler le succès à l’utilisateur.
+- Utilisez les API publiques AI Sonar et contrats de modèles; ne dépendez pas des détails d’exécution fournisseur.
+- Rendez les retries idempotents et évitez les générations ou facturations en double.
+- Les logs doivent aider le support sans stocker de secrets ni de payloads privés.
+- Vérifiez le comportement en staging avant de modifier le trafic de production.
+
+## Pages liées
+
+- [Tâches asynchrones et polling](/fr/guides/async-jobs-polling)
+- [Observabilité et dépannage](/fr/guides/observability-troubleshooting)
+- [Sécurité et traitement des données](/fr/guides/security-data-handling)
+- [Models API](/fr/api-reference/models/list-models)

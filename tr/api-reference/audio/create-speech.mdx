@@ -121,3 +121,16 @@ file_put_contents('speech.mp3', $audio);
 | `sage` | Bilge, düşünceli |
 | `shimmer` | Yumuşak, nazik |
 | `verse` | Dinamik, çok yönlü |
+
+## Yanıt örneği
+
+<ResponseExample>
+```binary 200 OK
+<binary audio data>
+```
+</ResponseExample>
+
+## Önemli alanlar
+
+<ResponseField name="Content-Type" type="string">API tarafından dönen event veya message type.</ResponseField>
+<ResponseField name="body" type="binary">Ham yanıt gövdesi. JSON olarak parse etmeden doğrudan kaydedin.</ResponseField>

@@ -1,0 +1,31 @@
+---
+title: "Modell-Lifecycle & Deprecations"
+description: "Planen Sie Modellverfügbarkeit, Preisänderungen, Aliase und Provider-Fähigkeitsdrift ein."
+---
+
+## Übersicht
+
+Planen Sie Modellverfügbarkeit, Preisänderungen, Aliase und Provider-Fähigkeitsdrift ein.
+
+Nutzen Sie öffentliche AI Sonar-APIs und Modellverträge; verlassen Sie sich nicht auf Provider-Ausführungsdetails.
+
+## Wichtige Regeln
+
+- Persistieren Sie model ID, price snapshot, replacement model, bevor Sie Nutzern Erfolg melden.
+- Nutzen Sie öffentliche AI Sonar-APIs und Modellverträge; verlassen Sie sich nicht auf Provider-Ausführungsdetails.
+- Machen Sie Wiederholungen idempotent und vermeiden Sie doppelte Generierung oder doppelte Abrechnung.
+
+## Produktions-Checkliste
+
+- Persistieren Sie model ID, price snapshot, replacement model, bevor Sie Nutzern Erfolg melden.
+- Nutzen Sie öffentliche AI Sonar-APIs und Modellverträge; verlassen Sie sich nicht auf Provider-Ausführungsdetails.
+- Machen Sie Wiederholungen idempotent und vermeiden Sie doppelte Generierung oder doppelte Abrechnung.
+- Logs sollen dem Support helfen, aber keine Secrets oder privaten Payloads speichern.
+- Prüfen Sie das Verhalten in Staging, bevor Produktionsverkehr geändert wird.
+
+## Verwandte Seiten
+
+- [Asynchrone Jobs & Polling](/de/guides/async-jobs-polling)
+- [Observability & Fehlersuche](/de/guides/observability-troubleshooting)
+- [Sicherheit & Datenverarbeitung](/de/guides/security-data-handling)
+- [Models API](/de/api-reference/models/list-models)
