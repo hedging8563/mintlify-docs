@@ -5,12 +5,14 @@ description: "GLM-4, GLM-4.5, GLM-4.6 series"
 
 ## Overview
 
-AI Sonar provides access to Zhipu AI (GLM) models. Total: **6 models** available.
+AI Sonar provides access to Zhipu AI (GLM) models. Total: **8 models** available.
 
 ## Chat Models
 
 | Model ID | Pricing |
 |----------|--------|
+| `glm-4.5` | $0.6/1M in |
+| `glm-4.5-air` | $0.13/1M in |
 | `glm-4.7` | $0.93/1M in |
 | `glm-5` | $1/1M in |
 | `glm-5-turbo` | $1.2/1M in |
@@ -30,7 +32,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="glm-4.7",
+    model="glm-4.5",
     messages=[{"role": "user", "content": "Hello!"}]
 )
 ```

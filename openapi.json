@@ -1746,6 +1746,74 @@
         }
       }
     },
+    "/v1/responses/{id}": {
+      "get": {
+        "tags": [
+          "Chat"
+        ],
+        "summary": "Retrieve response",
+        "description": "Retrieves a stored Responses API response by AI Sonar response id. Ownership checks fail closed and return 404 when the response is missing or unavailable to the current API key.",
+        "operationId": "retrieveResponse",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Response id returned by POST /v1/responses."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stored response"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Chat"
+        ],
+        "summary": "Delete response",
+        "description": "Deletes a stored Responses API response by AI Sonar response id. When the response is backed by an upstream provider record, AI Sonar deletes that provider record before clearing local state.",
+        "operationId": "deleteResponse",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Response id returned by POST /v1/responses."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted response"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
     "/v1/responses/compact": {
       "post": {
         "tags": [
