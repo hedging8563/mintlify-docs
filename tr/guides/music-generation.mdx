@@ -9,7 +9,7 @@ Müzik üretimi asenkron bir süreçtir. `POST /v1/music/generations` bir kamu A
 
 | İş Akışı | Ana alanlar | Notlar |
 |----------|-------------|--------|
-| Tam şarkı veya enstrümantal | `model`, `prompt`, isteğe bağlı `title`, `tags`, `action: "MUSIC"` | Kullanıcı nihai sesi bekliyorsa kullanın |
+| Tam şarkı veya enstrümantal | `model`, `mv`, `prompt`, isteğe bağlı `title`, `tags`, `action: "MUSIC"` | Kullanıcı nihai sesi bekliyorsa kullanın |
 | Sadece sözler | `model`, `prompt`, `action: "LYRICS"` | Sadece söz üretimi sunan modellerle kullanın |
 | Mevcut bir klibi devam ettirin | `continue_clip_id`, isteğe bağlı `continue_at` | Devam ettirmeden önce önceki kamu klip/görev kimliğini saklayın |
 
@@ -20,7 +20,7 @@ curl "https://api.aisonar.dev/v1/models?recommended_for=music" \
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-Mevcut kamu örnekleri müzik üretimi için `suno_music` kullanmaktadır. Sadece söz akışları için, söz üretimini belgeleyen bir model ile `action: "LYRICS"` gönderin. Model kimliklerini kamu AI Sonar kimlikleri olarak değerlendirin, sağlayıcıya özgü alanların kamu sözleşme alanları olduğu garantisi olarak değil.
+Mevcut kamu örnekleri müzik üretimi için `suno_music` kullanır ve `chirp-v4` gibi resmi bir Suno model sürümünü `mv` ile gönderir. Sadece söz akışları için, söz üretimini belgeleyen bir model ile `action: "LYRICS"` gönderin ve `mv` alanını atlayın. Model kimliklerini kamu AI Sonar kimlikleri olarak değerlendirin, sağlayıcıya özgü alanların kamu sözleşme alanları olduğu garantisi olarak değil.
 
 ## Bir Müzik Görevi Oluşturun
 
@@ -30,6 +30,7 @@ curl https://api.aisonar.dev/v1/music/generations \
   -H "Content-Type: application/json" \
   -d '{
     "model": "suno_music",
+    "mv": "chirp-v4",
     "prompt": "Sıcak vokallere ve temiz bir nakarata sahip neşeli bir synth-pop parçası",
     "title": "Sabah Statik",
     "tags": "synth-pop, neşeli",

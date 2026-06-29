@@ -29,7 +29,7 @@ Generieren Sie Musik und Songtexte mithilfe von KI. Dies ist eine asynchrone API
 </ParamField>
 
 <ParamField body="mv" type="string">
-  Zu verwendende Modellversion.
+  Offizielle Suno-Modellversion. Erforderlich für die Musikgenerierung (wenn `action` fehlt oder `MUSIC` ist); bei Nur-Text-Anfragen weglassen. Unterstützte Werte: `chirp-v3-5`, `chirp-v4`, `chirp-v4-5`, `chirp-v4.5`, `chirp-v4-5plus`, `chirp-v4.5plus`, `chirp-v4-5all`, `chirp-v4.5all`, `chirp-v5`, `chirp-v5-5`, `chirp-v5.5`.
 </ParamField>
 
 <ParamField body="continue_clip_id" type="string">
@@ -73,6 +73,7 @@ curl -X POST "https://api.aisonar.dev/v1/music/generations" \
   -H "Content-Type: application/json" \
   -d '{
     "model": "suno_music",
+    "mv": "chirp-v4",
     "prompt": "An upbeat electronic dance track with heavy bass",
     "title": "Night Drive",
     "tags": "electronic, EDM, energetic"
@@ -87,6 +88,7 @@ response = requests.post(
     headers={"Authorization": "Bearer sk-your-api-key"},
     json={
         "model": "suno_music",
+        "mv": "chirp-v4",
         "prompt": "An upbeat electronic dance track with heavy bass",
         "title": "Night Drive",
         "tags": "electronic, EDM, energetic"
@@ -106,6 +108,7 @@ const response = await fetch('https://api.aisonar.dev/v1/music/generations', {
   },
   body: JSON.stringify({
     model: 'suno_music',
+    mv: 'chirp-v4',
     prompt: 'An upbeat electronic dance track with heavy bass',
     title: 'Night Drive',
     tags: 'electronic, EDM, energetic'
@@ -129,6 +132,7 @@ import (
 func main() {
     payload := map[string]interface{}{
         "model":  "suno_music",
+        "mv":     "chirp-v4",
         "prompt": "An upbeat electronic dance track with heavy bass",
         "title":  "Night Drive",
         "tags":   "electronic, EDM, energetic",
@@ -162,6 +166,7 @@ curl_setopt_array($ch, [
     ],
     CURLOPT_POSTFIELDS => json_encode([
         'model' => 'suno_music',
+        'mv' => 'chirp-v4',
         'prompt' => 'An upbeat electronic dance track with heavy bass',
         'title' => 'Night Drive',
         'tags' => 'electronic, EDM, energetic'

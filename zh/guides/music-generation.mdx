@@ -9,7 +9,7 @@ description: "创建音乐或歌词任务，轮询最终音频，并安全存储
 
 | 工作流程 | 关键字段 | 备注 |
 |----------|----------|------|
-| 完整歌曲或伴奏 | `model`、`prompt`、可选 `title`、`tags`、`action: "MUSIC"` | 当用户期望最终音频时使用 |
+| 完整歌曲或伴奏 | `model`、`mv`、`prompt`、可选 `title`、`tags`、`action: "MUSIC"` | 当用户期望最终音频时使用 |
 | 仅歌词 | `model`、`prompt`、`action: "LYRICS"` | 仅与公开提供歌词生成的模型一起使用 |
 | 继续现有片段 | `continue_clip_id`、可选 `continue_at` | 在提供继续之前存储之前的公共片段/任务标识 |
 
@@ -20,7 +20,7 @@ curl "https://api.aisonar.dev/v1/models?recommended_for=music" \
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-当前公共示例使用 `suno_music` 进行音乐生成。对于仅歌词的流程，发送 `action: "LYRICS"` 与公开契约文档中包含歌词生成的模型。将模型 ID 视为公共 AI Sonar ID，而不是保证供应商特定字段是公共契约字段。
+当前公共示例使用 `suno_music` 进行音乐生成，并在 `mv` 中传入 `chirp-v4` 等官方 Suno 模型版本。对于仅歌词的流程，发送 `action: "LYRICS"` 与公开契约文档中包含歌词生成的模型，并省略 `mv`。将模型 ID 视为公共 AI Sonar ID，而不是保证供应商特定字段是公共契约字段。
 
 ## 创建音乐任务
 
@@ -30,6 +30,7 @@ curl https://api.aisonar.dev/v1/music/generations \
   -H "Content-Type: application/json" \
   -d '{
     "model": "suno_music",
+    "mv": "chirp-v4",
     "prompt": "一首充满活力的合成流行曲，伴有温暖的声乐和干净的合唱",
     "title": "晨间静电",
     "tags": "合成流行，充满活力",

@@ -9,7 +9,7 @@ La génération de musique est asynchrone. `POST /v1/music/generations` crée un
 
 | Flux de travail | Champs clés | Remarques |
 |-----------------|--------------|-----------|
-| Chanson complète ou instrumentale | `model`, `prompt`, `title` optionnel, `tags`, `action: "MUSIC"` | À utiliser lorsque l'utilisateur s'attend à un audio final |
+| Chanson complète ou instrumentale | `model`, `mv`, `prompt`, `title` optionnel, `tags`, `action: "MUSIC"` | À utiliser lorsque l'utilisateur s'attend à un audio final |
 | Paroles uniquement | `model`, `prompt`, `action: "LYRICS"` | À utiliser uniquement avec des modèles qui exposent la génération de paroles |
 | Continuer un clip existant | `continue_clip_id`, `continue_at` optionnel | Stockez l'identité du clip/tâche publique précédente avant d'offrir la continuation |
 
@@ -20,7 +20,7 @@ curl "https://api.aisonar.dev/v1/models?recommended_for=music" \
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-Les exemples publics actuels utilisent `suno_music` pour la génération de musique. Pour les flux uniquement de paroles, envoyez `action: "LYRICS"` avec un modèle dont le contrat public documente la génération de paroles. Traitez les ID de modèle comme des ID publics AI Sonar, et non comme une garantie que les champs spécifiques au fournisseur sont des champs de contrat public.
+Les exemples publics actuels utilisent `suno_music` pour la génération de musique et incluent `mv` avec une version officielle du modèle Suno, comme `chirp-v4`. Pour les flux uniquement de paroles, envoyez `action: "LYRICS"` avec un modèle dont le contrat public documente la génération de paroles et omettez `mv`. Traitez les ID de modèle comme des ID publics AI Sonar, et non comme une garantie que les champs spécifiques au fournisseur sont des champs de contrat public.
 
 ## Créer une Tâche de Musique
 
@@ -30,6 +30,7 @@ curl https://api.aisonar.dev/v1/music/generations \
   -H "Content-Type: application/json" \
   -d '{
     "model": "suno_music",
+    "mv": "chirp-v4",
     "prompt": "Une piste synth-pop entraînante avec des voix chaleureuses et un refrain clair",
     "title": "Morning Static",
     "tags": "synth-pop, entraînant",

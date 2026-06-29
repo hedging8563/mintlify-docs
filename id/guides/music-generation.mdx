@@ -9,7 +9,7 @@ Generasi musik bersifat asinkron. `POST /v1/music/generations` membuat tugas AI 
 
 | Alur Kerja | Bidang kunci | Catatan |
 |------------|--------------|---------|
-| Lagu penuh atau instrumental | `model`, `prompt`, opsional `title`, `tags`, `action: "MUSIC"` | Gunakan ketika pengguna mengharapkan audio akhir |
+| Lagu penuh atau instrumental | `model`, `mv`, `prompt`, opsional `title`, `tags`, `action: "MUSIC"` | Gunakan ketika pengguna mengharapkan audio akhir |
 | Hanya lirik | `model`, `prompt`, `action: "LYRICS"` | Gunakan hanya dengan model yang mengekspos generasi lirik |
 | Melanjutkan klip yang ada | `continue_clip_id`, opsional `continue_at` | Simpan identitas klip/tugas publik sebelumnya sebelum menawarkan kelanjutan |
 
@@ -20,7 +20,7 @@ curl "https://api.aisonar.dev/v1/models?recommended_for=music" \
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-Contoh publik saat ini menggunakan `suno_music` untuk generasi musik. Untuk alur hanya lirik, kirim `action: "LYRICS"` dengan model yang dokumen kontrak publiknya mencantumkan generasi lirik. Perlakukan ID model sebagai ID AI Sonar publik, bukan sebagai jaminan bahwa bidang spesifik penyedia adalah bidang kontrak publik.
+Contoh publik saat ini menggunakan `suno_music` untuk generasi musik dan menyertakan `mv` dengan versi model Suno resmi seperti `chirp-v4`. Untuk alur hanya lirik, kirim `action: "LYRICS"` dengan model yang dokumen kontrak publiknya mencantumkan generasi lirik dan hilangkan `mv`. Perlakukan ID model sebagai ID AI Sonar publik, bukan sebagai jaminan bahwa bidang spesifik penyedia adalah bidang kontrak publik.
 
 ## Buat Tugas Musik
 
@@ -30,6 +30,7 @@ curl https://api.aisonar.dev/v1/music/generations \
   -H "Content-Type: application/json" \
   -d '{
     "model": "suno_music",
+    "mv": "chirp-v4",
     "prompt": "Lagu synth-pop ceria dengan vokal hangat dan chorus yang bersih",
     "title": "Morning Static",
     "tags": "synth-pop, ceria",

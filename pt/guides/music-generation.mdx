@@ -9,7 +9,7 @@ A geração de música é assíncrona. `POST /v1/music/generations` cria uma tar
 
 | Fluxo de Trabalho | Campos principais | Notas |
 |-------------------|------------------|-------|
-| Música completa ou instrumental | `model`, `prompt`, `title` opcional, `tags`, `action: "MUSIC"` | Use quando o usuário espera áudio final |
+| Música completa ou instrumental | `model`, `mv`, `prompt`, `title` opcional, `tags`, `action: "MUSIC"` | Use quando o usuário espera áudio final |
 | Apenas letras | `model`, `prompt`, `action: "LYRICS"` | Use apenas com modelos que expõem a geração de letras |
 | Continuar um clipe existente | `continue_clip_id`, `continue_at` opcional | Armazene a identidade do clipe/tarefa pública anterior antes de oferecer a continuação |
 
@@ -20,7 +20,7 @@ curl "https://api.aisonar.dev/v1/models?recommended_for=music" \
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-Os exemplos públicos atuais usam `suno_music` para geração de música. Para fluxos apenas de letras, envie `action: "LYRICS"` com um modelo cujo contrato público documente a geração de letras. Trate os IDs de modelo como IDs públicos do AI Sonar, não como uma garantia de que campos específicos do provedor são campos de contrato público.
+Os exemplos públicos atuais usam `suno_music` para geração de música e incluem `mv` com uma versão oficial do modelo Suno, como `chirp-v4`. Para fluxos apenas de letras, envie `action: "LYRICS"` com um modelo cujo contrato público documente a geração de letras e omita `mv`. Trate os IDs de modelo como IDs públicos do AI Sonar, não como uma garantia de que campos específicos do provedor são campos de contrato público.
 
 ## Criar Uma Tarefa de Música
 
@@ -30,6 +30,7 @@ curl https://api.aisonar.dev/v1/music/generations \
   -H "Content-Type: application/json" \
   -d '{
     "model": "suno_music",
+    "mv": "chirp-v4",
     "prompt": "Uma faixa de synth-pop animada com vocais quentes e um refrão limpo",
     "title": "Estática da Manhã",
     "tags": "synth-pop, animado",

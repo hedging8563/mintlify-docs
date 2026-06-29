@@ -2020,7 +2020,20 @@
                   },
                   "mv": {
                     "type": "string",
-                    "description": "Music/video mode hint for compatible providers."
+                    "enum": [
+                      "chirp-v3-5",
+                      "chirp-v4",
+                      "chirp-v4-5",
+                      "chirp-v4.5",
+                      "chirp-v4-5plus",
+                      "chirp-v4.5plus",
+                      "chirp-v4-5all",
+                      "chirp-v4.5all",
+                      "chirp-v5",
+                      "chirp-v5-5",
+                      "chirp-v5.5"
+                    ],
+                    "description": "Official Suno model version. Required when creating music (action omitted or MUSIC); omit for lyrics-only requests."
                   },
                   "continue_clip_id": {
                     "type": "string",

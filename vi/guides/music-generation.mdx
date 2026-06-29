@@ -9,7 +9,7 @@ Việc tạo nhạc là không đồng bộ. `POST /v1/music/generations` tạo 
 
 | Quy trình | Trường chính | Ghi chú |
 |-----------|--------------|---------|
-| Bài hát hoàn chỉnh hoặc nhạc cụ | `model`, `prompt`, tùy chọn `title`, `tags`, `action: "MUSIC"` | Sử dụng khi người dùng mong đợi âm thanh cuối cùng |
+| Bài hát hoàn chỉnh hoặc nhạc cụ | `model`, `mv`, `prompt`, tùy chọn `title`, `tags`, `action: "MUSIC"` | Sử dụng khi người dùng mong đợi âm thanh cuối cùng |
 | Chỉ lời bài hát | `model`, `prompt`, `action: "LYRICS"` | Chỉ sử dụng với các mô hình có khả năng tạo lời bài hát |
 | Tiếp tục một clip hiện có | `continue_clip_id`, tùy chọn `continue_at` | Lưu trữ danh tính clip/tác vụ công khai trước đó trước khi cung cấp tiếp tục |
 
@@ -20,7 +20,7 @@ curl "https://api.aisonar.dev/v1/models?recommended_for=music" \
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-Các ví dụ công khai hiện tại sử dụng `suno_music` cho việc tạo nhạc. Đối với các quy trình chỉ lời bài hát, gửi `action: "LYRICS"` với một mô hình mà hợp đồng công khai của nó tài liệu hóa việc tạo lời bài hát. Xem xét các ID mô hình như là các ID AI Sonar công khai, không phải là một đảm bảo rằng các trường cụ thể của nhà cung cấp là các trường hợp công khai.
+Các ví dụ công khai hiện tại sử dụng `suno_music` cho việc tạo nhạc và bao gồm `mv` với phiên bản mô hình Suno chính thức như `chirp-v4`. Đối với các quy trình chỉ lời bài hát, gửi `action: "LYRICS"` với một mô hình mà hợp đồng công khai của nó tài liệu hóa việc tạo lời bài hát và bỏ qua `mv`. Xem ID mô hình là ID AI Sonar công khai, không phải là đảm bảo rằng các trường cụ thể của nhà cung cấp là trường hợp đồng công khai.
 
 ## Tạo Một Tác Vụ Nhạc
 
@@ -30,6 +30,7 @@ curl https://api.aisonar.dev/v1/music/generations \
   -H "Content-Type: application/json" \
   -d '{
     "model": "suno_music",
+    "mv": "chirp-v4",
     "prompt": "Một bản nhạc synth-pop vui tươi với giọng hát ấm áp và điệp khúc trong trẻo",
     "title": "Morning Static",
     "tags": "synth-pop, vui tươi",

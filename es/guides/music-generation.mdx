@@ -9,7 +9,7 @@ La generación de música es asincrónica. `POST /v1/music/generations` crea una
 
 | Flujo de Trabajo | Campos clave | Notas |
 |------------------|--------------|-------|
-| Canción completa o instrumental | `model`, `prompt`, `title` opcional, `tags`, `action: "MUSIC"` | Usar cuando el usuario espera audio final |
+| Canción completa o instrumental | `model`, `mv`, `prompt`, `title` opcional, `tags`, `action: "MUSIC"` | Usar cuando el usuario espera audio final |
 | Solo letras | `model`, `prompt`, `action: "LYRICS"` | Usar solo con modelos que expongan la generación de letras |
 | Continuar un clip existente | `continue_clip_id`, `continue_at` opcional | Almacenar la identidad del clip/tarea pública anterior antes de ofrecer la continuación |
 
@@ -20,7 +20,7 @@ curl "https://api.aisonar.dev/v1/models?recommended_for=music" \
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-Los ejemplos públicos actuales utilizan `suno_music` para la generación de música. Para flujos solo de letras, envía `action: "LYRICS"` con un modelo cuyo contrato público documente la generación de letras. Trata los IDs de modelo como IDs públicos de AI Sonar, no como una garantía de que los campos específicos del proveedor son campos de contrato público.
+Los ejemplos públicos actuales utilizan `suno_music` para la generación de música e incluyen `mv` con una versión oficial del modelo Suno, como `chirp-v4`. Para flujos solo de letras, envía `action: "LYRICS"` con un modelo cuyo contrato público documente la generación de letras y omite `mv`. Trata los IDs de modelo como IDs públicos de AI Sonar, no como una garantía de que los campos específicos del proveedor son campos de contrato público.
 
 ## Crear Una Tarea de Música
 
@@ -30,6 +30,7 @@ curl https://api.aisonar.dev/v1/music/generations \
   -H "Content-Type: application/json" \
   -d '{
     "model": "suno_music",
+    "mv": "chirp-v4",
     "prompt": "Una pista de synth-pop animada con voces cálidas y un coro limpio",
     "title": "Estática de la Mañana",
     "tags": "synth-pop, animado",

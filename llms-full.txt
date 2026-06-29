@@ -2,7 +2,7 @@
 
 > Unified AI API Gateway - Access hundreds of AI models through a single API
 
-Generated: 2026-06-27
+Generated: 2026-06-29
 Source: https://docs.aisonar.dev
 
 ---
@@ -2688,7 +2688,7 @@ Music generation is asynchronous. `POST /v1/music/generations` creates a public 
 
 | Workflow | Key fields | Notes |
 |----------|------------|-------|
-| Full song or instrumental | `model`, `prompt`, optional `title`, `tags`, `action: "MUSIC"` | Use when the user expects final audio |
+| Full song or instrumental | `model`, `mv`, `prompt`, optional `title`, `tags`, `action: "MUSIC"` | Use when the user expects final audio |
 | Lyrics only | `model`, `prompt`, `action: "LYRICS"` | Use only with models that expose lyric generation |
 | Continue an existing clip | `continue_clip_id`, optional `continue_at` | Store the previous public clip/task identity before offering continuation |
 
@@ -2699,7 +2699,7 @@ curl "https://api.aisonar.dev/v1/models?recommended_for=music" \
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-The current public examples use `suno_music` for music generation. For lyric-only flows, send `action: "LYRICS"` with a model whose public contract documents lyric generation. Treat model IDs as public AI Sonar IDs, not as a guarantee that provider-specific fields are public contract fields.
+The current public examples use `suno_music` for music generation and include `mv` with an official Suno model version such as `chirp-v4`. For lyric-only flows, send `action: "LYRICS"` with a model whose public contract documents lyric generation and omit `mv`. Treat model IDs as public AI Sonar IDs, not as a guarantee that provider-specific fields are public contract fields.
 
 ## Create A Music Task
 
@@ -2709,6 +2709,7 @@ curl https://api.aisonar.dev/v1/music/generations \
   -H "Content-Type: application/json" \
   -d '{
     "model": "suno_music",
+    "mv": "chirp-v4",
     "prompt": "An upbeat synth-pop track with warm vocals and a clean chorus",
     "title": "Morning Static",
     "tags": "synth-pop, upbeat",

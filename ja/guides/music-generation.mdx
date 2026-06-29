@@ -9,7 +9,7 @@ description: "音楽または歌詞のタスクを作成し、最終的なオー
 
 | ワークフロー | 主要フィールド | 注意事項 |
 |--------------|----------------|----------|
-| フルソングまたはインストゥルメンタル | `model`, `prompt`, オプションの `title`, `tags`, `action: "MUSIC"` | ユーザーが最終的なオーディオを期待する場合に使用 |
+| フルソングまたはインストゥルメンタル | `model`, `mv`, `prompt`, オプションの `title`, `tags`, `action: "MUSIC"` | ユーザーが最終的なオーディオを期待する場合に使用 |
 | 歌詞のみ | `model`, `prompt`, `action: "LYRICS"` | 歌詞生成を公開しているモデルのみで使用 |
 | 既存のクリップを続行 | `continue_clip_id`, オプションの `continue_at` | 続行を提供する前に、前の公開クリップ/タスクの識別子を保存 |
 
@@ -20,7 +20,7 @@ curl "https://api.aisonar.dev/v1/models?recommended_for=music" \
   -H "Authorization: Bearer sk-your-api-key"
 ```
 
-現在の公開例では、音楽生成に`suno_music`を使用しています。歌詞のみのフローの場合、歌詞生成を文書化したモデルと共に`action: "LYRICS"`を送信します。モデルIDは公開されたAI Sonar IDとして扱い、プロバイダー固有のフィールドが公開契約フィールドであることを保証するものではありません。
+現在の公開例では、音楽生成に`suno_music`を使用し、`chirp-v4`などの公式Sunoモデルバージョンを`mv`に含めています。歌詞のみのフローの場合、歌詞生成を文書化したモデルと共に`action: "LYRICS"`を送信し、`mv`は省略します。モデルIDは公開されたAI Sonar IDとして扱い、プロバイダー固有のフィールドが公開契約フィールドであることを保証するものではありません。
 
 ## 音楽タスクの作成
 
@@ -30,6 +30,7 @@ curl https://api.aisonar.dev/v1/music/generations \
   -H "Content-Type: application/json" \
   -d '{
     "model": "suno_music",
+    "mv": "chirp-v4",
     "prompt": "温かいボーカルとクリーンなコーラスを持つアップビートなシンセポップトラック",
     "title": "モーニングスタティック",
     "tags": "シンセポップ, アップビート",
