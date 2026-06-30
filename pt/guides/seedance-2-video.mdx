@@ -1,0 +1,84 @@
+---
+title: "Modelos de vídeo Seedance 2.0"
+description: "Escolha entre Seedance 2.0, Seedance 2.0 Fast e Seedance 2.0 Mini para geração de vídeo."
+---
+
+Seedance 2.0 é uma família de modelos de vídeo para texto para vídeo, imagem para vídeo, referência para vídeo, edição de vídeo e extensão de vídeo. Use IDs lógicos de nível de produto em `model` e escolha o fluxo com `operation`.
+
+## Escolha do modelo
+
+| Modelo | Melhor para | Resoluções públicas | Entradas de referência |
+|--------|-------------|---------------------|------------------------|
+| `seedance-2.0` | Maior qualidade e saída 4K | `480p`, `720p`, `1080p`, `4k` | Até 9 imagens de referência mais até 3 vídeos de referência e 3 áudios de referência para `reference-to-video` |
+| `seedance-2.0-fast` | Saída 480p/720p mais rápida e barata | `480p`, `720p` | Até 9 imagens de referência mais até 3 vídeos de referência e 3 áudios de referência para `reference-to-video` |
+| `seedance-2.0-mini` | Saída 480p/720p de menor custo | `480p`, `720p` | Suporta a família de operações Seedance 2.0; leia o detalhe atual do modelo antes de depender de limites exatos de referência |
+
+`seedance-2.0-fast` e `seedance-2.0-mini` são fail-closed para `480p` / `720p`; não envie `1080p` nem `4k` para esses modelos.
+
+## Operações suportadas
+
+A família pública Seedance 2.0 suporta:
+
+| Operação | Entradas típicas |
+|----------|------------------|
+| `text-to-video` | `prompt` |
+| `image-to-video` | `prompt`, `image_url` ou entrada de imagem compatível |
+| `start-end-to-video` | `prompt`, `start_image`, `end_image` |
+| `reference-to-video` | `prompt`, `reference_images`, `video_urls` opcionais, `audio_urls` opcionais |
+| `video-to-video` | `prompt`, `video_url` ou entrada de vídeo compatível |
+| `video-extension` | `task_id` ou entrada de continuação específica do modelo |
+
+Solicitações Seedance somente com áudio ou somente com texto mais áudio não fazem parte do contrato público. Use áudio apenas como entrada de referência em fluxos `reference-to-video` suportados.
+
+## 4K Reference-To-Video
+
+Use `seedance-2.0` quando precisar de saída 4K. O modelo base suporta `4k` no contrato público governado, incluindo `reference-to-video`.
+
+```bash
+curl -X POST "https://api.aisonar.dev/v1/videos/generations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0",
+    "operation": "reference-to-video",
+    "prompt": "Keep the same product identity and lighting while creating a slow cinematic rotation.",
+    "reference_images": [
+      "https://example.com/product-front.jpg",
+      "https://example.com/product-side.jpg"
+    ],
+    "video_urls": ["https://example.com/motion-reference.mp4"],
+    "duration": 6,
+    "resolution": "4k",
+    "aspect_ratio": "16:9"
+  }'
+```
+
+## Solicitações Fast e Mini
+
+Use `seedance-2.0-fast` quando a latência importar, e `seedance-2.0-mini` quando o menor custo for mais importante que a qualidade máxima.
+
+```bash
+curl -X POST "https://api.aisonar.dev/v1/videos/generations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0-fast",
+    "operation": "text-to-video",
+    "prompt": "A clean product reveal on a white studio background, gentle camera push-in.",
+    "duration": 5,
+    "resolution": "720p",
+    "aspect_ratio": "16:9"
+  }'
+```
+
+## Preços e cobrança
+
+O preço do Seedance 2.0 é baseado em tokens e depende da resolução de saída e de a solicitação incluir entrada de vídeo. A verdade de preços em USD da AI Sonar para esses modelos é convertida dos preços oficiais em CNY usando `6.8` CNY por USD.
+
+Use a [Pricing API](/pt/api-reference/pricing/get-pricing) ou a [Models API](/pt/api-reference/models/list-models) para obter o preço cobrável atual antes de fixá-lo em uma interface de produto.
+
+## Resultados assíncronos
+
+A geração de vídeo é assíncrona. Siga primeiro o `poll_url` retornado pela solicitação de criação, ou use `GET /v1/tasks/{id}` com o ID da tarefa retornado.
+
+Veja [Criar vídeo](/pt/api-reference/video/create-video), [Obter status da tarefa](/pt/api-reference/tasks/get-task-status) e [Cancelar tarefa](/pt/api-reference/tasks/cancel-task) para detalhes dos endpoints.

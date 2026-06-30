@@ -1,0 +1,84 @@
+---
+title: "Mô hình video Seedance 2.0"
+description: "Chọn giữa Seedance 2.0, Seedance 2.0 Fast và Seedance 2.0 Mini cho tạo video."
+---
+
+Seedance 2.0 là một họ mô hình video cho text-to-video, image-to-video, reference-to-video, chỉnh sửa video và mở rộng video. Dùng ID mô hình logic cấp sản phẩm trong `model`, rồi chọn luồng bằng `operation`.
+
+## Chọn mô hình
+
+| Mô hình | Phù hợp nhất cho | Độ phân giải công khai | Đầu vào tham chiếu |
+|---------|------------------|------------------------|--------------------|
+| `seedance-2.0` | Chất lượng cao nhất và đầu ra 4K | `480p`, `720p`, `1080p`, `4k` | Tối đa 9 ảnh tham chiếu cùng tối đa 3 video tham chiếu và 3 audio tham chiếu cho `reference-to-video` |
+| `seedance-2.0-fast` | Đầu ra 480p/720p nhanh hơn, chi phí thấp hơn | `480p`, `720p` | Tối đa 9 ảnh tham chiếu cùng tối đa 3 video tham chiếu và 3 audio tham chiếu cho `reference-to-video` |
+| `seedance-2.0-mini` | Đầu ra 480p/720p chi phí thấp nhất | `480p`, `720p` | Hỗ trợ họ thao tác Seedance 2.0; đọc chi tiết mô hình hiện tại trước khi phụ thuộc vào giới hạn số lượng tham chiếu chính xác |
+
+`seedance-2.0-fast` và `seedance-2.0-mini` fail-closed ở `480p` / `720p`; đừng gửi `1080p` hoặc `4k` cho các mô hình này.
+
+## Thao tác được hỗ trợ
+
+Họ Seedance 2.0 công khai hỗ trợ:
+
+| Thao tác | Đầu vào thường dùng |
+|----------|---------------------|
+| `text-to-video` | `prompt` |
+| `image-to-video` | `prompt`, `image_url` hoặc đầu vào ảnh tương thích |
+| `start-end-to-video` | `prompt`, `start_image`, `end_image` |
+| `reference-to-video` | `prompt`, `reference_images`, `video_urls` tùy chọn, `audio_urls` tùy chọn |
+| `video-to-video` | `prompt`, `video_url` hoặc đầu vào video tương thích |
+| `video-extension` | `task_id` hoặc đầu vào nối tiếp riêng của mô hình |
+
+Yêu cầu Seedance chỉ có audio, hoặc chỉ có text cộng audio, không thuộc hợp đồng công khai. Chỉ dùng audio làm đầu vào tham chiếu trong các luồng `reference-to-video` được hỗ trợ.
+
+## 4K Reference-To-Video
+
+Dùng `seedance-2.0` khi cần đầu ra 4K. Mô hình base hỗ trợ `4k` trong hợp đồng công khai đã quản trị, bao gồm `reference-to-video`.
+
+```bash
+curl -X POST "https://api.aisonar.dev/v1/videos/generations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0",
+    "operation": "reference-to-video",
+    "prompt": "Keep the same product identity and lighting while creating a slow cinematic rotation.",
+    "reference_images": [
+      "https://example.com/product-front.jpg",
+      "https://example.com/product-side.jpg"
+    ],
+    "video_urls": ["https://example.com/motion-reference.mp4"],
+    "duration": 6,
+    "resolution": "4k",
+    "aspect_ratio": "16:9"
+  }'
+```
+
+## Yêu cầu Fast và Mini
+
+Dùng `seedance-2.0-fast` khi độ trễ quan trọng, và `seedance-2.0-mini` khi tầng chi phí thấp nhất quan trọng hơn chất lượng tối đa.
+
+```bash
+curl -X POST "https://api.aisonar.dev/v1/videos/generations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0-fast",
+    "operation": "text-to-video",
+    "prompt": "A clean product reveal on a white studio background, gentle camera push-in.",
+    "duration": 5,
+    "resolution": "720p",
+    "aspect_ratio": "16:9"
+  }'
+```
+
+## Giá và tính phí
+
+Giá Seedance 2.0 dựa trên token và phụ thuộc vào độ phân giải đầu ra cũng như việc yêu cầu có đầu vào video hay không. Giá USD truth của AI Sonar cho các mô hình này được chuyển đổi từ giá CNY chính thức với tỷ giá `6.8` CNY/USD.
+
+Dùng [Pricing API](/vi/api-reference/pricing/get-pricing) hoặc [Models API](/vi/api-reference/models/list-models) để lấy giá tính phí hiện tại trước khi cố định giá trong UI sản phẩm.
+
+## Kết quả bất đồng bộ
+
+Tạo video là bất đồng bộ. Trước tiên hãy theo `poll_url` trả về từ yêu cầu tạo, hoặc dùng `GET /v1/tasks/{id}` với ID tác vụ được trả về.
+
+Xem [Tạo video](/vi/api-reference/video/create-video), [Lấy trạng thái tác vụ](/vi/api-reference/tasks/get-task-status) và [Hủy tác vụ](/vi/api-reference/tasks/cancel-task) để biết chi tiết endpoint.

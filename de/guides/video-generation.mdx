@@ -52,7 +52,7 @@ Für Produktionsmedieneingaben bevorzugen Sie öffentliche `https` URLs gegenüb
 
 - Anfragen der Veo 3 Familie sind standardmäßig auf Audio-an, wenn `output_audio` weggelassen wird. Setzen Sie es explizit, wenn das Modell den Schalter unterstützt und Ihre UX von Ton abhängt.
 - `kling_elements` ist für `kling-3.0-video` bildkonditionierte Anfragen. Referenzieren Sie jedes Element im `prompt` als `@name`; kombinieren Sie es nicht mit `output_audio=true`.
-- Für `seedance-2.0` und `seedance-2.0-fast` kann reference-to-video mehrere Referenzbilder sowie Referenzvideo-/Audioeingaben gemäß dem aktuellen öffentlichen Vertrag akzeptieren.
+- Lesen Sie für die Seedance 2.0 Familie den [Leitfaden zu Seedance 2.0 Videomodellen](/de/guides/seedance-2-video), bevor Sie 4K-Ausgabe, Fast/Mini-Auflösungsgrenzen oder multimodale Referenzeingaben verwenden.
 - Für `grok-imagine-video` verwendet video-to-video eine öffentliche `.mp4` `video_url`; modell-spezifische Einschränkungen wie `duration` und `resolution` müssen aus dem Modellvertrag stammen.
 
 ## Ergebnisse abfragen

@@ -52,7 +52,7 @@ curl https://api.aisonar.dev/v1/videos/generations \\
 
 - Veo 3 ailesi istekleri `output_audio` atlandığında varsayılan olarak sesli açılır. Model bu geçişi destekliyorsa ve kullanıcı deneyiminiz sese bağlıysa, bunu açıkça ayarlayın.
 - `kling_elements`, `kling-3.0-video` görüntü koşullu istekler içindir. Her bir öğeyi `prompt` içinde `@name` olarak referans gösterin; bunu `output_audio=true` ile birleştirmeyin.
-- `seedance-2.0` ve `seedance-2.0-fast` için, referans-to-video birden fazla referans görüntüsü ve mevcut kamu sözleşmesine göre referans video/ses girdilerini kabul edebilir.
+- Seedance 2.0 ailesinde 4K çıktı, Fast/Mini çözünürlük sınırları veya çok modlu referans girdileri kullanmadan önce [Seedance 2.0 video modelleri kılavuzunu](/tr/guides/seedance-2-video) okuyun.
 - `grok-imagine-video` için, video-to-video bir kamuya açık `.mp4` `video_url` kullanır; modele özgü sınırlamalar, örneğin `duration` ve `resolution`, model sözleşmesinden gelmelidir.
 
 ## Anket Sonuçları

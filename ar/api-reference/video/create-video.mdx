@@ -43,7 +43,7 @@ description: "ينشئ مهمة توليد فيديو"
 </ParamField>
 
 <ParamField body="reference_images" type="array">
-  صور مرجعية للتدفقات التي تدعم التكييف المرجعي المخصص. العدد المدعوم يعتمد على النموذج. بالنسبة إلى `seedance-2.0` و `seedance-2.0-fast`، تدعم AI Sonar حاليًا ما يصل إلى 9 صور مرجعية، بالإضافة إلى ما يصل إلى 3 مقاطع فيديو مرجعية و3 ملفات صوت مرجعية. يُفضَّل استخدام روابط `https` العامة، كما تقبل النماذج المتوافقة أيضًا روابط `data:`. بالنسبة إلى `grok-imagine-video`، تقبل reference-to-video حتى 7 مراجع صور ويكون `duration` بحد أقصى 10 ثوانٍ. يدعم `grok-imagine-video-1.5-preview` image-to-video فقط ولا يقبل مراجع الصور.
+  صور مرجعية للتدفقات التي تدعم التكييف المرجعي المخصص. العدد المدعوم يعتمد على النموذج. بالنسبة إلى `seedance-2.0` و `seedance-2.0-fast`، تدعم AI Sonar حاليًا ما يصل إلى 9 صور مرجعية، بالإضافة إلى ما يصل إلى 3 مقاطع فيديو مرجعية و3 ملفات صوت مرجعية. لاختيار النموذج وحدود 4K وملاحظات Mini، راجع [دليل نماذج فيديو Seedance 2.0](/ar/guides/seedance-2-video). يُفضَّل استخدام روابط `https` العامة، كما تقبل النماذج المتوافقة أيضًا روابط `data:`. بالنسبة إلى `grok-imagine-video`، تقبل reference-to-video حتى 7 مراجع صور ويكون `duration` بحد أقصى 10 ثوانٍ. يدعم `grok-imagine-video-1.5-preview` image-to-video فقط ولا يقبل مراجع الصور.
 </ParamField>
 
 <ParamField body="reference_image_type" type="string">
@@ -259,7 +259,7 @@ response = requests.post("https://api.aisonar.dev/v1/videos/generations",
 
 ## من مرجع إلى فيديو
 
-استخدم `operation=reference-to-video` عندما يدعم النموذج تكييفًا مرجعيًا مخصصًا. في العقد العام لـ AI Sonar تستخدم مراجع الصور `reference_images`، بينما تستخدم الفيديوهات والصوتيات المرجعية متعددة الوسائط الحقول `video_urls` و `audio_urls`. بالنسبة إلى `seedance-2.0` و `seedance-2.0-fast`، تدعم AI Sonar حاليًا ما يصل إلى 9 صور مرجعية، بالإضافة إلى ما يصل إلى 3 مقاطع فيديو مرجعية و3 ملفات صوت مرجعية. يتحكم `duration` فقط في طول الإخراج الناتج، ولا يضع حدًا منفصلًا لمدة فيديو المرجع المُدخل. بالنسبة إلى `grok-imagine-video`، تقبل reference-to-video حتى 7 مراجع صور (`reference_images` أو `image_urls`) ويكون `duration` بحد أقصى 10 ثوانٍ. لا تجمع مراجع الصور مع إدخالات الإطار الأول `image_url` / `image`. يدعم `grok-imagine-video-1.5-preview` image-to-video فقط.
+استخدم `operation=reference-to-video` عندما يدعم النموذج تكييفًا مرجعيًا مخصصًا. في العقد العام لـ AI Sonar تستخدم مراجع الصور `reference_images`، بينما تستخدم الفيديوهات والصوتيات المرجعية متعددة الوسائط الحقول `video_urls` و `audio_urls`. بالنسبة إلى `seedance-2.0` و `seedance-2.0-fast`، تدعم AI Sonar حاليًا ما يصل إلى 9 صور مرجعية، بالإضافة إلى ما يصل إلى 3 مقاطع فيديو مرجعية و3 ملفات صوت مرجعية. لاختيار النموذج وحدود 4K وملاحظات Mini، راجع [دليل نماذج فيديو Seedance 2.0](/ar/guides/seedance-2-video). يتحكم `duration` فقط في طول الإخراج الناتج، ولا يضع حدًا منفصلًا لمدة فيديو المرجع المُدخل. بالنسبة إلى `grok-imagine-video`، تقبل reference-to-video حتى 7 مراجع صور (`reference_images` أو `image_urls`) ويكون `duration` بحد أقصى 10 ثوانٍ. لا تجمع مراجع الصور مع إدخالات الإطار الأول `image_url` / `image`. يدعم `grok-imagine-video-1.5-preview` image-to-video فقط.
 
 ```python
 response = requests.post(

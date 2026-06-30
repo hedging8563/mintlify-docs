@@ -43,7 +43,7 @@ Untuk integrasi produksi, sebaiknya gunakan URL `https` publik untuk gambar, vid
 </ParamField>
 
 <ParamField body="reference_images" type="array">
-  Gambar referensi untuk alur dengan conditioning khusus. Jumlah yang didukung bergantung pada model. Untuk `seedance-2.0` dan `seedance-2.0-fast`, AI Sonar saat ini mendukung hingga 9 gambar referensi, ditambah hingga 3 video referensi dan 3 audio referensi. URL publik `https` lebih disarankan; model yang kompatibel juga menerima URL `data:`. Untuk `grok-imagine-video`, reference-to-video menerima hingga 7 referensi gambar dan `duration` dibatasi maksimal 10 detik. `grok-imagine-video-1.5-preview` hanya mendukung image-to-video dan tidak menerima referensi gambar.
+  Gambar referensi untuk alur dengan conditioning khusus. Jumlah yang didukung bergantung pada model. Untuk `seedance-2.0` dan `seedance-2.0-fast`, AI Sonar saat ini mendukung hingga 9 gambar referensi, ditambah hingga 3 video referensi dan 3 audio referensi. Untuk pilihan model, batas 4K, dan catatan Mini, lihat [panduan model video Seedance 2.0](/id/guides/seedance-2-video). URL publik `https` lebih disarankan; model yang kompatibel juga menerima URL `data:`. Untuk `grok-imagine-video`, reference-to-video menerima hingga 7 referensi gambar dan `duration` dibatasi maksimal 10 detik. `grok-imagine-video-1.5-preview` hanya mendukung image-to-video dan tidak menerima referensi gambar.
 </ParamField>
 
 <ParamField body="reference_image_type" type="string">
@@ -259,7 +259,7 @@ response = requests.post("https://api.aisonar.dev/v1/videos/generations",
 
 ## Reference to video
 
-Gunakan `operation=reference-to-video` ketika model mendukung conditioning referensi khusus. Dalam kontrak publik AI Sonar, referensi gambar menggunakan `reference_images`, sedangkan video dan audio referensi multimodal menggunakan `video_urls` dan `audio_urls`. Untuk `seedance-2.0` dan `seedance-2.0-fast`, AI Sonar saat ini mendukung hingga 9 gambar referensi, ditambah hingga 3 video referensi dan 3 audio referensi. `duration` hanya mengatur panjang output yang dihasilkan; field ini tidak menetapkan batas terpisah untuk durasi input video referensi. Untuk `grok-imagine-video`, reference-to-video menerima hingga 7 referensi gambar (`reference_images` atau `image_urls`) dan `duration` dibatasi maksimal 10 detik. Jangan gabungkan referensi gambar dengan input frame awal `image_url` / `image`. `grok-imagine-video-1.5-preview` hanya mendukung image-to-video.
+Gunakan `operation=reference-to-video` ketika model mendukung conditioning referensi khusus. Dalam kontrak publik AI Sonar, referensi gambar menggunakan `reference_images`, sedangkan video dan audio referensi multimodal menggunakan `video_urls` dan `audio_urls`. Untuk `seedance-2.0` dan `seedance-2.0-fast`, AI Sonar saat ini mendukung hingga 9 gambar referensi, ditambah hingga 3 video referensi dan 3 audio referensi. Untuk pilihan model, batas 4K, dan catatan Mini, lihat [panduan model video Seedance 2.0](/id/guides/seedance-2-video). `duration` hanya mengatur panjang output yang dihasilkan; field ini tidak menetapkan batas terpisah untuk durasi input video referensi. Untuk `grok-imagine-video`, reference-to-video menerima hingga 7 referensi gambar (`reference_images` atau `image_urls`) dan `duration` dibatasi maksimal 10 detik. Jangan gabungkan referensi gambar dengan input frame awal `image_url` / `image`. `grok-imagine-video-1.5-preview` hanya mendukung image-to-video.
 
 ```python
 response = requests.post(

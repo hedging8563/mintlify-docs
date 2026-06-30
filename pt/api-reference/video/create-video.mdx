@@ -43,7 +43,7 @@ Em integrações de produção, prefira URLs `https` públicas para imagens, ví
 </ParamField>
 
 <ParamField body="reference_images" type="array">
-  Imagens de referência para fluxos com condicionamento dedicado. A quantidade suportada depende do modelo. Para `seedance-2.0` e `seedance-2.0-fast`, a AI Sonar suporta atualmente até 9 imagens de referência, além de até 3 vídeos de referência e 3 áudios de referência. Recomendam-se URLs públicas `https`; modelos compatíveis também aceitam URLs `data:`. Para `grok-imagine-video`, reference-to-video aceita até 7 referências de imagem e `duration` é limitado a 10 segundos. `grok-imagine-video-1.5-preview` é apenas image-to-video e não aceita referências de imagem.
+  Imagens de referência para fluxos com condicionamento dedicado. A quantidade suportada depende do modelo. Para `seedance-2.0` e `seedance-2.0-fast`, a AI Sonar suporta atualmente até 9 imagens de referência, além de até 3 vídeos de referência e 3 áudios de referência. Para escolha de modelo, limites de 4K e notas sobre Mini, consulte o [guia de modelos de vídeo Seedance 2.0](/pt/guides/seedance-2-video). Recomendam-se URLs públicas `https`; modelos compatíveis também aceitam URLs `data:`. Para `grok-imagine-video`, reference-to-video aceita até 7 referências de imagem e `duration` é limitado a 10 segundos. `grok-imagine-video-1.5-preview` é apenas image-to-video e não aceita referências de imagem.
 </ParamField>
 
 <ParamField body="reference_image_type" type="string">
@@ -259,7 +259,7 @@ response = requests.post("https://api.aisonar.dev/v1/videos/generations",
 
 ## Referência para vídeo
 
-Use `operation=reference-to-video` quando o modelo suportar condicionamento dedicado por referência. No contrato público da AI Sonar, referências de imagem usam `reference_images`, enquanto vídeos e áudios de referência multimodais usam `video_urls` e `audio_urls`. Para `seedance-2.0` e `seedance-2.0-fast`, a AI Sonar suporta atualmente até 9 imagens de referência, além de até 3 vídeos de referência e 3 áudios de referência. `duration` controla apenas a duração do resultado gerado; ele não define um limite separado para a duração do vídeo de referência de entrada. Para `grok-imagine-video`, reference-to-video aceita até 7 referências de imagem (`reference_images` ou `image_urls`) e `duration` é limitado a 10 segundos. Não combine referências de imagem com entradas de primeiro frame `image_url` / `image`. `grok-imagine-video-1.5-preview` é apenas image-to-video.
+Use `operation=reference-to-video` quando o modelo suportar condicionamento dedicado por referência. No contrato público da AI Sonar, referências de imagem usam `reference_images`, enquanto vídeos e áudios de referência multimodais usam `video_urls` e `audio_urls`. Para `seedance-2.0` e `seedance-2.0-fast`, a AI Sonar suporta atualmente até 9 imagens de referência, além de até 3 vídeos de referência e 3 áudios de referência. Para escolha de modelo, limites de 4K e notas sobre Mini, consulte o [guia de modelos de vídeo Seedance 2.0](/pt/guides/seedance-2-video). `duration` controla apenas a duração do resultado gerado; ele não define um limite separado para a duração do vídeo de referência de entrada. Para `grok-imagine-video`, reference-to-video aceita até 7 referências de imagem (`reference_images` ou `image_urls`) e `duration` é limitado a 10 segundos. Não combine referências de imagem com entradas de primeiro frame `image_url` / `image`. `grok-imagine-video-1.5-preview` é apenas image-to-video.
 
 ```python
 response = requests.post(

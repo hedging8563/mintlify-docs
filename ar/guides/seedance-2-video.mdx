@@ -1,0 +1,84 @@
+---
+title: "نماذج فيديو Seedance 2.0"
+description: "اختر بين Seedance 2.0 وSeedance 2.0 Fast وSeedance 2.0 Mini لتوليد الفيديو."
+---
+
+Seedance 2.0 هي عائلة نماذج فيديو لتدفقات النص إلى فيديو، والصورة إلى فيديو، والمرجع إلى فيديو، وتحرير الفيديو، وتمديد الفيديو. استخدم معرفات النماذج المنطقية على مستوى المنتج في `model`، ثم اختر التدفق عبر `operation`.
+
+## اختيار النموذج
+
+| النموذج | الأفضل لـ | الدقات العامة | مدخلات المرجع |
+|---------|-----------|---------------|----------------|
+| `seedance-2.0` | أعلى جودة ومخرجات 4K | `480p`, `720p`, `1080p`, `4k` | حتى 9 صور مرجعية بالإضافة إلى حتى 3 فيديوهات مرجعية و3 ملفات صوتية مرجعية لـ `reference-to-video` |
+| `seedance-2.0-fast` | مخرجات 480p/720p أسرع وأقل تكلفة | `480p`, `720p` | حتى 9 صور مرجعية بالإضافة إلى حتى 3 فيديوهات مرجعية و3 ملفات صوتية مرجعية لـ `reference-to-video` |
+| `seedance-2.0-mini` | أقل تكلفة لمخرجات 480p/720p | `480p`, `720p` | يدعم عائلة عمليات Seedance 2.0؛ اقرأ تفاصيل النموذج الحالية قبل الاعتماد على حدود عدد مرجعية دقيقة |
+
+`seedance-2.0-fast` و`seedance-2.0-mini` مغلقان بأمان على `480p` / `720p`؛ لا ترسل `1080p` أو `4k` إلى هذين النموذجين.
+
+## العمليات المدعومة
+
+تدعم عائلة Seedance 2.0 العامة:
+
+| العملية | المدخلات النموذجية |
+|---------|--------------------|
+| `text-to-video` | `prompt` |
+| `image-to-video` | `prompt`, `image_url` أو إدخال صورة متوافق |
+| `start-end-to-video` | `prompt`, `start_image`, `end_image` |
+| `reference-to-video` | `prompt`, `reference_images`, و`video_urls` اختيارية، و`audio_urls` اختيارية |
+| `video-to-video` | `prompt`, `video_url` أو إدخال فيديو متوافق |
+| `video-extension` | `task_id` أو إدخال تمديد محدد للنموذج |
+
+طلبات Seedance الصوتية فقط، أو النص مع الصوت فقط، ليست جزءًا من العقد العام. استخدم الصوت كمدخل مرجعي فقط في تدفقات `reference-to-video` المدعومة.
+
+## 4K Reference-To-Video
+
+استخدم `seedance-2.0` عندما تحتاج إلى مخرجات 4K. يدعم النموذج الأساسي `4k` في العقد العام المحكوم، بما في ذلك `reference-to-video`.
+
+```bash
+curl -X POST "https://api.aisonar.dev/v1/videos/generations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0",
+    "operation": "reference-to-video",
+    "prompt": "Keep the same product identity and lighting while creating a slow cinematic rotation.",
+    "reference_images": [
+      "https://example.com/product-front.jpg",
+      "https://example.com/product-side.jpg"
+    ],
+    "video_urls": ["https://example.com/motion-reference.mp4"],
+    "duration": 6,
+    "resolution": "4k",
+    "aspect_ratio": "16:9"
+  }'
+```
+
+## طلبات Fast وMini
+
+استخدم `seedance-2.0-fast` عندما تكون سرعة الاستجابة مهمة، و`seedance-2.0-mini` عندما تكون أقل تكلفة أهم من أعلى جودة.
+
+```bash
+curl -X POST "https://api.aisonar.dev/v1/videos/generations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0-fast",
+    "operation": "text-to-video",
+    "prompt": "A clean product reveal on a white studio background, gentle camera push-in.",
+    "duration": 5,
+    "resolution": "720p",
+    "aspect_ratio": "16:9"
+  }'
+```
+
+## التسعير والفوترة
+
+تسعير Seedance 2.0 قائم على tokens ويعتمد على دقة الإخراج وما إذا كان الطلب يتضمن إدخال فيديو. حقيقة أسعار AI Sonar بالدولار لهذه النماذج محولة من الأسعار الرسمية باليوان الصيني باستخدام `6.8` CNY لكل USD.
+
+استخدم [Pricing API](/ar/api-reference/pricing/get-pricing) أو [Models API](/ar/api-reference/models/list-models) للحصول على السعر القابل للفوترة الحالي قبل تثبيته في واجهة المنتج.
+
+## النتائج غير المتزامنة
+
+توليد الفيديو غير متزامن. اتبع أولًا `poll_url` العائد من طلب الإنشاء، أو استخدم `GET /v1/tasks/{id}` مع معرف المهمة العائد.
+
+راجع [إنشاء فيديو](/ar/api-reference/video/create-video)، و[الحصول على حالة المهمة](/ar/api-reference/tasks/get-task-status)، و[إلغاء المهمة](/ar/api-reference/tasks/cancel-task) لتفاصيل نقاط النهاية.

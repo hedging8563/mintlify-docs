@@ -2,7 +2,7 @@
 
 > Unified AI API Gateway - Access hundreds of AI models through a single API
 
-Generated: 2026-06-29
+Generated: 2026-06-30
 Source: https://docs.aisonar.dev
 
 ---
@@ -2650,7 +2650,7 @@ For production media input, prefer public `https` URLs over inline `data:` URLs.
 
 - Veo 3 family requests default to audio-on when `output_audio` is omitted. Set it explicitly when the model supports the toggle and your UX depends on sound.
 - `kling_elements` is for `kling-3.0-video` image-conditioned requests. Reference each element in `prompt` as `@name`; do not combine it with `output_audio=true`.
-- For `seedance-2.0` and `seedance-2.0-fast`, reference-to-video can accept multiple reference images plus reference video/audio inputs according to the current public contract.
+- For the Seedance 2.0 family, read the [Seedance 2.0 video models guide](/guides/seedance-2-video) before using 4K output, Fast/Mini resolution caps, or multimodal reference inputs.
 - For `grok-imagine-video`, video-to-video uses a public `.mp4` `video_url`; model-specific limits such as `duration` and `resolution` must come from the model contract.
 
 ## Polling Results
@@ -2675,6 +2675,94 @@ Completed video tasks may return `video_url`, `video`, or `videos` depending on 
 | Get Task Status | [Get Task Status](/api-reference/tasks/get-task-status) |
 | Cancel Task | [Cancel Task](/api-reference/tasks/cancel-task) |
 | Billing & Pricing | [Billing & Pricing](/guides/billing) |
+
+---
+
+### Seedance 2.0 Video Models
+
+> Choose between Seedance 2.0, Seedance 2.0 Fast, and Seedance 2.0 Mini for video generation.
+
+URL: https://docs.aisonar.dev/guides/seedance-2-video
+
+Seedance 2.0 is a video model family for text-to-video, image-to-video, reference-to-video, video editing, and video extension workflows. Use product-level model IDs in `model`, then choose the workflow with `operation`.
+
+## Model Choice
+
+| Model | Best for | Public resolutions | Reference inputs |
+|-------|----------|--------------------|------------------|
+| `seedance-2.0` | Highest quality and 4K output | `480p`, `720p`, `1080p`, `4k` | Up to 9 reference images plus up to 3 reference videos and 3 reference audios for `reference-to-video` |
+| `seedance-2.0-fast` | Faster, lower-cost 480p/720p output | `480p`, `720p` | Up to 9 reference images plus up to 3 reference videos and 3 reference audios for `reference-to-video` |
+| `seedance-2.0-mini` | Lowest-cost 480p/720p output | `480p`, `720p` | Supports the Seedance 2.0 operation family; read the current model detail before relying on exact reference count limits |
+
+`seedance-2.0-fast` and `seedance-2.0-mini` are fail-closed to `480p` / `720p`; do not send `1080p` or `4k` to those models.
+
+## Supported Operations
+
+The public Seedance 2.0 family supports:
+
+| Operation | Typical inputs |
+|-----------|----------------|
+| `text-to-video` | `prompt` |
+| `image-to-video` | `prompt`, `image_url` or compatible image input |
+| `start-end-to-video` | `prompt`, `start_image`, `end_image` |
+| `reference-to-video` | `prompt`, `reference_images`, optional `video_urls`, optional `audio_urls` |
+| `video-to-video` | `prompt`, `video_url` or compatible video input |
+| `video-extension` | `task_id` or model-specific continuation input |
+
+Pure audio-only and text-plus-audio-only Seedance requests are not part of the public contract. Use audio as a reference input only in supported `reference-to-video` flows.
+
+## 4K Reference-To-Video
+
+Use `seedance-2.0` when you need 4K output. The base model supports `4k` across the governed public contract, including `reference-to-video`.
+
+```bash
+curl -X POST "https://api.aisonar.dev/v1/videos/generations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0",
+    "operation": "reference-to-video",
+    "prompt": "Keep the same product identity and lighting while creating a slow cinematic rotation.",
+    "reference_images": [
+      "https://example.com/product-front.jpg",
+      "https://example.com/product-side.jpg"
+    ],
+    "video_urls": ["https://example.com/motion-reference.mp4"],
+    "duration": 6,
+    "resolution": "4k",
+    "aspect_ratio": "16:9"
+  }'
+```
+
+## Fast And Mini Requests
+
+Use `seedance-2.0-fast` when latency matters, and `seedance-2.0-mini` when the lowest cost tier is more important than maximum quality.
+
+```bash
+curl -X POST "https://api.aisonar.dev/v1/videos/generations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0-fast",
+    "operation": "text-to-video",
+    "prompt": "A clean product reveal on a white studio background, gentle camera push-in.",
+    "duration": 5,
+    "resolution": "720p",
+    "aspect_ratio": "16:9"
+  }'
+```
+
+## Pricing And Billing
+
+Seedance 2.0 pricing is token-based and depends on output resolution and whether the request includes video input. AI Sonar's USD price truth for these models is converted from official CNY pricing using `6.8` CNY per USD.
+
+Use the [Pricing API](/api-reference/pricing/get-pricing) or [Models API](/api-reference/models/list-models) for the current billable price before hard-coding product UI.
+
+## Async Results
+
+Video generation is asynchronous. Follow the `poll_url` returned by the create request, or use `GET /v1/tasks/{id}` with the returned task ID.
+
+See [Create Video](/api-reference/video/create-video), [Get Task Status](/api-reference/tasks/get-task-status), and [Cancel Task](/api-reference/tasks/cancel-task) for endpoint details.
 
 ---
 
@@ -4257,7 +4345,7 @@ response = requests.post("https://api.aisonar.dev/v1/videos/generations",
 
 ## Reference to Video
 
-Use `operation=reference-to-video` when the model supports dedicated reference conditioning. In AI Sonar's public contract, image references use `reference_images`, while multimodal reference videos and audios use `video_urls` and `audio_urls`. For `seedance-2.0` and `seedance-2.0-fast`, AI Sonar currently supports up to 9 reference images plus up to 3 reference videos and 3 reference audios. `duration` controls generated output length only; it does not set a separate limit for reference video input duration. For `grok-imagine-video`, reference-to-video accepts up to 7 image references (`reference_images` or `image_urls`) and `duration` is capped at 10 seconds. Do not combine reference images with `image_url` / `image` first-frame inputs. `grok-imagine-video-1.5-preview` is image-to-video only.
+Use `operation=reference-to-video` when the model supports dedicated reference conditioning. In AI Sonar's public contract, image references use `reference_images`, while multimodal reference videos and audios use `video_urls` and `audio_urls`. For `seedance-2.0` and `seedance-2.0-fast`, AI Sonar currently supports up to 9 reference images plus up to 3 reference videos and 3 reference audios. For model selection, 4K boundaries, and Mini notes, see the [Seedance 2.0 video models guide](/guides/seedance-2-video). `duration` controls generated output length only; it does not set a separate limit for reference video input duration. For `grok-imagine-video`, reference-to-video accepts up to 7 image references (`reference_images` or `image_urls`) and `duration` is capped at 10 seconds. Do not combine reference images with `image_url` / `image` first-frame inputs. `grok-imagine-video-1.5-preview` is image-to-video only.
 
 ```python
 response = requests.post(

@@ -52,7 +52,7 @@ curl https://api.aisonar.dev/v1/videos/generations \\
 
 - طلبات عائلة Veo 3 افتراضيًا تكون على وضع الصوت عند حذف `output_audio`. قم بتعيينها صراحة عندما يدعم النموذج التبديل وتعتمد تجربة المستخدم الخاصة بك على الصوت.
 - `kling_elements` مخصصة لطلبات `kling-3.0-video` المشروطة بالصورة. قم بالإشارة إلى كل عنصر في `prompt` كـ `@name`؛ لا تجمعها مع `output_audio=true`.
-- بالنسبة لـ `seedance-2.0` و `seedance-2.0-fast`، يمكن أن تقبل `reference-to-video` صور مرجعية متعددة بالإضافة إلى مدخلات فيديو/صوت مرجعية وفقًا للعقد العام الحالي.
+- بالنسبة إلى عائلة Seedance 2.0، اقرأ [دليل نماذج فيديو Seedance 2.0](/ar/guides/seedance-2-video) قبل استخدام مخرجات 4K أو حدود Fast/Mini أو مدخلات المرجع متعددة الوسائط.
 - بالنسبة لـ `grok-imagine-video`، يستخدم `video-to-video` `video_url` العامة بصيغة `.mp4`؛ يجب أن تأتي الحدود المحددة للنموذج مثل `duration` و `resolution` من عقد النموذج.
 
 ## استعلام النتائج

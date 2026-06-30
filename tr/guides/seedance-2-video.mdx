@@ -1,0 +1,84 @@
+---
+title: "Seedance 2.0 video modelleri"
+description: "Video üretimi için Seedance 2.0, Seedance 2.0 Fast ve Seedance 2.0 Mini arasında seçim yapın."
+---
+
+Seedance 2.0; metinden videoya, görselden videoya, referanstan videoya, video düzenleme ve video uzatma akışları için bir video model ailesidir. `model` içinde ürün düzeyi mantıksal model ID kullanın, iş akışını `operation` ile seçin.
+
+## Model seçimi
+
+| Model | En uygun kullanım | Genel çözünürlükler | Referans girdileri |
+|-------|-------------------|---------------------|--------------------|
+| `seedance-2.0` | En yüksek kalite ve 4K çıktı | `480p`, `720p`, `1080p`, `4k` | `reference-to-video` için en fazla 9 referans görseli, en fazla 3 referans videosu ve 3 referans sesi |
+| `seedance-2.0-fast` | Daha hızlı ve daha düşük maliyetli 480p/720p çıktı | `480p`, `720p` | `reference-to-video` için en fazla 9 referans görseli, en fazla 3 referans videosu ve 3 referans sesi |
+| `seedance-2.0-mini` | En düşük maliyetli 480p/720p çıktı | `480p`, `720p` | Seedance 2.0 operasyon ailesini destekler; kesin referans sayısı sınırlarına güvenmeden önce mevcut model detayını okuyun |
+
+`seedance-2.0-fast` ve `seedance-2.0-mini`, `480p` / `720p` için fail-closed durumdadır; bu modellere `1080p` veya `4k` göndermeyin.
+
+## Desteklenen operasyonlar
+
+Genel Seedance 2.0 ailesi şunları destekler:
+
+| Operasyon | Tipik girdiler |
+|-----------|----------------|
+| `text-to-video` | `prompt` |
+| `image-to-video` | `prompt`, `image_url` veya uyumlu görsel girdisi |
+| `start-end-to-video` | `prompt`, `start_image`, `end_image` |
+| `reference-to-video` | `prompt`, `reference_images`, isteğe bağlı `video_urls`, isteğe bağlı `audio_urls` |
+| `video-to-video` | `prompt`, `video_url` veya uyumlu video girdisi |
+| `video-extension` | `task_id` veya modele özel devam girdisi |
+
+Yalnızca ses veya yalnızca metin artı ses içeren Seedance istekleri genel sözleşmenin parçası değildir. Sesi yalnızca desteklenen `reference-to-video` akışlarında referans girdisi olarak kullanın.
+
+## 4K Reference-To-Video
+
+4K çıktı gerektiğinde `seedance-2.0` kullanın. Temel model, yönetilen genel sözleşmede `reference-to-video` dahil `4k` destekler.
+
+```bash
+curl -X POST "https://api.aisonar.dev/v1/videos/generations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0",
+    "operation": "reference-to-video",
+    "prompt": "Keep the same product identity and lighting while creating a slow cinematic rotation.",
+    "reference_images": [
+      "https://example.com/product-front.jpg",
+      "https://example.com/product-side.jpg"
+    ],
+    "video_urls": ["https://example.com/motion-reference.mp4"],
+    "duration": 6,
+    "resolution": "4k",
+    "aspect_ratio": "16:9"
+  }'
+```
+
+## Fast ve Mini istekleri
+
+Gecikme önemliyse `seedance-2.0-fast`, en düşük maliyet maksimum kaliteden daha önemliyse `seedance-2.0-mini` kullanın.
+
+```bash
+curl -X POST "https://api.aisonar.dev/v1/videos/generations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0-fast",
+    "operation": "text-to-video",
+    "prompt": "A clean product reveal on a white studio background, gentle camera push-in.",
+    "duration": 5,
+    "resolution": "720p",
+    "aspect_ratio": "16:9"
+  }'
+```
+
+## Fiyatlandırma ve faturalama
+
+Seedance 2.0 fiyatlandırması token bazlıdır; çıktı çözünürlüğüne ve isteğin video girdisi içerip içermemesine bağlıdır. AI Sonar'in bu modeller için USD fiyat gerçeği, resmi CNY fiyatlarından `6.8` CNY/USD ile dönüştürülür.
+
+Ürün arayüzünde fiyatı sabitlemeden önce güncel faturalandırılabilir fiyat için [Pricing API](/tr/api-reference/pricing/get-pricing) veya [Models API](/tr/api-reference/models/list-models) kullanın.
+
+## Asenkron sonuçlar
+
+Video üretimi asenkrondur. Önce create isteğinin döndürdüğü `poll_url` değerini izleyin veya dönen görev ID'siyle `GET /v1/tasks/{id}` kullanın.
+
+Endpoint ayrıntıları için [Video Oluştur](/tr/api-reference/video/create-video), [Görev Durumunu Al](/tr/api-reference/tasks/get-task-status) ve [Görevi İptal Et](/tr/api-reference/tasks/cancel-task) sayfalarına bakın.

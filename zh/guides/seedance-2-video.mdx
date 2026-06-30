@@ -1,0 +1,84 @@
+---
+title: "Seedance 2.0 视频模型"
+description: "在 Seedance 2.0、Seedance 2.0 Fast 和 Seedance 2.0 Mini 之间选择视频生成模型。"
+---
+
+Seedance 2.0 是一个视频模型家族，覆盖文生视频、图生视频、参考图生视频、视频编辑和视频续写等流程。请求里使用产品级逻辑模型 ID 作为 `model`，再用 `operation` 选择具体工作流。
+
+## 模型选择
+
+| 模型 | 适合场景 | 公开分辨率 | 参考输入 |
+|------|----------|------------|----------|
+| `seedance-2.0` | 最高质量和 4K 输出 | `480p`, `720p`, `1080p`, `4k` | `reference-to-video` 最多 9 张参考图，外加最多 3 段参考视频和 3 段参考音频 |
+| `seedance-2.0-fast` | 更快、更低成本的 480p/720p 输出 | `480p`, `720p` | `reference-to-video` 最多 9 张参考图，外加最多 3 段参考视频和 3 段参考音频 |
+| `seedance-2.0-mini` | 成本最低的 480p/720p 输出 | `480p`, `720p` | 支持 Seedance 2.0 操作家族；依赖精确参考数量前请读取当前模型详情 |
+
+`seedance-2.0-fast` 和 `seedance-2.0-mini` 对 `480p` / `720p` 之外的分辨率保持 fail-closed；不要向这两个模型发送 `1080p` 或 `4k`。
+
+## 支持的操作
+
+Seedance 2.0 家族的公开契约支持：
+
+| 操作 | 常见输入 |
+|------|----------|
+| `text-to-video` | `prompt` |
+| `image-to-video` | `prompt`, `image_url` 或兼容图片输入 |
+| `start-end-to-video` | `prompt`, `start_image`, `end_image` |
+| `reference-to-video` | `prompt`, `reference_images`，可选 `video_urls`，可选 `audio_urls` |
+| `video-to-video` | `prompt`, `video_url` 或兼容视频输入 |
+| `video-extension` | `task_id` 或模型特定续写输入 |
+
+纯音频或文本加音频的 Seedance 请求不属于公开契约。音频只应作为受支持 `reference-to-video` 流程里的参考输入使用。
+
+## 4K Reference-To-Video
+
+需要 4K 输出时使用 `seedance-2.0`。基础模型在治理后的公开契约中支持 `4k`，包括 `reference-to-video`。
+
+```bash
+curl -X POST "https://api.aisonar.dev/v1/videos/generations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0",
+    "operation": "reference-to-video",
+    "prompt": "保持同一商品身份和布光，生成缓慢电影感旋转镜头。",
+    "reference_images": [
+      "https://example.com/product-front.jpg",
+      "https://example.com/product-side.jpg"
+    ],
+    "video_urls": ["https://example.com/motion-reference.mp4"],
+    "duration": 6,
+    "resolution": "4k",
+    "aspect_ratio": "16:9"
+  }'
+```
+
+## Fast 和 Mini 请求
+
+更看重延迟时使用 `seedance-2.0-fast`；更看重最低成本档时使用 `seedance-2.0-mini`。
+
+```bash
+curl -X POST "https://api.aisonar.dev/v1/videos/generations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0-fast",
+    "operation": "text-to-video",
+    "prompt": "白色棚拍背景上的干净商品揭示镜头，镜头轻微推进。",
+    "duration": 5,
+    "resolution": "720p",
+    "aspect_ratio": "16:9"
+  }'
+```
+
+## 价格与计费
+
+Seedance 2.0 价格按 token 计费，并根据输出分辨率以及请求是否包含视频输入区分。AI Sonar 对这些模型的 USD 价格真值使用官方 CNY 价格按 `6.8` CNY/USD 折算。
+
+在产品 UI 中硬编码价格前，请使用 [Pricing API](/zh/api-reference/pricing/get-pricing) 或 [Models API](/zh/api-reference/models/list-models) 读取当前可计费价格。
+
+## 异步结果
+
+视频生成是异步的。优先跟随创建响应返回的 `poll_url`，也可以用返回的任务 ID 调用 `GET /v1/tasks/{id}`。
+
+端点细节请参考[创建视频](/zh/api-reference/video/create-video)、[获取任务状态](/zh/api-reference/tasks/get-task-status)和[取消任务](/zh/api-reference/tasks/cancel-task)。

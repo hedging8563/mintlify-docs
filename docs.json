@@ -80,6 +80,7 @@
                 "pages": [
                   "guides/image-generation",
                   "guides/video-generation",
+                  "guides/seedance-2-video",
                   "guides/music-generation",
                   "guides/3d-generation"
                 ]
@@ -265,6 +266,7 @@
                 "pages": [
                   "zh/guides/image-generation",
                   "zh/guides/video-generation",
+                  "zh/guides/seedance-2-video",
                   "zh/guides/music-generation",
                   "zh/guides/3d-generation"
                 ]
@@ -450,6 +452,7 @@
                 "pages": [
                   "zh-Hant/guides/image-generation",
                   "zh-Hant/guides/video-generation",
+                  "zh-Hant/guides/seedance-2-video",
                   "zh-Hant/guides/music-generation",
                   "zh-Hant/guides/3d-generation"
                 ]
@@ -635,6 +638,7 @@
                 "pages": [
                   "ja/guides/image-generation",
                   "ja/guides/video-generation",
+                  "ja/guides/seedance-2-video",
                   "ja/guides/music-generation",
                   "ja/guides/3d-generation"
                 ]
@@ -820,6 +824,7 @@
                 "pages": [
                   "ko/guides/image-generation",
                   "ko/guides/video-generation",
+                  "ko/guides/seedance-2-video",
                   "ko/guides/music-generation",
                   "ko/guides/3d-generation"
                 ]
@@ -1005,6 +1010,7 @@
                 "pages": [
                   "de/guides/image-generation",
                   "de/guides/video-generation",
+                  "de/guides/seedance-2-video",
                   "de/guides/music-generation",
                   "de/guides/3d-generation"
                 ]
@@ -1190,6 +1196,7 @@
                 "pages": [
                   "fr/guides/image-generation",
                   "fr/guides/video-generation",
+                  "fr/guides/seedance-2-video",
                   "fr/guides/music-generation",
                   "fr/guides/3d-generation"
                 ]
@@ -1375,6 +1382,7 @@
                 "pages": [
                   "es/guides/image-generation",
                   "es/guides/video-generation",
+                  "es/guides/seedance-2-video",
                   "es/guides/music-generation",
                   "es/guides/3d-generation"
                 ]
@@ -1560,6 +1568,7 @@
                 "pages": [
                   "pt/guides/image-generation",
                   "pt/guides/video-generation",
+                  "pt/guides/seedance-2-video",
                   "pt/guides/music-generation",
                   "pt/guides/3d-generation"
                 ]
@@ -1745,6 +1754,7 @@
                 "pages": [
                   "ar/guides/image-generation",
                   "ar/guides/video-generation",
+                  "ar/guides/seedance-2-video",
                   "ar/guides/music-generation",
                   "ar/guides/3d-generation"
                 ]
@@ -1930,6 +1940,7 @@
                 "pages": [
                   "vi/guides/image-generation",
                   "vi/guides/video-generation",
+                  "vi/guides/seedance-2-video",
                   "vi/guides/music-generation",
                   "vi/guides/3d-generation"
                 ]
@@ -2115,6 +2126,7 @@
                 "pages": [
                   "id/guides/image-generation",
                   "id/guides/video-generation",
+                  "id/guides/seedance-2-video",
                   "id/guides/music-generation",
                   "id/guides/3d-generation"
                 ]
@@ -2300,6 +2312,7 @@
                 "pages": [
                   "tr/guides/image-generation",
                   "tr/guides/video-generation",
+                  "tr/guides/seedance-2-video",
                   "tr/guides/music-generation",
                   "tr/guides/3d-generation"
                 ]

@@ -45,7 +45,7 @@ Ses çıkışı modele bağlıdır. AI Sonar’da `output_audio` gönderilmezse 
 </ParamField>
 
 <ParamField body="reference_images" type="array">
-  Özel referans koşullandırmasını destekleyen akışlar için referans görseller. Desteklenen adet modele bağlıdır. `seedance-2.0` ve `seedance-2.0-fast` için AI Sonar şu anda en fazla 9 referans görseli, ayrıca en fazla 3 referans video ve 3 referans ses girdisini destekler. Herkese açık `https` URL'leri önerilir; uyumlu modeller `data:` URL'lerini de kabul eder. `grok-imagine-video` için reference-to-video en fazla 7 görüntü referansı kabul eder ve `duration` en fazla 10 saniyedir. `grok-imagine-video-1.5-preview` yalnızca image-to-video destekler ve referans görüntü kabul etmez.
+  Özel referans koşullandırmasını destekleyen akışlar için referans görseller. Desteklenen adet modele bağlıdır. `seedance-2.0` ve `seedance-2.0-fast` için AI Sonar şu anda en fazla 9 referans görseli, ayrıca en fazla 3 referans video ve 3 referans ses girdisini destekler. Model seçimi, 4K sınırları ve Mini notları için [Seedance 2.0 video modelleri kılavuzuna](/tr/guides/seedance-2-video) bakın. Herkese açık `https` URL'leri önerilir; uyumlu modeller `data:` URL'lerini de kabul eder. `grok-imagine-video` için reference-to-video en fazla 7 görüntü referansı kabul eder ve `duration` en fazla 10 saniyedir. `grok-imagine-video-1.5-preview` yalnızca image-to-video destekler ve referans görüntü kabul etmez.
 </ParamField>
 
 <ParamField body="reference_image_type" type="string">
@@ -277,7 +277,7 @@ response = requests.post("https://api.aisonar.dev/v1/videos/generations",
 
 ## Referans görselle videoya
 
-Model özel referans koşullandırmasını destekliyorsa `operation=reference-to-video` kullanın. AI Sonar'nın herkese açık sözleşmesinde görsel referanslar `reference_images`, çok modlu referans video ve sesler ise `video_urls` ve `audio_urls` ile iletilir. `seedance-2.0` ve `seedance-2.0-fast` için AI Sonar şu anda en fazla 9 referans görseli, ayrıca en fazla 3 referans video ve 3 referans sesi destekler. `duration` yalnızca üretilen çıktının süresini kontrol eder; referans video girdisi için ayrı bir süre sınırı belirlemez. `grok-imagine-video` için reference-to-video en fazla 7 görüntü referansı (`reference_images` veya `image_urls`) kabul eder ve `duration` en fazla 10 saniyedir. Referans görüntüleri `image_url` / `image` ilk kare girdileriyle birlikte göndermeyin. `grok-imagine-video-1.5-preview` yalnızca image-to-video destekler.
+Model özel referans koşullandırmasını destekliyorsa `operation=reference-to-video` kullanın. AI Sonar'nın herkese açık sözleşmesinde görsel referanslar `reference_images`, çok modlu referans video ve sesler ise `video_urls` ve `audio_urls` ile iletilir. `seedance-2.0` ve `seedance-2.0-fast` için AI Sonar şu anda en fazla 9 referans görseli, ayrıca en fazla 3 referans video ve 3 referans sesi destekler. Model seçimi, 4K sınırları ve Mini notları için [Seedance 2.0 video modelleri kılavuzuna](/tr/guides/seedance-2-video) bakın. `duration` yalnızca üretilen çıktının süresini kontrol eder; referans video girdisi için ayrı bir süre sınırı belirlemez. `grok-imagine-video` için reference-to-video en fazla 7 görüntü referansı (`reference_images` veya `image_urls`) kabul eder ve `duration` en fazla 10 saniyedir. Referans görüntüleri `image_url` / `image` ilk kare girdileriyle birlikte göndermeyin. `grok-imagine-video-1.5-preview` yalnızca image-to-video destekler.
 
 ```python
 response = requests.post(

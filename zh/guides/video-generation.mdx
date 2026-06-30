@@ -52,7 +52,7 @@ curl https://api.aisonar.dev/v1/videos/generations \\
 
 - Veo 3 系列请求在省略 `output_audio` 时默认启用音频。当模型支持切换且您的用户体验依赖于声音时，请明确设置它。
 - `kling_elements` 用于 `kling-3.0-video` 图像条件请求。在 `prompt` 中将每个元素引用为 `@name`；不要将其与 `output_audio=true` 结合使用。
-- 对于 `seedance-2.0` 和 `seedance-2.0-fast`，reference-to-video 可以根据当前公共合同接受多个参考图像以及参考视频/音频输入。
+- 使用 Seedance 2.0 家族的 4K 输出、Fast/Mini 分辨率边界或多模态参考输入前，请阅读 [Seedance 2.0 视频模型指南](/zh/guides/seedance-2-video)。
 - 对于 `grok-imagine-video`，video-to-video 使用公共 `.mp4` `video_url`；特定模型的限制如 `duration` 和 `resolution` 必须来自模型合同。
 
 ## 轮询结果

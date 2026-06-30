@@ -45,7 +45,7 @@ description: "建立一個影片生成任務"
 </ParamField>
 
 <ParamField body="reference_images" type="array">
-  用於參考圖生影片的參考圖輸入。可傳數量取決於模型。對於 `seedance-2.0` 與 `seedance-2.0-fast`，AI Sonar 目前支援最多 9 張參考圖，外加最多 3 段參考影片與 3 段參考音訊。建議優先使用公開 `https` URL；相容模型也支援內嵌 `data:` URL。 對於 `grok-imagine-video`，reference-to-video 最多接受 7 個圖片參考，且 `duration` 最高為 10 秒。`grok-imagine-video-1.5-preview` 僅支援圖生影片，不接受參考圖片。
+  用於參考圖生影片的參考圖輸入。可傳數量取決於模型。對於 `seedance-2.0` 與 `seedance-2.0-fast`，AI Sonar 目前支援最多 9 張參考圖，外加最多 3 段參考影片與 3 段參考音訊。模型選型、4K 邊界和 Mini 說明請參考 [Seedance 2.0 影片模型指南](/zh-Hant/guides/seedance-2-video)。建議優先使用公開 `https` URL；相容模型也支援內嵌 `data:` URL。 對於 `grok-imagine-video`，reference-to-video 最多接受 7 個圖片參考，且 `duration` 最高為 10 秒。`grok-imagine-video-1.5-preview` 僅支援圖生影片，不接受參考圖片。
 </ParamField>
 
 <ParamField body="reference_image_type" type="string">
@@ -301,7 +301,7 @@ response = requests.post("https://api.aisonar.dev/v1/videos/generations",
 
 ## 參考圖生影片
 
-當模型支援專門的參考條件控制時，請使用 `operation=reference-to-video`。在 AI Sonar 的公開契約中，圖片參考素材使用 `reference_images`，多模態參考影片與參考音訊則分別使用 `video_urls` 與 `audio_urls`。對於 `seedance-2.0` 與 `seedance-2.0-fast`，AI Sonar 目前支援最多 9 張參考圖，外加最多 3 段參考影片與 3 段參考音訊。`duration` 只控制生成輸出時長，不單獨限制參考影片輸入時長。 對於 `grok-imagine-video`，reference-to-video 最多接受 7 個圖片參考（`reference_images` 或 `image_urls`），且 `duration` 最高為 10 秒。不要把參考圖片與 `image_url` / `image` 首幀輸入混用。`grok-imagine-video-1.5-preview` 僅支援圖生影片。
+當模型支援專門的參考條件控制時，請使用 `operation=reference-to-video`。在 AI Sonar 的公開契約中，圖片參考素材使用 `reference_images`，多模態參考影片與參考音訊則分別使用 `video_urls` 與 `audio_urls`。對於 `seedance-2.0` 與 `seedance-2.0-fast`，AI Sonar 目前支援最多 9 張參考圖，外加最多 3 段參考影片與 3 段參考音訊。模型選型、4K 邊界和 Mini 說明請參考 [Seedance 2.0 影片模型指南](/zh-Hant/guides/seedance-2-video)。`duration` 只控制生成輸出時長，不單獨限制參考影片輸入時長。 對於 `grok-imagine-video`，reference-to-video 最多接受 7 個圖片參考（`reference_images` 或 `image_urls`），且 `duration` 最高為 10 秒。不要把參考圖片與 `image_url` / `image` 首幀輸入混用。`grok-imagine-video-1.5-preview` 僅支援圖生影片。
 
 ```python
 response = requests.post(

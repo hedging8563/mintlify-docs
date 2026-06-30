@@ -43,7 +43,7 @@ Trong môi trường vận hành, nên ưu tiên URL `https` công khai cho ản
 </ParamField>
 
 <ParamField body="reference_images" type="array">
-  Ảnh tham chiếu cho các luồng có conditioning chuyên biệt. Số lượng hỗ trợ phụ thuộc vào model. Với `seedance-2.0` và `seedance-2.0-fast`, AI Sonar hiện hỗ trợ tối đa 9 ảnh tham chiếu, cùng thêm tối đa 3 video tham chiếu và 3 audio tham chiếu. Nên ưu tiên URL công khai `https`; các model tương thích cũng chấp nhận URL `data:`. Với `grok-imagine-video`, reference-to-video chấp nhận tối đa 7 tham chiếu ảnh và `duration` tối đa là 10 giây. `grok-imagine-video-1.5-preview` chỉ hỗ trợ image-to-video và không nhận ảnh tham chiếu.
+  Ảnh tham chiếu cho các luồng có conditioning chuyên biệt. Số lượng hỗ trợ phụ thuộc vào model. Với `seedance-2.0` và `seedance-2.0-fast`, AI Sonar hiện hỗ trợ tối đa 9 ảnh tham chiếu, cùng thêm tối đa 3 video tham chiếu và 3 audio tham chiếu. Để chọn mô hình, hiểu ranh giới 4K và ghi chú Mini, xem [hướng dẫn mô hình video Seedance 2.0](/vi/guides/seedance-2-video). Nên ưu tiên URL công khai `https`; các model tương thích cũng chấp nhận URL `data:`. Với `grok-imagine-video`, reference-to-video chấp nhận tối đa 7 tham chiếu ảnh và `duration` tối đa là 10 giây. `grok-imagine-video-1.5-preview` chỉ hỗ trợ image-to-video và không nhận ảnh tham chiếu.
 </ParamField>
 
 <ParamField body="reference_image_type" type="string">
@@ -259,7 +259,7 @@ response = requests.post("https://api.aisonar.dev/v1/videos/generations",
 
 ## Ảnh tham chiếu sang video
 
-Hãy dùng `operation=reference-to-video` khi model hỗ trợ conditioning tham chiếu chuyên biệt. Trong hợp đồng công khai của AI Sonar, ảnh tham chiếu dùng `reference_images`, còn video và audio tham chiếu đa phương thức dùng `video_urls` và `audio_urls`. Với `seedance-2.0` và `seedance-2.0-fast`, AI Sonar hiện hỗ trợ tối đa 9 ảnh tham chiếu, cùng thêm tối đa 3 video tham chiếu và 3 audio tham chiếu. `duration` chỉ điều khiển độ dài đầu ra được tạo; nó không đặt ra giới hạn riêng cho thời lượng video tham chiếu đầu vào. Với `grok-imagine-video`, reference-to-video chấp nhận tối đa 7 tham chiếu ảnh (`reference_images` hoặc `image_urls`) và `duration` tối đa là 10 giây. Không kết hợp ảnh tham chiếu với đầu vào khung đầu `image_url` / `image`. `grok-imagine-video-1.5-preview` chỉ hỗ trợ image-to-video.
+Hãy dùng `operation=reference-to-video` khi model hỗ trợ conditioning tham chiếu chuyên biệt. Trong hợp đồng công khai của AI Sonar, ảnh tham chiếu dùng `reference_images`, còn video và audio tham chiếu đa phương thức dùng `video_urls` và `audio_urls`. Với `seedance-2.0` và `seedance-2.0-fast`, AI Sonar hiện hỗ trợ tối đa 9 ảnh tham chiếu, cùng thêm tối đa 3 video tham chiếu và 3 audio tham chiếu. Để chọn mô hình, hiểu ranh giới 4K và ghi chú Mini, xem [hướng dẫn mô hình video Seedance 2.0](/vi/guides/seedance-2-video). `duration` chỉ điều khiển độ dài đầu ra được tạo; nó không đặt ra giới hạn riêng cho thời lượng video tham chiếu đầu vào. Với `grok-imagine-video`, reference-to-video chấp nhận tối đa 7 tham chiếu ảnh (`reference_images` hoặc `image_urls`) và `duration` tối đa là 10 giây. Không kết hợp ảnh tham chiếu với đầu vào khung đầu `image_url` / `image`. `grok-imagine-video-1.5-preview` chỉ hỗ trợ image-to-video.
 
 ```python
 response = requests.post(

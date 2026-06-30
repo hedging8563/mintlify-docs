@@ -52,7 +52,7 @@ Para la entrada de medios en producción, prefiere URLs públicas `https` sobre 
 
 - Las solicitudes de la familia Veo 3 predeterminan el audio activado cuando se omite `output_audio`. Establece esto explícitamente cuando el modelo soporte el interruptor y tu experiencia de usuario dependa del sonido.
 - `kling_elements` es para solicitudes condicionadas por imagen de `kling-3.0-video`. Referencia cada elemento en `prompt` como `@name`; no lo combines con `output_audio=true`.
-- Para `seedance-2.0` y `seedance-2.0-fast`, reference-to-video puede aceptar múltiples imágenes de referencia más entradas de video/audio de referencia de acuerdo con el contrato público actual.
+- Para la familia Seedance 2.0, lee la [guía de modelos de video Seedance 2.0](/es/guides/seedance-2-video) antes de usar salida 4K, límites Fast/Mini o entradas de referencia multimodales.
 - Para `grok-imagine-video`, video-to-video utiliza un `.mp4` público `video_url`; los límites específicos del modelo como `duration` y `resolution` deben provenir del contrato del modelo.
 
 ## Resultados de Sondeo

@@ -43,7 +43,7 @@ description: "動画生成タスクを作成します"
 </ParamField>
 
 <ParamField body="reference_images" type="array">
-  reference-to-video フローで使う参照画像入力です。許容数はモデルごとに異なります。`seedance-2.0` と `seedance-2.0-fast` では、AI Sonar は現在最大 9 枚の参照画像に加えて、最大 3 本の参照動画と 3 本の参照音声をサポートします。公開 `https` URL を推奨し、互換モデルでは `data:` URL も利用できます。 `grok-imagine-video` の reference-to-video は最大 7 件の画像参照を受け付け、`duration` は最大 10 秒です。`grok-imagine-video-1.5-preview` は image-to-video のみで、参照画像は受け付けません。
+  reference-to-video フローで使う参照画像入力です。許容数はモデルごとに異なります。`seedance-2.0` と `seedance-2.0-fast` では、AI Sonar は現在最大 9 枚の参照画像に加えて、最大 3 本の参照動画と 3 本の参照音声をサポートします。モデル選択、4K の境界、Mini の注意点については [Seedance 2.0 ビデオモデルガイド](/ja/guides/seedance-2-video)を参照してください。公開 `https` URL を推奨し、互換モデルでは `data:` URL も利用できます。 `grok-imagine-video` の reference-to-video は最大 7 件の画像参照を受け付け、`duration` は最大 10 秒です。`grok-imagine-video-1.5-preview` は image-to-video のみで、参照画像は受け付けません。
 </ParamField>
 
 <ParamField body="reference_image_type" type="string">
@@ -259,7 +259,7 @@ response = requests.post("https://api.aisonar.dev/v1/videos/generations",
 
 ## 参照画像から動画
 
-モデルが専用の参照条件付けに対応している場合は `operation=reference-to-video` を使います。AI Sonar の公開契約では、画像参照は `reference_images`、マルチモーダル参照動画と参照音声は `video_urls` と `audio_urls` を使います。`seedance-2.0` と `seedance-2.0-fast` では、AI Sonar は現在最大 9 枚の参照画像に加えて、最大 3 本の参照動画と 3 本の参照音声をサポートします。`duration` は生成される出力長のみを制御し、参照動画入力の長さ上限を個別に設定するものではありません。 `grok-imagine-video` の reference-to-video は最大 7 件の画像参照（`reference_images` または `image_urls`）を受け付け、`duration` は最大 10 秒です。参照画像を `image_url` / `image` の先頭フレーム入力と組み合わせないでください。`grok-imagine-video-1.5-preview` は image-to-video のみです。
+モデルが専用の参照条件付けに対応している場合は `operation=reference-to-video` を使います。AI Sonar の公開契約では、画像参照は `reference_images`、マルチモーダル参照動画と参照音声は `video_urls` と `audio_urls` を使います。`seedance-2.0` と `seedance-2.0-fast` では、AI Sonar は現在最大 9 枚の参照画像に加えて、最大 3 本の参照動画と 3 本の参照音声をサポートします。モデル選択、4K の境界、Mini の注意点については [Seedance 2.0 ビデオモデルガイド](/ja/guides/seedance-2-video)を参照してください。`duration` は生成される出力長のみを制御し、参照動画入力の長さ上限を個別に設定するものではありません。 `grok-imagine-video` の reference-to-video は最大 7 件の画像参照（`reference_images` または `image_urls`）を受け付け、`duration` は最大 10 秒です。参照画像を `image_url` / `image` の先頭フレーム入力と組み合わせないでください。`grok-imagine-video-1.5-preview` は image-to-video のみです。
 
 ```python
 response = requests.post(

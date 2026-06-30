@@ -1,0 +1,84 @@
+---
+title: "Model video Seedance 2.0"
+description: "Pilih antara Seedance 2.0, Seedance 2.0 Fast, dan Seedance 2.0 Mini untuk pembuatan video."
+---
+
+Seedance 2.0 adalah keluarga model video untuk text-to-video, image-to-video, reference-to-video, penyuntingan video, dan ekstensi video. Gunakan ID model logis tingkat produk di `model`, lalu pilih alur dengan `operation`.
+
+## Pilihan model
+
+| Model | Paling cocok untuk | Resolusi publik | Input referensi |
+|-------|--------------------|-----------------|-----------------|
+| `seedance-2.0` | Kualitas tertinggi dan output 4K | `480p`, `720p`, `1080p`, `4k` | Hingga 9 gambar referensi plus hingga 3 video referensi dan 3 audio referensi untuk `reference-to-video` |
+| `seedance-2.0-fast` | Output 480p/720p lebih cepat dan lebih murah | `480p`, `720p` | Hingga 9 gambar referensi plus hingga 3 video referensi dan 3 audio referensi untuk `reference-to-video` |
+| `seedance-2.0-mini` | Output 480p/720p dengan biaya terendah | `480p`, `720p` | Mendukung keluarga operasi Seedance 2.0; baca detail model terbaru sebelum bergantung pada batas jumlah referensi yang presisi |
+
+`seedance-2.0-fast` dan `seedance-2.0-mini` fail-closed ke `480p` / `720p`; jangan kirim `1080p` atau `4k` ke model tersebut.
+
+## Operasi yang didukung
+
+Keluarga publik Seedance 2.0 mendukung:
+
+| Operasi | Input umum |
+|---------|------------|
+| `text-to-video` | `prompt` |
+| `image-to-video` | `prompt`, `image_url` atau input gambar kompatibel |
+| `start-end-to-video` | `prompt`, `start_image`, `end_image` |
+| `reference-to-video` | `prompt`, `reference_images`, `video_urls` opsional, `audio_urls` opsional |
+| `video-to-video` | `prompt`, `video_url` atau input video kompatibel |
+| `video-extension` | `task_id` atau input lanjutan khusus model |
+
+Permintaan Seedance audio-saja atau teks-plus-audio-saja tidak termasuk kontrak publik. Gunakan audio hanya sebagai input referensi dalam alur `reference-to-video` yang didukung.
+
+## 4K Reference-To-Video
+
+Gunakan `seedance-2.0` saat membutuhkan output 4K. Model base mendukung `4k` dalam kontrak publik yang dikelola, termasuk `reference-to-video`.
+
+```bash
+curl -X POST "https://api.aisonar.dev/v1/videos/generations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0",
+    "operation": "reference-to-video",
+    "prompt": "Keep the same product identity and lighting while creating a slow cinematic rotation.",
+    "reference_images": [
+      "https://example.com/product-front.jpg",
+      "https://example.com/product-side.jpg"
+    ],
+    "video_urls": ["https://example.com/motion-reference.mp4"],
+    "duration": 6,
+    "resolution": "4k",
+    "aspect_ratio": "16:9"
+  }'
+```
+
+## Permintaan Fast dan Mini
+
+Gunakan `seedance-2.0-fast` saat latensi penting, dan `seedance-2.0-mini` saat biaya terendah lebih penting daripada kualitas maksimum.
+
+```bash
+curl -X POST "https://api.aisonar.dev/v1/videos/generations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0-fast",
+    "operation": "text-to-video",
+    "prompt": "A clean product reveal on a white studio background, gentle camera push-in.",
+    "duration": 5,
+    "resolution": "720p",
+    "aspect_ratio": "16:9"
+  }'
+```
+
+## Harga dan penagihan
+
+Harga Seedance 2.0 berbasis token dan bergantung pada resolusi output serta apakah permintaan menyertakan input video. Truth harga USD AI Sonar untuk model-model ini dikonversi dari harga resmi CNY menggunakan `6.8` CNY per USD.
+
+Gunakan [Pricing API](/id/api-reference/pricing/get-pricing) atau [Models API](/id/api-reference/models/list-models) untuk harga tertagih terbaru sebelum menguncinya di UI produk.
+
+## Hasil asinkron
+
+Pembuatan video bersifat asinkron. Ikuti `poll_url` yang dikembalikan oleh permintaan create, atau gunakan `GET /v1/tasks/{id}` dengan ID tugas yang dikembalikan.
+
+Lihat [Buat video](/id/api-reference/video/create-video), [Ambil status tugas](/id/api-reference/tasks/get-task-status), dan [Batalkan tugas](/id/api-reference/tasks/cancel-task) untuk detail endpoint.

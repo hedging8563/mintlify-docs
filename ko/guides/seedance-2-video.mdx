@@ -1,0 +1,84 @@
+---
+title: "Seedance 2.0 비디오 모델"
+description: "Seedance 2.0, Seedance 2.0 Fast, Seedance 2.0 Mini 중 비디오 생성 모델을 선택합니다."
+---
+
+Seedance 2.0은 text-to-video, image-to-video, reference-to-video, 비디오 편집, 비디오 확장을 위한 비디오 모델 패밀리입니다. `model`에는 제품 수준의 논리 모델 ID를 사용하고, `operation`으로 워크플로를 선택하세요.
+
+## 모델 선택
+
+| 모델 | 적합한 용도 | 공개 해상도 | 참조 입력 |
+|------|-------------|-------------|-----------|
+| `seedance-2.0` | 최고 품질 및 4K 출력 | `480p`, `720p`, `1080p`, `4k` | `reference-to-video`에서 최대 9개 참조 이미지, 최대 3개 참조 비디오, 3개 참조 오디오 |
+| `seedance-2.0-fast` | 더 빠르고 저렴한 480p/720p 출력 | `480p`, `720p` | `reference-to-video`에서 최대 9개 참조 이미지, 최대 3개 참조 비디오, 3개 참조 오디오 |
+| `seedance-2.0-mini` | 가장 낮은 비용의 480p/720p 출력 | `480p`, `720p` | Seedance 2.0 작업 패밀리를 지원합니다. 정확한 참조 개수 제한에 의존하기 전에 현재 모델 세부정보를 확인하세요 |
+
+`seedance-2.0-fast`와 `seedance-2.0-mini`는 `480p` / `720p`로 fail-closed 되어 있습니다. 이 모델들에는 `1080p` 또는 `4k`를 보내지 마세요.
+
+## 지원 작업
+
+Seedance 2.0 패밀리의 공개 계약은 다음을 지원합니다.
+
+| 작업 | 일반 입력 |
+|------|-----------|
+| `text-to-video` | `prompt` |
+| `image-to-video` | `prompt`, `image_url` 또는 호환 이미지 입력 |
+| `start-end-to-video` | `prompt`, `start_image`, `end_image` |
+| `reference-to-video` | `prompt`, `reference_images`, 선택적 `video_urls`, 선택적 `audio_urls` |
+| `video-to-video` | `prompt`, `video_url` 또는 호환 비디오 입력 |
+| `video-extension` | `task_id` 또는 모델별 확장 입력 |
+
+오디오만 사용하거나 텍스트와 오디오만 사용하는 Seedance 요청은 공개 계약에 포함되지 않습니다. 오디오는 지원되는 `reference-to-video` 흐름의 참조 입력으로만 사용하세요.
+
+## 4K Reference-To-Video
+
+4K 출력이 필요하면 `seedance-2.0`을 사용하세요. 기본 모델은 관리된 공개 계약에서 `reference-to-video`를 포함해 `4k`를 지원합니다.
+
+```bash
+curl -X POST "https://api.aisonar.dev/v1/videos/generations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0",
+    "operation": "reference-to-video",
+    "prompt": "같은 제품 정체성과 조명을 유지하면서 느린 영화적 회전을 만듭니다.",
+    "reference_images": [
+      "https://example.com/product-front.jpg",
+      "https://example.com/product-side.jpg"
+    ],
+    "video_urls": ["https://example.com/motion-reference.mp4"],
+    "duration": 6,
+    "resolution": "4k",
+    "aspect_ratio": "16:9"
+  }'
+```
+
+## Fast 및 Mini 요청
+
+지연 시간이 중요하면 `seedance-2.0-fast`를 사용하고, 가장 낮은 비용이 더 중요하면 `seedance-2.0-mini`를 사용하세요.
+
+```bash
+curl -X POST "https://api.aisonar.dev/v1/videos/generations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0-fast",
+    "operation": "text-to-video",
+    "prompt": "흰색 스튜디오 배경에서 깨끗한 제품 공개 장면, 부드러운 카메라 푸시인.",
+    "duration": 5,
+    "resolution": "720p",
+    "aspect_ratio": "16:9"
+  }'
+```
+
+## 가격 및 청구
+
+Seedance 2.0 가격은 token 기반이며 출력 해상도와 요청에 비디오 입력이 포함되는지에 따라 달라집니다. AI Sonar의 이 모델들에 대한 USD 가격 truth는 공식 CNY 가격을 `6.8` CNY/USD로 변환합니다.
+
+제품 UI에 가격을 고정하기 전에 [Pricing API](/ko/api-reference/pricing/get-pricing) 또는 [Models API](/ko/api-reference/models/list-models)로 현재 청구 가격을 확인하세요.
+
+## 비동기 결과
+
+비디오 생성은 비동기입니다. 생성 응답의 `poll_url`을 따르거나 반환된 작업 ID로 `GET /v1/tasks/{id}`를 호출하세요.
+
+엔드포인트 세부정보는 [비디오 생성](/ko/api-reference/video/create-video), [작업 상태 가져오기](/ko/api-reference/tasks/get-task-status), [작업 취소](/ko/api-reference/tasks/cancel-task)를 참조하세요.

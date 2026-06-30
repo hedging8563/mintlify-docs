@@ -52,7 +52,7 @@ curl https://api.aisonar.dev/v1/videos/generations \\
 
 - Veo 3ファミリーのリクエストは、`output_audio` が省略された場合、デフォルトでオーディオオンになります。モデルがトグルをサポートしている場合は、サウンドに依存するUXのために明示的に設定してください。
 - `kling_elements` は `kling-3.0-video` 画像条件付きリクエスト用です。各要素を `prompt` で `@name` として参照してください。 `output_audio=true` と組み合わせないでください。
-- `seedance-2.0` および `seedance-2.0-fast` の場合、reference-to-video は現在の公開契約に従って複数の参照画像と参照ビデオ/オーディオ入力を受け入れることができます。
+- Seedance 2.0 ファミリーで 4K 出力、Fast/Mini の解像度上限、またはマルチモーダル参照入力を使う前に、[Seedance 2.0 ビデオモデルガイド](/ja/guides/seedance-2-video)を確認してください。
 - `grok-imagine-video` の場合、video-to-video は公開の `.mp4` `video_url` を使用します。モデル固有の制限（`duration` や `resolution` など）はモデル契約から取得する必要があります。
 
 ## ポーリング結果

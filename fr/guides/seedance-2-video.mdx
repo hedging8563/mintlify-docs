@@ -1,0 +1,84 @@
+---
+title: "Modèles vidéo Seedance 2.0"
+description: "Choisissez entre Seedance 2.0, Seedance 2.0 Fast et Seedance 2.0 Mini pour la génération vidéo."
+---
+
+Seedance 2.0 est une famille de modèles vidéo pour les flux texte-vers-vidéo, image-vers-vidéo, référence-vers-vidéo, édition vidéo et extension vidéo. Utilisez des IDs logiques de niveau produit dans `model`, puis choisissez le flux avec `operation`.
+
+## Choix du modèle
+
+| Modèle | Idéal pour | Résolutions publiques | Entrées de référence |
+|--------|------------|-----------------------|----------------------|
+| `seedance-2.0` | Qualité maximale et sortie 4K | `480p`, `720p`, `1080p`, `4k` | Jusqu'à 9 images de référence plus jusqu'à 3 vidéos de référence et 3 audios de référence pour `reference-to-video` |
+| `seedance-2.0-fast` | Sortie 480p/720p plus rapide et moins coûteuse | `480p`, `720p` | Jusqu'à 9 images de référence plus jusqu'à 3 vidéos de référence et 3 audios de référence pour `reference-to-video` |
+| `seedance-2.0-mini` | Sortie 480p/720p au coût le plus bas | `480p`, `720p` | Prend en charge la famille d'opérations Seedance 2.0 ; lisez le détail actuel du modèle avant de dépendre de limites de nombre exactes |
+
+`seedance-2.0-fast` et `seedance-2.0-mini` restent fail-closed sur `480p` / `720p` ; n'envoyez pas `1080p` ou `4k` à ces modèles.
+
+## Opérations prises en charge
+
+La famille publique Seedance 2.0 prend en charge :
+
+| Opération | Entrées typiques |
+|-----------|------------------|
+| `text-to-video` | `prompt` |
+| `image-to-video` | `prompt`, `image_url` ou entrée image compatible |
+| `start-end-to-video` | `prompt`, `start_image`, `end_image` |
+| `reference-to-video` | `prompt`, `reference_images`, `video_urls` optionnels, `audio_urls` optionnels |
+| `video-to-video` | `prompt`, `video_url` ou entrée vidéo compatible |
+| `video-extension` | `task_id` ou entrée de continuation propre au modèle |
+
+Les requêtes Seedance audio-seul ou texte-plus-audio-seul ne font pas partie du contrat public. Utilisez l'audio uniquement comme entrée de référence dans les flux `reference-to-video` pris en charge.
+
+## 4K Reference-To-Video
+
+Utilisez `seedance-2.0` lorsque vous avez besoin d'une sortie 4K. Le modèle de base prend en charge `4k` dans le contrat public gouverné, y compris `reference-to-video`.
+
+```bash
+curl -X POST "https://api.aisonar.dev/v1/videos/generations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0",
+    "operation": "reference-to-video",
+    "prompt": "Keep the same product identity and lighting while creating a slow cinematic rotation.",
+    "reference_images": [
+      "https://example.com/product-front.jpg",
+      "https://example.com/product-side.jpg"
+    ],
+    "video_urls": ["https://example.com/motion-reference.mp4"],
+    "duration": 6,
+    "resolution": "4k",
+    "aspect_ratio": "16:9"
+  }'
+```
+
+## Requêtes Fast et Mini
+
+Utilisez `seedance-2.0-fast` lorsque la latence compte, et `seedance-2.0-mini` lorsque le coût le plus bas est plus important que la qualité maximale.
+
+```bash
+curl -X POST "https://api.aisonar.dev/v1/videos/generations" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "seedance-2.0-fast",
+    "operation": "text-to-video",
+    "prompt": "A clean product reveal on a white studio background, gentle camera push-in.",
+    "duration": 5,
+    "resolution": "720p",
+    "aspect_ratio": "16:9"
+  }'
+```
+
+## Tarifs et facturation
+
+La tarification Seedance 2.0 est basée sur les tokens et dépend de la résolution de sortie ainsi que de la présence d'une entrée vidéo dans la requête. La vérité tarifaire USD de AI Sonar pour ces modèles est convertie depuis les tarifs officiels en CNY avec `6.8` CNY par USD.
+
+Utilisez la [Pricing API](/fr/api-reference/pricing/get-pricing) ou la [Models API](/fr/api-reference/models/list-models) pour le prix facturable actuel avant de le figer dans une interface produit.
+
+## Résultats asynchrones
+
+La génération vidéo est asynchrone. Suivez d'abord la `poll_url` retournée par la requête de création, ou utilisez `GET /v1/tasks/{id}` avec l'ID de tâche retourné.
+
+Consultez [Créer une vidéo](/fr/api-reference/video/create-video), [Obtenir le statut de la tâche](/fr/api-reference/tasks/get-task-status) et [Annuler la tâche](/fr/api-reference/tasks/cancel-task) pour les détails des endpoints.
