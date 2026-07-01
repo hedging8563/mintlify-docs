@@ -5,3 +5,14 @@ description: "Tải tư liệu Seedance lên một nhóm tư liệu AI Sonar."
 ---
 
 Tải tư liệu Seedance lên một nhóm tư liệu AI Sonar.
+
+Tải một URL tư liệu có thể truy cập công khai vào thư viện tư liệu Seedance 2.0 đã chọn. Tư liệu thuộc phạm vi tổ chức đã xác thực.
+
+Với hầu hết yêu cầu, chỉ cần đặt `library_type` và bỏ qua `group_id`; AI Sonar sẽ dùng hoặc tạo nhóm mặc định của tổ chức cho loại thư viện đó. Chỉ truyền `group_id` khi cần tải vào một nhóm cụ thể.
+
+- `aigc_avatar`: tư liệu nhân vật ảo hoặc avatar.
+- `liveness_face`: tư liệu người thật đã xác thực.
+
+Sau khi tạo, hãy thăm dò [Lấy tư liệu](/vi/api-reference/video/get-material-asset) cho đến khi `status` là `ACTIVE`. Sau đó truyền `id` trả về dưới dạng `material_asset_id`, hoặc đưa vào `material_asset_ids`, khi gọi [Tạo video](/vi/api-reference/video/create-video).
+
+Nếu tư liệu chuyển sang `FAILED`, hãy xem `error_message`, sửa tư liệu nguồn rồi tạo tư liệu mới.

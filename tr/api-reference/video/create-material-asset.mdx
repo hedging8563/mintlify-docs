@@ -5,3 +5,14 @@ description: "Bir Seedance materyalini AI Sonar materyal grubuna yükler."
 ---
 
 Bir Seedance materyalini AI Sonar materyal grubuna yükler.
+
+Herkese açık erişilebilir bir materyal URL'sini seçili Seedance 2.0 materyal kitaplığına yükleyin. Materyal kimliği doğrulanmış kuruluşa aittir.
+
+Çoğu istekte `library_type` ayarlayıp `group_id` değerini atlayabilirsiniz; AI Sonar bu kitaplık türü için kuruluşun varsayılan grubunu kullanır veya oluşturur. Yalnızca belirli bir gruba yüklemek gerektiğinde `group_id` gönderin.
+
+- `aigc_avatar`: sanal kişi veya avatar materyalleri.
+- `liveness_face`: sertifikalı gerçek kişi materyalleri.
+
+Oluşturduktan sonra `status` `ACTIVE` olana kadar [Materyal getir](/tr/api-reference/video/get-material-asset) çağrısını yoklayın. Ardından dönen `id` değerini `material_asset_id` olarak veya `material_asset_ids` içinde [Video oluştur](/tr/api-reference/video/create-video) çağrısına gönderin.
+
+Materyal `FAILED` olursa `error_message` değerini inceleyin, kaynak materyali düzeltin ve yeni bir materyal oluşturun.

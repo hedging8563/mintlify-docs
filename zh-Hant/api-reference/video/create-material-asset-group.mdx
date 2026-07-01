@@ -5,3 +5,12 @@ description: "為目前組織建立 AI Sonar Seedance 素材組。"
 ---
 
 為目前組織建立 AI Sonar Seedance 素材組。
+
+當你需要依素材庫類型整理可重複使用的 Seedance 2.0 素材時，可以建立素材組。素材組依目前組織隔離，不能跨帳號使用。
+
+多數接入可以跳過此接口，在建立素材時不傳 `group_id`。AI Sonar 會為所選 `library_type` 使用或建立目前組織的預設素材組。
+
+- `aigc_avatar`：虛擬人像或頭像素材。
+- `liveness_face`：已認證真人素材。
+
+回傳的 `id` 可作為 `group_id` 或 `material_group_id` 傳給[建立素材](/zh-Hant/api-reference/video/create-material-asset)接口。

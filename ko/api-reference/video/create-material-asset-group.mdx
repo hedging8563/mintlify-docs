@@ -5,3 +5,12 @@ description: "현재 조직에 AI Sonar Seedance 소재 그룹을 만듭니다."
 ---
 
 현재 조직에 AI Sonar Seedance 소재 그룹을 만듭니다.
+
+재사용할 Seedance 2.0 소재를 라이브러리 유형별로 정리하려면 소재 그룹을 만듭니다. 소재 그룹은 인증된 조직 범위에 속하며 다른 계정에서 사용할 수 없습니다.
+
+대부분의 연동에서는 이 호출을 건너뛰고 소재를 만들 때 `group_id` 를 생략해도 됩니다. AI Sonar은 선택한 `library_type` 에 대해 조직 기본 소재 그룹을 사용하거나 생성합니다.
+
+- `aigc_avatar`: 가상 인물 또는 아바타 소재.
+- `liveness_face`: 인증된 실제 인물 소재.
+
+반환된 `id` 는 [소재 만들기](/ko/api-reference/video/create-material-asset)의 `group_id` 또는 `material_group_id` 로 사용할 수 있습니다.

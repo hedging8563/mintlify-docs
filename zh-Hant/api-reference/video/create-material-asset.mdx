@@ -5,3 +5,14 @@ description: "將 Seedance 素材上傳到 AI Sonar 素材組中。"
 ---
 
 將 Seedance 素材上傳到 AI Sonar 素材組中。
+
+將公開可存取的素材 URL 上傳到所選 Seedance 2.0 素材庫。素材依目前組織隔離。
+
+多數請求只需要設定 `library_type`，可以省略 `group_id`；AI Sonar 會使用或建立該素材庫類型下目前組織的預設素材組。只有需要放入指定素材組時才傳 `group_id`。
+
+- `aigc_avatar`：虛擬人像或頭像素材。
+- `liveness_face`：已認證真人素材。
+
+建立後，呼叫[查詢素材詳情](/zh-Hant/api-reference/video/get-material-asset)輪詢，直到 `status` 變為 `ACTIVE`。之後把回傳的 `id` 作為 `material_asset_id`，或放入 `material_asset_ids`，傳給[建立影片](/zh-Hant/api-reference/video/create-video)接口。
+
+如果素材變為 `FAILED`，查看 `error_message`，修正來源素材後重新建立素材。

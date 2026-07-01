@@ -5,3 +5,12 @@ description: "Crée un groupe de ressources AI Sonar Seedance pour l’organisat
 ---
 
 Crée un groupe de ressources AI Sonar Seedance pour l’organisation actuelle.
+
+Créez un groupe lorsque vous voulez organiser des ressources Seedance 2.0 réutilisables par type de bibliothèque. Les groupes sont rattachés à l’organisation authentifiée et ne peuvent pas être utilisés par un autre compte.
+
+La plupart des intégrations peuvent ignorer cet appel et omettre `group_id` lors de la création d’une ressource. AI Sonar utilisera ou créera le groupe par défaut de l’organisation pour le `library_type` choisi.
+
+- `aigc_avatar` : ressources de personne virtuelle ou d’avatar.
+- `liveness_face` : ressources de personne réelle certifiée.
+
+Utilisez l’`id` retourné comme `group_id` ou `material_group_id` avec [Créer une ressource](/fr/api-reference/video/create-material-asset).

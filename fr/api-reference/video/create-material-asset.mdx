@@ -5,3 +5,14 @@ description: "Importe une ressource Seedance dans un groupe de ressources AI Son
 ---
 
 Importe une ressource Seedance dans un groupe de ressources AI Sonar.
+
+Importez une URL de ressource publiquement accessible dans la bibliothèque Seedance 2.0 sélectionnée. La ressource est rattachée à l’organisation authentifiée.
+
+Dans la plupart des requêtes, définissez `library_type` et omettez `group_id`; AI Sonar utilisera ou créera le groupe par défaut de l’organisation pour ce type de bibliothèque. Ne transmettez `group_id` que si vous devez importer la ressource dans un groupe précis.
+
+- `aigc_avatar` : ressources de personne virtuelle ou d’avatar.
+- `liveness_face` : ressources de personne réelle certifiée.
+
+Après la création, interrogez [Obtenir une ressource](/fr/api-reference/video/get-material-asset) jusqu’à ce que `status` soit `ACTIVE`. Transmettez ensuite l’`id` retourné comme `material_asset_id`, ou dans `material_asset_ids`, à [Créer une vidéo](/fr/api-reference/video/create-video).
+
+Si la ressource passe à `FAILED`, consultez `error_message`, corrigez la ressource source, puis créez une nouvelle ressource.

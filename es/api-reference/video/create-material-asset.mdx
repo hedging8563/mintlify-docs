@@ -5,3 +5,14 @@ description: "Carga un recurso Seedance en un grupo de recursos AI Sonar."
 ---
 
 Carga un recurso Seedance en un grupo de recursos AI Sonar.
+
+Carga una URL de recurso públicamente accesible en la biblioteca Seedance 2.0 seleccionada. El recurso pertenece a la organización autenticada.
+
+En la mayoría de solicitudes, define `library_type` y omite `group_id`; AI Sonar usará o creará el grupo predeterminado de la organización para ese tipo de biblioteca. Envía `group_id` solo si necesitas cargar el recurso en un grupo concreto.
+
+- `aigc_avatar`: recursos de persona virtual o avatar.
+- `liveness_face`: recursos de persona real certificada.
+
+Después de crearlo, consulta [Obtener recurso](/es/api-reference/video/get-material-asset) hasta que `status` sea `ACTIVE`. Luego pasa el `id` devuelto como `material_asset_id`, o inclúyelo en `material_asset_ids`, al llamar a [Crear video](/es/api-reference/video/create-video).
+
+Si el recurso pasa a `FAILED`, revisa `error_message`, corrige el recurso de origen y crea uno nuevo.

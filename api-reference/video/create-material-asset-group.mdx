@@ -5,3 +5,12 @@ description: "Creates a AI Sonar Seedance material asset group for the current o
 ---
 
 Creates a AI Sonar Seedance material asset group for the current organization.
+
+Use a material group when you want to organize reusable Seedance 2.0 assets by library type. Groups are scoped to the authenticated organization and cannot be used across accounts.
+
+Most integrations can skip this call and omit `group_id` when creating an asset. AI Sonar will use or create the organization default group for the selected `library_type`.
+
+- `aigc_avatar`: virtual-person or avatar materials.
+- `liveness_face`: certified real-person materials.
+
+Use the returned `id` as `group_id` or `material_group_id` when calling [Create Material Asset](/api-reference/video/create-material-asset).

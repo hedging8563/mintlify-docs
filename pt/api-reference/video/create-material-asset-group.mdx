@@ -5,3 +5,12 @@ description: "Cria um grupo de materiais AI Sonar Seedance para a organização 
 ---
 
 Cria um grupo de materiais AI Sonar Seedance para a organização atual.
+
+Crie um grupo quando quiser organizar materiais reutilizáveis do Seedance 2.0 por tipo de biblioteca. Os grupos pertencem à organização autenticada e não podem ser usados entre contas.
+
+A maioria das integrações pode ignorar esta chamada e omitir `group_id` ao criar um material. A AI Sonar usará ou criará o grupo padrão da organização para o `library_type` selecionado.
+
+- `aigc_avatar`: materiais de pessoa virtual ou avatar.
+- `liveness_face`: materiais de pessoa real certificada.
+
+Use o `id` retornado como `group_id` ou `material_group_id` em [Criar material](/pt/api-reference/video/create-material-asset).

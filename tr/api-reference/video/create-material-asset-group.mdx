@@ -5,3 +5,12 @@ description: "Geçerli kuruluş için AI Sonar Seedance materyal grubu oluşturu
 ---
 
 Geçerli kuruluş için AI Sonar Seedance materyal grubu oluşturur.
+
+Yeniden kullanılabilir Seedance 2.0 materyallerini kitaplık türüne göre düzenlemek istediğinizde materyal grubu oluşturun. Gruplar kimliği doğrulanmış kuruluşa aittir ve hesaplar arasında kullanılamaz.
+
+Çoğu entegrasyon bu çağrıyı atlayabilir ve materyal oluştururken `group_id` göndermeyebilir. AI Sonar seçilen `library_type` için kuruluşun varsayılan grubunu kullanır veya oluşturur.
+
+- `aigc_avatar`: sanal kişi veya avatar materyalleri.
+- `liveness_face`: sertifikalı gerçek kişi materyalleri.
+
+Dönen `id` değerini [Materyal oluştur](/tr/api-reference/video/create-material-asset) içinde `group_id` veya `material_group_id` olarak kullanın.

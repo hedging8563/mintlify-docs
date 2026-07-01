@@ -5,3 +5,14 @@ description: "Uploads a Seedance material asset into a AI Sonar material group."
 ---
 
 Uploads a Seedance material asset into a AI Sonar material group.
+
+Upload a publicly reachable material URL into the selected Seedance 2.0 material library. The asset is scoped to the authenticated organization.
+
+For most requests, set `library_type` and omit `group_id`; AI Sonar will use or create the organization default group for that library type. Pass `group_id` only when you need to upload into a specific material group.
+
+- `aigc_avatar`: virtual-person or avatar materials.
+- `liveness_face`: certified real-person materials.
+
+After creation, poll [Get Material Asset](/api-reference/video/get-material-asset) until `status` is `ACTIVE`. Then pass the returned `id` as `material_asset_id`, or include it in `material_asset_ids`, when calling [Create Video](/api-reference/video/create-video).
+
+If the asset becomes `FAILED`, inspect `error_message`, fix the source material, and create a new asset.

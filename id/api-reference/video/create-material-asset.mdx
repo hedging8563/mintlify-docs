@@ -5,3 +5,14 @@ description: "Mengunggah aset Seedance ke grup aset AI Sonar."
 ---
 
 Mengunggah aset Seedance ke grup aset AI Sonar.
+
+Unggah URL aset yang dapat diakses publik ke pustaka aset Seedance 2.0 yang dipilih. Aset berada dalam cakupan organisasi yang diautentikasi.
+
+Untuk sebagian besar permintaan, tetapkan `library_type` dan kosongkan `group_id`; AI Sonar akan menggunakan atau membuat grup default organisasi untuk jenis pustaka tersebut. Kirim `group_id` hanya saat Anda perlu mengunggah ke grup tertentu.
+
+- `aigc_avatar`: aset orang virtual atau avatar.
+- `liveness_face`: aset orang nyata tersertifikasi.
+
+Setelah dibuat, polling [Ambil aset](/id/api-reference/video/get-material-asset) hingga `status` menjadi `ACTIVE`. Lalu kirim `id` yang dikembalikan sebagai `material_asset_id`, atau masukkan ke `material_asset_ids`, saat memanggil [Buat video](/id/api-reference/video/create-video).
+
+Jika aset menjadi `FAILED`, periksa `error_message`, perbaiki aset sumber, lalu buat aset baru.

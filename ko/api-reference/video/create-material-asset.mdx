@@ -5,3 +5,14 @@ description: "Seedance 소재를 AI Sonar 소재 그룹에 업로드합니다."
 ---
 
 Seedance 소재를 AI Sonar 소재 그룹에 업로드합니다.
+
+공개적으로 접근 가능한 소재 URL을 선택한 Seedance 2.0 소재 라이브러리에 업로드합니다. 소재는 인증된 조직 범위에 속합니다.
+
+대부분의 요청에서는 `library_type` 만 설정하고 `group_id` 는 생략할 수 있습니다. AI Sonar은 해당 라이브러리 유형에 대해 조직 기본 소재 그룹을 사용하거나 생성합니다. 특정 소재 그룹에 업로드해야 할 때만 `group_id` 를 전달하세요.
+
+- `aigc_avatar`: 가상 인물 또는 아바타 소재.
+- `liveness_face`: 인증된 실제 인물 소재.
+
+생성 후 [소재 가져오기](/ko/api-reference/video/get-material-asset)를 폴링하여 `status` 가 `ACTIVE` 가 될 때까지 기다립니다. 그런 다음 반환된 `id` 를 `material_asset_id` 로 사용하거나 `material_asset_ids` 에 포함해 [동영상 만들기](/ko/api-reference/video/create-video)에 전달합니다.
+
+소재가 `FAILED` 가 되면 `error_message` 를 확인하고 원본 소재를 수정한 뒤 새 소재를 생성하세요.

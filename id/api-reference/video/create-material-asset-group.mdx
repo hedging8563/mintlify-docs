@@ -5,3 +5,12 @@ description: "Membuat grup aset AI Sonar Seedance untuk organisasi saat ini."
 ---
 
 Membuat grup aset AI Sonar Seedance untuk organisasi saat ini.
+
+Buat grup saat Anda ingin mengatur aset Seedance 2.0 yang dapat digunakan ulang berdasarkan jenis pustaka. Grup berada dalam cakupan organisasi yang diautentikasi dan tidak dapat digunakan lintas akun.
+
+Sebagian besar integrasi dapat melewati panggilan ini dan mengosongkan `group_id` saat membuat aset. AI Sonar akan menggunakan atau membuat grup default organisasi untuk `library_type` yang dipilih.
+
+- `aigc_avatar`: aset orang virtual atau avatar.
+- `liveness_face`: aset orang nyata tersertifikasi.
+
+Gunakan `id` yang dikembalikan sebagai `group_id` atau `material_group_id` di [Buat aset](/id/api-reference/video/create-material-asset).

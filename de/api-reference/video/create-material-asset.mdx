@@ -5,3 +5,14 @@ description: "Lädt ein Seedance-Material in eine AI Sonar-Materialgruppe hoch."
 ---
 
 Lädt ein Seedance-Material in eine AI Sonar-Materialgruppe hoch.
+
+Laden Sie eine öffentlich erreichbare Material-URL in die ausgewählte Seedance 2.0-Materialbibliothek hoch. Das Material ist auf die authentifizierte Organisation beschränkt.
+
+Für die meisten Anfragen genügt `library_type`; `group_id` kann weggelassen werden. AI Sonar verwendet oder erstellt die Standardgruppe der Organisation für diesen Bibliothekstyp. Übergeben Sie `group_id` nur, wenn das Material in eine bestimmte Gruppe hochgeladen werden soll.
+
+- `aigc_avatar`: Materialien für virtuelle Personen oder Avatare.
+- `liveness_face`: zertifizierte Materialien realer Personen.
+
+Fragen Sie nach dem Erstellen [Material abrufen](/de/api-reference/video/get-material-asset) ab, bis `status` den Wert `ACTIVE` hat. Verwenden Sie danach die zurückgegebene `id` als `material_asset_id` oder in `material_asset_ids` bei [Video erstellen](/de/api-reference/video/create-video).
+
+Wenn das Material `FAILED` wird, prüfen Sie `error_message`, korrigieren Sie das Quellmaterial und erstellen Sie ein neues Material.

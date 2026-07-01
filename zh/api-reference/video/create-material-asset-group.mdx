@@ -5,3 +5,12 @@ description: "为当前组织创建 AI Sonar Seedance 素材组。"
 ---
 
 为当前组织创建 AI Sonar Seedance 素材组。
+
+当你需要按素材库类型组织可复用的 Seedance 2.0 素材时，可以创建素材组。素材组按当前组织隔离，不能跨账号使用。
+
+多数接入可以跳过这个接口，在创建素材时不传 `group_id`。AI Sonar 会为所选 `library_type` 使用或创建当前组织的默认素材组。
+
+- `aigc_avatar`：虚拟人像或头像素材。
+- `liveness_face`：已认证真人素材。
+
+返回的 `id` 可作为 `group_id` 或 `material_group_id` 传给[创建素材](/zh/api-reference/video/create-material-asset)接口。

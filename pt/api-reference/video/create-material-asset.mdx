@@ -5,3 +5,14 @@ description: "Envia um material Seedance para um grupo de materiais AI Sonar."
 ---
 
 Envia um material Seedance para um grupo de materiais AI Sonar.
+
+Envie uma URL de material publicamente acessível para a biblioteca de materiais Seedance 2.0 selecionada. O material pertence à organização autenticada.
+
+Na maioria das solicitações, defina `library_type` e omita `group_id`; a AI Sonar usará ou criará o grupo padrão da organização para esse tipo de biblioteca. Envie `group_id` apenas quando precisar carregar em um grupo específico.
+
+- `aigc_avatar`: materiais de pessoa virtual ou avatar.
+- `liveness_face`: materiais de pessoa real certificada.
+
+Depois de criar, consulte [Obter material](/pt/api-reference/video/get-material-asset) até `status` ser `ACTIVE`. Então passe o `id` retornado como `material_asset_id`, ou inclua-o em `material_asset_ids`, ao chamar [Criar vídeo](/pt/api-reference/video/create-video).
+
+Se o material ficar `FAILED`, verifique `error_message`, corrija o material de origem e crie um novo material.

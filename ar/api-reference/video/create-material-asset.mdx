@@ -5,3 +5,14 @@ description: "يرفع مادة Seedance إلى مجموعة مواد AI Sonar."
 ---
 
 يرفع مادة Seedance إلى مجموعة مواد AI Sonar.
+
+ارفع عنوان URL لمادة يمكن الوصول إليها علنًا إلى مكتبة مواد Seedance 2.0 المحددة. تكون المادة ضمن نطاق المؤسسة الموثقة.
+
+في معظم الطلبات، عيّن `library_type` واترك `group_id` فارغًا؛ سيستخدم AI Sonar أو ينشئ المجموعة الافتراضية للمؤسسة لهذا النوع من المكتبات. أرسل `group_id` فقط عندما تحتاج إلى الرفع إلى مجموعة محددة.
+
+- `aigc_avatar`: مواد شخصية افتراضية أو صورة رمزية.
+- `liveness_face`: مواد شخص حقيقي معتمد.
+
+بعد الإنشاء، استعلم عن [جلب المادة](/ar/api-reference/video/get-material-asset) حتى يصبح `status` هو `ACTIVE`. بعد ذلك مرر `id` المعاد كـ `material_asset_id`، أو ضعه داخل `material_asset_ids`، عند استدعاء [إنشاء فيديو](/ar/api-reference/video/create-video).
+
+إذا أصبحت المادة `FAILED`، راجع `error_message`، أصلح المادة المصدر، ثم أنشئ مادة جديدة.
