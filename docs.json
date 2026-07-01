@@ -124,27 +124,62 @@
                 ]
               },
               {
-                "group": "Images & Media",
+                "group": "Images",
                 "pages": [
                   "api-reference/images/create-image",
                   "api-reference/images/edit-image",
                   "api-reference/images/create-variation",
-                  "api-reference/images/get-image-status",
+                  "api-reference/images/get-image-status"
+                ]
+              },
+              {
+                "group": "Audio & Realtime",
+                "pages": [
                   "api-reference/audio/create-speech",
                   "api-reference/audio/create-transcription",
                   "api-reference/audio/create-translation",
-                  "api-reference/realtime/connect",
+                  "api-reference/realtime/connect"
+                ]
+              },
+              {
+                "group": "Music",
+                "pages": [
                   "api-reference/music/create-music",
-                  "api-reference/music/get-music-status",
+                  "api-reference/music/get-music-status"
+                ]
+              },
+              {
+                "group": "Video & Materials",
+                "pages": [
                   "api-reference/video/create-video",
                   "api-reference/video/get-video-status",
+                  "api-reference/video/create-material-asset-group",
+                  "api-reference/video/list-material-asset-groups",
+                  "api-reference/video/get-material-asset-group",
+                  "api-reference/video/update-material-asset-group",
+                  "api-reference/video/delete-material-asset-group",
+                  "api-reference/video/create-material-asset",
+                  "api-reference/video/list-material-assets",
+                  "api-reference/video/get-material-asset",
+                  "api-reference/video/update-material-asset",
+                  "api-reference/video/delete-material-asset"
+                ]
+              },
+              {
+                "group": "Worlds",
+                "pages": [
                   "api-reference/worlds/prepare-media-asset-upload",
                   "api-reference/worlds/get-media-asset",
                   "api-reference/worlds/create-world",
                   "api-reference/worlds/get-world-status",
                   "api-reference/worlds/list-worlds",
                   "api-reference/worlds/get-world",
-                  "api-reference/worlds/delete-world",
+                  "api-reference/worlds/delete-world"
+                ]
+              },
+              {
+                "group": "3D",
+                "pages": [
                   "api-reference/3d/create-3d",
                   "api-reference/3d/get-3d-status"
                 ]
@@ -310,27 +345,62 @@
                 ]
               },
               {
-                "group": "图像与媒体",
+                "group": "图像",
                 "pages": [
                   "zh/api-reference/images/create-image",
                   "zh/api-reference/images/edit-image",
                   "zh/api-reference/images/create-variation",
-                  "zh/api-reference/images/get-image-status",
+                  "zh/api-reference/images/get-image-status"
+                ]
+              },
+              {
+                "group": "音频与实时",
+                "pages": [
                   "zh/api-reference/audio/create-speech",
                   "zh/api-reference/audio/create-transcription",
                   "zh/api-reference/audio/create-translation",
-                  "zh/api-reference/realtime/connect",
+                  "zh/api-reference/realtime/connect"
+                ]
+              },
+              {
+                "group": "音乐",
+                "pages": [
                   "zh/api-reference/music/create-music",
-                  "zh/api-reference/music/get-music-status",
+                  "zh/api-reference/music/get-music-status"
+                ]
+              },
+              {
+                "group": "视频与素材",
+                "pages": [
                   "zh/api-reference/video/create-video",
                   "zh/api-reference/video/get-video-status",
+                  "zh/api-reference/video/create-material-asset-group",
+                  "zh/api-reference/video/list-material-asset-groups",
+                  "zh/api-reference/video/get-material-asset-group",
+                  "zh/api-reference/video/update-material-asset-group",
+                  "zh/api-reference/video/delete-material-asset-group",
+                  "zh/api-reference/video/create-material-asset",
+                  "zh/api-reference/video/list-material-assets",
+                  "zh/api-reference/video/get-material-asset",
+                  "zh/api-reference/video/update-material-asset",
+                  "zh/api-reference/video/delete-material-asset"
+                ]
+              },
+              {
+                "group": "Worlds",
+                "pages": [
                   "zh/api-reference/worlds/prepare-media-asset-upload",
                   "zh/api-reference/worlds/get-media-asset",
                   "zh/api-reference/worlds/create-world",
                   "zh/api-reference/worlds/get-world-status",
                   "zh/api-reference/worlds/list-worlds",
                   "zh/api-reference/worlds/get-world",
-                  "zh/api-reference/worlds/delete-world",
+                  "zh/api-reference/worlds/delete-world"
+                ]
+              },
+              {
+                "group": "3D",
+                "pages": [
                   "zh/api-reference/3d/create-3d",
                   "zh/api-reference/3d/get-3d-status"
                 ]
@@ -496,27 +566,62 @@
                 ]
               },
               {
-                "group": "圖像與媒體",
+                "group": "圖像",
                 "pages": [
                   "zh-Hant/api-reference/images/create-image",
                   "zh-Hant/api-reference/images/edit-image",
                   "zh-Hant/api-reference/images/create-variation",
-                  "zh-Hant/api-reference/images/get-image-status",
+                  "zh-Hant/api-reference/images/get-image-status"
+                ]
+              },
+              {
+                "group": "音訊與即時",
+                "pages": [
                   "zh-Hant/api-reference/audio/create-speech",
                   "zh-Hant/api-reference/audio/create-transcription",
                   "zh-Hant/api-reference/audio/create-translation",
-                  "zh-Hant/api-reference/realtime/connect",
+                  "zh-Hant/api-reference/realtime/connect"
+                ]
+              },
+              {
+                "group": "音樂",
+                "pages": [
                   "zh-Hant/api-reference/music/create-music",
-                  "zh-Hant/api-reference/music/get-music-status",
+                  "zh-Hant/api-reference/music/get-music-status"
+                ]
+              },
+              {
+                "group": "視頻與素材",
+                "pages": [
                   "zh-Hant/api-reference/video/create-video",
                   "zh-Hant/api-reference/video/get-video-status",
+                  "zh-Hant/api-reference/video/create-material-asset-group",
+                  "zh-Hant/api-reference/video/list-material-asset-groups",
+                  "zh-Hant/api-reference/video/get-material-asset-group",
+                  "zh-Hant/api-reference/video/update-material-asset-group",
+                  "zh-Hant/api-reference/video/delete-material-asset-group",
+                  "zh-Hant/api-reference/video/create-material-asset",
+                  "zh-Hant/api-reference/video/list-material-assets",
+                  "zh-Hant/api-reference/video/get-material-asset",
+                  "zh-Hant/api-reference/video/update-material-asset",
+                  "zh-Hant/api-reference/video/delete-material-asset"
+                ]
+              },
+              {
+                "group": "Worlds",
+                "pages": [
                   "zh-Hant/api-reference/worlds/prepare-media-asset-upload",
                   "zh-Hant/api-reference/worlds/get-media-asset",
                   "zh-Hant/api-reference/worlds/create-world",
                   "zh-Hant/api-reference/worlds/get-world-status",
                   "zh-Hant/api-reference/worlds/list-worlds",
                   "zh-Hant/api-reference/worlds/get-world",
-                  "zh-Hant/api-reference/worlds/delete-world",
+                  "zh-Hant/api-reference/worlds/delete-world"
+                ]
+              },
+              {
+                "group": "3D",
+                "pages": [
                   "zh-Hant/api-reference/3d/create-3d",
                   "zh-Hant/api-reference/3d/get-3d-status"
                 ]
@@ -682,27 +787,62 @@
                 ]
               },
               {
-                "group": "画像とメディア",
+                "group": "画像",
                 "pages": [
                   "ja/api-reference/images/create-image",
                   "ja/api-reference/images/edit-image",
                   "ja/api-reference/images/create-variation",
-                  "ja/api-reference/images/get-image-status",
+                  "ja/api-reference/images/get-image-status"
+                ]
+              },
+              {
+                "group": "オーディオとリアルタイム",
+                "pages": [
                   "ja/api-reference/audio/create-speech",
                   "ja/api-reference/audio/create-transcription",
                   "ja/api-reference/audio/create-translation",
-                  "ja/api-reference/realtime/connect",
+                  "ja/api-reference/realtime/connect"
+                ]
+              },
+              {
+                "group": "音楽",
+                "pages": [
                   "ja/api-reference/music/create-music",
-                  "ja/api-reference/music/get-music-status",
+                  "ja/api-reference/music/get-music-status"
+                ]
+              },
+              {
+                "group": "ビデオと素材",
+                "pages": [
                   "ja/api-reference/video/create-video",
                   "ja/api-reference/video/get-video-status",
+                  "ja/api-reference/video/create-material-asset-group",
+                  "ja/api-reference/video/list-material-asset-groups",
+                  "ja/api-reference/video/get-material-asset-group",
+                  "ja/api-reference/video/update-material-asset-group",
+                  "ja/api-reference/video/delete-material-asset-group",
+                  "ja/api-reference/video/create-material-asset",
+                  "ja/api-reference/video/list-material-assets",
+                  "ja/api-reference/video/get-material-asset",
+                  "ja/api-reference/video/update-material-asset",
+                  "ja/api-reference/video/delete-material-asset"
+                ]
+              },
+              {
+                "group": "Worlds",
+                "pages": [
                   "ja/api-reference/worlds/prepare-media-asset-upload",
                   "ja/api-reference/worlds/get-media-asset",
                   "ja/api-reference/worlds/create-world",
                   "ja/api-reference/worlds/get-world-status",
                   "ja/api-reference/worlds/list-worlds",
                   "ja/api-reference/worlds/get-world",
-                  "ja/api-reference/worlds/delete-world",
+                  "ja/api-reference/worlds/delete-world"
+                ]
+              },
+              {
+                "group": "3D",
+                "pages": [
                   "ja/api-reference/3d/create-3d",
                   "ja/api-reference/3d/get-3d-status"
                 ]
@@ -868,27 +1008,62 @@
                 ]
               },
               {
-                "group": "이미지 및 미디어",
+                "group": "이미지",
                 "pages": [
                   "ko/api-reference/images/create-image",
                   "ko/api-reference/images/edit-image",
                   "ko/api-reference/images/create-variation",
-                  "ko/api-reference/images/get-image-status",
+                  "ko/api-reference/images/get-image-status"
+                ]
+              },
+              {
+                "group": "오디오 및 실시간",
+                "pages": [
                   "ko/api-reference/audio/create-speech",
                   "ko/api-reference/audio/create-transcription",
                   "ko/api-reference/audio/create-translation",
-                  "ko/api-reference/realtime/connect",
+                  "ko/api-reference/realtime/connect"
+                ]
+              },
+              {
+                "group": "음악",
+                "pages": [
                   "ko/api-reference/music/create-music",
-                  "ko/api-reference/music/get-music-status",
+                  "ko/api-reference/music/get-music-status"
+                ]
+              },
+              {
+                "group": "비디오 및 자료",
+                "pages": [
                   "ko/api-reference/video/create-video",
                   "ko/api-reference/video/get-video-status",
+                  "ko/api-reference/video/create-material-asset-group",
+                  "ko/api-reference/video/list-material-asset-groups",
+                  "ko/api-reference/video/get-material-asset-group",
+                  "ko/api-reference/video/update-material-asset-group",
+                  "ko/api-reference/video/delete-material-asset-group",
+                  "ko/api-reference/video/create-material-asset",
+                  "ko/api-reference/video/list-material-assets",
+                  "ko/api-reference/video/get-material-asset",
+                  "ko/api-reference/video/update-material-asset",
+                  "ko/api-reference/video/delete-material-asset"
+                ]
+              },
+              {
+                "group": "Worlds",
+                "pages": [
                   "ko/api-reference/worlds/prepare-media-asset-upload",
                   "ko/api-reference/worlds/get-media-asset",
                   "ko/api-reference/worlds/create-world",
                   "ko/api-reference/worlds/get-world-status",
                   "ko/api-reference/worlds/list-worlds",
                   "ko/api-reference/worlds/get-world",
-                  "ko/api-reference/worlds/delete-world",
+                  "ko/api-reference/worlds/delete-world"
+                ]
+              },
+              {
+                "group": "3D",
+                "pages": [
                   "ko/api-reference/3d/create-3d",
                   "ko/api-reference/3d/get-3d-status"
                 ]
@@ -1054,27 +1229,62 @@
                 ]
               },
               {
-                "group": "Bilder & Medien",
+                "group": "Bilder",
                 "pages": [
                   "de/api-reference/images/create-image",
                   "de/api-reference/images/edit-image",
                   "de/api-reference/images/create-variation",
-                  "de/api-reference/images/get-image-status",
+                  "de/api-reference/images/get-image-status"
+                ]
+              },
+              {
+                "group": "Audio & Echtzeit",
+                "pages": [
                   "de/api-reference/audio/create-speech",
                   "de/api-reference/audio/create-transcription",
                   "de/api-reference/audio/create-translation",
-                  "de/api-reference/realtime/connect",
+                  "de/api-reference/realtime/connect"
+                ]
+              },
+              {
+                "group": "Musik",
+                "pages": [
                   "de/api-reference/music/create-music",
-                  "de/api-reference/music/get-music-status",
+                  "de/api-reference/music/get-music-status"
+                ]
+              },
+              {
+                "group": "Video & Materialien",
+                "pages": [
                   "de/api-reference/video/create-video",
                   "de/api-reference/video/get-video-status",
+                  "de/api-reference/video/create-material-asset-group",
+                  "de/api-reference/video/list-material-asset-groups",
+                  "de/api-reference/video/get-material-asset-group",
+                  "de/api-reference/video/update-material-asset-group",
+                  "de/api-reference/video/delete-material-asset-group",
+                  "de/api-reference/video/create-material-asset",
+                  "de/api-reference/video/list-material-assets",
+                  "de/api-reference/video/get-material-asset",
+                  "de/api-reference/video/update-material-asset",
+                  "de/api-reference/video/delete-material-asset"
+                ]
+              },
+              {
+                "group": "Worlds",
+                "pages": [
                   "de/api-reference/worlds/prepare-media-asset-upload",
                   "de/api-reference/worlds/get-media-asset",
                   "de/api-reference/worlds/create-world",
                   "de/api-reference/worlds/get-world-status",
                   "de/api-reference/worlds/list-worlds",
                   "de/api-reference/worlds/get-world",
-                  "de/api-reference/worlds/delete-world",
+                  "de/api-reference/worlds/delete-world"
+                ]
+              },
+              {
+                "group": "3D",
+                "pages": [
                   "de/api-reference/3d/create-3d",
                   "de/api-reference/3d/get-3d-status"
                 ]
@@ -1240,27 +1450,62 @@
                 ]
               },
               {
-                "group": "Images & médias",
+                "group": "Images",
                 "pages": [
                   "fr/api-reference/images/create-image",
                   "fr/api-reference/images/edit-image",
                   "fr/api-reference/images/create-variation",
-                  "fr/api-reference/images/get-image-status",
+                  "fr/api-reference/images/get-image-status"
+                ]
+              },
+              {
+                "group": "Audio & temps réel",
+                "pages": [
                   "fr/api-reference/audio/create-speech",
                   "fr/api-reference/audio/create-transcription",
                   "fr/api-reference/audio/create-translation",
-                  "fr/api-reference/realtime/connect",
+                  "fr/api-reference/realtime/connect"
+                ]
+              },
+              {
+                "group": "Musique",
+                "pages": [
                   "fr/api-reference/music/create-music",
-                  "fr/api-reference/music/get-music-status",
+                  "fr/api-reference/music/get-music-status"
+                ]
+              },
+              {
+                "group": "Vidéo & ressources",
+                "pages": [
                   "fr/api-reference/video/create-video",
                   "fr/api-reference/video/get-video-status",
+                  "fr/api-reference/video/create-material-asset-group",
+                  "fr/api-reference/video/list-material-asset-groups",
+                  "fr/api-reference/video/get-material-asset-group",
+                  "fr/api-reference/video/update-material-asset-group",
+                  "fr/api-reference/video/delete-material-asset-group",
+                  "fr/api-reference/video/create-material-asset",
+                  "fr/api-reference/video/list-material-assets",
+                  "fr/api-reference/video/get-material-asset",
+                  "fr/api-reference/video/update-material-asset",
+                  "fr/api-reference/video/delete-material-asset"
+                ]
+              },
+              {
+                "group": "Worlds",
+                "pages": [
                   "fr/api-reference/worlds/prepare-media-asset-upload",
                   "fr/api-reference/worlds/get-media-asset",
                   "fr/api-reference/worlds/create-world",
                   "fr/api-reference/worlds/get-world-status",
                   "fr/api-reference/worlds/list-worlds",
                   "fr/api-reference/worlds/get-world",
-                  "fr/api-reference/worlds/delete-world",
+                  "fr/api-reference/worlds/delete-world"
+                ]
+              },
+              {
+                "group": "3D",
+                "pages": [
                   "fr/api-reference/3d/create-3d",
                   "fr/api-reference/3d/get-3d-status"
                 ]
@@ -1426,27 +1671,62 @@
                 ]
               },
               {
-                "group": "Imágenes y medios",
+                "group": "Imágenes",
                 "pages": [
                   "es/api-reference/images/create-image",
                   "es/api-reference/images/edit-image",
                   "es/api-reference/images/create-variation",
-                  "es/api-reference/images/get-image-status",
+                  "es/api-reference/images/get-image-status"
+                ]
+              },
+              {
+                "group": "Audio y tiempo real",
+                "pages": [
                   "es/api-reference/audio/create-speech",
                   "es/api-reference/audio/create-transcription",
                   "es/api-reference/audio/create-translation",
-                  "es/api-reference/realtime/connect",
+                  "es/api-reference/realtime/connect"
+                ]
+              },
+              {
+                "group": "Música",
+                "pages": [
                   "es/api-reference/music/create-music",
-                  "es/api-reference/music/get-music-status",
+                  "es/api-reference/music/get-music-status"
+                ]
+              },
+              {
+                "group": "Video y recursos",
+                "pages": [
                   "es/api-reference/video/create-video",
                   "es/api-reference/video/get-video-status",
+                  "es/api-reference/video/create-material-asset-group",
+                  "es/api-reference/video/list-material-asset-groups",
+                  "es/api-reference/video/get-material-asset-group",
+                  "es/api-reference/video/update-material-asset-group",
+                  "es/api-reference/video/delete-material-asset-group",
+                  "es/api-reference/video/create-material-asset",
+                  "es/api-reference/video/list-material-assets",
+                  "es/api-reference/video/get-material-asset",
+                  "es/api-reference/video/update-material-asset",
+                  "es/api-reference/video/delete-material-asset"
+                ]
+              },
+              {
+                "group": "Worlds",
+                "pages": [
                   "es/api-reference/worlds/prepare-media-asset-upload",
                   "es/api-reference/worlds/get-media-asset",
                   "es/api-reference/worlds/create-world",
                   "es/api-reference/worlds/get-world-status",
                   "es/api-reference/worlds/list-worlds",
                   "es/api-reference/worlds/get-world",
-                  "es/api-reference/worlds/delete-world",
+                  "es/api-reference/worlds/delete-world"
+                ]
+              },
+              {
+                "group": "3D",
+                "pages": [
                   "es/api-reference/3d/create-3d",
                   "es/api-reference/3d/get-3d-status"
                 ]
@@ -1612,27 +1892,62 @@
                 ]
               },
               {
-                "group": "Imagens e mídia",
+                "group": "Imagens",
                 "pages": [
                   "pt/api-reference/images/create-image",
                   "pt/api-reference/images/edit-image",
                   "pt/api-reference/images/create-variation",
-                  "pt/api-reference/images/get-image-status",
+                  "pt/api-reference/images/get-image-status"
+                ]
+              },
+              {
+                "group": "Áudio e tempo real",
+                "pages": [
                   "pt/api-reference/audio/create-speech",
                   "pt/api-reference/audio/create-transcription",
                   "pt/api-reference/audio/create-translation",
-                  "pt/api-reference/realtime/connect",
+                  "pt/api-reference/realtime/connect"
+                ]
+              },
+              {
+                "group": "Música",
+                "pages": [
                   "pt/api-reference/music/create-music",
-                  "pt/api-reference/music/get-music-status",
+                  "pt/api-reference/music/get-music-status"
+                ]
+              },
+              {
+                "group": "Vídeo e materiais",
+                "pages": [
                   "pt/api-reference/video/create-video",
                   "pt/api-reference/video/get-video-status",
+                  "pt/api-reference/video/create-material-asset-group",
+                  "pt/api-reference/video/list-material-asset-groups",
+                  "pt/api-reference/video/get-material-asset-group",
+                  "pt/api-reference/video/update-material-asset-group",
+                  "pt/api-reference/video/delete-material-asset-group",
+                  "pt/api-reference/video/create-material-asset",
+                  "pt/api-reference/video/list-material-assets",
+                  "pt/api-reference/video/get-material-asset",
+                  "pt/api-reference/video/update-material-asset",
+                  "pt/api-reference/video/delete-material-asset"
+                ]
+              },
+              {
+                "group": "Worlds",
+                "pages": [
                   "pt/api-reference/worlds/prepare-media-asset-upload",
                   "pt/api-reference/worlds/get-media-asset",
                   "pt/api-reference/worlds/create-world",
                   "pt/api-reference/worlds/get-world-status",
                   "pt/api-reference/worlds/list-worlds",
                   "pt/api-reference/worlds/get-world",
-                  "pt/api-reference/worlds/delete-world",
+                  "pt/api-reference/worlds/delete-world"
+                ]
+              },
+              {
+                "group": "3D",
+                "pages": [
                   "pt/api-reference/3d/create-3d",
                   "pt/api-reference/3d/get-3d-status"
                 ]
@@ -1798,27 +2113,62 @@
                 ]
               },
               {
-                "group": "الصور والوسائط",
+                "group": "الصور",
                 "pages": [
                   "ar/api-reference/images/create-image",
                   "ar/api-reference/images/edit-image",
                   "ar/api-reference/images/create-variation",
-                  "ar/api-reference/images/get-image-status",
+                  "ar/api-reference/images/get-image-status"
+                ]
+              },
+              {
+                "group": "الصوت والوقت الفعلي",
+                "pages": [
                   "ar/api-reference/audio/create-speech",
                   "ar/api-reference/audio/create-transcription",
                   "ar/api-reference/audio/create-translation",
-                  "ar/api-reference/realtime/connect",
+                  "ar/api-reference/realtime/connect"
+                ]
+              },
+              {
+                "group": "الموسيقى",
+                "pages": [
                   "ar/api-reference/music/create-music",
-                  "ar/api-reference/music/get-music-status",
+                  "ar/api-reference/music/get-music-status"
+                ]
+              },
+              {
+                "group": "الفيديو والمواد",
+                "pages": [
                   "ar/api-reference/video/create-video",
                   "ar/api-reference/video/get-video-status",
+                  "ar/api-reference/video/create-material-asset-group",
+                  "ar/api-reference/video/list-material-asset-groups",
+                  "ar/api-reference/video/get-material-asset-group",
+                  "ar/api-reference/video/update-material-asset-group",
+                  "ar/api-reference/video/delete-material-asset-group",
+                  "ar/api-reference/video/create-material-asset",
+                  "ar/api-reference/video/list-material-assets",
+                  "ar/api-reference/video/get-material-asset",
+                  "ar/api-reference/video/update-material-asset",
+                  "ar/api-reference/video/delete-material-asset"
+                ]
+              },
+              {
+                "group": "Worlds",
+                "pages": [
                   "ar/api-reference/worlds/prepare-media-asset-upload",
                   "ar/api-reference/worlds/get-media-asset",
                   "ar/api-reference/worlds/create-world",
                   "ar/api-reference/worlds/get-world-status",
                   "ar/api-reference/worlds/list-worlds",
                   "ar/api-reference/worlds/get-world",
-                  "ar/api-reference/worlds/delete-world",
+                  "ar/api-reference/worlds/delete-world"
+                ]
+              },
+              {
+                "group": "3D",
+                "pages": [
                   "ar/api-reference/3d/create-3d",
                   "ar/api-reference/3d/get-3d-status"
                 ]
@@ -1984,27 +2334,62 @@
                 ]
               },
               {
-                "group": "Hình ảnh và phương tiện",
+                "group": "Hình ảnh",
                 "pages": [
                   "vi/api-reference/images/create-image",
                   "vi/api-reference/images/edit-image",
                   "vi/api-reference/images/create-variation",
-                  "vi/api-reference/images/get-image-status",
+                  "vi/api-reference/images/get-image-status"
+                ]
+              },
+              {
+                "group": "Âm thanh & thời gian thực",
+                "pages": [
                   "vi/api-reference/audio/create-speech",
                   "vi/api-reference/audio/create-transcription",
                   "vi/api-reference/audio/create-translation",
-                  "vi/api-reference/realtime/connect",
+                  "vi/api-reference/realtime/connect"
+                ]
+              },
+              {
+                "group": "Âm nhạc",
+                "pages": [
                   "vi/api-reference/music/create-music",
-                  "vi/api-reference/music/get-music-status",
+                  "vi/api-reference/music/get-music-status"
+                ]
+              },
+              {
+                "group": "Video & tư liệu",
+                "pages": [
                   "vi/api-reference/video/create-video",
                   "vi/api-reference/video/get-video-status",
+                  "vi/api-reference/video/create-material-asset-group",
+                  "vi/api-reference/video/list-material-asset-groups",
+                  "vi/api-reference/video/get-material-asset-group",
+                  "vi/api-reference/video/update-material-asset-group",
+                  "vi/api-reference/video/delete-material-asset-group",
+                  "vi/api-reference/video/create-material-asset",
+                  "vi/api-reference/video/list-material-assets",
+                  "vi/api-reference/video/get-material-asset",
+                  "vi/api-reference/video/update-material-asset",
+                  "vi/api-reference/video/delete-material-asset"
+                ]
+              },
+              {
+                "group": "Worlds",
+                "pages": [
                   "vi/api-reference/worlds/prepare-media-asset-upload",
                   "vi/api-reference/worlds/get-media-asset",
                   "vi/api-reference/worlds/create-world",
                   "vi/api-reference/worlds/get-world-status",
                   "vi/api-reference/worlds/list-worlds",
                   "vi/api-reference/worlds/get-world",
-                  "vi/api-reference/worlds/delete-world",
+                  "vi/api-reference/worlds/delete-world"
+                ]
+              },
+              {
+                "group": "3D",
+                "pages": [
                   "vi/api-reference/3d/create-3d",
                   "vi/api-reference/3d/get-3d-status"
                 ]
@@ -2170,27 +2555,62 @@
                 ]
               },
               {
-                "group": "Gambar & media",
+                "group": "Gambar",
                 "pages": [
                   "id/api-reference/images/create-image",
                   "id/api-reference/images/edit-image",
                   "id/api-reference/images/create-variation",
-                  "id/api-reference/images/get-image-status",
+                  "id/api-reference/images/get-image-status"
+                ]
+              },
+              {
+                "group": "Audio & realtime",
+                "pages": [
                   "id/api-reference/audio/create-speech",
                   "id/api-reference/audio/create-transcription",
                   "id/api-reference/audio/create-translation",
-                  "id/api-reference/realtime/connect",
+                  "id/api-reference/realtime/connect"
+                ]
+              },
+              {
+                "group": "Musik",
+                "pages": [
                   "id/api-reference/music/create-music",
-                  "id/api-reference/music/get-music-status",
+                  "id/api-reference/music/get-music-status"
+                ]
+              },
+              {
+                "group": "Video & materi",
+                "pages": [
                   "id/api-reference/video/create-video",
                   "id/api-reference/video/get-video-status",
+                  "id/api-reference/video/create-material-asset-group",
+                  "id/api-reference/video/list-material-asset-groups",
+                  "id/api-reference/video/get-material-asset-group",
+                  "id/api-reference/video/update-material-asset-group",
+                  "id/api-reference/video/delete-material-asset-group",
+                  "id/api-reference/video/create-material-asset",
+                  "id/api-reference/video/list-material-assets",
+                  "id/api-reference/video/get-material-asset",
+                  "id/api-reference/video/update-material-asset",
+                  "id/api-reference/video/delete-material-asset"
+                ]
+              },
+              {
+                "group": "Worlds",
+                "pages": [
                   "id/api-reference/worlds/prepare-media-asset-upload",
                   "id/api-reference/worlds/get-media-asset",
                   "id/api-reference/worlds/create-world",
                   "id/api-reference/worlds/get-world-status",
                   "id/api-reference/worlds/list-worlds",
                   "id/api-reference/worlds/get-world",
-                  "id/api-reference/worlds/delete-world",
+                  "id/api-reference/worlds/delete-world"
+                ]
+              },
+              {
+                "group": "3D",
+                "pages": [
                   "id/api-reference/3d/create-3d",
                   "id/api-reference/3d/get-3d-status"
                 ]
@@ -2356,27 +2776,62 @@
                 ]
               },
               {
-                "group": "Görseller ve medya",
+                "group": "Görseller",
                 "pages": [
                   "tr/api-reference/images/create-image",
                   "tr/api-reference/images/edit-image",
                   "tr/api-reference/images/create-variation",
-                  "tr/api-reference/images/get-image-status",
+                  "tr/api-reference/images/get-image-status"
+                ]
+              },
+              {
+                "group": "Ses ve gerçek zamanlı",
+                "pages": [
                   "tr/api-reference/audio/create-speech",
                   "tr/api-reference/audio/create-transcription",
                   "tr/api-reference/audio/create-translation",
-                  "tr/api-reference/realtime/connect",
+                  "tr/api-reference/realtime/connect"
+                ]
+              },
+              {
+                "group": "Müzik",
+                "pages": [
                   "tr/api-reference/music/create-music",
-                  "tr/api-reference/music/get-music-status",
+                  "tr/api-reference/music/get-music-status"
+                ]
+              },
+              {
+                "group": "Video ve materyaller",
+                "pages": [
                   "tr/api-reference/video/create-video",
                   "tr/api-reference/video/get-video-status",
+                  "tr/api-reference/video/create-material-asset-group",
+                  "tr/api-reference/video/list-material-asset-groups",
+                  "tr/api-reference/video/get-material-asset-group",
+                  "tr/api-reference/video/update-material-asset-group",
+                  "tr/api-reference/video/delete-material-asset-group",
+                  "tr/api-reference/video/create-material-asset",
+                  "tr/api-reference/video/list-material-assets",
+                  "tr/api-reference/video/get-material-asset",
+                  "tr/api-reference/video/update-material-asset",
+                  "tr/api-reference/video/delete-material-asset"
+                ]
+              },
+              {
+                "group": "Worlds",
+                "pages": [
                   "tr/api-reference/worlds/prepare-media-asset-upload",
                   "tr/api-reference/worlds/get-media-asset",
                   "tr/api-reference/worlds/create-world",
                   "tr/api-reference/worlds/get-world-status",
                   "tr/api-reference/worlds/list-worlds",
                   "tr/api-reference/worlds/get-world",
-                  "tr/api-reference/worlds/delete-world",
+                  "tr/api-reference/worlds/delete-world"
+                ]
+              },
+              {
+                "group": "3D",
+                "pages": [
                   "tr/api-reference/3d/create-3d",
                   "tr/api-reference/3d/get-3d-status"
                 ]
