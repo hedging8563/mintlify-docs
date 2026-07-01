@@ -14,7 +14,7 @@ Este endpoint retorna o detalhamento de uso por API Key sem expor metadata de ro
 |-----------|------|-------------------|-----------|
 | `page` | integer | padrão `1`, mínimo `1` | Número da página começando em 1 |
 | `limit` | integer | padrão `50`, mínimo `1`, máximo `100` | Tamanho da página |
-| `logicalModel` | string | comprimento máximo `100` | Nome do modelo solicitado |
+| `model` | string | comprimento máximo `100` | Nome do modelo solicitado |
 | `modelVendor` | string | comprimento máximo `100` | Fornecedor público do modelo |
 | `scene` | enum | - | `chat`, `image`, `audio`, `video`, `embedding`, `rerank`, `translation`, `music`, `3d` |
 | `accessChannel` | enum | - | `platform` ou `byok` |

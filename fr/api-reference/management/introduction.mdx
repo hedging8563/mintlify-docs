@@ -36,7 +36,7 @@ Les management tokens sont différents des API Keys d’inférence. Utilisez `mt
 |-----------|------|------------------------------|-------------|
 | `page` | integer | défaut `1`, min. `1` | Numéro de page basé sur 1 |
 | `limit` | integer | défaut `50`, min. `1`, max. `100` | Taille de page |
-| `logicalModel` | string | longueur max. `100` | Nom du modèle demandé |
+| `model` | string | longueur max. `100` | Nom du modèle demandé |
 | `modelVendor` | string | longueur max. `100` | Fournisseur public du modèle |
 | `scene` | enum | - | `chat`, `image`, `audio`, `video`, `embedding`, `rerank`, `translation`, `music`, `3d` |
 | `accessChannel` | enum | - | `platform` ou `byok` |
@@ -75,7 +75,7 @@ Au moins un champ doit être fourni dans la requête PATCH.
 
 ## Sémantique des rapports
 
-- `logicalModel` désigne le modèle public demandé par l’appelant.
+- `model` désigne le modèle public demandé par l’appelant.
 - `modelVendor` désigne le fournisseur public du modèle, et non la route physique cachée.
 - `scene` correspond à la scène publique de la requête, dérivée de l’endpoint ou du type de tâche.
 - `accessChannel=platform` signifie que la requête a été facturée via le canal plateforme de AI Sonar.

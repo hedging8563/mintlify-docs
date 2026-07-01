@@ -50,7 +50,7 @@ curl "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/usage?page
   -H "Authorization: Bearer mt-your-management-token"
 ```
 
-`GET /v1/management/api-keys/{keyId}/usage` `scene`, `accessChannel`, `logicalModel`, `modelVendor`, `startDate` ve `endDate` ile filtreleme yapabilir. Bu kayıtları gösterge paneli sayfalarını kazımak veya yukarı akış sağlayıcı görev ID'lerine güvenmek yerine kullanın.
+`GET /v1/management/api-keys/{keyId}/usage` `scene`, `accessChannel`, `model`, `modelVendor`, `startDate` ve `endDate` ile filtreleme yapabilir. Bu kayıtları gösterge paneli sayfalarını kazımak veya yukarı akış sağlayıcı görev ID'lerine güvenmek yerine kullanın.
 
 Akış yanıtları, akış gönderildikten sonra yerleşebilir, bu nedenle kullanım daha sonra kaydedilse bile bir faturalama başlığı mevcut olmayabilir. Asenkron medya görevleri, terminal anketlemesinden sonra yerleşebilir.
 

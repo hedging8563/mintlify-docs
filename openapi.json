@@ -2838,7 +2838,7 @@
             "description": "Page size. Default is 50 and the maximum is 100."
           },
           {
-            "name": "logicalModel",
+            "name": "model",
             "in": "query",
             "schema": {
               "type": "string",
@@ -2952,11 +2952,12 @@
             }
           },
           {
-            "name": "logicalModel",
+            "name": "model",
             "in": "query",
             "schema": {
               "type": "string"
-            }
+            },
+            "description": "Filter by requested model name."
           },
           {
             "name": "modelVendor",
@@ -7509,7 +7510,7 @@
       "ManagementUsageItem": {
         "type": "object",
         "required": [
-          "logical_model",
+          "model",
           "scene",
           "access_channel",
           "usage_unit",
@@ -7530,9 +7531,6 @@
               "null"
             ],
             "description": "Settled billing transaction id for request-level reconciliation."
-          },
-          "logical_model": {
-            "type": "string"
           },
           "model_vendor": {
             "type": [
@@ -7578,6 +7576,9 @@
           "created_at": {
             "type": "string",
             "format": "date-time"
+          },
+          "model": {
+            "type": "string"
           }
         }
       },
@@ -7622,36 +7623,6 @@
                 }
               }
             }
-          }
-        }
-      },
-      "ManagementLogicalModelBreakdown": {
-        "type": "object",
-        "required": [
-          "logical_model",
-          "model_vendor",
-          "requests",
-          "cost",
-          "usage_quantity"
-        ],
-        "properties": {
-          "logical_model": {
-            "type": "string"
-          },
-          "model_vendor": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "requests": {
-            "type": "integer"
-          },
-          "cost": {
-            "type": "number"
-          },
-          "usage_quantity": {
-            "type": "number"
           }
         }
       },
@@ -7735,12 +7706,6 @@
       "ManagementBreakdowns": {
         "type": "object",
         "properties": {
-          "by_logical_model": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ManagementLogicalModelBreakdown"
-            }
-          },
           "by_model_vendor": {
             "type": "array",
             "items": {
@@ -7763,6 +7728,12 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ManagementDailyCostBreakdown"
+            }
+          },
+          "by_model": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ManagementModelBreakdown"
             }
           }
         }
@@ -7836,27 +7807,6 @@
           }
         }
       },
-      "ModelListContractSummary": {
-        "type": [
-          "object",
-          "null"
-        ],
-        "properties": {
-          "public_operations": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "request_endpoint": {
-            "type": [
-              "string",
-              "null"
-            ]
-          }
-        },
-        "additionalProperties": false
-      },
       "ModelListItem": {
         "type": "object",
         "properties": {
@@ -7901,136 +7851,6 @@
           "tokenlab"
         ],
         "additionalProperties": false
-      },
-      "NonChatPublicContractSummary": {
-        "type": [
-          "object",
-          "null"
-        ],
-        "properties": {
-          "public_operations": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "supported_parameters": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "required_selectors": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "optional_selectors": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "resolutions": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "durations": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "aspect_ratios": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "request_endpoint": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "status_mode": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "contract_scope": {
-            "type": "string",
-            "enum": [
-              "active",
-              "deferred"
-            ]
-          },
-          "recommended_request_summary": {
-            "type": [
-              "object",
-              "null"
-            ],
-            "additionalProperties": true
-          }
-        },
-        "additionalProperties": true
-      },
-      "NonChatPublicContract": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/NonChatPublicContractSummary"
-          },
-          {
-            "type": [
-              "object",
-              "null"
-            ],
-            "properties": {
-              "documented_inputs": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              },
-              "documented_outputs": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              },
-              "fallback_status_endpoints": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              },
-              "truth_source": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "notes": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              },
-              "recommended_request": {
-                "type": [
-                  "object",
-                  "null"
-                ],
-                "additionalProperties": true
-              }
-            },
-            "additionalProperties": true
-          }
-        ]
       },
       "ModelPricingResponse": {
         "type": "object",
@@ -9148,6 +8968,174 @@
         },
         "additionalProperties": false
       },
+      "ManagementModelBreakdown": {
+        "type": "object",
+        "required": [
+          "model",
+          "model_vendor",
+          "requests",
+          "cost",
+          "usage_quantity"
+        ],
+        "properties": {
+          "model_vendor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "requests": {
+            "type": "integer"
+          },
+          "cost": {
+            "type": "number"
+          },
+          "usage_quantity": {
+            "type": "number"
+          },
+          "model": {
+            "type": "string"
+          }
+        }
+      },
+      "ModelListRequestFormatSummary": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "properties": {
+          "public_operations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "request_endpoint": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "NonChatRequestFormatSummary": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "properties": {
+          "public_operations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "supported_parameters": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "required_selectors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "optional_selectors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "resolutions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "durations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "aspect_ratios": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "request_endpoint": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status_mode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "recommended_request_summary": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": true
+      },
+      "NonChatRequestFormatDetails": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/NonChatRequestFormatSummary"
+          },
+          {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "documented_inputs": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "documented_outputs": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "fallback_status_endpoints": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "notes": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "recommended_request": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "additionalProperties": true
+              }
+            },
+            "additionalProperties": true
+          }
+        ]
+      },
       "ModelListLegacyPlatformExtension": {
         "type": "object",
         "description": "AI Sonar discovery fields for the list route. Detail-only metadata such as capability flags, pricing provenance, full model details, and empty recommendation snapshots are omitted.",
@@ -9213,8 +9201,8 @@
             "type": "object",
             "additionalProperties": true
           },
-          "public_contract_summary": {
-            "$ref": "#/components/schemas/ModelListContractSummary"
+          "request_format_summary": {
+            "$ref": "#/components/schemas/ModelListRequestFormatSummary"
           }
         },
         "required": [
@@ -9303,11 +9291,11 @@
             ],
             "additionalProperties": true
           },
-          "public_contract_summary": {
-            "$ref": "#/components/schemas/NonChatPublicContractSummary"
+          "request_format_summary": {
+            "$ref": "#/components/schemas/NonChatRequestFormatSummary"
           },
-          "public_contract": {
-            "$ref": "#/components/schemas/NonChatPublicContract"
+          "request_format_details": {
+            "$ref": "#/components/schemas/NonChatRequestFormatDetails"
           }
         },
         "additionalProperties": true
@@ -9376,9 +9364,6 @@
           "agent_preferences": {
             "type": "object",
             "additionalProperties": true
-          },
-          "public_contract_summary": {
-            "$ref": "#/components/schemas/ModelListContractSummary"
           },
           "lifecycle": {
             "type": "object",
@@ -9570,6 +9555,9 @@
               "additionalProperties": false
             },
             "description": "Display badges derived from lifecycle and commercial metadata."
+          },
+          "request_format_summary": {
+            "$ref": "#/components/schemas/ModelListRequestFormatSummary"
           }
         },
         "required": [
@@ -9661,12 +9649,6 @@
             ],
             "additionalProperties": true
           },
-          "public_contract_summary": {
-            "$ref": "#/components/schemas/NonChatPublicContractSummary"
-          },
-          "public_contract": {
-            "$ref": "#/components/schemas/NonChatPublicContract"
-          },
           "lifecycle": {
             "type": "object",
             "required": [
@@ -9857,6 +9839,12 @@
               "additionalProperties": false
             },
             "description": "Display badges derived from lifecycle and commercial metadata."
+          },
+          "request_format_summary": {
+            "$ref": "#/components/schemas/NonChatRequestFormatSummary"
+          },
+          "request_format_details": {
+            "$ref": "#/components/schemas/NonChatRequestFormatDetails"
           }
         },
         "additionalProperties": true,

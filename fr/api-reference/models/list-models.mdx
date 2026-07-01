@@ -23,7 +23,7 @@ description: "Liste tous les modèles disponibles"
   - `tokenlab.capability_flags` (object ou `null`) : Résumé public des capacités
   - `tokenlab.supported_operations` (array ou `null`) : Opérations publiques hors chat prises en charge par le modèle
   - `tokenlab.pricing_provenance` (object ou `null`) : Métadonnées publiques de provenance de la tarification
-  - `tokenlab.public_contract_summary` (object ou `null`) : Résumé de découverte non-chat léger, avec uniquement `public_operations` et `request_endpoint`
+  - `tokenlab.request_format_summary` (object ou `null`) : Résumé de découverte non-chat léger, avec uniquement `public_operations` et `request_endpoint`
   - `tokenlab.agent_preferences` (object) : Renvoyé uniquement lorsque `recommended_for` est présent
   - `tokenlab.lifecycle` (object) : étape du cycle de vie, dates de sortie/dépréciation, modèle de remplacement et source du badge latest
   - `tokenlab.commercial` (object) : politique de facturation utilisateur, raison de gratuité et échéance facultative
@@ -31,7 +31,7 @@ description: "Liste tous les modèles disponibles"
 </ResponseField>
 
 <Note>
-`GET /v1/models` est optimisé pour la découverte. Les métadonnées réservées au détail, comme `capability_flags`, `pricing_provenance` et le `public_contract` complet, se trouvent sur `GET /v1/models/{model}`.
+`GET /v1/models` est optimisé pour la découverte. Les métadonnées réservées au détail, comme `capability_flags`, `pricing_provenance` et le `request_format_details` complet, se trouvent sur `GET /v1/models/{model}`.
 </Note>
 
 ## Paramètres de requête

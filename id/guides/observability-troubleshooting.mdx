@@ -50,7 +50,7 @@ curl "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/usage?page
   -H "Authorization: Bearer mt-your-management-token"
 ```
 
-`GET /v1/management/api-keys/{keyId}/usage` dapat memfilter berdasarkan `scene`, `accessChannel`, `logicalModel`, `modelVendor`, `startDate`, dan `endDate`. Gunakan catatan ini alih-alih menggores halaman dasbor atau bergantung pada ID tugas penyedia hulu.
+`GET /v1/management/api-keys/{keyId}/usage` dapat memfilter berdasarkan `scene`, `accessChannel`, `model`, `modelVendor`, `startDate`, dan `endDate`. Gunakan catatan ini alih-alih menggores halaman dasbor atau bergantung pada ID tugas penyedia hulu.
 
 Respons streaming mungkin diselesaikan setelah aliran dikirim, jadi header penagihan bisa tidak ada bahkan ketika penggunaan dicatat kemudian. Tugas media asinkron mungkin diselesaikan setelah pemantauan terminal.
 

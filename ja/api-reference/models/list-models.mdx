@@ -23,7 +23,7 @@ description: "利用可能なすべてのモデルを一覧表示します"
   - `tokenlab.capability_flags` (object or `null`): 公開されている機能サマリー
   - `tokenlab.supported_operations` (array or `null`): モデルが公開サポートする非チャット操作
   - `tokenlab.pricing_provenance` (object or `null`): 公開料金の出典メタデータ
-  - `tokenlab.public_contract_summary` (object or `null`): `public_operations` と `request_endpoint` のみを含む軽量な非チャット発見用サマリー
+  - `tokenlab.request_format_summary` (object or `null`): `public_operations` と `request_endpoint` のみを含む軽量な非チャット発見用サマリー
   - `tokenlab.agent_preferences` (object): `recommended_for` がある場合のみ返されます
   - `tokenlab.lifecycle`（object）：ライフサイクル段階、リリース/非推奨日、代替モデル、latest バッジの由来
   - `tokenlab.commercial`（object）：ユーザー課金ポリシー、無料理由、任意の無料終了時刻
@@ -31,7 +31,7 @@ description: "利用可能なすべてのモデルを一覧表示します"
 </ResponseField>
 
 <Note>
-`GET /v1/models` は発見向けに最適化されています。`capability_flags`、`pricing_provenance`、完全な `public_contract` のような詳細専用メタデータは `GET /v1/models/{model}` にあります。
+`GET /v1/models` は発見向けに最適化されています。`capability_flags`、`pricing_provenance`、完全な `request_format_details` のような詳細専用メタデータは `GET /v1/models/{model}` にあります。
 </Note>
 
 ## クエリパラメータ

@@ -14,7 +14,7 @@ description: "返回某个用户 API Key 的分页用量明细。"
 |------|------|---------------|------|
 | `page` | integer | 默认 `1`，最小 `1` | 1-based 页码 |
 | `limit` | integer | 默认 `50`，最小 `1`，最大 `100` | 每页条数 |
-| `logicalModel` | string | 最大长度 `100` | 请求时使用的模型名 |
+| `model` | string | 最大长度 `100` | 请求时使用的模型名 |
 | `modelVendor` | string | 最大长度 `100` | 公开模型厂商 |
 | `scene` | enum | - | `chat`、`image`、`audio`、`video`、`embedding`、`rerank`、`translation`、`music`、`3d` |
 | `accessChannel` | enum | - | `platform` 或 `byok` |
@@ -28,7 +28,7 @@ description: "返回某个用户 API Key 的分页用量明细。"
 - 响应是分页的。
 - 响应只包含公开账单和报表字段。
 - 当底层请求已完成结算时，每条用量明细还会包含 `billing_transaction_id`。建议将它与 `request_id` 一起用于请求级对账。
-- 内部路由和物理渠道元数据会被隐藏。
+- 供应商执行细节会被隐藏。
 
 ## 示例
 

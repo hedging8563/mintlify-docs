@@ -30,7 +30,7 @@ Também inclui `lifecycle`, `commercial` e `badges` para estado de depreciação
 </ResponseField>
 
 <ResponseField name="tokenlab" type="object">
-  Metadados públicos específicos da AI Sonar. A rota de detalhe pode incluir `category`, `pricing_unit`, `capability_flags`, `supported_operations`, `pricing_provenance`, `public_contract_summary`, o `public_contract` completo e `agent_preferences` em nível de cena para instantâneos de recomendação não chat.
+  Metadados públicos específicos da AI Sonar. A rota de detalhe pode incluir `category`, `pricing_unit`, `capability_flags`, `supported_operations`, `pricing_provenance`, `request_format_summary`, o `request_format_details` completo e `agent_preferences` em nível de cena para instantâneos de recomendação não chat.
 </ResponseField>
 
 <RequestExample>
@@ -150,5 +150,5 @@ Em comparação com `GET /v1/models`, a rota de detalhe também pode retornar:
 - `tokenlab.capability_flags`
 - `tokenlab.supported_operations`
 - `tokenlab.pricing_provenance`
-- `tokenlab.public_contract_summary`
-- `tokenlab.public_contract`
+- `tokenlab.request_format_summary`
+- `tokenlab.request_format_details`

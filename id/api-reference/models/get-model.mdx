@@ -30,7 +30,7 @@ Ini juga menyertakan `lifecycle`, `commercial`, dan `badges` untuk status depres
 </ResponseField>
 
 <ResponseField name="tokenlab" type="object">
-  Metadata publik khusus AI Sonar. Route detail dapat mencakup `category`, `pricing_unit`, `capability_flags`, `supported_operations`, `pricing_provenance`, `public_contract_summary`, `public_contract` lengkap, dan `agent_preferences` level scene untuk snapshot rekomendasi non-chat.
+  Metadata publik khusus AI Sonar. Route detail dapat mencakup `category`, `pricing_unit`, `capability_flags`, `supported_operations`, `pricing_provenance`, `request_format_summary`, `request_format_details` lengkap, dan `agent_preferences` level scene untuk snapshot rekomendasi non-chat.
 </ResponseField>
 
 <RequestExample>
@@ -150,5 +150,5 @@ Dibandingkan `GET /v1/models`, route detail juga bisa mengembalikan:
 - `tokenlab.capability_flags`
 - `tokenlab.supported_operations`
 - `tokenlab.pricing_provenance`
-- `tokenlab.public_contract_summary`
-- `tokenlab.public_contract`
+- `tokenlab.request_format_summary`
+- `tokenlab.request_format_details`

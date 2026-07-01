@@ -36,7 +36,7 @@ Authorization: Bearer mt-your-management-token
 |-----------|------|---------------|------|
 | `page` | integer | 기본값 `1`, 최소 `1` | 1부터 시작하는 페이지 번호 |
 | `limit` | integer | 기본값 `50`, 최소 `1`, 최대 `100` | 페이지 크기 |
-| `logicalModel` | string | 최대 길이 `100` | 호출자가 요청한 공개 모델 이름 |
+| `model` | string | 최대 길이 `100` | 호출자가 요청한 공개 모델 이름 |
 | `modelVendor` | string | 최대 길이 `100` | 공개 모델 공급자 |
 | `scene` | enum | - | `chat`, `image`, `audio`, `video`, `embedding`, `rerank`, `translation`, `music`, `3d` |
 | `accessChannel` | enum | - | `platform` 또는 `byok` |
@@ -75,7 +75,7 @@ PATCH 요청에는 최소 1개 이상의 필드가 포함되어야 합니다.
 
 ## 리포팅 의미
 
-- `logicalModel` 은 호출자가 요청한 공개 모델을 의미합니다.
+- `model` 은 호출자가 요청한 공개 모델을 의미합니다.
 - `modelVendor` 는 숨겨진 호환 경로가 아니라 공개 모델 공급자를 의미합니다.
 - `scene` 은 엔드포인트 또는 작업 유형에서 파생된 공개 요청 장면입니다.
 - `accessChannel=platform` 은 해당 요청이 AI Sonar 플랫폼 채널을 통해 과금되었음을 의미합니다.

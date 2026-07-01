@@ -23,7 +23,7 @@ description: "사용 가능한 모든 모델을 나열합니다"
   - `tokenlab.capability_flags` (object 또는 `null`): 공개 기능 요약
   - `tokenlab.supported_operations` (array 또는 `null`): 공개 비채팅 작업 목록
   - `tokenlab.pricing_provenance` (object 또는 `null`): 공개 가격 출처 메타데이터
-  - `tokenlab.public_contract_summary` (object 또는 `null`): `public_operations` 와 `request_endpoint` 만 포함하는 간단한 비채팅 탐색 요약
+  - `tokenlab.request_format_summary` (object 또는 `null`): `public_operations` 와 `request_endpoint` 만 포함하는 간단한 비채팅 탐색 요약
   - `tokenlab.agent_preferences` (object): `recommended_for` 가 있을 때만 반환
   - `tokenlab.lifecycle`(object): 수명 주기 단계, 출시/지원 중단 날짜, 대체 모델, latest 배지 기준
   - `tokenlab.commercial`(object): 사용자 과금 정책, 무료 사유, 선택적 무료 종료 시각
@@ -31,7 +31,7 @@ description: "사용 가능한 모든 모델을 나열합니다"
 </ResponseField>
 
 <Note>
-`GET /v1/models` 는 탐색에 최적화되어 있습니다. `capability_flags`, `pricing_provenance`, 전체 `public_contract` 같은 상세 전용 메타데이터는 `GET /v1/models/{model}` 에 있습니다.
+`GET /v1/models` 는 탐색에 최적화되어 있습니다. `capability_flags`, `pricing_provenance`, 전체 `request_format_details` 같은 상세 전용 메타데이터는 `GET /v1/models/{model}` 에 있습니다.
 </Note>
 
 ## 쿼리 파라미터

@@ -14,7 +14,7 @@ This endpoint returns key-level usage details without exposing provider-specific
 |-----------|------|------------------|-------|
 | `page` | integer | default `1`, min `1` | 1-based page number |
 | `limit` | integer | default `50`, min `1`, max `100` | Page size |
-| `logicalModel` | string | max length `100` | Requested model name |
+| `model` | string | max length `100` | Requested model name |
 | `modelVendor` | string | max length `100` | Public model vendor |
 | `scene` | enum | - | `chat`, `image`, `audio`, `video`, `embedding`, `rerank`, `translation`, `music`, `3d` |
 | `accessChannel` | enum | - | `platform` or `byok` |

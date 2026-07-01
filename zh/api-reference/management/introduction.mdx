@@ -36,7 +36,7 @@ Authorization: Bearer mt-your-management-token
 |------|------|---------------|------|
 | `page` | integer | 默认 `1`，最小 `1` | 1-based 页码 |
 | `limit` | integer | 默认 `50`，最小 `1`，最大 `100` | 每页条数 |
-| `logicalModel` | string | 最大长度 `100` | 请求时使用的模型名 |
+| `model` | string | 最大长度 `100` | 请求时使用的模型名 |
 | `modelVendor` | string | 最大长度 `100` | 公开模型厂商 |
 | `scene` | enum | - | `chat`、`image`、`audio`、`video`、`embedding`、`rerank`、`translation`、`music`、`3d` |
 | `accessChannel` | enum | - | `platform` 或 `byok` |
@@ -75,13 +75,13 @@ PATCH 请求至少需要提供一个字段。
 
 ## 报表语义
 
-- `logicalModel` 表示调用方请求的模型。
+- `model` 表示调用方请求的模型。
 - `modelVendor` 表示公开模型厂商，不是提供商执行细节。
 - `scene` 表示公开请求场景，由接口或任务类型归一化得到。
 - `accessChannel=platform` 表示通过 AI Sonar 平台渠道计费。
 - `accessChannel=byok` 表示请求使用了你自己的上游 Provider Key。
 
-接口只返回公开可理解的账单与报表字段，不暴露内部路由细节或物理渠道元数据。
+接口只返回公开可理解的账单与报表字段，供应商执行细节不会出现在响应中。
 - `/usage` 的逐条明细会在底层请求完成结算后包含 `billing_transaction_id`。建议使用 `request_id` + `billing_transaction_id` 做请求级对账。
 
 ## Billing 分页说明

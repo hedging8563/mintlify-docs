@@ -36,7 +36,7 @@ Los tokens de gestión son distintos de las claves API de inferencia. Usa `mt-..
 |-----------|------|-------------------------------|-------|
 | `page` | integer | predeterminado `1`, mínimo `1` | Número de página basado en 1 |
 | `limit` | integer | predeterminado `50`, mínimo `1`, máximo `100` | Tamaño de página |
-| `logicalModel` | string | longitud máxima `100` | Nombre del modelo solicitado |
+| `model` | string | longitud máxima `100` | Nombre del modelo solicitado |
 | `modelVendor` | string | longitud máxima `100` | Proveedor público del modelo |
 | `scene` | enum | - | `chat`, `image`, `audio`, `video`, `embedding`, `rerank`, `translation`, `music`, `3d` |
 | `accessChannel` | enum | - | `platform` o `byok` |
@@ -75,7 +75,7 @@ Debe proporcionarse al menos un campo de PATCH.
 
 ## Semántica de reporting
 
-- `logicalModel` se refiere al modelo público solicitado por el llamador.
+- `model` se refiere al modelo público solicitado por el llamador.
 - `modelVendor` se refiere al proveedor público del modelo, no a la ruta física oculta.
 - `scene` es la escena pública de la solicitud derivada del endpoint o del tipo de tarea.
 - `accessChannel=platform` significa que la solicitud se facturó mediante el canal de plataforma de AI Sonar.

@@ -6,7 +6,7 @@ description: "يعرض جميع النماذج المتاحة"
 
 ## نظرة عامة
 
-`GET /v1/models` مهيأ للاكتشاف. أما البيانات الوصفية الخاصة بالتفاصيل فقط، مثل `capability_flags` و `pricing_provenance` و `public_contract` الكامل، فتوجد في `GET /v1/models/{model}`.
+`GET /v1/models` مهيأ للاكتشاف. أما البيانات الوصفية الخاصة بالتفاصيل فقط، مثل `capability_flags` و `pricing_provenance` و `request_format_details` الكامل، فتوجد في `GET /v1/models/{model}`.
 
 ## معلمات الاستعلام
 
@@ -49,7 +49,7 @@ description: "يعرض جميع النماذج المتاحة"
   - `tokenlab.capability_flags` (object or `null`): ملخص عام للقدرات
   - `tokenlab.supported_operations` (array or `null`): العمليات العامة غير chat التي يدعمها النموذج
   - `tokenlab.pricing_provenance` (object or `null`): بيانات وصفية عامة لمصدر التسعير
-  - `tokenlab.public_contract_summary` (object or `null`): ملخص اكتشاف خفيف غير chat يحتوي فقط على `public_operations` و `request_endpoint`
+  - `tokenlab.request_format_summary` (object or `null`): ملخص اكتشاف خفيف غير chat يحتوي فقط على `public_operations` و `request_endpoint`
   - `tokenlab.agent_preferences` (object): يُعاد فقط عندما تكون `recommended_for` موجودة
   - `tokenlab.lifecycle` (object): مرحلة دورة الحياة وتواريخ الإصدار/الإيقاف ونموذج الاستبدال ومصدر شارة latest
   - `tokenlab.commercial` (object): سياسة تحصيل الرسوم من المستخدم وسبب المجانية ووقت انتهائها الاختياري

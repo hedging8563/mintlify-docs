@@ -30,7 +30,7 @@ description: "모델 인스턴스를 조회합니다"
 </ResponseField>
 
 <ResponseField name="tokenlab" type="object">
-  AI Sonar 전용 공개 메타데이터입니다. 상세 경로는 `category`, `pricing_unit`, `capability_flags`, `supported_operations`, `pricing_provenance`, `public_contract_summary`, 전체 `public_contract`, 그리고 비채팅 추천 스냅샷용 scene 수준의 `agent_preferences` 를 포함할 수 있습니다.
+  AI Sonar 전용 공개 메타데이터입니다. 상세 경로는 `category`, `pricing_unit`, `capability_flags`, `supported_operations`, `pricing_provenance`, `request_format_summary`, 전체 `request_format_details`, 그리고 비채팅 추천 스냅샷용 scene 수준의 `agent_preferences` 를 포함할 수 있습니다.
 </ResponseField>
 
 <RequestExample>
@@ -150,5 +150,5 @@ echo "Model: {$model['id']}, Provider: {$model['owned_by']}\n";
 - `tokenlab.capability_flags`
 - `tokenlab.supported_operations`
 - `tokenlab.pricing_provenance`
-- `tokenlab.public_contract_summary`
-- `tokenlab.public_contract`
+- `tokenlab.request_format_summary`
+- `tokenlab.request_format_details`

@@ -50,7 +50,7 @@ curl "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/usage?page
   -H "Authorization: Bearer mt-your-management-token"
 ```
 
-`GET /v1/management/api-keys/{keyId}/usage`は`scene`、`accessChannel`、`logicalModel`、`modelVendor`、`startDate`、および`endDate`でフィルタリングできます。ダッシュボードページをスクレイピングしたり、上流プロバイダーのタスクIDに依存する代わりに、これらの記録を使用してください。
+`GET /v1/management/api-keys/{keyId}/usage`は`scene`、`accessChannel`、`model`、`modelVendor`、`startDate`、および`endDate`でフィルタリングできます。ダッシュボードページをスクレイピングしたり、上流プロバイダーのタスクIDに依存する代わりに、これらの記録を使用してください。
 
 ストリーミング応答はストリームが送信された後に決済される場合があるため、使用が後で記録される場合でも請求ヘッダーが存在しないことがあります。非同期メディアタスクはターミナルポーリングの後に決済される場合があります。
 

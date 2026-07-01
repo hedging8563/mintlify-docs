@@ -36,7 +36,7 @@ Tokens de gerenciamento são diferentes de API Keys de inferência. Use `mt-...`
 |-----------|------|-------------------|-----------|
 | `page` | integer | padrão `1`, mínimo `1` | Número da página começando em 1 |
 | `limit` | integer | padrão `50`, mínimo `1`, máximo `100` | Tamanho da página |
-| `logicalModel` | string | comprimento máximo `100` | Nome do modelo solicitado |
+| `model` | string | comprimento máximo `100` | Nome do modelo solicitado |
 | `modelVendor` | string | comprimento máximo `100` | Fornecedor público do modelo |
 | `scene` | enum | - | `chat`, `image`, `audio`, `video`, `embedding`, `rerank`, `translation`, `music`, `3d` |
 | `accessChannel` | enum | - | `platform` ou `byok` |
@@ -75,7 +75,7 @@ A requisição PATCH deve incluir pelo menos um campo.
 
 ## Semântica de reporting
 
-- `logicalModel` se refere ao modelo público solicitado por quem faz a chamada.
+- `model` se refere ao modelo público solicitado por quem faz a chamada.
 - `modelVendor` se refere ao fornecedor público do modelo, e não à rota física oculta.
 - `scene` é a cena pública da solicitação derivada do endpoint ou do tipo de tarefa.
 - `accessChannel=platform` significa que a solicitação foi cobrada pelo canal de plataforma da AI Sonar.

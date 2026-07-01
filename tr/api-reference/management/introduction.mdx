@@ -36,7 +36,7 @@ Yönetim token'ları inference API anahtarlarından farklıdır. `/v1/management
 |-----------|------|----------------------|--------|
 | `page` | integer | varsayılan `1`, min `1` | 1'den başlayan sayfa numarası |
 | `limit` | integer | varsayılan `50`, min `1`, max `100` | Sayfa boyutu |
-| `logicalModel` | string | max uzunluk `100` | İstenen model adı |
+| `model` | string | max uzunluk `100` | İstenen model adı |
 | `modelVendor` | string | max uzunluk `100` | Herkese açık model vendor'ı |
 | `scene` | enum | - | `chat`, `image`, `audio`, `video`, `embedding`, `rerank`, `translation`, `music`, `3d` |
 | `accessChannel` | enum | - | `platform` veya `byok` |
@@ -75,11 +75,11 @@ PATCH için en az bir alan verilmelidir.
 
 ## Raporlama Anlamı
 
-- `logicalModel`, çağıranın talep ettiği herkese açık modeli ifade eder.
+- `model`, çağıranın talep ettiği herkese açık modeli ifade eder.
 - `modelVendor`, gizli fiziksel route yerine herkese açık model vendor'ını ifade eder.
 - `scene`, endpoint veya görev türünden türetilen herkese açık istek sahnesidir.
 - `accessChannel=platform`, isteğin AI Sonar'nın platform kanalından faturalandığı anlamına gelir.
-- `accessChannel=byok`, isteğin kendi upstream provider anahtarınızı kullandığı anlamına gelir.
+- `accessChannel=byok`, isteğin kendi provider anahtarınızı kullandığı anlamına gelir.
 
 Yanıtlar yalnızca herkese açık faturalama ve raporlama alanlarını gösterir. Provider execution ayrıntıları public yönetim sözleşmesinin parçası değildir.
 - `/usage` satır öğeleri, alttaki istek settlement edilmiş billing durumuna ulaştığında `billing_transaction_id` içerebilir. İstek düzeyinde mutabakat için `request_id` + `billing_transaction_id` kullanın.

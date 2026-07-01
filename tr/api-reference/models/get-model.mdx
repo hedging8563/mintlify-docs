@@ -30,7 +30,7 @@ Ayrıca kullanım dışı/retired durumu, kullanıcı ücret politikası ve roze
 </ResponseField>
 
 <ResponseField name="tokenlab" type="object">
-  AI Sonar'ya özgü herkese açık metadata. Detay route'u `category`, `pricing_unit`, `capability_flags`, `supported_operations`, `pricing_provenance`, `public_contract_summary`, tam `public_contract` ve chat dışı öneri snapshot'ları için sahne düzeyinde `agent_preferences` içerebilir.
+  AI Sonar'ya özgü herkese açık metadata. Detay route'u `category`, `pricing_unit`, `capability_flags`, `supported_operations`, `pricing_provenance`, `request_format_summary`, tam `request_format_details` ve chat dışı öneri snapshot'ları için sahne düzeyinde `agent_preferences` içerebilir.
 </ResponseField>
 
 <RequestExample>
@@ -150,5 +150,5 @@ Public yanıt, öneri kaynağını `basis.source` ile özetler ve routing identi
 - `tokenlab.capability_flags`
 - `tokenlab.supported_operations`
 - `tokenlab.pricing_provenance`
-- `tokenlab.public_contract_summary`
-- `tokenlab.public_contract`
+- `tokenlab.request_format_summary`
+- `tokenlab.request_format_details`

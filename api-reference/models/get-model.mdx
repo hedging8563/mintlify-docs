@@ -30,7 +30,7 @@ It also includes `lifecycle`, `commercial`, and `badges`, which describe depreca
 </ResponseField>
 
 <ResponseField name="tokenlab" type="object">
-  AI Sonar-specific public metadata. The detail route can include `category`, `pricing_unit`, `capability_flags`, `supported_operations`, `pricing_provenance`, `public_contract_summary`, the full `public_contract`, and scene-level `agent_preferences` for non-chat recommendation snapshots.
+  AI Sonar-specific public metadata. The detail route can include `category`, `pricing_unit`, `capability_flags`, `supported_operations`, `pricing_provenance`, `request_format_summary`, the full `request_format_details`, and scene-level `agent_preferences` for non-chat recommendation snapshots.
 </ResponseField>
 
 <RequestExample>
@@ -150,5 +150,5 @@ Compared with `GET /v1/models`, the detail route can additionally return:
 - `tokenlab.capability_flags`
 - `tokenlab.supported_operations`
 - `tokenlab.pricing_provenance`
-- `tokenlab.public_contract_summary`
-- `tokenlab.public_contract`
+- `tokenlab.request_format_summary`
+- `tokenlab.request_format_details`

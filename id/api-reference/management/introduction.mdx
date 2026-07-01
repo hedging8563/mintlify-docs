@@ -36,7 +36,7 @@ Management token berbeda dari inference API key. Gunakan `mt-...` untuk `/v1/man
 |-----------|------|-----------------|---------|
 | `page` | integer | default `1`, min `1` | Nomor halaman mulai dari 1 |
 | `limit` | integer | default `50`, min `1`, max `100` | Ukuran halaman |
-| `logicalModel` | string | panjang maks `100` | Nama model yang diminta |
+| `model` | string | panjang maks `100` | Nama model yang diminta |
 | `modelVendor` | string | panjang maks `100` | Vendor model publik |
 | `scene` | enum | - | `chat`, `image`, `audio`, `video`, `embedding`, `rerank`, `translation`, `music`, `3d` |
 | `accessChannel` | enum | - | `platform` atau `byok` |
@@ -75,11 +75,11 @@ Setidaknya satu field PATCH harus diberikan.
 
 ## Semantik Pelaporan
 
-- `logicalModel` merujuk ke model publik yang diminta caller.
+- `model` merujuk ke model publik yang diminta caller.
 - `modelVendor` merujuk ke vendor model publik, bukan rute penyedia di balik layar.
 - `scene` adalah scene request publik yang diturunkan dari endpoint atau jenis tugas.
 - `accessChannel=platform` berarti request ditagihkan lewat channel platform AI Sonar.
-- `accessChannel=byok` berarti request memakai kunci upstream provider milik Anda sendiri.
+- `accessChannel=byok` berarti request memakai kunci provider milik Anda sendiri.
 
 Respons hanya menampilkan field billing dan reporting publik. Detail routing penyedia tidak ditampilkan.
 - Item `/usage` dapat menyertakan `billing_transaction_id` setelah request dasar mencapai status billing yang telah diselesaikan. Gunakan `request_id` + `billing_transaction_id` untuk rekonsiliasi level request.

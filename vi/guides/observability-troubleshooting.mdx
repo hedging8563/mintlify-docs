@@ -50,7 +50,7 @@ curl "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/usage?page
   -H "Authorization: Bearer mt-your-management-token"
 ```
 
-`GET /v1/management/api-keys/{keyId}/usage` có thể lọc theo `scene`, `accessChannel`, `logicalModel`, `modelVendor`, `startDate`, và `endDate`. Sử dụng các bản ghi này thay vì lấy thông tin từ các trang bảng điều khiển hoặc dựa vào ID nhiệm vụ của nhà cung cấp upstream.
+`GET /v1/management/api-keys/{keyId}/usage` có thể lọc theo `scene`, `accessChannel`, `model`, `modelVendor`, `startDate`, và `endDate`. Sử dụng các bản ghi này thay vì lấy thông tin từ các trang bảng điều khiển hoặc dựa vào ID nhiệm vụ của nhà cung cấp upstream.
 
 Các phản hồi phát trực tiếp có thể được thanh toán sau khi luồng được gửi, vì vậy một tiêu đề thanh toán có thể không có ngay cả khi việc sử dụng được ghi lại sau đó. Các nhiệm vụ phương tiện không đồng bộ có thể được thanh toán sau khi lấy thông tin cuối cùng.
 

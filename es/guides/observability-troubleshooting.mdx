@@ -50,7 +50,7 @@ curl "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/usage?page
   -H "Authorization: Bearer mt-your-management-token"
 ```
 
-`GET /v1/management/api-keys/{keyId}/usage` puede filtrar por `scene`, `accessChannel`, `logicalModel`, `modelVendor`, `startDate` y `endDate`. Utiliza estos registros en lugar de raspar páginas del panel o depender de IDs de tareas del proveedor ascendente.
+`GET /v1/management/api-keys/{keyId}/usage` puede filtrar por `scene`, `accessChannel`, `model`, `modelVendor`, `startDate` y `endDate`. Utiliza estos registros en lugar de raspar páginas del panel o depender de IDs de tareas del proveedor ascendente.
 
 Las respuestas de streaming pueden liquidarse después de que se envía el stream, por lo que un encabezado de facturación puede estar ausente incluso cuando el uso se registra más tarde. Las tareas de medios asíncronas pueden liquidarse después del sondeo terminal.
 

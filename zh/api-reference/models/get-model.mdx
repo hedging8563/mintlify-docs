@@ -30,7 +30,7 @@ description: "检索一个模型实例"
 </ResponseField>
 
 <ResponseField name="tokenlab" type="object">
-  AI Sonar 专属的公开元数据。详情路由可包含 `category`、`pricing_unit`、`capability_flags`、`supported_operations`、`pricing_provenance`、`public_contract_summary`、完整的 `public_contract`，以及非聊天推荐快照的场景级 `agent_preferences`。
+  AI Sonar 专属的公开元数据。详情路由可包含 `category`、`pricing_unit`、`capability_flags`、`supported_operations`、`pricing_provenance`、`request_format_summary`、完整的 `request_format_details`，以及非聊天推荐快照的场景级 `agent_preferences`。
 </ResponseField>
 
 <RequestExample>
@@ -136,8 +136,8 @@ echo "Model: {$model['id']}, Provider: {$model['owned_by']}\n";
 - `tokenlab.capability_flags`
 - `tokenlab.supported_operations`
 - `tokenlab.pricing_provenance`
-- `tokenlab.public_contract_summary`
-- `tokenlab.public_contract`
+- `tokenlab.request_format_summary`
+- `tokenlab.request_format_details`
 
 ## 错误处理
 

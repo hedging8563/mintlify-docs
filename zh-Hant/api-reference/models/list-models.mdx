@@ -23,7 +23,7 @@ description: "列出所有可用的模型"
   - `tokenlab.capability_flags` (object or `null`)：公開能力摘要
   - `tokenlab.supported_operations` (array or `null`)：模型公開支援的非聊天操作
   - `tokenlab.pricing_provenance` (object or `null`)：公開定價來源中繼資料
-  - `tokenlab.public_contract_summary` (object or `null`)：輕量級非聊天發現摘要，只包含 `public_operations` 與 `request_endpoint`
+  - `tokenlab.request_format_summary` (object or `null`)：輕量級非聊天發現摘要，只包含 `public_operations` 與 `request_endpoint`
   - `tokenlab.agent_preferences` (object)：僅在存在 `recommended_for` 時回傳
   - `tokenlab.lifecycle`（object）：生命週期狀態、發布日期/棄用日期、替代模型和 latest 標籤來源
   - `tokenlab.commercial`（object）：使用者收費策略、免費原因和可選免費截止時間
@@ -31,7 +31,7 @@ description: "列出所有可用的模型"
 </ResponseField>
 
 <Note>
-`GET /v1/models` 以發現為主。像 `capability_flags`、`pricing_provenance` 與完整的 `public_contract` 這類僅詳情可見的中繼資料都在 `GET /v1/models/{model}` 中。
+`GET /v1/models` 以發現為主。像 `capability_flags`、`pricing_provenance` 與完整的 `request_format_details` 這類僅詳情可見的中繼資料都在 `GET /v1/models/{model}` 中。
 </Note>
 
 ## 查詢參數

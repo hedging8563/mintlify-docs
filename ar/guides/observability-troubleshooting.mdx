@@ -50,7 +50,7 @@ curl "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/usage?page
   -H "Authorization: Bearer mt-your-management-token"
 ```
 
-`GET /v1/management/api-keys/{keyId}/usage` يمكن أن يقوم بالتصفية حسب `scene`، `accessChannel`، `logicalModel`، `modelVendor`، `startDate`، و `endDate`. استخدم هذه السجلات بدلاً من جمع بيانات صفحات لوحة التحكم أو الاعتماد على معرفات مهام المزود العلوية.
+`GET /v1/management/api-keys/{keyId}/usage` يمكن أن يقوم بالتصفية حسب `scene`، `accessChannel`، `model`، `modelVendor`، `startDate`، و `endDate`. استخدم هذه السجلات بدلاً من جمع بيانات صفحات لوحة التحكم أو الاعتماد على معرفات مهام المزود العلوية.
 
 قد تستقر الاستجابات المتدفقة بعد إرسال التدفق، لذا قد يكون رأس الفوترة غائبًا حتى عندما يتم تسجيل الاستخدام لاحقًا. قد تستقر المهام الإعلامية غير المتزامنة بعد الاستعلام النهائي.
 

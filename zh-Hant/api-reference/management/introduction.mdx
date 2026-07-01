@@ -36,7 +36,7 @@ Authorization: Bearer mt-your-management-token
 |------|------|---------------|------|
 | `page` | integer | 預設 `1`，最小 `1` | 從 1 開始的頁碼 |
 | `limit` | integer | 預設 `50`，最小 `1`，最大 `100` | 每頁筆數 |
-| `logicalModel` | string | 最大長度 `100` | 請求時使用的模型名稱 |
+| `model` | string | 最大長度 `100` | 請求時使用的模型名稱 |
 | `modelVendor` | string | 最大長度 `100` | 公開模型供應商 |
 | `scene` | enum | - | `chat`、`image`、`audio`、`video`、`embedding`、`rerank`、`translation`、`music`、`3d` |
 | `accessChannel` | enum | - | `platform` 或 `byok` |
@@ -75,7 +75,7 @@ PATCH 請求至少需要提供一個欄位。
 
 ## 報表語義
 
-- `logicalModel` 指的是呼叫方請求的模型名稱。
+- `model` 指的是呼叫方請求的模型名稱。
 - `modelVendor` 指的是公開模型供應商，而不是隱藏的實體路由。
 - `scene` 是由 endpoint 或任務型別推導出的公開請求場景。
 - `accessChannel=platform` 表示該請求是透過 AI Sonar 平台渠道計費。

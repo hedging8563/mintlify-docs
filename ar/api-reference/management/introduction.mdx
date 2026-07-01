@@ -36,7 +36,7 @@ Authorization: Bearer mt-your-management-token
 |---------|------|----------------------------|-------|
 | `page` | integer | الافتراضي `1`، الحد الأدنى `1` | رقم الصفحة بدءًا من 1 |
 | `limit` | integer | الافتراضي `50`، الحد الأدنى `1`، الحد الأقصى `100` | حجم الصفحة |
-| `logicalModel` | string | أقصى طول `100` | اسم النموذج المطلوب |
+| `model` | string | أقصى طول `100` | اسم النموذج المطلوب |
 | `modelVendor` | string | أقصى طول `100` | مزود النموذج العام |
 | `scene` | enum | - | `chat` و `image` و `audio` و `video` و `embedding` و `rerank` و `translation` و `music` و `3d` |
 | `accessChannel` | enum | - | `platform` أو `byok` |
@@ -75,7 +75,7 @@ Authorization: Bearer mt-your-management-token
 
 ## دلالات التقارير
 
-- يشير `logicalModel` إلى النموذج المطلوب الذي طلبه المستدعي.
+- يشير `model` إلى النموذج المطلوب الذي طلبه المستدعي.
 - يشير `modelVendor` إلى مزود النموذج العام، وليس المسار الفيزيائي المخفي.
 - تمثل `scene` مشهد الطلب العام المشتق من الواجهة أو نوع المهمة.
 - تعني `accessChannel=platform` أن الطلب تمت محاسبته عبر قناة منصة AI Sonar.

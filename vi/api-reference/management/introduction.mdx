@@ -36,7 +36,7 @@ Management token khác với inference API key. Dùng `mt-...` cho `/v1/manageme
 |---------|------|---------------------|--------|
 | `page` | integer | mặc định `1`, tối thiểu `1` | Số trang tính từ 1 |
 | `limit` | integer | mặc định `50`, tối thiểu `1`, tối đa `100` | Kích thước trang |
-| `logicalModel` | string | tối đa `100` ký tự | Tên model được yêu cầu |
+| `model` | string | tối đa `100` ký tự | Tên model được yêu cầu |
 | `modelVendor` | string | tối đa `100` ký tự | Nhà cung cấp model công khai |
 | `scene` | enum | - | `chat`, `image`, `audio`, `video`, `embedding`, `rerank`, `translation`, `music`, `3d` |
 | `accessChannel` | enum | - | `platform` hoặc `byok` |
@@ -75,11 +75,11 @@ PATCH phải có ít nhất một trường.
 
 ## Ngữ Nghĩa Báo Cáo
 
-- `logicalModel` là model công khai mà người gọi yêu cầu.
+- `model` là model công khai mà người gọi yêu cầu.
 - `modelVendor` là nhà cung cấp model công khai, không phải tuyến vật lý ẩn.
 - `scene` là ngữ cảnh yêu cầu công khai được suy ra từ endpoint hoặc loại tác vụ.
 - `accessChannel=platform` nghĩa là request được tính phí qua kênh platform của AI Sonar.
-- `accessChannel=byok` nghĩa là request dùng khóa upstream provider của chính bạn.
+- `accessChannel=byok` nghĩa là request dùng khóa provider của chính bạn.
 
 Phản hồi chỉ hiển thị các trường billing và reporting công khai. Chi tiết routing nội bộ và metadata provider vật lý vẫn bị ẩn.
 - Các mục `/usage` có thể bao gồm `billing_transaction_id` sau khi request cơ bản đã đạt trạng thái billing đã thanh toán. Dùng `request_id` + `billing_transaction_id` để đối soát ở mức request.

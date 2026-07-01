@@ -23,7 +23,7 @@ description: "Liệt kê tất cả model hiện có"
   - `tokenlab.capability_flags` (object hoặc `null`): Tóm tắt năng lực công khai
   - `tokenlab.supported_operations` (array hoặc `null`): Các thao tác phi-chat công khai của model
   - `tokenlab.pricing_provenance` (object hoặc `null`): Metadata nguồn giá công khai
-  - `tokenlab.public_contract_summary` (object hoặc `null`): Tóm tắt khám phá phi-chat nhẹ, chỉ gồm `public_operations` và `request_endpoint`
+  - `tokenlab.request_format_summary` (object hoặc `null`): Tóm tắt khám phá phi-chat nhẹ, chỉ gồm `public_operations` và `request_endpoint`
   - `tokenlab.agent_preferences` (object): Chỉ trả về khi có `recommended_for`
   - `tokenlab.lifecycle` (object): giai đoạn vòng đời, ngày phát hành/ngừng hỗ trợ, mô hình thay thế và nguồn huy hiệu latest
   - `tokenlab.commercial` (object): chính sách tính phí người dùng, lý do miễn phí và thời điểm miễn phí đến tùy chọn
@@ -31,7 +31,7 @@ description: "Liệt kê tất cả model hiện có"
 </ResponseField>
 
 <Note>
-`GET /v1/models` được tối ưu cho khám phá. Metadata chỉ có ở trang chi tiết như `capability_flags`, `pricing_provenance`, và `public_contract` đầy đủ nằm ở `GET /v1/models/{model}`.
+`GET /v1/models` được tối ưu cho khám phá. Metadata chỉ có ở trang chi tiết như `capability_flags`, `pricing_provenance`, và `request_format_details` đầy đủ nằm ở `GET /v1/models/{model}`.
 </Note>
 
 ## Tham số Query

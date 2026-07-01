@@ -50,7 +50,7 @@ curl "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/usage?page
   -H "Authorization: Bearer mt-your-management-token"
 ```
 
-`GET /v1/management/api-keys/{keyId}/usage` kann nach `scene`, `accessChannel`, `logicalModel`, `modelVendor`, `startDate` und `endDate` filtern. Verwenden Sie diese Aufzeichnungen anstelle von Scraping-Dashboard-Seiten oder der Abhängigkeit von upstream-Anbieter-Aufgaben-IDs.
+`GET /v1/management/api-keys/{keyId}/usage` kann nach `scene`, `accessChannel`, `model`, `modelVendor`, `startDate` und `endDate` filtern. Verwenden Sie diese Aufzeichnungen anstelle von Scraping-Dashboard-Seiten oder der Abhängigkeit von Anbieter-Aufgaben-IDs.
 
 Streaming-Antworten können nach dem Senden des Streams abgerechnet werden, sodass ein Abrechnungsheader fehlen kann, selbst wenn die Nutzung später aufgezeichnet wird. Asynchrone Medienaufgaben können nach terminalen Abfragen abgerechnet werden.
 

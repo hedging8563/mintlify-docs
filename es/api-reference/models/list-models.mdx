@@ -6,7 +6,7 @@ description: "Enumera todos los modelos disponibles"
 
 ## Resumen
 
-`GET /v1/models` está optimizado para el descubrimiento. Los metadatos solo de detalle, como `capability_flags`, `pricing_provenance` y el `public_contract` completo, viven en `GET /v1/models/{model}`.
+`GET /v1/models` está optimizado para el descubrimiento. Los metadatos solo de detalle, como `capability_flags`, `pricing_provenance` y el `request_format_details` completo, viven en `GET /v1/models/{model}`.
 
 ## Parámetros de consulta
 
@@ -49,7 +49,7 @@ Cuando `recommended_for` está presente, `/v1/models` ordena los modelos no chat
   - `tokenlab.capability_flags` (object or `null`): Resumen público de capacidades
   - `tokenlab.supported_operations` (array or `null`): Operaciones públicas no chat compatibles con el modelo
   - `tokenlab.pricing_provenance` (object or `null`): Metadatos públicos de procedencia de precios
-  - `tokenlab.public_contract_summary` (object or `null`): Resumen ligero de descubrimiento no chat con solo `public_operations` y `request_endpoint`
+  - `tokenlab.request_format_summary` (object or `null`): Resumen ligero de descubrimiento no chat con solo `public_operations` y `request_endpoint`
   - `tokenlab.agent_preferences` (object): Solo se devuelve cuando existe `recommended_for`
   - `tokenlab.lifecycle` (object): etapa del ciclo de vida, fechas de lanzamiento/deprecación, modelo de reemplazo y origen de latest
   - `tokenlab.commercial` (object): política de cobro al usuario, motivo gratuito y fecha opcional de fin gratuito

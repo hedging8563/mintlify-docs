@@ -23,7 +23,7 @@ description: "Mevcut tüm modelleri listeler"
   - `tokenlab.capability_flags` (object veya `null`): Genel yetenek özeti
   - `tokenlab.supported_operations` (array veya `null`): Model için genel chat dışı işlemler
   - `tokenlab.pricing_provenance` (object veya `null`): Genel fiyat kaynağı metadata'sı
-  - `tokenlab.public_contract_summary` (object veya `null`): Yalnızca `public_operations` ve `request_endpoint` içeren hafif chat dışı discovery özeti
+  - `tokenlab.request_format_summary` (object veya `null`): Yalnızca `public_operations` ve `request_endpoint` içeren hafif chat dışı discovery özeti
   - `tokenlab.agent_preferences` (object): Yalnızca `recommended_for` mevcut olduğunda döner
   - `tokenlab.lifecycle` (object): yaşam döngüsü aşaması, yayın/kullanımdan kaldırma tarihleri, yerine geçecek model ve latest rozeti kaynağı
   - `tokenlab.commercial` (object): kullanıcı ücret politikası, ücretsiz nedeni ve isteğe bağlı ücretsiz bitiş zamanı
@@ -31,7 +31,7 @@ description: "Mevcut tüm modelleri listeler"
 </ResponseField>
 
 <Note>
-`GET /v1/models` keşif için optimize edilmiştir. `capability_flags`, `pricing_provenance` ve tam `public_contract` gibi yalnızca detay sayfasına ait metadata `GET /v1/models/{model}` üzerinde bulunur.
+`GET /v1/models` keşif için optimize edilmiştir. `capability_flags`, `pricing_provenance` ve tam `request_format_details` gibi yalnızca detay sayfasına ait metadata `GET /v1/models/{model}` üzerinde bulunur.
 </Note>
 
 ## Query Parametreleri

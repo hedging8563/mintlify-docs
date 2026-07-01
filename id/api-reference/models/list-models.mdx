@@ -23,7 +23,7 @@ description: "Daftar semua model yang tersedia"
   - `tokenlab.capability_flags` (object atau `null`): Ringkasan kapabilitas publik
   - `tokenlab.supported_operations` (array atau `null`): Operasi non-chat publik untuk model
   - `tokenlab.pricing_provenance` (object atau `null`): Metadata sumber harga publik
-  - `tokenlab.public_contract_summary` (object atau `null`): Ringkasan discovery non-chat ringan yang hanya berisi `public_operations` dan `request_endpoint`
+  - `tokenlab.request_format_summary` (object atau `null`): Ringkasan discovery non-chat ringan yang hanya berisi `public_operations` dan `request_endpoint`
   - `tokenlab.agent_preferences` (object): Hanya dikembalikan saat `recommended_for` ada
   - `tokenlab.lifecycle` (object): tahap lifecycle, tanggal rilis/depresiasi, model pengganti, dan sumber badge latest
   - `tokenlab.commercial` (object): kebijakan biaya pengguna, alasan gratis, dan waktu gratis hingga opsional
@@ -31,7 +31,7 @@ description: "Daftar semua model yang tersedia"
 </ResponseField>
 
 <Note>
-`GET /v1/models` dioptimalkan untuk discovery. Metadata khusus detail seperti `capability_flags`, `pricing_provenance`, dan `public_contract` lengkap berada di `GET /v1/models/{model}`.
+`GET /v1/models` dioptimalkan untuk discovery. Metadata khusus detail seperti `capability_flags`, `pricing_provenance`, dan `request_format_details` lengkap berada di `GET /v1/models/{model}`.
 </Note>
 
 ## Parameter Query

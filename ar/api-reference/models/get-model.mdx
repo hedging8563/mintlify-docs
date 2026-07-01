@@ -30,7 +30,7 @@ description: "يسترجع مثيلاً للنموذج"
 </ResponseField>
 
 <ResponseField name="tokenlab" type="object">
-  بيانات وصفية عامة خاصة بـ AI Sonar. قد تتضمن مسار التفاصيل `category` و `pricing_unit` و `capability_flags` و `supported_operations` و `pricing_provenance` و `public_contract_summary` و `public_contract` الكامل و `agent_preferences` على مستوى السيناريو للقطات التوصية غير chat.
+  بيانات وصفية عامة خاصة بـ AI Sonar. قد تتضمن مسار التفاصيل `category` و `pricing_unit` و `capability_flags` و `supported_operations` و `pricing_provenance` و `request_format_summary` و `request_format_details` الكامل و `agent_preferences` على مستوى السيناريو للقطات التوصية غير chat.
 </ResponseField>
 
 <RequestExample>
@@ -150,5 +150,5 @@ echo "Model: {$model['id']}, Provider: {$model['owned_by']}\n";
 - `tokenlab.capability_flags`
 - `tokenlab.supported_operations`
 - `tokenlab.pricing_provenance`
-- `tokenlab.public_contract_summary`
-- `tokenlab.public_contract`
+- `tokenlab.request_format_summary`
+- `tokenlab.request_format_details`

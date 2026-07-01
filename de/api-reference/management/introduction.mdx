@@ -36,7 +36,7 @@ Management-Tokens sind nicht dasselbe wie Inference-API-Keys. Verwenden Sie `mt-
 |-----------|-----|--------------------|--------------|
 | `page` | integer | Standard `1`, min. `1` | Seitennummer ab 1 |
 | `limit` | integer | Standard `50`, min. `1`, max. `100` | Seitengröße |
-| `logicalModel` | string | max. Länge `100` | Angeforderter Modellname |
+| `model` | string | max. Länge `100` | Angeforderter Modellname |
 | `modelVendor` | string | max. Länge `100` | Öffentlicher Modellanbieter |
 | `scene` | enum | - | `chat`, `image`, `audio`, `video`, `embedding`, `rerank`, `translation`, `music`, `3d` |
 | `accessChannel` | enum | - | `platform` oder `byok` |
@@ -75,7 +75,7 @@ Mindestens ein PATCH-Feld muss angegeben werden.
 
 ## Reporting-Semantik
 
-- `logicalModel` bezeichnet den vom Aufrufer angeforderten Modellnamen.
+- `model` bezeichnet den vom Aufrufer angeforderten Modellnamen.
 - `modelVendor` bezeichnet den öffentlichen Modellanbieter, nicht interne Ausführungsdetails.
 - `scene` ist die öffentliche Request-Szene, die aus Endpoint oder Task-Typ abgeleitet wird.
 - `accessChannel=platform` bedeutet, dass die Anfrage über AI Sonars Plattformkanal abgerechnet wurde.

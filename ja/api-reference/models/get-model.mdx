@@ -30,7 +30,7 @@ description: "モデルインスタンスを取得します"
 </ResponseField>
 
 <ResponseField name="tokenlab" type="object">
-  AI Sonar 固有の公開メタデータです。詳細ルートでは、`category`、`pricing_unit`、`capability_flags`、`supported_operations`、`pricing_provenance`、`public_contract_summary`、完全な `public_contract`、そして非チャット推奨スナップショット用のシーン別 `agent_preferences` を含めることができます。
+  AI Sonar 固有の公開メタデータです。詳細ルートでは、`category`、`pricing_unit`、`capability_flags`、`supported_operations`、`pricing_provenance`、`request_format_summary`、完全な `request_format_details`、そして非チャット推奨スナップショット用のシーン別 `agent_preferences` を含めることができます。
 </ResponseField>
 
 <RequestExample>
@@ -136,8 +136,8 @@ echo "Model: {$model['id']}, Provider: {$model['owned_by']}\n";
 - `tokenlab.capability_flags`
 - `tokenlab.supported_operations`
 - `tokenlab.pricing_provenance`
-- `tokenlab.public_contract_summary`
-- `tokenlab.public_contract`
+- `tokenlab.request_format_summary`
+- `tokenlab.request_format_details`
 
 ## エラーハンドリング
 

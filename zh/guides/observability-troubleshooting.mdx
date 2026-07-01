@@ -50,7 +50,7 @@ curl "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/usage?page
   -H "Authorization: Bearer mt-your-management-token"
 ```
 
-`GET /v1/management/api-keys/{keyId}/usage` 可以按 `scene`、`accessChannel`、`logicalModel`、`modelVendor`、`startDate` 和 `endDate` 进行过滤。使用这些记录，而不是抓取仪表板页面或依赖上游供应商任务 ID。
+`GET /v1/management/api-keys/{keyId}/usage` 可以按 `scene`、`accessChannel`、`model`、`modelVendor`、`startDate` 和 `endDate` 进行过滤。使用这些记录，而不是抓取仪表板页面或依赖上游供应商任务 ID。
 
 流式响应可能在流发送后结算，因此即使使用稍后记录，计费头也可能缺失。异步媒体任务可能在终端轮询后结算。
 
@@ -65,7 +65,7 @@ curl "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/usage?page
 - 清理后的请求形状和公共错误主体。
 - 您期望的结果和用户实际看到的内容。
 
-除非 AI Sonar 支持明确要求提供已编辑的示例，否则请勿包含 API 密钥、管理令牌、私有媒体、完整提示、供应商 URL、通道 ID 或内部路由标识符。
+除非 AI Sonar 支持明确要求提供已编辑的示例，否则请勿包含 API 密钥、管理令牌、私有媒体、完整提示、供应商 URL、通道 ID 或私有调试标识符。
 
 ## 操作检查
 

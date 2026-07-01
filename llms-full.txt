@@ -1915,7 +1915,7 @@ curl "https://api.aisonar.dev/v1/management/api-keys/key_abc123def456/usage?page
   -H "Authorization: Bearer mt-your-management-token"
 ```
 
-`GET /v1/management/api-keys/{keyId}/usage` can filter by `scene`, `accessChannel`, `logicalModel`, `modelVendor`, `startDate`, and `endDate`. Use these records instead of scraping dashboard pages or relying on upstream provider task IDs.
+`GET /v1/management/api-keys/{keyId}/usage` can filter by `scene`, `accessChannel`, `model`, `modelVendor`, `startDate`, and `endDate`. Use these records instead of scraping dashboard pages or relying on provider task IDs.
 
 Streaming responses may settle after the stream is sent, so a billing header can be absent even when usage is later recorded. Async media tasks may settle after terminal polling.
 
@@ -3174,7 +3174,7 @@ URL: https://docs.aisonar.dev/api-reference/models/list-models
 
 ## Response
 
-> Note: `GET /v1/models` is optimized for discovery. Detail-only metadata such as `capability_flags`, `pricing_provenance`, and the full `public_contract` live on `GET /v1/models/{model}`.
+> Note: `GET /v1/models` is optimized for discovery. Detail-only metadata such as `capability_flags`, `pricing_provenance`, and the full `request_format_details` live on `GET /v1/models/{model}`.
 
 ## Query Parameters
 
@@ -3282,8 +3282,8 @@ Compared with `GET /v1/models`, the detail route can additionally return:
 - `tokenlab.capability_flags`
 - `tokenlab.supported_operations`
 - `tokenlab.pricing_provenance`
-- `tokenlab.public_contract_summary`
-- `tokenlab.public_contract`
+- `tokenlab.request_format_summary`
+- `tokenlab.request_format_details`
 
 ---
 
@@ -5027,7 +5027,7 @@ Authorization: Bearer mt-your-management-token
 |-----------|------|------------------|-------|
 | `page` | integer | default `1`, min `1` | 1-based page number |
 | `limit` | integer | default `50`, min `1`, max `100` | Page size |
-| `logicalModel` | string | max length `100` | Requested model name |
+| `model` | string | max length `100` | Requested model name |
 | `modelVendor` | string | max length `100` | Public model vendor |
 | `scene` | enum | - | `chat`, `image`, `audio`, `video`, `embedding`, `rerank`, `translation`, `music`, `3d` |
 | `accessChannel` | enum | - | `platform` or `byok` |
@@ -5068,11 +5068,11 @@ At least one PATCH field must be provided.
 
 ## Reporting Semantics
 
-- `logicalModel` refers to the model requested by the caller.
+- `model` refers to the model requested by the caller.
 - `modelVendor` refers to the public model vendor, not provider-specific execution details.
 - `scene` is the public request scene derived from the endpoint or task type.
 - `accessChannel=platform` means the request was billed via AI Sonar’s platform channel.
-- `accessChannel=byok` means the request used your own upstream provider key.
+- `accessChannel=byok` means the request used your own provider key.
 
 Responses expose public billing and reporting fields only. Provider execution details are not included in management responses.
 - `/usage` line items can include `billing_transaction_id` once the underlying request has reached settled billing state. Use `request_id` + `billing_transaction_id` for request-level reconciliation.
@@ -5253,7 +5253,7 @@ This endpoint returns key-level usage details without exposing provider-specific
 |-----------|------|------------------|-------|
 | `page` | integer | default `1`, min `1` | 1-based page number |
 | `limit` | integer | default `50`, min `1`, max `100` | Page size |
-| `logicalModel` | string | max length `100` | Requested model name |
+| `model` | string | max length `100` | Requested model name |
 | `modelVendor` | string | max length `100` | Public model vendor |
 | `scene` | enum | - | `chat`, `image`, `audio`, `video`, `embedding`, `rerank`, `translation`, `music`, `3d` |
 | `accessChannel` | enum | - | `platform` or `byok` |
@@ -7456,7 +7456,7 @@ for block in message.content:
 
 ### LiteLLM
 
-> Use AI Sonar with LiteLLM as either an upstream provider or an internal gateway layer
+> Use AI Sonar with LiteLLM either as a provider endpoint or as your gateway layer
 
 URL: https://docs.aisonar.dev/integrations/litellm
 

@@ -23,7 +23,7 @@ description: "Listet alle verfügbaren Modelle auf"
   - `tokenlab.capability_flags` (object oder `null`): Öffentliche Fähigkeitsübersicht
   - `tokenlab.supported_operations` (array oder `null`): Öffentliche Nicht-Chat-Operationen für das Modell
   - `tokenlab.pricing_provenance` (object oder `null`): Öffentliche Metadaten zur Preisquelle
-  - `tokenlab.public_contract_summary` (object oder `null`): Leichte Discovery-Zusammenfassung mit nur `public_operations` und `request_endpoint`
+  - `tokenlab.request_format_summary` (object oder `null`): Leichte Discovery-Zusammenfassung mit nur `public_operations` und `request_endpoint`
   - `tokenlab.agent_preferences` (object): Nur vorhanden, wenn `recommended_for` gesetzt ist
   - `tokenlab.lifecycle` (object): Lifecycle-Status, Release-/Deprecation-Daten, Ersatzmodell und Latest-Badge-Quelle
   - `tokenlab.commercial` (object): Nutzer-Abrechnungsrichtlinie, Free-Grund und optionaler Free-until-Zeitpunkt
@@ -31,7 +31,7 @@ description: "Listet alle verfügbaren Modelle auf"
 </ResponseField>
 
 <Note>
-`GET /v1/models` ist für Discovery optimiert. Detail-Metadaten wie `capability_flags`, `pricing_provenance` und das vollständige `public_contract` liegen auf `GET /v1/models/{model}`.
+`GET /v1/models` ist für Discovery optimiert. Detail-Metadaten wie `capability_flags`, `pricing_provenance` und das vollständige `request_format_details` liegen auf `GET /v1/models/{model}`.
 </Note>
 
 ## Query-Parameter

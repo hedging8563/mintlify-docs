@@ -30,7 +30,7 @@ También incluye `lifecycle`, `commercial` y `badges` para el estado de deprecac
 </ResponseField>
 
 <ResponseField name="tokenlab" type="object">
-  Metadatos públicos específicos de AI Sonar. La ruta de detalle puede incluir `category`, `pricing_unit`, `capability_flags`, `supported_operations`, `pricing_provenance`, `public_contract_summary`, el `public_contract` completo y `agent_preferences` a nivel de escena para instantáneas de recomendación no chat.
+  Metadatos públicos específicos de AI Sonar. La ruta de detalle puede incluir `category`, `pricing_unit`, `capability_flags`, `supported_operations`, `pricing_provenance`, `request_format_summary`, el `request_format_details` completo y `agent_preferences` a nivel de escena para instantáneas de recomendación no chat.
 </ResponseField>
 
 <RequestExample>
@@ -150,5 +150,5 @@ En comparación con `GET /v1/models`, la ruta de detalle también puede devolver
 - `tokenlab.capability_flags`
 - `tokenlab.supported_operations`
 - `tokenlab.pricing_provenance`
-- `tokenlab.public_contract_summary`
-- `tokenlab.public_contract`
+- `tokenlab.request_format_summary`
+- `tokenlab.request_format_details`
