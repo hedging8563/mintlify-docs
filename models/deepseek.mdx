@@ -5,13 +5,12 @@ description: "DeepSeek R1, V3 reasoning and chat models"
 
 ## Overview
 
-AI Sonar provides access to DeepSeek models. Total: **5 models** available.
+AI Sonar provides access to DeepSeek models. Total: **4 models** available.
 
 ## Chat Models
 
 | Model ID | Pricing |
 |----------|--------|
-| `deepseek-r1` | $0.14/1M in |
 | `deepseek-v3` | $0.14/1M in |
 | `deepseek-v3-2` | $0.28/1M in |
 | `deepseek-v4-flash` | $0.14705882/1M in |
@@ -29,7 +28,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="deepseek-r1",
+    model="deepseek-v3",
     messages=[{"role": "user", "content": "Hello!"}]
 )
 ```
