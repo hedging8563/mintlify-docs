@@ -5,12 +5,13 @@ description: "Claude Opus, Sonnet, Haiku series"
 
 ## Overview
 
-AI Sonar provides access to Anthropic models. Total: **6 models** available.
+AI Sonar provides access to Anthropic models. Total: **7 models** available.
 
 ## Chat Models
 
 | Model ID | Pricing |
 |----------|--------|
+| `claude-fable-5` | $6.5/1M in |
 | `claude-haiku-4-5` | $0.65/1M in |
 | `claude-opus-4-6` | $3.25/1M in |
 | `claude-opus-4-7` | $3.25/1M in |
@@ -30,7 +31,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="claude-haiku-4-5",
+    model="claude-fable-5",
     messages=[{"role": "user", "content": "Hello!"}]
 )
 ```
